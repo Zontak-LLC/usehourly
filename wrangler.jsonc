@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hourly",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Run the Worker near D1: Prisma's D1 adapter makes several round-trips per query.
+  "placement": { "mode": "smart" },
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "hourly-db", "database_id": "fd20fd46-8c42-4ee0-8697-118358734897" }
+  ],
+  "vars": {
+    "AUTH_URL": "https://hourly.dzontak.workers.dev",
+    "NEXT_PUBLIC_APP_URL": "https://hourly.dzontak.workers.dev"
+  },
+  "workers_dev": true
+}

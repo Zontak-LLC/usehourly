@@ -1,0 +1,54 @@
+# CLAUDE.md — Hourly
+
+Time tracking for freelancers. Goal: logging a day's time should take seconds (UX is the product).
+Built on the `arhamkhnz/next-shadcn-admin-dashboard` shell (the Vercel "admin-dashboard" template was Postgres/Auth.js-only, so it was not used). No Material UI — shadcn + Tailwind only.
+
+## Stack
+Next.js 16, React 19, Tailwind v4, shadcn/ui · NextAuth v5 (Credentials, JWT) · tRPC v11 · Prisma 7 + Cloudflare D1 · Vitest · Biome · OpenNext on Cloudflare Workers. Dev port **3028**.
+
+## Commands
+```bash
+npm run dev                 # http://localhost:3028 (local D1 via wrangler state)
+npm run d1:migrate:local    # apply migrations/ to local D1 (do this first)
+npx vitest run              # scenario tests (src/__tests__)
+npx next build              # must pass before deploy
+npm run deploy              # opennextjs-cloudflare build + deploy
+npm run d1:migrate:remote
+```
+Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync); production secret via `wrangler secret put AUTH_SECRET`.
+
+## Design decisions
+- Duration is integer **minutes**; `TimeEntry.date` is a local `YYYY-MM-DD` string (Workers run in UTC — "today" is computed in the browser, never on the server).
+- `src/lib/duration.ts` parses `1.5`, `1:30`, `90m`, `2h`, `1h30`; bare number ≤12 = hours, else minutes. Shared by client preview and server validation.
+- Running timer = a `TimeEntry` with `started_at` set. `entry.start` stops any running timer first; stop rounds elapsed up to ≥1 min.
+- Multi-tenancy = per-user: every procedure uses `protectedProcedure` and filters by `ctx.userId` (that filter is the isolation boundary).
+- tRPC router for clients is named `clients` (a router named `client` collides with tRPC's built-in).
+- `getPrisma()` is lazy on purpose — a top-level await on D1 breaks `next build` with SQLITE_BUSY.
+- `trpc.ts` must not import next-auth/Prisma at runtime (context lives in `context.ts`) so routers are testable.
+- Sidebar user name is read from the DB in the dashboard layout, not the JWT (JWT goes stale after profile edits).
+
+## Routes
+`/dashboard/today` (quick-add, timer, day list; `?date=`) · `/dashboard/week` (editable timesheet grid + multi-day Fill + Excel export; `?project=`) · `/dashboard/month` (calendar of day/week totals, per-project breakdown, Excel export; `?month=YYYY-MM&project=`) · `/dashboard/report` (annual summary for taxes: hours, earned, quarters, months, clients/projects, invoices; Excel export; `lib/annual-report.ts`) · `/dashboard/invoices` (searchable history; PDF re-download) · `/dashboard/invoices/new` · `/dashboard/clients` · `/dashboard/account` · `/auth/v2/login|register`. `src/proxy.ts` redirects signed-out users to login.
+
+## Timesheet grid & export
+- Every entry row (Today page and the day-editor dialog) has a Move control (`move-popover.tsx`): quick picks around its day or any date; it calls `entry.update({ id, date })` and changes nothing else.
+- Week/Month have a project filter (`src/components/project-filter.tsx`, `?project=<id>`): client-side filter of the already-loaded entries; export respects it. On Today, the project label on each entry is an invisible `<select>` that reassigns via `entry.update` in one step.
+- `entry.bulkSet` is the single write path for grid cell edits and multi-day fill: >0 creates/updates the day's single entry, 0 deletes it; days with several entries or a running timer are **skipped and reported**, never merged (those cells render read-only and link to the day).
+- `src/lib/timesheet.ts` (`buildSheet`) pivots entries into project × day; Week, Month and the export all use it.
+- Excel export is client-side (`src/lib/export-xlsx.ts`, exceljs imported on demand): sheet "Timesheet" = decimal-hour grid with live SUM formulas; sheet "Entries" = per-entry rows with rate/amount. `buildTimesheetWorkbook` is tested by round-tripping the real bytes.
+- exceljs still lands in the Worker bundle (~0.25 MB gzip of ~5.4 MB; paid-plan limit is 10 MB). Slim later if the Worker nears the limit.
+- Local D1 state can get wiped by `npm run deploy`; re-run `npm run d1:migrate:local` and re-register a dev user if login says Configuration error.
+
+## Logos
+- Users, clients and projects can each have a logo stored as a small png/jpeg data URL (`logoSchema`, resized in the browser by `src/lib/logo.ts`; projects at 160×160). They are **never** included in entry/client lists (`omit: { logo: true }`, see `withProject` in `entry.ts`): project logos come from the single cached `project.logos` query (`src/components/project-logo.tsx`: `useProjectLogos` + `ProjectMark`, which falls back to the client's color dot); client logos from `clients.get`.
+
+## Invoices
+- `invoice.create` recomputes everything server-side from billable entries (client's projects, date range) using `src/lib/invoice.ts` `buildInvoice` — the builder page runs the same function only for the live preview. One line per project; amount = round(minutes × rate / 60) per line, in cents.
+- Each `Invoice` stores a frozen JSON `snapshot` (seller name/EIN/address/logo, lines, detail) so history never changes when rates, entries or the account are edited later; the PDF is re-rendered from it (`src/lib/invoice-pdf.ts`, jsPDF + autotable, client-side, dynamic import). `search_text` is a lowercase blob (number, client, projects, entry notes, total) that `invoice.list({q})` matches with `contains`.
+- Business details live on `AuthUser` (`business_name`, `ein` normalized NN-NNNNNNN, `address`, `logo` = ≤400 KB png/jpeg data URL, resized in the browser on the Account page). Invoice numbers `INV-<year>-NNN`, unique per user. Clients also carry `legal_name` (full name, falls back to `name`), `address` and `logo`, edited via "Billing details" on Clients & projects; `clients.list` omits `logo` (hundreds of KB) — use `clients.get`. PDF header: left = your logo/name + INVOICE + number/dates, right = client logo, full name, address. Invoices carry `paid_date` (a date, not a flag — cash-basis taxes need *when*); it lives outside the frozen snapshot. `invoice.markPaid`, status filter on history; the annual report's cash view (Received by paid date, Outstanding at year end) comes from it.
+
+## Deployment
+Live: https://hourly.dzontak.workers.dev (Worker `hourly`, D1 `hourly-db` id `fd20fd46-8c42-4ee0-8697-118358734897`, deployed 2026-10-09). `AUTH_SECRET` is a Worker secret (set via `wrangler secret put`, different from the local `.dev.vars` value); `AUTH_URL`/`NEXT_PUBLIC_APP_URL` are `vars` in wrangler.jsonc. Registration is open to anyone. esbuild "duplicate key providers" warnings during build are benign.
+
+## Not yet built
+Hourly-rate invoicing/CSV export, password reset email, rate limiting on login/register (see duely's `rate-limit.ts`).

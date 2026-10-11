@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+  runtime  = "cloudflare"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model AuthUser {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  password_hash String
+  hourly_rate   Int       @default(0) // cents; default rate for new projects
+  // Business details printed on invoices.
+  business_name String?
+  ein           String?   // normalized NN-NNNNNNN
+  address       String?   // multi-line
+  logo          String?   // data URL (png/jpeg), resized client-side
+  created_at    DateTime  @default(now())
+
+  clients  Client[]
+  projects Project[]
+  entries  TimeEntry[]
+  invoices Invoice[]
+
+  @@map("auth_users")
+}
+
+model Client {
+  id         String   @id @default(uuid())
+  user_id    String
+  name       String
+  color      String   @default("#6366f1")
+  // Printed in the invoice header's "bill to" block.
+  legal_name String?  // full name / company legal name; falls back to `name`
+  address    String?  // multi-line
+  logo       String?  // data URL (png/jpeg), resized client-side
+  archived   Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user     AuthUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  projects Project[]
+  invoices Invoice[]
+
+  @@unique([user_id, name])
+  @@map("clients")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  user_id     String
+  client_id   String
+  name        String
+  hourly_rate Int      @default(0) // cents
+  billable    Boolean  @default(true)
+  logo        String?  // small data URL (png/jpeg), resized client-side; served via project.logos
+  archived    Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  user    AuthUser    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  client  Client      @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  entries TimeEntry[]
+
+  @@unique([client_id, name])
+  @@index([user_id])
+  @@map("projects")
+}
+
+// Duration is integer minutes. `date` is a local YYYY-MM-DD string so a
+// freelancer's "Tuesday" never shifts with UTC offsets. A running timer is a
+// row with started_at set (and minutes holding the already-accumulated time).
+model TimeEntry {
+  id         String    @id @default(uuid())
+  user_id    String
+  project_id String
+  date       String
+  minutes    Int       @default(0)
+  note       String    @default("")
+  started_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  user    AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, date])
+  @@index([user_id, started_at])
+  @@map("time_entries")
+}
+
+// An issued invoice. `snapshot` is a frozen JSON copy of everything printed on the PDF
+// (seller details, lines, per-entry detail), so editing the account, rates or entries later
+// never rewrites history; the PDF is regenerated from it on demand. `search_text` is a
+// denormalized lowercase blob (number, client, projects, notes) for history search.
+model Invoice {
+  id            String   @id @default(uuid())
+  user_id       String
+  client_id     String?
+  client_name   String
+  number        String
+  issue_date    String
+  due_date      String?
+  // Date the money arrived (YYYY-MM-DD), or null while unpaid. A date, not a flag: cash-basis
+  // taxes depend on which year/quarter the payment landed in. Not part of the frozen snapshot.
+  paid_date     String?
+  period_from   String
+  period_to     String
+  total_minutes Int
+  total_cents   Int
+  notes         String   @default("")
+  snapshot      String
+  search_text   String
+  created_at    DateTime @default(now())
+
+  user   AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  client Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
+
+  @@unique([user_id, number])
+  @@index([user_id, issue_date])
+  @@index([user_id, paid_date])
+  @@map("invoices")
+}
