@@ -13,11 +13,12 @@ const isProd = process.env.NODE_ENV === "production";
 // this origin or data/blob (logos are data URLs, downloads are blobs).
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
+  // static.cloudflareinsights.com: Cloudflare Web Analytics, injected at the edge in production.
+  `script-src 'self' 'unsafe-inline'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self'${isProd ? "" : " ws: wss:"}`,
+  `connect-src 'self'${isProd ? " https://cloudflareinsights.com" : " ws: wss:"}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
