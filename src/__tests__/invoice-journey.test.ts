@@ -217,6 +217,29 @@ describe("client invoice journey", () => {
     expect(prisma.authUser.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "u1" } }));
   });
 
+  it("finds invoices by issue-date range and sorts by amount, always within the caller's own", async () => {
+    const prisma = mockPrisma();
+    const c = asCaller(prisma, "u1");
+    await c.invoice.list({ from: "2026-09-01", to: "2026-10-31", sort: "highest" });
+    expect(prisma.invoice.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: { user_id: "u1", issue_date: { gte: "2026-09-01", lte: "2026-10-31" } },
+        orderBy: [{ total_cents: "desc" }, { issue_date: "desc" }],
+      }),
+    );
+    await c.invoice.list({ from: "2026-09-01", sort: "oldest" });
+    expect(prisma.invoice.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: { user_id: "u1", issue_date: { gte: "2026-09-01" } },
+        orderBy: [{ issue_date: "asc" }, { created_at: "asc" }],
+      }),
+    );
+    // a malformed date is refused and nothing is queried
+    prisma.invoice.findMany.mockClear();
+    await expect(c.invoice.list({ from: "October" })).rejects.toThrow();
+    expect(prisma.invoice.findMany).not.toHaveBeenCalled();
+  });
+
   it("only ever reads/deletes invoices owned by the caller", async () => {
     const prisma = mockPrisma();
     await expect(asCaller(prisma, "u1").invoice.get({ id: "other" })).rejects.toMatchObject({ code: "NOT_FOUND" });

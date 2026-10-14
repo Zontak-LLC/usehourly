@@ -93,6 +93,9 @@ export function InvoicesView() {
   const [q, setQ] = useState("");
   const [clientId, setClientId] = useState("");
   const [status, setStatus] = useState<"all" | "unpaid" | "paid">("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [sort, setSort] = useState<"newest" | "oldest" | "highest" | "lowest">("newest");
   // "Today" is the browser's date (the Worker runs in UTC); used to flag overdue invoices.
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => setToday(toISODate(new Date())), []);
@@ -107,6 +110,9 @@ export function InvoicesView() {
     q: q || undefined,
     clientId: clientId || undefined,
     status: status === "all" ? undefined : status,
+    from: from || undefined,
+    to: to || undefined,
+    sort: sort === "newest" ? undefined : sort,
   });
   const del = trpc.invoice.delete.useMutation();
   const markPaid = trpc.invoice.markPaid.useMutation();
@@ -145,7 +151,7 @@ export function InvoicesView() {
     }
   }
 
-  const filtering = !!q || !!clientId || status !== "all";
+  const filtering = !!q || !!clientId || status !== "all" || !!from || !!to;
   const total = (invoices.data ?? []).reduce((a, i) => a + i.total_cents, 0);
   const unpaid = (invoices.data ?? []).filter((i) => !i.paid_date).reduce((a, i) => a + i.total_cents, 0);
 
@@ -197,6 +203,55 @@ export function InvoicesView() {
           <option value="unpaid">Unpaid</option>
           <option value="paid">Paid</option>
         </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as typeof sort)}
+          aria-label="Sort invoices"
+          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="highest">Highest amount</option>
+          <option value="lowest">Lowest amount</option>
+        </select>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Issued from</span>
+        <Input
+          type="date"
+          value={from}
+          max={to || undefined}
+          onChange={(e) => setFrom(e.target.value)}
+          aria-label="Issued from"
+          className="h-9 w-40"
+        />
+        <span className="text-muted-foreground">to</span>
+        <Input
+          type="date"
+          value={to}
+          min={from || undefined}
+          onChange={(e) => setTo(e.target.value)}
+          aria-label="Issued to"
+          className="h-9 w-40"
+        />
+        {(filtering || sort !== "newest") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setText("");
+              setQ("");
+              setClientId("");
+              setStatus("all");
+              setFrom("");
+              setTo("");
+              setSort("newest");
+            }}
+          >
+            Clear all
+          </Button>
+        )}
       </div>
 
       {invoices.error ? (

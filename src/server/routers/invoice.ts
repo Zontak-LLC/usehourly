@@ -33,6 +33,16 @@ export const invoiceRouter = router({
           q: z.string().trim().max(100).optional(),
           clientId: z.string().optional(),
           status: z.enum(["all", "unpaid", "paid"]).optional(),
+          // Issue date range (inclusive, YYYY-MM-DD) and the order of the results.
+          from: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          to: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          sort: z.enum(["newest", "oldest", "highest", "lowest"]).optional(),
         })
         .optional(),
     )
@@ -40,13 +50,23 @@ export const invoiceRouter = router({
       ctx.prisma.invoice.findMany({
         where: {
           user_id: ctx.userId,
+          ...((input?.from || input?.to) && {
+            issue_date: { ...(input.from && { gte: input.from }), ...(input.to && { lte: input.to }) },
+          }),
           ...(input?.clientId && { client_id: input.clientId }),
           ...(input?.status === "paid" && { paid_date: { not: null } }),
           ...(input?.status === "unpaid" && { paid_date: null }),
           ...(input?.q && { search_text: { contains: input.q.toLowerCase() } }),
         },
         select: summary,
-        orderBy: [{ issue_date: "desc" }, { created_at: "desc" }],
+        orderBy:
+          input?.sort === "oldest"
+            ? [{ issue_date: "asc" }, { created_at: "asc" }]
+            : input?.sort === "highest"
+              ? [{ total_cents: "desc" }, { issue_date: "desc" }]
+              : input?.sort === "lowest"
+                ? [{ total_cents: "asc" }, { issue_date: "desc" }]
+                : [{ issue_date: "desc" }, { created_at: "desc" }],
         take: 200,
       }),
     ),
