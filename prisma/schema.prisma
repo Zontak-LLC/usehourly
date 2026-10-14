@@ -123,3 +123,12 @@ model Invoice {
   @@index([user_id, paid_date])
   @@map("invoices")
 }
+
+// Fixed-window counters used to throttle sign-in and register. `reset_at` is epoch seconds.
+model RateLimit {
+  key      String @id
+  count    Int    @default(0)
+  reset_at Int
+
+  @@map("rate_limits")
+}

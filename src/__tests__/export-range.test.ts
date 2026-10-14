@@ -213,6 +213,30 @@ describe("Export everything as a zip", () => {
     return { plan, zip };
   }
 
+  it("never lets a note or name run as a spreadsheet formula when the CSV is opened", async () => {
+    const evil = [
+      entry({ id: "x1", date: "2026-03-03", minutes: 30, note: '=HYPERLINK("http://evil.example","click")' }),
+      entry({ id: "x2", date: "2026-03-04", minutes: 30, note: "+1+1" }),
+      entry({ id: "x3", date: "2026-03-05", minutes: 30, note: "@SUM(A1)" }),
+      entry({ id: "x4", date: "2026-03-06", minutes: 30, note: "-2+3" }),
+      entry({ id: "x5", date: "2026-03-07", minutes: 30, note: "plain note, with comma" }),
+    ];
+    const { zip } = await build(evil, []);
+    const csv = await fileIn(zip, "all-entries.csv").async("string");
+    expect(csv).toContain(`"'=HYPERLINK(""http://evil.example"",""click"")"`);
+    expect(csv).toContain("'+1+1");
+    expect(csv).toContain("'@SUM(A1)");
+    expect(csv).toContain("'-2+3");
+    expect(csv).toContain('"plain note, with comma"');
+    // a cell never *starts* with a formula character, apart from the header row's BOM
+    for (const line of csv.replace("\uFEFF", "").split("\r\n")) {
+      for (const cell of line.match(/(?:^|,)("(?:[^"]|"")*"|[^,]*)/g) ?? []) {
+        const v = cell.replace(/^,/, "").replace(/^"/, "");
+        expect(v).not.toMatch(/^[=+@]/);
+      }
+    }
+  });
+
   it("contains a readme, the combined workbook, the CSVs and one workbook per client", async () => {
     const { plan, zip } = await build();
     expect(

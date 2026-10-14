@@ -37,9 +37,9 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - Logo: an "H" inside a stopwatch with an amber crossbar. `src/components/logo.tsx` (`LogoMark`, `Logo`) and `src/app/icon.svg` must stay in step; `apple-icon.png`, `favicon.ico`, `opengraph-image.png` and `twitter-image.png` are rendered from it. Public pages (sitemap, robots) are only `/` and the two `/auth/v2/*` pages.
 
 ## Free, supported by donations
-- Hourly is free: no paywall, no ads, and no payment code anywhere. Donations are optional.
-- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts` (`donateUrl()` only accepts https). It is **on**: https://github.com/sponsors/Zontak-LLC (the Zontak LLC GitHub Sponsors listing, live 2026-10-14; one-time, monthly and custom amounts). It drives the landing page "Hourly is free." band and footer link and the Account page "Support Hourly" card (`SupportHourly`). Set it to "" to hide all of them.
-- GitHub Sponsors is meant for open-source work and the Hourly repo is private; if GitHub ever objects, Ko-fi or Buy Me a Coffee are drop-in replacements (change `DONATE_URL` and `DONATE_PLATFORM`).
+- UseHourly is free: no paywall, no ads, and no payment code anywhere. Donations are optional.
+- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts` (`donateUrl()` only accepts https). It is **on**: https://github.com/sponsors/Zontak-LLC (the Zontak LLC GitHub Sponsors listing, live 2026-10-14; one-time, monthly and custom amounts). It drives the landing page "UseHourly is free." band and footer link and the Account page "Support UseHourly" card (`SupportHourly`). Set it to "" to hide all of them.
+- GitHub Sponsors suits open-source work and the repo is public (MIT). If GitHub ever objects, Ko-fi or Buy Me a Coffee are drop-in replacements (change `DONATE_URL` and `DONATE_PLATFORM`).
 
 ## Timesheet grid & export
 - Every entry row (Today page and the day-editor dialog) has a Move control (`move-popover.tsx`): quick picks around its day or any date; it calls `entry.update({ id, date })` and changes nothing else.
@@ -62,7 +62,13 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - Business details live on `AuthUser` (`business_name`, `ein` normalized NN-NNNNNNN, `address`, `logo` = ≤400 KB png/jpeg data URL, resized in the browser on the Account page). Invoice numbers `INV-<year>-NNN`, unique per user. Clients also carry `legal_name` (full name, falls back to `name`), `address` and `logo`, edited via "Billing details" on Clients & projects; `clients.list` omits `logo` (hundreds of KB) — use `clients.get`. PDF header: left = your logo/name + INVOICE + number/dates, right = client logo, full name, address. Invoices carry `paid_date` (a date, not a flag — cash-basis taxes need *when*); it lives outside the frozen snapshot. `invoice.markPaid`, status filter on history; the annual report's cash view (Received by paid date, Outstanding at year end) comes from it.
 
 ## Deployment
-Live: https://hourly.dzontak.workers.dev (Worker `hourly`, D1 `hourly-db` id `fd20fd46-8c42-4ee0-8697-118358734897`, deployed 2026-10-09). `AUTH_SECRET` is a Worker secret (set via `wrangler secret put`, different from the local `.dev.vars` value); `AUTH_URL`/`NEXT_PUBLIC_APP_URL` are `vars` in wrangler.jsonc. Registration is open to anyone. esbuild "duplicate key providers" warnings during build are benign.
+Live: https://usehourly.app (Worker `hourly`, D1 `hourly-db`; the database id is in `wrangler.jsonc`). `AUTH_SECRET` is a Worker secret (set via `wrangler secret put`, different from the local `.dev.vars` value); `AUTH_URL`/`NEXT_PUBLIC_APP_URL` are `vars` in wrangler.jsonc. Registration is open to anyone. esbuild "duplicate key providers" warnings during build are benign.
+
+## Security notes
+- Security headers (nosniff, frame deny, HSTS, referrer, permissions) are set in `next.config.mjs`. There is no Content-Security-Policy yet: the theme boot script and the JSON-LD block are inline and would need nonces.
+- CSV exports prefix text that starts with = + - @ with an apostrophe (`csvField` in `src/lib/export-all.ts`) so a note cannot run as a spreadsheet formula.
+- `removeConsole` keeps `console.error` in production: the tRPC route logs internal errors with it.
+- `.github/workflows/ci.yml` runs biome, tsc and vitest on every push and pull request.
 
 ## Not yet built
-A standalone CSV export per week/month (CSV exists only inside the export-everything zip), a printable timesheet PDF for client sign-off, password reset email, rate limiting on login/register (see duely's `rate-limit.ts`).
+A standalone CSV export per week/month (CSV exists only inside the export-everything zip), a printable timesheet PDF for client sign-off, password reset email, **rate limiting on login and register** (the top security gap), session revocation after a password change (JWT sessions stay valid until they expire), email verification on register, Content-Security-Policy.

@@ -3,6 +3,7 @@ import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 
 import { normalizeEmail } from "@/lib/email";
+import { describeWait, hitRateLimit, REGISTER_PER_IP } from "@/lib/rate-limit";
 
 import { logoSchema } from "../logo-schema";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
@@ -17,6 +18,20 @@ export const accountRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (ctx.ip) {
+        const r = await hitRateLimit(
+          ctx.prisma,
+          `register:${ctx.ip}`,
+          REGISTER_PER_IP.limit,
+          REGISTER_PER_IP.windowSeconds,
+        );
+        if (!r.allowed) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Too many sign-ups from this connection. Please try again in ${describeWait(r.retryAfterSeconds)}.`,
+          });
+        }
+      }
       const email = normalizeEmail(input.email);
       const existing = await ctx.prisma.authUser.findUnique({ where: { email } });
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "An account with that email already exists." });

@@ -39,7 +39,8 @@ Register an account on the sign-up page and you are in.
 
 ```bash
 npm test                    # scenario tests (Vitest)
-npx biome check src         # lint and format
+npx biome check             # lint and format
+npx tsc --noEmit            # type check
 ```
 
 ## Deploy
