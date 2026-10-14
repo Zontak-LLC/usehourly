@@ -5,7 +5,8 @@ export const APP_CONFIG = {
   version: packageJson.version,
   copyright: `© ${new Date().getFullYear()} UseHourly.`,
   meta: {
-    title: "UseHourly — time tracking for freelancers",
-    description: "Log your day in seconds. Quick entry, a start/stop timer and a weekly timesheet.",
+    title: "UseHourly: free time tracking for freelancers",
+    description:
+      "A free time tracking app for freelancers. Log your day in seconds, with a start/stop timer and a weekly timesheet.",
   },
 };
