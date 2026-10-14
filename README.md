@@ -57,6 +57,14 @@ It runs on Cloudflare Workers with a D1 database:
 
 UseHourly is free. If it saves you time you can [sponsor it on GitHub](https://github.com/sponsors/Zontak-LLC).
 
+### Supporters
+
+Thank you to everyone who helps keep UseHourly free:
+
+<!-- supporters:start -->
+_Be the first: [sponsor UseHourly on GitHub](https://github.com/sponsors/Zontak-LLC)._
+<!-- supporters:end -->
+
 ## Credits and license
 
 Built on the excellent [next-shadcn-admin-dashboard](https://github.com/arhamkhnz/next-shadcn-admin-dashboard) template by Mohammed Arham Khan.
