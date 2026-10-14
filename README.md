@@ -57,6 +57,18 @@ It runs on Cloudflare Workers with a D1 database:
 4. `npx wrangler secret put AUTH_SECRET`
 5. `npm run deploy`
 
+### Email (optional)
+
+Password reset and email confirmation need an email service. UseHourly sends through
+[Resend](https://resend.com): verify your sending domain there, then set two values on the Worker:
+
+```bash
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put EMAIL_FROM        # for example: UseHourly <noreply@your-domain.com>
+```
+
+Without them the app works as before, and the forgot-password page says email isn't set up.
+
 ### Deploy from CircleCI
 
 `.circleci/config.yml` runs the checks on every push and, on `main`, applies the D1 migrations and

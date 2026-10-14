@@ -25,6 +25,9 @@ export function AccountView() {
   const changePassword = trpc.account.changePassword.useMutation();
   const updateBusiness = trpc.account.updateBusiness.useMutation();
   const signOutEverywhere = trpc.account.signOutEverywhere.useMutation();
+  const emailEnabled = trpc.account.emailEnabled.useQuery();
+  const sendVerification = trpc.account.sendVerification.useMutation();
+  const [verificationSent, setVerificationSent] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
   useEffect(() => setLogo(me.data?.logo ?? null), [me.data?.logo]);
 
@@ -113,6 +116,32 @@ export function AccountView() {
         <div className="grid gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input id="email" value={me.data.email} disabled />
+          {me.data.email_verified_at ? (
+            <p className="text-emerald-700 text-xs dark:text-emerald-400">Email confirmed.</p>
+          ) : emailEnabled.data?.enabled ? (
+            <p className="text-muted-foreground text-xs">
+              Not confirmed yet.{" "}
+              {verificationSent ? (
+                "We sent you a link. Check your inbox."
+              ) : (
+                <button
+                  type="button"
+                  className="underline"
+                  disabled={sendVerification.isPending}
+                  onClick={async () => {
+                    try {
+                      await sendVerification.mutateAsync();
+                      setVerificationSent(true);
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
+                    }
+                  }}
+                >
+                  Send me a confirmation email
+                </button>
+              )}
+            </p>
+          ) : null}
         </div>
         <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
           Save

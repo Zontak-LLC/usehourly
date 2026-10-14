@@ -65,11 +65,14 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 Live: https://usehourly.app (Worker `hourly`, D1 `hourly-db`; the database id is in `wrangler.jsonc`). `AUTH_SECRET` is a Worker secret (set via `wrangler secret put`, different from the local `.dev.vars` value); `AUTH_URL`/`NEXT_PUBLIC_APP_URL` are `vars` in wrangler.jsonc. Registration is open to anyone. esbuild "duplicate key providers" warnings during build are benign.
 
 ## Security notes
-- Security headers (nosniff, frame deny, HSTS, referrer, permissions) are set in `next.config.mjs`. There is no Content-Security-Policy yet: the theme boot script and the JSON-LD block are inline and would need nonces.
+- Security headers (nosniff, frame deny, HSTS, referrer, permissions) are set in `next.config.mjs`. The Content-Security-Policy allows inline scripts because the theme boot script, the JSON-LD block and Next.js itself emit them; a nonce would make every page dynamic.
 - CSV exports prefix text that starts with = + - @ with an apostrophe (`csvField` in `src/lib/export-all.ts`) so a note cannot run as a spreadsheet formula.
 - `removeConsole` keeps `console.error` in production: the tRPC route logs internal errors with it.
 - `.github/workflows/ci.yml` (GitHub Actions) and `.circleci/config.yml` (CircleCI) both run biome, tsc and vitest on every push. CircleCI also deploys `main`: it writes `wrangler.jsonc` from env vars (`scripts/ci-wrangler-config.mjs`), applies D1 migrations, then `npm run deploy`. Env vars are listed in the README. Delete the GitHub workflow if you want a single CI.
 - Sign-in and sign-up are throttled (`src/lib/rate-limit.ts`, D1 `rate_limits`). Sessions carry `token_version`; a password change or "Log out on all devices" bumps it and `createContext` plus the dashboard layout reject older tokens (`src/lib/session-version.ts`).
 
+- Email (`src/lib/mailer.ts`, Resend over `fetch`): confirmation link on register and from the Account page, and password reset (`/auth/v2/forgot-password`, `/reset-password`, `/verify-email`). One-time tokens live hashed in `email_tokens`; a reset bumps `token_version`. Everything is dormant until `RESEND_API_KEY` and `EMAIL_FROM` are set as Worker secrets (`ctx.mailer` is null; pages say email isn't set up). Tests: `src/__tests__/email-flows.test.ts`.
+- CSP is set in `next.config.mjs` (inline scripts allowed; framing, plugins, `<base>`, off-site fetches and forms are not). Checked in a browser on every page, an Excel export, the zip export and an invoice PDF with no violations.
+
 ## Not yet built
-A standalone CSV export per week/month (CSV exists only inside the export-everything zip), a printable timesheet PDF for client sign-off, password reset email, **rate limiting on login and register** (the top security gap), session revocation after a password change (JWT sessions stay valid until they expire), email verification on register, Content-Security-Policy.
+A standalone CSV export per week/month (CSV exists only inside the export-everything zip), a printable timesheet PDF for client sign-off, a nonce-based Content-Security-Policy (the current one allows inline scripts), a bounce/complaint webhook for the email service.
