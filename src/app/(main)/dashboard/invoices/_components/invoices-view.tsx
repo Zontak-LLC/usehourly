@@ -343,8 +343,10 @@ export function InvoicesView() {
                 <p className="text-muted-foreground text-sm">
                   Issued {fmt(i.issue_date)} · {formatDecimalHours(i.total_minutes)} h
                 </p>
-                <p className="mt-2 text-sm">{statusOf(i)}</p>
-                <div className="mt-3 flex justify-end gap-1 border-t pt-2">{actionsOf(i)}</div>
+                <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
+                  <p className="min-w-0 text-sm">{statusOf(i)}</p>
+                  <div className="flex shrink-0">{actionsOf(i)}</div>
+                </div>
               </li>
             ))}
             <li className="rounded-xl border bg-card">{summary}</li>
