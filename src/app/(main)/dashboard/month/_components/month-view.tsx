@@ -164,9 +164,12 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           )}
 
           <div className="overflow-x-auto rounded-xl border bg-card">
-            <div className="grid min-w-[680px] select-none grid-cols-[repeat(7,minmax(0,1fr))_5.5rem] text-sm">
+            <div className="grid select-none grid-cols-7 text-sm sm:min-w-[680px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
               {[...weekdayNames, "Week"].map((n) => (
-                <div key={n} className="border-b px-2 py-2 text-center text-muted-foreground text-xs">
+                <div
+                  key={n}
+                  className={`border-b px-0.5 py-2 text-center text-muted-foreground text-xs sm:px-2 ${n === "Week" ? "hidden sm:block" : ""}`}
+                >
                   {n}
                 </div>
               ))}
@@ -217,7 +220,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
                           }}
                           aria-pressed={selectMode ? shownPicked.has(d) : undefined}
                           aria-label={`${d}: ${formatDuration(mins)}`}
-                          className={`flex min-h-20 cursor-pointer flex-col justify-between border-r border-b p-2 text-left transition-colors hover:bg-muted ${
+                          className={`flex min-h-16 cursor-pointer flex-col justify-between border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
                             inMonth(d) ? "" : "bg-muted/30 text-muted-foreground/50"
                           } ${d === today ? "ring-2 ring-primary ring-inset" : ""} ${
                             shownPicked.has(d) ? "bg-primary/15 outline-2 outline-primary -outline-offset-2" : ""
@@ -231,11 +234,13 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
                           }
                         >
                           <span className="text-xs">{Number(d.slice(8))}</span>
-                          <span className="text-right font-mono tabular-nums">{mins ? formatDuration(mins) : ""}</span>
+                          <span className="text-right font-mono text-[11px] tabular-nums sm:text-sm">
+                            {mins ? formatDuration(mins) : ""}
+                          </span>
                         </button>
                       );
                     })}
-                    <div className="flex items-end justify-end border-b bg-muted/40 p-2 font-medium font-mono tabular-nums">
+                    <div className="hidden items-end justify-end border-b bg-muted/40 p-2 font-medium font-mono tabular-nums sm:flex">
                       {weekTotal ? formatDuration(weekTotal) : ""}
                     </div>
                   </div>
@@ -267,10 +272,10 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
                           {r.project} <span className="text-muted-foreground">· {r.client}</span>
                         </button>
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-muted-foreground tabular-nums">
+                      <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-muted-foreground tabular-nums sm:px-4">
                         {formatDecimalHours(r.total)} h
                       </td>
-                      <td className="px-4 py-2 text-right font-medium font-mono tabular-nums">
+                      <td className="whitespace-nowrap px-2 py-2 text-right font-medium font-mono tabular-nums sm:px-4">
                         {formatDuration(r.total)}
                       </td>
                     </tr>

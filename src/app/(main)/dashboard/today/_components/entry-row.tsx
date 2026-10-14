@@ -76,7 +76,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
   }
 
   return (
-    <li className="group flex items-center gap-3 px-3 py-2.5">
+    <li className="group flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 sm:flex-nowrap">
       <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
       <div className="min-w-0 flex-1">
         {editing ? (
@@ -155,48 +155,56 @@ export function EntryRow({ entry }: { entry: EntryData }) {
         )}
       </div>
 
-      {editing ? (
-        <>
-          <Input
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") save();
-              if (e.key === "Escape") setEditing(false);
-            }}
-            className="h-8 w-24 text-right"
-            aria-label="Duration"
-            autoFocus
-          />
-          <Button size="icon" variant="ghost" onClick={save} aria-label="Save" disabled={update.isPending}>
-            <Check />
-          </Button>
-          <Button size="icon" variant="ghost" onClick={() => setEditing(false)} aria-label="Cancel">
-            <X />
-          </Button>
-        </>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            disabled={isRunning}
-            title={isRunning ? "Stop the timer to edit" : "Click to edit"}
-            className="rounded px-1.5 py-0.5 font-mono text-sm tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
-          >
-            {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
-          </button>
-          <div className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 max-sm:opacity-100">
-            <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
-            <Button size="icon" variant="ghost" onClick={() => setEditing(true)} aria-label="Edit" disabled={isRunning}>
-              <Pencil />
+      <div className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-end">
+        {editing ? (
+          <>
+            <Input
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              className="h-8 w-24 text-right"
+              aria-label="Duration"
+              autoFocus
+            />
+            <Button size="icon" variant="ghost" onClick={save} aria-label="Save" disabled={update.isPending}>
+              <Check />
             </Button>
-            <Button size="icon" variant="ghost" onClick={remove} aria-label="Delete" disabled={del.isPending}>
-              <Trash2 />
+            <Button size="icon" variant="ghost" onClick={() => setEditing(false)} aria-label="Cancel">
+              <X />
             </Button>
-          </div>
-        </>
-      )}
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              disabled={isRunning}
+              title={isRunning ? "Stop the timer to edit" : "Click to edit"}
+              className="rounded px-1.5 py-0.5 font-mono text-sm tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
+            >
+              {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
+            </button>
+            <div className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 max-sm:opacity-100">
+              <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setEditing(true)}
+                aria-label="Edit"
+                disabled={isRunning}
+              >
+                <Pencil />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={remove} aria-label="Delete" disabled={del.isPending}>
+                <Trash2 />
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
     </li>
   );
 }
