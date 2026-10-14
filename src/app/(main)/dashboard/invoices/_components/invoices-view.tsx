@@ -155,6 +155,65 @@ export function InvoicesView() {
   const total = (invoices.data ?? []).reduce((a, i) => a + i.total_cents, 0);
   const unpaid = (invoices.data ?? []).filter((i) => !i.paid_date).reduce((a, i) => a + i.total_cents, 0);
 
+  type Row = NonNullable<typeof invoices.data>[number];
+  const statusOf = (i: Row) => (
+    <>
+      {i.paid_date ? (
+        <span className="text-emerald-700 dark:text-emerald-400">Paid {fmt(i.paid_date)}</span>
+      ) : today && i.due_date && i.due_date < today ? (
+        <span className="text-destructive">Overdue · due {fmt(i.due_date)}</span>
+      ) : (
+        <span className="text-muted-foreground">Unpaid{i.due_date ? ` · due ${fmt(i.due_date)}` : ""}</span>
+      )}
+    </>
+  );
+  const actionsOf = (i: Row) => (
+    <>
+      <PaidPopover
+        // Re-mount when the saved payment changes so the date field resets.
+        key={`${i.id}:${i.paid_date ?? ""}`}
+        number={i.number}
+        paidDate={i.paid_date}
+        today={today ?? ""}
+        busy={markPaid.isPending}
+        onSave={(date) => setPaid(i.id, i.number, date)}
+      />
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={`Download ${i.number} as PDF`}
+        title="Download PDF"
+        disabled={busyId === i.id}
+        onClick={() => download(i.id)}
+      >
+        <Download />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={`Delete ${i.number}`}
+        title="Delete"
+        onClick={() => remove(i.id, i.number)}
+      >
+        <Trash2 />
+      </Button>
+    </>
+  );
+
+  const summary = (
+    <p className="px-4 py-2 text-right text-muted-foreground text-xs">
+      {invoices.data?.length} invoice{invoices.data?.length === 1 ? "" : "s"} ·{" "}
+      <span className="font-medium font-mono text-foreground">{formatMoney(total)}</span>
+      {unpaid > 0 && (
+        <>
+          {" "}
+          · <span className="font-medium font-mono text-foreground">{formatMoney(unpaid)}</span> unpaid
+        </>
+      )}
+      {filtering ? " (filtered)" : ""}
+    </p>
+  );
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -269,94 +328,67 @@ export function InvoicesView() {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="px-4 py-2 font-normal">Invoice</th>
-                <th className="px-4 py-2 font-normal">Client</th>
-                <th className="px-4 py-2 font-normal">Period</th>
-                <th className="px-4 py-2 font-normal">Issued</th>
-                <th className="px-4 py-2 text-right font-normal">Hours</th>
-                <th className="px-4 py-2 text-right font-normal">Total</th>
-                <th className="px-4 py-2 font-normal">Status</th>
-                <th className="w-32" />
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.data?.map((i) => (
-                <tr key={i.id} className="border-b last:border-0">
-                  <td className="px-4 py-2.5 font-medium">{i.number}</td>
-                  <td className="px-4 py-2.5">{i.client_name}</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    {fmt(i.period_from)} – {fmt(i.period_to)}
-                  </td>
-                  <td className="px-4 py-2.5 text-muted-foreground">{fmt(i.issue_date)}</td>
-                  <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-                    {formatDecimalHours(i.total_minutes)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-medium font-mono tabular-nums">
-                    {formatMoney(i.total_cents)}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs">
-                    {i.paid_date ? (
-                      <span className="text-emerald-700 dark:text-emerald-400">Paid {fmt(i.paid_date)}</span>
-                    ) : today && i.due_date && i.due_date < today ? (
-                      <span className="text-destructive">Overdue · due {fmt(i.due_date)}</span>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        Unpaid{i.due_date ? ` · due ${fmt(i.due_date)}` : ""}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex justify-end">
-                      <PaidPopover
-                        // Re-mount when the saved payment changes so the date field resets.
-                        key={`${i.id}:${i.paid_date ?? ""}`}
-                        number={i.number}
-                        paidDate={i.paid_date}
-                        today={today ?? ""}
-                        busy={markPaid.isPending}
-                        onSave={(date) => setPaid(i.id, i.number, date)}
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={`Download ${i.number} as PDF`}
-                        title="Download PDF"
-                        disabled={busyId === i.id}
-                        onClick={() => download(i.id)}
-                      >
-                        <Download />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={`Delete ${i.number}`}
-                        title="Delete"
-                        onClick={() => remove(i.id, i.number)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
+        <>
+          <ul className="flex flex-col gap-3 md:hidden">
+            {invoices.data?.map((i) => (
+              <li key={i.id} className="rounded-xl border bg-card p-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="font-semibold">{i.number}</span>
+                  <span className="font-medium font-mono tabular-nums">{formatMoney(i.total_cents)}</span>
+                </div>
+                <p className="mt-0.5">{i.client_name}</p>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {fmt(i.period_from)} – {fmt(i.period_to)}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  Issued {fmt(i.issue_date)} · {formatDecimalHours(i.total_minutes)} h
+                </p>
+                <p className="mt-2 text-sm">{statusOf(i)}</p>
+                <div className="mt-3 flex justify-end gap-1 border-t pt-2">{actionsOf(i)}</div>
+              </li>
+            ))}
+            <li className="rounded-xl border bg-card">{summary}</li>
+          </ul>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="px-4 py-2 font-normal">Invoice</th>
+                  <th className="px-4 py-2 font-normal">Client</th>
+                  <th className="px-4 py-2 font-normal">Period</th>
+                  <th className="px-4 py-2 font-normal">Issued</th>
+                  <th className="px-4 py-2 text-right font-normal">Hours</th>
+                  <th className="px-4 py-2 text-right font-normal">Total</th>
+                  <th className="px-4 py-2 font-normal">Status</th>
+                  <th className="w-32" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="border-t px-4 py-2 text-right text-muted-foreground text-xs">
-            {invoices.data?.length} invoice{invoices.data?.length === 1 ? "" : "s"} ·{" "}
-            <span className="font-medium font-mono text-foreground">{formatMoney(total)}</span>
-            {unpaid > 0 && (
-              <>
-                {" "}
-                · <span className="font-medium font-mono text-foreground">{formatMoney(unpaid)}</span> unpaid
-              </>
-            )}
-            {filtering ? " (filtered)" : ""}
-          </p>
-        </div>
+              </thead>
+              <tbody>
+                {invoices.data?.map((i) => (
+                  <tr key={i.id} className="border-b last:border-0">
+                    <td className="px-4 py-2.5 font-medium">{i.number}</td>
+                    <td className="px-4 py-2.5">{i.client_name}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">
+                      {fmt(i.period_from)} – {fmt(i.period_to)}
+                    </td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{fmt(i.issue_date)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono tabular-nums">
+                      {formatDecimalHours(i.total_minutes)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-medium font-mono tabular-nums">
+                      {formatMoney(i.total_cents)}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs">{statusOf(i)}</td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex justify-end">{actionsOf(i)}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="border-t">{summary}</div>
+          </div>
+        </>
       )}
     </div>
   );
