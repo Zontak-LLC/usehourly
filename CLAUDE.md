@@ -15,6 +15,7 @@ npx next build              # must pass before deploy
 npm run deploy              # opennextjs-cloudflare build + deploy
 npm run d1:migrate:remote
 ```
+Live at **https://usehourly.app** (Worker `hourly`, Cloudflare account Zontak LLC, custom domain attached in `wrangler.jsonc` `routes`); the old `hourly.dzontak.workers.dev` still answers. `wrangler.jsonc` pins `account_id` because the shared token sees more than one account. `NEXT_PUBLIC_APP_URL` is baked at build time, so `npm run deploy` sets it on the build command.
 Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync); production secret via `wrangler secret put AUTH_SECRET`.
 
 ## Design decisions
@@ -30,10 +31,16 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 ## Routes
 `/dashboard/today` (quick-add, timer, day list; `?date=`) · `/dashboard/week` (editable timesheet grid + multi-day Fill + Excel export; `?project=`) · `/dashboard/month` (calendar of day/week totals, per-project breakdown, Excel export; `?month=YYYY-MM&project=`) · `/dashboard/report` (annual summary for taxes: hours, earned, quarters, months, clients/projects, invoices; Excel export; `lib/annual-report.ts`) · `/dashboard/invoices` (searchable history; PDF re-download) · `/dashboard/invoices/new` · `/dashboard/clients` · `/dashboard/account` · `/auth/v2/login|register`. `src/proxy.ts` redirects signed-out users to login.
 
+## Landing page and brand
+- `/` is a public landing page (`src/app/(main)/page.tsx`); signed-in users are sent on to `/dashboard/today`. The rule lives in `src/lib/route-access.ts` (tested) and is applied by `src/proxy.ts`; `next.config.mjs` must NOT redirect `/` (it used to, and hid the page).
+- Its screenshots (`public/landing/*.webp`) are the real app, taken from a local demo freelancer: register through the UI, seed clients/projects/entries/invoices with `wrangler d1 execute --local`, screenshot Today/Week/Month/Report at 1440x900 @2x with the Next dev badge hidden, then delete the demo rows.
+- Logo: an "H" inside a stopwatch with an amber crossbar. `src/components/logo.tsx` (`LogoMark`, `Logo`) and `src/app/icon.svg` must stay in step; `apple-icon.png`, `favicon.ico`, `opengraph-image.png` and `twitter-image.png` are rendered from it. Public pages (sitemap, robots) are only `/` and the two `/auth/v2/*` pages.
+
 ## Timesheet grid & export
 - Every entry row (Today page and the day-editor dialog) has a Move control (`move-popover.tsx`): quick picks around its day or any date; it calls `entry.update({ id, date })` and changes nothing else.
 - Week/Month have a project filter (`src/components/project-filter.tsx`, `?project=<id>`): client-side filter of the already-loaded entries; export respects it. On Today, the project label on each entry is an invisible `<select>` that reassigns via `entry.update` in one step.
 - `entry.bulkSet` is the single write path for grid cell edits and multi-day fill: >0 creates/updates the day's single entry, 0 deletes it; days with several entries or a running timer are **skipped and reported**, never merged (those cells render read-only and link to the day).
+- Several entries on one day: each weekday header on Week has a **+** (`week/_components/add-entry-popover.tsx`): pick project (preset to the row you last typed in, filled or annotated; else the project filter; else the first row), hours, note, Enter; it calls `entry.create` and stays open so a day can be keyed in a row, listing what the day already holds. Cells stay one value per project × day (multi-entry days remain read-only, linking to the day editor).
 - `src/lib/timesheet.ts` (`buildSheet`) pivots entries into project × day; Week, Month and the export all use it.
 - Excel export is client-side (`src/lib/export-xlsx.ts`, exceljs imported on demand): sheet "Timesheet" = decimal-hour grid with live SUM formulas; sheet "Entries" = per-entry rows with rate/amount. `buildTimesheetWorkbook` is tested by round-tripping the real bytes.
 - exceljs still lands in the Worker bundle (~0.25 MB gzip of ~5.4 MB; paid-plan limit is 10 MB). Slim later if the Worker nears the limit.
