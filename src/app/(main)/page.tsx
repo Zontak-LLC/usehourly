@@ -98,6 +98,7 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
@@ -226,6 +227,12 @@ export default function LandingPage() {
               Support UseHourly
             </a>
           )}
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
           <Link href="/auth/v2/login" className="hover:text-foreground">
             Log in
           </Link>

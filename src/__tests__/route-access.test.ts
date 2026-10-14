@@ -43,4 +43,12 @@ describe("Who can see which page", () => {
       }
     });
   });
+
+  it("keeps the privacy and terms pages open to everyone, signed in or not", () => {
+    for (const path of ["/privacy", "/terms"]) {
+      expect(accessDecision(path, false)).toBe("allow");
+      expect(accessDecision(path, true)).toBe("allow");
+    }
+    expect(accessDecision("/privacy/extra", false)).toBe("to-login");
+  });
 });
