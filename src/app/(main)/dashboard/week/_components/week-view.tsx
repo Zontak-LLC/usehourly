@@ -18,6 +18,7 @@ import { formatDecimalHours, formatDuration, parseDuration } from "@/lib/duratio
 import { buildSheet, type Cell, type SheetEntry } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
+import { AddEntryPopover } from "./add-entry-popover";
 import { FillPopover } from "./fill-popover";
 import { type CellEntry, NotePopover } from "./note-popover";
 
@@ -32,6 +33,7 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
   const [editDate, setEditDate] = useState<string | null>(null);
   const logos = useProjectLogos();
   const [extraIds, setExtraIds] = useState<string[]>([]); // project rows added with no time yet
+  const [lastProject, setLastProject] = useState(""); // the project being worked in: preselected in the add-entry popover
   useEffect(() => {
     const t = toISODate(new Date());
     setToday(t);
@@ -108,12 +110,18 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
         <div>
           <h1 className="font-semibold text-xl">Weekly timesheet</h1>
           <p className="text-muted-foreground text-sm">
-            {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))} · type in any cell, or use
-            the wand to fill several days
+            {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))} · type in any cell, use the
+            wand to fill several days, or + on a day to add more entries
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          <ProjectFilter value={projectId} onChange={setProjectId} />
+          <ProjectFilter
+            value={projectId}
+            onChange={(id) => {
+              setProjectId(id);
+              setLastProject(""); // the filter is the project in play now
+            }}
+          />
           <ExportButton
             entries={entries.data ? shown : undefined}
             days={days}
@@ -147,14 +155,27 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
                 <th className="px-3 py-2 text-left font-normal">Project</th>
                 {days.map((d) => (
                   <th key={d} className={`px-1 py-2 text-center font-normal ${d === today ? "text-foreground" : ""}`}>
-                    <button
-                      type="button"
-                      onClick={() => setEditDate(d)}
-                      title="Edit this day"
-                      className="rounded px-1 hover:bg-muted hover:underline"
-                    >
-                      {dayLabel.format(fromISODate(d))}
-                    </button>
+                    <div className="flex items-center justify-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setEditDate(d)}
+                        title="Edit this day"
+                        className="rounded px-1 hover:bg-muted hover:underline"
+                      >
+                        {dayLabel.format(fromISODate(d))}
+                      </button>
+                      <AddEntryPopover
+                        date={d}
+                        label={dayLabel.format(fromISODate(d))}
+                        projects={allProjects}
+                        projectId={
+                          lastProject || projectId || sheet.rows[0]?.projectId || allProjects[0]?.projectId || ""
+                        }
+                        onProjectChange={setLastProject}
+                        dayEntries={shown.filter((e) => e.date === d)}
+                        onDone={refresh}
+                      />
+                    </div>
                   </th>
                 ))}
                 <th className="px-3 py-2 text-right font-normal">Total</th>
@@ -169,7 +190,13 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
                 </tr>
               )}
               {sheet.rows.map((r) => (
-                <tr key={r.projectId} className="border-b last:border-0">
+                <tr
+                  key={r.projectId}
+                  className="border-b last:border-0"
+                  // Typing in, filling or annotating a row makes it the project the + popover presets.
+                  onFocusCapture={() => setLastProject(r.projectId)}
+                  onPointerDownCapture={() => setLastProject(r.projectId)}
+                >
                   <td className="px-3 py-1.5">
                     <div className="flex items-center gap-1">
                       <ProjectMark projectId={r.projectId} color={r.color} logos={logos} />

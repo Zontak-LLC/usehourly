@@ -260,3 +260,60 @@ describe("Excel export", () => {
     expect(read.getWorksheet("Timesheet")?.getRow(2).getCell(1).value).toBe("Total");
   });
 });
+
+describe("week grid: several entries on the same day", () => {
+  it("adds a second entry for the same project and day without touching the first", async () => {
+    const created: unknown[] = [];
+    const prisma = {
+      project: { findFirst: vi.fn().mockResolvedValue({ id: "p1" }) },
+      timeEntry: {
+        create: vi.fn().mockImplementation(async ({ data }: { data: unknown }) => {
+          created.push(data);
+          return { id: `e${created.length}`, ...(data as object) };
+        }),
+        update: vi.fn(),
+        deleteMany: vi.fn(),
+      },
+    };
+    const caller = createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
+
+    await caller.entry.create({ projectId: "p1", date: "2026-10-12", duration: "2", note: "Standup + planning" });
+    await caller.entry.create({ projectId: "p1", date: "2026-10-12", duration: "1:30", note: "Code review" });
+
+    expect(created).toEqual([
+      { user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 120, note: "Standup + planning" },
+      { user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 90, note: "Code review" },
+    ]);
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("shows the day as one cell of 3:30 with 2 entries, and the day total counts both", () => {
+    const sheet = buildSheet([
+      entry({ id: "e1", date: "2026-10-12", minutes: 120, note: "Standup + planning" }),
+      entry({ id: "e2", date: "2026-10-12", minutes: 90, note: "Code review" }),
+      entry({ id: "e3", date: "2026-10-13", minutes: 60 }),
+    ]);
+    expect(sheet.rows[0].cells["2026-10-12"]).toEqual({ minutes: 210, count: 2, running: false });
+    expect(sheet.dayTotals["2026-10-12"]).toBe(210);
+    expect(sheet.total).toBe(270);
+  });
+
+  it("adds an entry for another project on the same day as a separate row cell", () => {
+    const sheet = buildSheet([
+      entry({ id: "e1", date: "2026-10-12", minutes: 120 }),
+      entry({
+        id: "e2",
+        date: "2026-10-12",
+        minutes: 45,
+        project_id: "p2",
+        project: { name: "Support", hourly_rate: 8000, billable: true, client: { name: "Acme", color: "#10b981" } },
+      }),
+    ]);
+    expect(sheet.rows.map((r) => [r.project, r.cells["2026-10-12"].minutes])).toEqual([
+      ["Support", 45],
+      ["Website", 120],
+    ]);
+    expect(sheet.dayTotals["2026-10-12"]).toBe(165);
+  });
+});
