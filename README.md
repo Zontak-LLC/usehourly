@@ -57,6 +57,22 @@ It runs on Cloudflare Workers with a D1 database:
 4. `npx wrangler secret put AUTH_SECRET`
 5. `npm run deploy`
 
+### Deploy from CircleCI
+
+`.circleci/config.yml` runs the checks on every push and, on `main`, applies the D1 migrations and
+deploys. In the CircleCI project settings add these environment variables:
+
+| Variable | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | a token with Workers Scripts: Edit and D1: Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | your Cloudflare account id |
+| `D1_DATABASE_ID` | the id of your D1 database |
+| `APP_URL` | your public address, for example `https://app.example.com` |
+
+Optional: `WORKER_NAME`, `D1_DATABASE_NAME`, `CUSTOM_DOMAIN`. `AUTH_SECRET` stays a Worker secret
+(`npx wrangler secret put AUTH_SECRET`, once); CI never sees it. `scripts/ci-wrangler-config.mjs`
+writes `wrangler.jsonc` from these variables, so no account ids live in the repository.
+
 ## Support
 
 UseHourly is free. If it saves you time you can [sponsor it on GitHub](https://github.com/sponsors/Zontak-LLC).
