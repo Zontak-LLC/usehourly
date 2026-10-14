@@ -6,8 +6,9 @@ describe("Donation address", () => {
   it("keeps every donation button hidden until an address is set", () => {
     expect(donateUrl("")).toBeNull();
     expect(donateUrl("   ")).toBeNull();
-    // the shipped default must be a deliberate choice, never a half-typed one
+    // the shipped address is a real https page (or empty, which hides everything)
     expect(donateUrl()).toBe(DONATE_URL === "" ? null : donateUrl(DONATE_URL));
+    expect(DONATE_URL === "" || DONATE_URL.startsWith("https://")).toBe(true);
   });
 
   it("accepts a real https page, such as a GitHub Sponsors profile", () => {
