@@ -7,6 +7,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 import { DayEditorDialog } from "@/components/day-editor";
 import { ExportButton } from "@/components/export-button";
 import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
+import { RangeExport } from "@/components/range-export";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
@@ -122,6 +123,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             days={monthDays}
             filename={`hourly-${first.slice(0, 7)}.xlsx`}
           />
+          <RangeExport defaultFrom={first} defaultTo={last} projectId={projectId} />
           <Button
             size="icon"
             variant="outline"

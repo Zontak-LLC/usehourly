@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 
+import { ExportEverything } from "@/components/export-everything";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,6 +177,17 @@ export function AccountView() {
           Change password
         </Button>
       </form>
+
+      <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+        <div>
+          <h2 className="font-medium">Your data</h2>
+          <p className="text-muted-foreground text-sm">
+            Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook, one
+            per client, and plain CSV files.
+          </p>
+        </div>
+        <ExportEverything className="self-start" />
+      </section>
 
       <Button variant="outline" className="self-start" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
         Log out
