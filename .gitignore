@@ -45,6 +45,8 @@ supabase/.temp/
 # wrangler local dev
 .wrangler
 .dev.vars
+# your own Cloudflare account and database ids (copy wrangler.example.jsonc)
+wrangler.jsonc
 
 # typescript
 *.tsbuildinfo
