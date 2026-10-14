@@ -1,146 +1,64 @@
-# Next.js Admin Template with TypeScript & Shadcn UI
+# UseHourly
 
-**Studio Admin** - Includes multiple dashboards, authentication layouts, customizable theme presets, and more.
+**A simple timesheet for freelancers.** Log your day in seconds: type `1.5`, `1:30` or `90m`, press Enter, done.
 
-<img src="https://github.com/arhamkhnz/next-shadcn-admin-dashboard/blob/main/media/dashboard.png?version=5" alt="Dashboard Screenshot">
+**Live:** https://usehourly.app · Free to use, no paywall, no ads.
 
-Most admin templates I found, free or paid, felt cluttered, outdated, or too rigid. I built this as a cleaner alternative with features often missing in others, such as theme toggling and layout controls, while keeping the design modern, minimal, and flexible.
+![The weekly timesheet](public/landing/week.webp)
 
-> **View demo:** [studio admin](https://studio-admin.arhamkhnz.com)
+## What it does
 
-> [!NOTE]
-> Looking for the Base UI version? Check out [next-shadcn-admin-dashboard-baseui](https://github.com/arhamkhnz/next-shadcn-admin-dashboard-baseui).
->
-> Looking for the React Aria version? Check out [arhamkhnz/next-shadcn-admin-dashboard-aria](https://github.com/arhamkhnz/next-shadcn-admin-dashboard-aria).
->
-> Looking for the TanStack Start version? Check out [tanstack-shadcn-admin-dashboard](https://github.com/arhamkhnz/tanstack-shadcn-admin-dashboard).
+- **Quick entry.** Pick a project, type the time the way you would say it, add a note. Or press Start and let the timer count.
+- **Weekly timesheet.** Every project and every day in one editable grid. Fill several days at once, add more entries to a day, move an entry to another date.
+- **Month calendar** with per-project totals.
+- **Invoices.** Turn billable hours into a PDF invoice, track paid and unpaid, re-download any time.
+- **Annual report.** Hours, earnings, invoiced and received by quarter and month, ready for your accountant.
+- **Export.** Excel for any week, month or custom date range (for example March 3 to April 20), and one zip with everything: every client, all time.
+- **Your data is yours.** Per-user isolation; everything you log can be exported at any time.
 
-> [!TIP]
-> I’m also working on Nuxt.js and Svelte versions of this dashboard. They’ll be live soon.
+## Stack
 
-## Features
+Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · shadcn/ui · NextAuth v5 (credentials) · tRPC v11 · Prisma 7 with Cloudflare D1 · Vitest · Biome · deployed to Cloudflare Workers with OpenNext.
 
-- Built with Next.js 16, TypeScript, Tailwind CSS v4, and Shadcn UI  
-- Responsive and mobile-friendly  
-- Customizable theme presets (light/dark modes with color schemes like Tangerine, Brutalist, and more)  
-- Flexible layouts (collapsible sidebar, variable content widths)  
-- Authentication flows and screens  
-- Prebuilt dashboards (Default, CRM, Finance, Analytics, Productivity) plus legacy variants  
-- Role-Based Access Control (RBAC) with config-driven UI and multi-tenant support *(planned)*  
+## Run it locally
 
-> [!NOTE]
-> The default dashboard uses the **shadcn neutral** theme.  
-> It also includes additional color presets inspired by [Tweakcn](https://tweakcn.com):  
->
-> - Tangerine  
-> - Neo Brutalism  
-> - Soft Pop  
->
-> You can create more presets by following the same structure as the existing ones.
+You need Node 22+.
 
-> Looking for the **Next.js 15** version?  
-> Check out the [`archive/next15`](https://github.com/arhamkhnz/next-shadcn-admin-dashboard/tree/archive/next15) branch.  
-> This branch contains the setup prior to upgrading to Next 16 and the React Compiler.
-
-> Looking for the **Next.js 14 + Tailwind CSS v3** version?  
-> Check out the [`archive/next14-tailwindv3`](https://github.com/arhamkhnz/next-shadcn-admin-dashboard/tree/archive/next14-tailwindv3) branch.  
-> It has a different color theme and is not actively maintained, but I try to keep it updated with major changes.  
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4  
-- **UI Components**: Shadcn UI  
-- **Validation**: Zod  
-- **Forms & State Management**: React Hook Form, Zustand  
-- **Tables & Data Handling**: TanStack Table  
-- **Tooling & DX**: Biome, Husky  
-
-## Screens
-
-### Available
-- Default Dashboard  
-- CRM Dashboard  
-- Finance Dashboard  
-- Analytics Dashboard  
-- Productivity Dashboard  
-- E-commerce Dashboard  
-- Academy Dashboard  
-- Logistics Dashboard  
-- Infrastructure Dashboard  
-- File Manager  
-- Patient Monitoring  
-- Chat Page  
-- Email Page  
-- Profile  
-- Users Management  
-- Roles Management  
-- Kanban Board  
-- Tasks Page  
-- Invoice Page  
-- Calendar Page  
-- Authentication (4 screens)  
-- Legacy: Default v1, CRM v1, Finance v1, Analytics v1
-
-### Planned
-I’ve added all the planned screens. Feel free to open an issue for requesting something specific.
-
-## Colocation File System Architecture
-
-This project follows a **colocation-based architecture** each feature keeps its own pages, components, and logic inside its route folder.  
-Shared UI, hooks, and configuration live at the top level, making the codebase modular, scalable, and easier to maintain as the app grows.
-
-For a full breakdown of the structure with examples, see the [Next Colocation Template](https://github.com/arhamkhnz/next-colocation-template).
-
-## Getting Started
-
-You can run this project locally, or deploy it instantly with Vercel.
-
-### Deploy with Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farhamkhnz%2Fnext-shadcn-admin-dashboard)
-
-_Deploy your own copy with one click._
-
-### Run locally
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/arhamkhnz/next-shadcn-admin-dashboard.git
-   ```
-   
-2. **Navigate into the project**
-   ```bash
-    cd next-shadcn-admin-dashboard
-   ```
-   
-3. **Install dependencies**
-   ```bash
-    npm install
-   ```
-
-4. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-Your app will be running at [http://localhost:3000](http://localhost:3000)
-
-### Formatting and Linting
-
-Format, lint, and organize imports
 ```bash
-npx @biomejs/biome check --write
+npm install                 # also runs `prisma generate`
+
+# .env.local and .dev.vars (keep the two in sync):
+#   AUTH_SECRET=<a long random string, e.g. `openssl rand -base64 32`>
+#   AUTH_URL=http://localhost:3028
+
+npm run d1:migrate:local    # create the local D1 database
+npm run dev                 # http://localhost:3028
 ```
-> For more information on available rules, fixes, and CLI options, refer to the [Biome documentation](https://biomejs.dev/).
 
----
+Register an account on the sign-up page and you are in.
 
-> [!IMPORTANT]  
-> This project is updated frequently. If you’re working from a fork or an older clone, pull the latest changes before syncing. Some updates may include breaking changes.
+```bash
+npm test                    # scenario tests (Vitest)
+npx biome check src         # lint and format
+```
 
----
+## Deploy
 
-Contributions are welcome. Feel free to open issues, feature requests, or start a discussion.
+It runs on Cloudflare Workers with a D1 database:
 
+1. Create a D1 database and put its id in `wrangler.jsonc`.
+2. `npm run d1:migrate:remote`
+3. `npx wrangler secret put AUTH_SECRET`
+4. `npm run deploy`
 
-**Happy Vibe Coding!**
+`wrangler.jsonc` pins the Cloudflare account and the custom domain; change both for your own account.
+
+## Support
+
+UseHourly is free. If it saves you time you can [sponsor it on GitHub](https://github.com/sponsors/Zontak-LLC).
+
+## Credits and license
+
+Built on the excellent [next-shadcn-admin-dashboard](https://github.com/arhamkhnz/next-shadcn-admin-dashboard) template by Mohammed Arham Khan.
+
+Released under the [MIT License](LICENSE). The code is open; the name "UseHourly" and its logo are not part of the license.
