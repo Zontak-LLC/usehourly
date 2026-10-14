@@ -27,6 +27,8 @@ You need Node 22+.
 ```bash
 npm install                 # also runs `prisma generate`
 
+cp wrangler.example.jsonc wrangler.jsonc   # then set account_id and database_id (see Deploy)
+
 # .env.local and .dev.vars (keep the two in sync):
 #   AUTH_SECRET=<a long random string, e.g. `openssl rand -base64 32`>
 #   AUTH_URL=http://localhost:3028
@@ -47,12 +49,13 @@ npx tsc --noEmit            # type check
 
 It runs on Cloudflare Workers with a D1 database:
 
-1. Create a D1 database and put its id in `wrangler.jsonc`.
-2. `npm run d1:migrate:remote`
-3. `npx wrangler secret put AUTH_SECRET`
-4. `npm run deploy`
-
-`wrangler.jsonc` pins the Cloudflare account and the custom domain; change both for your own account.
+1. `cp wrangler.example.jsonc wrangler.jsonc` and fill in your Cloudflare account id and a D1 database
+   (`npx wrangler d1 create usehourly-db`). `wrangler.jsonc` is git-ignored, so your ids stay out of the repo.
+2. Put your public address in `.env.production.local`: `NEXT_PUBLIC_APP_URL=https://app.example.com`
+   (it is baked into the build) and set the same value as `AUTH_URL` in `wrangler.jsonc`.
+3. `npm run d1:migrate:remote`
+4. `npx wrangler secret put AUTH_SECRET`
+5. `npm run deploy`
 
 ## Support
 
