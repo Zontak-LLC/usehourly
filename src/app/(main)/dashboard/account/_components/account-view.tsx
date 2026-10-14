@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { signOut } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { toast } from "sonner";
 
 import { ExportEverything } from "@/components/export-everything";
@@ -24,6 +24,7 @@ export function AccountView() {
   const updateProfile = trpc.account.updateProfile.useMutation();
   const changePassword = trpc.account.changePassword.useMutation();
   const updateBusiness = trpc.account.updateBusiness.useMutation();
+  const signOutEverywhere = trpc.account.signOutEverywhere.useMutation();
   const [logo, setLogo] = useState<string | null>(null);
   useEffect(() => setLogo(me.data?.logo ?? null), [me.data?.logo]);
 
@@ -79,7 +80,16 @@ export function AccountView() {
         newPassword: String(fd.get("next")),
       });
       form.reset();
-      toast.success("Password changed.");
+      // Every device was signed out by the change. Sign this one straight back in.
+      const res = await signIn("credentials", {
+        email: me.data?.email ?? "",
+        password: String(fd.get("next")),
+        redirect: false,
+      });
+      toast.success(
+        res?.error ? "Password changed. Please log in again." : "Password changed. Other devices have been signed out.",
+      );
+      if (res?.error) await signOut({ callbackUrl: "/auth/v2/login" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't change your password.");
     }
@@ -205,9 +215,25 @@ export function AccountView() {
 
       <SupportHourly />
 
-      <Button variant="outline" className="self-start" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
-        Log out
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
+          Log out
+        </Button>
+        <Button
+          variant="outline"
+          disabled={signOutEverywhere.isPending}
+          onClick={async () => {
+            try {
+              await signOutEverywhere.mutateAsync();
+              await signOut({ callbackUrl: "/auth/v2/login" });
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Couldn't sign out your other devices.");
+            }
+          }}
+        >
+          Log out on all devices
+        </Button>
+      </div>
     </div>
   );
 }

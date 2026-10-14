@@ -19,6 +19,7 @@ model AuthUser {
   address       String?   // multi-line
   logo          String?   // data URL (png/jpeg), resized client-side
   payment_instructions String? // free text printed on invoices (ACH, check...)
+  token_version Int      @default(0) // bump to sign out every device (see lib/session-version.ts)
   created_at    DateTime  @default(now())
 
   clients  Client[]
