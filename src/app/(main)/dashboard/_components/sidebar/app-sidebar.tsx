@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { APP_CONFIG } from "@/config/app-config";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
@@ -31,6 +32,8 @@ export function AppSidebar({ user, ...props }: Props) {
     })),
   );
 
+  const { setOpenMobile } = useSidebar();
+
   return (
     <Sidebar
       {...props}
@@ -41,7 +44,7 @@ export function AppSidebar({ user, ...props }: Props) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link prefetch={false} href="/dashboard/today">
+              <Link prefetch={false} href="/dashboard/today" onClick={() => setOpenMobile(false)}>
                 <LogoMark className="size-6 shrink-0" aria-hidden />
                 <span className="font-semibold text-base">{APP_CONFIG.name}</span>
               </Link>
