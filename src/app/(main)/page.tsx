@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 
 import { LogoMark } from "@/components/logo";
 import { SupportHourly } from "@/components/support-hourly";
+import { Supporters } from "@/components/supporters";
 import { APP_CONFIG } from "@/config/app-config";
 import { donateUrl } from "@/lib/donate";
 
@@ -186,6 +187,7 @@ export default function LandingPage() {
         </section>
 
         <SupportHourly variant="band" />
+        <Supporters />
 
         <section className="border-t bg-primary text-primary-foreground">
           <div className="mx-auto max-w-3xl px-6 py-16 text-center md:py-20">
