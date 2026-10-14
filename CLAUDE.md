@@ -36,6 +36,10 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - Its screenshots (`public/landing/*.webp`) are the real app, taken from a local demo freelancer: register through the UI, seed clients/projects/entries/invoices with `wrangler d1 execute --local`, screenshot Today/Week/Month/Report at 1440x900 @2x with the Next dev badge hidden, then delete the demo rows.
 - Logo: an "H" inside a stopwatch with an amber crossbar. `src/components/logo.tsx` (`LogoMark`, `Logo`) and `src/app/icon.svg` must stay in step; `apple-icon.png`, `favicon.ico`, `opengraph-image.png` and `twitter-image.png` are rendered from it. Public pages (sitemap, robots) are only `/` and the two `/auth/v2/*` pages.
 
+## Free, supported by donations
+- Hourly is free: no paywall, no ads, and no payment code anywhere. Donations are optional.
+- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts`. While it is empty every "Support Hourly" button, the landing-page "Hourly is free." band and the footer link stay hidden (`SupportHourly`, `donateUrl()` which only accepts https). To switch on: set it to the live page, e.g. `https://github.com/sponsors/<user-or-org>`, and deploy. Neither `dzontak` nor `Zontak-LLC` had a GitHub Sponsors listing on 2026-10-14 (`hasSponsorsListing: false`); GitHub Sponsors is meant for open-source work and the Hourly repo is private, so the alternatives are Ko-fi or Buy Me a Coffee.
+
 ## Timesheet grid & export
 - Every entry row (Today page and the day-editor dialog) has a Move control (`move-popover.tsx`): quick picks around its day or any date; it calls `entry.update({ id, date })` and changes nothing else.
 - Week/Month have a project filter (`src/components/project-filter.tsx`, `?project=<id>`): client-side filter of the already-loaded entries; export respects it. On Today, the project label on each entry is an invisible `<select>` that reassigns via `entry.update` in one step.

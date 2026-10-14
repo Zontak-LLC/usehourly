@@ -4,7 +4,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { LogoMark } from "@/components/logo";
+import { SupportHourly } from "@/components/support-hourly";
 import { APP_CONFIG } from "@/config/app-config";
+import { donateUrl } from "@/lib/donate";
 
 export const metadata: Metadata = {
   title: "Hourly: a simple timesheet for freelancers",
@@ -119,7 +121,7 @@ export default function LandingPage() {
               Log in
             </Link>
           </div>
-          <p className="mt-3 text-muted-foreground text-sm">Free while you try it out.</p>
+          <p className="mt-3 text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
 
           <div className="mx-auto mt-14 max-w-4xl text-left">
             <Screen
@@ -183,6 +185,8 @@ export default function LandingPage() {
           </ul>
         </section>
 
+        <SupportHourly variant="band" />
+
         <section className="border-t bg-primary text-primary-foreground">
           <div className="mx-auto max-w-3xl px-6 py-16 text-center md:py-20">
             <h2 className="font-semibold text-3xl tracking-tight md:text-4xl">Start tracking today.</h2>
@@ -201,9 +205,16 @@ export default function LandingPage() {
 
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-muted-foreground text-sm">
         <span>{APP_CONFIG.copyright}</span>
-        <Link href="/auth/v2/login" className="hover:text-foreground">
-          Log in
-        </Link>
+        <span className="flex items-center gap-4">
+          {donateUrl() && (
+            <a href={donateUrl() ?? "#"} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+              Support Hourly
+            </a>
+          )}
+          <Link href="/auth/v2/login" className="hover:text-foreground">
+            Log in
+          </Link>
+        </span>
       </footer>
     </div>
   );
