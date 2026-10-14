@@ -28,7 +28,7 @@ export type ReportBusiness = { name: string | null; ein: string | null };
 export async function buildAnnualWorkbook(report: AnnualReport, business: ReportBusiness) {
   const { default: ExcelJS } = await import("exceljs");
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Hourly";
+  wb.creator = "UseHourly";
   wb.created = new Date();
   const money = '"$"#,##0.00';
 
@@ -232,7 +232,7 @@ export async function downloadAnnualXlsx(report: AnnualReport, business: ReportB
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `hourly-annual-report-${report.year}.xlsx`;
+  a.download = `usehourly-annual-report-${report.year}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();

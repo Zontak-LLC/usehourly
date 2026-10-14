@@ -6,7 +6,7 @@ import { dateRange } from "@/lib/timesheet";
 /**
  * "Export everything": all of a user's time, all clients, all time, as one zip.
  *
- *   hourly-export-<date>.zip
+ *   usehourly-export-<date>.zip
  *     README.txt            what is in the zip, with totals
  *     all-time.xlsx         every entry in one workbook (grid by week + entry list)
  *     all-entries.csv       every entry, one row each (opens anywhere, easy to import)
@@ -160,7 +160,7 @@ export async function planExport(opts: {
   const totalMinutes = entries.reduce((a, e) => a + e.minutes, 0);
   const dates = entries.map((e) => e.date).sort();
   const lines = [
-    "Your Hourly export",
+    "Your UseHourly export",
     `Created ${opts.today}`,
     "",
     entries.length

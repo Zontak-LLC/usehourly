@@ -9,7 +9,7 @@ import { APP_CONFIG } from "@/config/app-config";
 import { donateUrl } from "@/lib/donate";
 
 export const metadata: Metadata = {
-  title: "Hourly: a simple timesheet for freelancers",
+  title: "UseHourly: a simple timesheet for freelancers",
   description:
     "Log your day in seconds. Type 1.5, 1:30 or 90m, press Enter, done. A weekly timesheet, invoices and a year-end report, in one place.",
   alternates: { canonical: "/" },
@@ -109,7 +109,7 @@ export default function LandingPage() {
             Log your day in seconds.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Hourly is a simple timesheet for freelancers. Type <strong className="text-foreground">1.5</strong>,{" "}
+            UseHourly is a simple timesheet for freelancers. Type <strong className="text-foreground">1.5</strong>,{" "}
             <strong className="text-foreground">1:30</strong> or <strong className="text-foreground">90m</strong>, press
             Enter, and you&rsquo;re done.
           </p>
@@ -208,7 +208,7 @@ export default function LandingPage() {
         <span className="flex items-center gap-4">
           {donateUrl() && (
             <a href={donateUrl() ?? "#"} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
-              Support Hourly
+              Support UseHourly
             </a>
           )}
           <Link href="/auth/v2/login" className="hover:text-foreground">

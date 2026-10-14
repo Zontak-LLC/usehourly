@@ -1,6 +1,6 @@
 /**
- * Hourly is free; people who find it useful can chip in. This is the one place the donation
- * address lives. While it is empty, every "Support Hourly" button and message stays hidden, so
+ * UseHourly is free; people who find it useful can chip in. This is the one place the donation
+ * address lives. While it is empty, every "Support UseHourly" button and message stays hidden, so
  * nobody is ever sent to a page that does not exist yet.
  *
  * To switch donations on: set DONATE_URL to the live page (for GitHub Sponsors that is

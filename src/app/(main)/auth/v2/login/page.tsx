@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { LoginForm } from "../../_components/login-form";
 
-export const metadata: Metadata = { title: "Log in · Hourly" };
+export const metadata: Metadata = { title: "Log in · UseHourly" };
 
 export default function LoginPage() {
   return (

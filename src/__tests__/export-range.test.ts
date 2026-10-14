@@ -95,9 +95,9 @@ describe("Choosing a custom range, like March 3 to April 20", () => {
   });
 
   it("names the file after what it covers", () => {
-    expect(rangeFilename("2026-03-03", "2026-04-20")).toBe("hourly-2026-03-03_to_2026-04-20.xlsx");
+    expect(rangeFilename("2026-03-03", "2026-04-20")).toBe("usehourly-2026-03-03_to_2026-04-20.xlsx");
     expect(rangeFilename("2026-03-03", "2026-04-20", "Patient portal / v2")).toBe(
-      "hourly-2026-03-03_to_2026-04-20-patient-portal-v2.xlsx",
+      "usehourly-2026-03-03_to_2026-04-20-patient-portal-v2.xlsx",
     );
   });
 });

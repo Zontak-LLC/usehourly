@@ -79,13 +79,13 @@ export function presetRange(key: PresetKey, today: string): { from: string; to: 
   }
 }
 
-/** File name that says what it covers, e.g. hourly-2026-03-03_to_2026-04-20.xlsx. */
+/** File name that says what it covers, e.g. usehourly-2026-03-03_to_2026-04-20.xlsx. */
 export function rangeFilename(from: string, to: string, projectName?: string): string {
   const slug = projectName
     ?.toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return `hourly-${from}_to_${to}${slug ? `-${slug}` : ""}.xlsx`;
+  return `usehourly-${from}_to_${to}${slug ? `-${slug}` : ""}.xlsx`;
 }
 
 /**

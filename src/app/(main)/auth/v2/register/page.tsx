@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { RegisterForm } from "../../_components/register-form";
 
-export const metadata: Metadata = { title: "Create account · Hourly" };
+export const metadata: Metadata = { title: "Create account · UseHourly" };
 
 export default function RegisterPage() {
   return (

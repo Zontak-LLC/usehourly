@@ -126,7 +126,7 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
           <ExportButton
             entries={entries.data ? shown : undefined}
             days={days}
-            filename={`hourly-${start}_to_${end}.xlsx`}
+            filename={`usehourly-${start}_to_${end}.xlsx`}
           />
           <RangeExport defaultFrom={start} defaultTo={end} projectId={projectId} />
           <Button size="icon" variant="outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">
