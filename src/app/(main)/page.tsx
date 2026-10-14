@@ -227,6 +227,14 @@ export default function LandingPage() {
               Support UseHourly
             </a>
           )}
+          <a
+            href="https://github.com/Zontak-LLC/usehourly/issues/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground"
+          >
+            Report a bug
+          </a>
           <Link href="/privacy" className="hover:text-foreground">
             Privacy
           </Link>
