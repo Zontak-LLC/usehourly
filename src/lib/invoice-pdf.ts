@@ -223,6 +223,26 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
   // biome-ignore lint/suspicious/noExplicitAny: jspdf-autotable stores the last table position on the doc
   y = ((doc as any).lastAutoTable?.finalY ?? y) + 24;
 
+  // ── How to pay ──────────────────────────────────────────────────────────
+  if (s.seller.paymentInstructions?.trim()) {
+    const payLines = (doc.splitTextToSize(s.seller.paymentInstructions, pageW - MARGIN * 2) as string[]).slice(0, 12);
+    if (y > 700 - payLines.length * 13) {
+      doc.addPage();
+      y = MARGIN;
+    }
+    doc
+      .setFont("helvetica", "bold")
+      .setFontSize(8)
+      .setTextColor(...MUTED)
+      .text("HOW TO PAY", MARGIN, y);
+    doc
+      .setFont("helvetica", "normal")
+      .setFontSize(10)
+      .setTextColor(...INK);
+    doc.text(payLines, MARGIN, y + 14);
+    y += 14 + payLines.length * 13 + 16;
+  }
+
   // ── Notes / payment terms ───────────────────────────────────────────────
   if (s.notes) {
     if (y > 680) {

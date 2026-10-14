@@ -15,6 +15,7 @@ const user = {
   ein: "12-3456789",
   address: "1 Main St\nSpringfield, IL 62701",
   logo: null,
+  payment_instructions: "Pay by ACH\nRouting 000000000\nAccount 111122223333",
 };
 
 function mockPrisma() {
@@ -103,6 +104,8 @@ describe("client invoice journey", () => {
     ]);
     expect(snapshot.totalCents).toBe(22500);
     expect(snapshot.seller).toMatchObject({ name: "Jo Design LLC", ein: "12-3456789", email: "jo@example.com" });
+    // how to pay is frozen onto the invoice with the rest of the seller's details
+    expect(snapshot.seller.paymentInstructions).toBe("Pay by ACH\nRouting 000000000\nAccount 111122223333");
     expect(snapshot.detail.map((d) => d.note)).toEqual(["homepage hero", "nav fixes"]); // no "internal sync"
 
     const data = prisma.invoice.create.mock.calls[0][0].data;
@@ -181,12 +184,37 @@ describe("client invoice journey", () => {
       ...legacy,
       snapshot: JSON.stringify({
         ...JSON.parse(legacy.snapshot),
+        seller: { ...JSON.parse(legacy.snapshot).seller, paymentInstructions: null },
         client: { name: "Acme", legalName: null, address: null, logo: null },
       }),
     } as never);
     const frozen = await asCaller(prisma, "u1").invoice.get({ id: "inv0" });
     expect(frozen.snapshot.client.address).toBeNull();
     expect(prisma.invoice.update).not.toHaveBeenCalled();
+  });
+
+  it("fills 'how to pay' into an older invoice once, from the account, then keeps it frozen", async () => {
+    const prisma = mockPrisma();
+    const old = {
+      id: "inv0",
+      user_id: "u1",
+      client_id: "c1",
+      snapshot: JSON.stringify({
+        seller: { name: "Jo", ein: null, address: null, email: "jo@example.com", logo: null },
+        client: { name: "Acme", legalName: null, address: null, logo: null },
+        number: "INV-1",
+        lines: [],
+        detail: [],
+        notes: "",
+        totalCents: 0,
+        totalMinutes: 0,
+      }),
+    };
+    prisma.invoice.findFirst.mockResolvedValueOnce(old as never);
+    const r = await asCaller(prisma, "u1").invoice.get({ id: "inv0" });
+    expect(r.snapshot.seller.paymentInstructions).toBe("Pay by ACH\nRouting 000000000\nAccount 111122223333");
+    expect(prisma.invoice.update).toHaveBeenCalledTimes(1);
+    expect(prisma.authUser.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "u1" } }));
   });
 
   it("only ever reads/deletes invoices owned by the caller", async () => {
@@ -324,6 +352,7 @@ describe("client invoice journey", () => {
       businessName: "  ",
       ein: "123456789",
       address: "1 Main St",
+      paymentInstructions: "  Pay by ACH\nRouting 000000000  ",
       logo: "data:image/png;base64,iVBORw0KGgo=",
     });
     expect(prisma.authUser.update).toHaveBeenCalledWith(
@@ -333,6 +362,7 @@ describe("client invoice journey", () => {
           ein: "12-3456789",
           address: "1 Main St",
           logo: "data:image/png;base64,iVBORw0KGgo=",
+          payment_instructions: "Pay by ACH\nRouting 000000000",
         },
       }),
     );

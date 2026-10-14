@@ -38,6 +38,7 @@ export const accountRouter = router({
         ein: true,
         address: true,
         logo: true,
+        payment_instructions: true,
       },
     });
     if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
@@ -65,6 +66,7 @@ export const accountRouter = router({
           .transform((v) => v.replace(/\D/g, ""))
           .refine((v) => v === "" || v.length === 9, "An EIN has 9 digits, e.g. 12-3456789."),
         address: z.string().trim().max(300),
+        paymentInstructions: z.string().trim().max(500).default(""),
         logo: logoSchema,
       }),
     )
@@ -76,6 +78,7 @@ export const accountRouter = router({
           ein: input.ein ? `${input.ein.slice(0, 2)}-${input.ein.slice(2)}` : null,
           address: input.address || null,
           logo: input.logo,
+          payment_instructions: input.paymentInstructions || null,
         },
         select: { id: true },
       }),
