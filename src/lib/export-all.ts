@@ -32,9 +32,15 @@ export type ExportFile = { path: string; content: string | Uint8Array };
 
 const hours = (m: number) => Math.round((m / 60) * 100) / 100;
 
-/** RFC 4180 field: quoted when it holds a comma, quote or line break; quotes doubled. */
+/**
+ * RFC 4180 field: quoted when it holds a comma, quote or line break; quotes doubled.
+ *
+ * A text value that starts with = + - @ (or a tab or carriage return) would be run as a formula
+ * when the file is opened in Excel or Sheets, so it gets a leading apostrophe. Numbers are exempt.
+ */
 export function csvField(value: string | number | null | undefined): string {
-  const s = value === null || value === undefined ? "" : String(value);
+  let s = value === null || value === undefined ? "" : String(value);
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

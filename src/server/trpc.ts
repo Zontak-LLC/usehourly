@@ -5,7 +5,8 @@ import { ZodError } from "zod";
 
 // Context is built in ./context.ts so this module stays free of next-auth/Prisma
 // runtime imports and routers can be exercised directly in scenario tests.
-export type Context = { session: Session | null; prisma: PrismaClient };
+// `ip` is the caller's address when known; register uses it to throttle sign-ups (absent in tests).
+export type Context = { session: Session | null; prisma: PrismaClient; ip?: string | null };
 
 const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {
