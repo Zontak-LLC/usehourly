@@ -227,7 +227,7 @@ export function ClientsView() {
           onChange={(e) => setName(e.target.value)}
           placeholder="New client name"
           required
-          className="max-w-xs"
+          className="min-w-0 flex-1 sm:max-w-xs sm:flex-none"
         />
         <Button type="submit" disabled={createClient.isPending}>
           Add client
@@ -239,9 +239,9 @@ export function ClientsView() {
 
       {clients.data?.map((c) => (
         <section key={c.id} className="rounded-xl border bg-card">
-          <header className="flex items-center justify-between border-b px-4 py-3">
-            <h2 className="flex items-center gap-2 font-medium">
-              <span className="size-3 rounded-full" style={{ backgroundColor: c.color }} />
+          <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-4 py-3">
+            <h2 className="flex min-w-0 items-center gap-2 font-medium">
+              <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
               {c.name}
             </h2>
             <span className="flex">
@@ -338,16 +338,19 @@ export function ClientsView() {
                   </form>
                 </li>
               ) : (
-                <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
-                  <span className="flex min-w-0 items-center gap-2 truncate">
+                <li
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 text-sm"
+                >
+                  <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
                     <ProjectMark projectId={p.id} color={c.color} logos={logos} />
                     {p.name}
                     {p.hourly_rate > 0 && (
-                      <span className="ml-2 text-muted-foreground">${(p.hourly_rate / 100).toFixed(2)}/h</span>
+                      <span className="text-muted-foreground">${(p.hourly_rate / 100).toFixed(2)}/h</span>
                     )}
-                    {!p.billable && <span className="ml-2 text-muted-foreground text-xs">non-billable</span>}
+                    {!p.billable && <span className="text-muted-foreground text-xs">non-billable</span>}
                   </span>
-                  <span className="ml-auto flex items-center gap-3 font-mono text-muted-foreground text-xs tabular-nums">
+                  <span className="flex items-center gap-3 font-mono text-muted-foreground text-xs tabular-nums sm:ml-auto">
                     <span title="This month">{formatDuration(totals.data?.[p.id]?.range ?? 0)} mo</span>
                     <span title="All time">{formatDuration(totals.data?.[p.id]?.total ?? 0)} total</span>
                   </span>

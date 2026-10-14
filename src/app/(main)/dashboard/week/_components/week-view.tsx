@@ -25,6 +25,7 @@ import { type CellEntry, NotePopover } from "./note-popover";
 
 const dayLabel = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric" });
 const rangeLabel = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const longDayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "short", day: "numeric" });
 
 export function WeekView({ initialProject }: { initialProject?: string }) {
   const utils = trpc.useUtils();
@@ -111,8 +112,12 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
         <div>
           <h1 className="font-semibold text-xl">Weekly timesheet</h1>
           <p className="text-muted-foreground text-sm">
-            {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))} · type in any cell, use the
-            wand to fill several days, or + on a day to add more entries
+            {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))}
+            <span className="max-md:hidden">
+              {" "}
+              · type in any cell, use the wand to fill several days, or + on a day to add more entries
+            </span>
+            <span className="md:hidden"> · tap a day to add or change time</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1">
@@ -150,110 +155,157 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead>
-              <tr className="border-b text-muted-foreground">
-                <th className="px-3 py-2 text-left font-normal">Project</th>
-                {days.map((d) => (
-                  <th key={d} className={`px-1 py-2 text-center font-normal ${d === today ? "text-foreground" : ""}`}>
-                    <div className="flex items-center justify-center gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setEditDate(d)}
-                        title="Edit this day"
-                        className="rounded px-1 hover:bg-muted hover:underline"
-                      >
-                        {dayLabel.format(fromISODate(d))}
-                      </button>
-                      <AddEntryPopover
-                        date={d}
-                        label={dayLabel.format(fromISODate(d))}
-                        projects={allProjects}
-                        projectId={
-                          lastProject || projectId || sheet.rows[0]?.projectId || allProjects[0]?.projectId || ""
-                        }
-                        onProjectChange={setLastProject}
-                        dayEntries={shown.filter((e) => e.date === d)}
-                        onDone={refresh}
-                      />
-                    </div>
-                  </th>
-                ))}
-                <th className="px-3 py-2 text-right font-normal">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sheet.rows.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
-                    No time logged this week. Add a project row below to start filling in days.
-                  </td>
-                </tr>
-              )}
-              {sheet.rows.map((r) => (
-                <tr
-                  key={r.projectId}
-                  className="border-b last:border-0"
-                  // Typing in, filling or annotating a row makes it the project the + popover presets.
-                  onFocusCapture={() => setLastProject(r.projectId)}
-                  onPointerDownCapture={() => setLastProject(r.projectId)}
-                >
-                  <td className="px-3 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <ProjectMark projectId={r.projectId} color={r.color} logos={logos} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {r.project} <span className="text-muted-foreground">· {r.client}</span>
+        <>
+          {/* Phones: one card per day. Tap a day to open it and add or change time. */}
+          <ul className="flex flex-col gap-2 md:hidden">
+            {days.map((d) => {
+              const lines = sheet.rows.filter((r) => (r.cells[d]?.minutes ?? 0) > 0);
+              return (
+                <li key={d}>
+                  <button
+                    type="button"
+                    onClick={() => setEditDate(d)}
+                    className={`w-full rounded-xl border bg-card p-4 text-left ${d === today ? "ring-2 ring-primary" : ""}`}
+                  >
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="font-medium">{longDayLabel.format(fromISODate(d))}</span>
+                      <span className="font-medium font-mono tabular-nums">
+                        {sheet.dayTotals[d] ? formatDuration(sheet.dayTotals[d]) : "–"}
                       </span>
-                      <FillPopover
-                        projectId={r.projectId}
-                        label={r.project}
-                        days={days}
-                        cells={r.cells}
-                        onDone={refresh}
-                      />
-                    </div>
-                  </td>
+                    </span>
+                    {lines.length === 0 ? (
+                      <span className="mt-1 block text-muted-foreground text-sm">Nothing logged. Tap to add time.</span>
+                    ) : (
+                      <span className="mt-1 block space-y-0.5 text-sm">
+                        {lines.map((r) => (
+                          <span key={r.projectId} className="flex items-baseline justify-between gap-3">
+                            <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                              {r.project} · {r.client}
+                            </span>
+                            <span className="font-mono tabular-nums">{formatDuration(r.cells[d]?.minutes ?? 0)}</span>
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                    <span className="mt-2 block text-primary text-sm">Open day</span>
+                  </button>
+                </li>
+              );
+            })}
+            <li className="flex items-baseline justify-between rounded-xl border bg-muted/40 px-4 py-3 font-medium">
+              <span>Week total</span>
+              <span className="font-mono tabular-nums">
+                {formatDuration(sheet.total)}
+                <span className="ml-1 text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
+              </span>
+            </li>
+          </ul>
+
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b text-muted-foreground">
+                  <th className="px-3 py-2 text-left font-normal">Project</th>
                   {days.map((d) => (
-                    <td key={d} className="px-1 py-1.5">
-                      <GridCell
-                        cell={r.cells[d]}
-                        label={`${r.project} ${d}`}
-                        projectId={r.projectId}
-                        date={d}
-                        entry={cellEntries.get(`${r.projectId}|${d}`) ?? null}
-                        onNoteSaved={refresh}
-                        onOpenDay={() => setEditDate(d)}
-                        onCommit={(text) => setCell(r.projectId, d, text, r.cells[d]?.minutes ?? 0)}
-                      />
+                    <th key={d} className={`px-1 py-2 text-center font-normal ${d === today ? "text-foreground" : ""}`}>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditDate(d)}
+                          title="Edit this day"
+                          className="rounded px-1 hover:bg-muted hover:underline"
+                        >
+                          {dayLabel.format(fromISODate(d))}
+                        </button>
+                        <AddEntryPopover
+                          date={d}
+                          label={dayLabel.format(fromISODate(d))}
+                          projects={allProjects}
+                          projectId={
+                            lastProject || projectId || sheet.rows[0]?.projectId || allProjects[0]?.projectId || ""
+                          }
+                          onProjectChange={setLastProject}
+                          dayEntries={shown.filter((e) => e.date === d)}
+                          onDone={refresh}
+                        />
+                      </div>
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-right font-normal">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sheet.rows.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
+                      No time logged this week. Add a project row below to start filling in days.
+                    </td>
+                  </tr>
+                )}
+                {sheet.rows.map((r) => (
+                  <tr
+                    key={r.projectId}
+                    className="border-b last:border-0"
+                    // Typing in, filling or annotating a row makes it the project the + popover presets.
+                    onFocusCapture={() => setLastProject(r.projectId)}
+                    onPointerDownCapture={() => setLastProject(r.projectId)}
+                  >
+                    <td className="px-3 py-1.5">
+                      <div className="flex items-center gap-1">
+                        <ProjectMark projectId={r.projectId} color={r.color} logos={logos} />
+                        <span className="min-w-0 flex-1 truncate">
+                          {r.project} <span className="text-muted-foreground">· {r.client}</span>
+                        </span>
+                        <FillPopover
+                          projectId={r.projectId}
+                          label={r.project}
+                          days={days}
+                          cells={r.cells}
+                          onDone={refresh}
+                        />
+                      </div>
+                    </td>
+                    {days.map((d) => (
+                      <td key={d} className="px-1 py-1.5">
+                        <GridCell
+                          cell={r.cells[d]}
+                          label={`${r.project} ${d}`}
+                          projectId={r.projectId}
+                          date={d}
+                          entry={cellEntries.get(`${r.projectId}|${d}`) ?? null}
+                          onNoteSaved={refresh}
+                          onOpenDay={() => setEditDate(d)}
+                          onCommit={(text) => setCell(r.projectId, d, text, r.cells[d]?.minutes ?? 0)}
+                        />
+                      </td>
+                    ))}
+                    <td className="px-3 py-1.5 text-right font-medium font-mono tabular-nums">
+                      {formatDuration(r.total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t bg-muted/40 font-medium">
+                  <td className="px-3 py-2">Total</td>
+                  {days.map((d) => (
+                    <td key={d} className="px-1 py-2 text-center font-mono tabular-nums">
+                      {sheet.dayTotals[d] ? formatDuration(sheet.dayTotals[d]) : "–"}
                     </td>
                   ))}
-                  <td className="px-3 py-1.5 text-right font-medium font-mono tabular-nums">
-                    {formatDuration(r.total)}
+                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                    {formatDuration(sheet.total)}
+                    <span className="ml-1 text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t bg-muted/40 font-medium">
-                <td className="px-3 py-2">Total</td>
-                {days.map((d) => (
-                  <td key={d} className="px-1 py-2 text-center font-mono tabular-nums">
-                    {sheet.dayTotals[d] ? formatDuration(sheet.dayTotals[d]) : "–"}
-                  </td>
-                ))}
-                <td className="px-3 py-2 text-right font-mono tabular-nums">
-                  {formatDuration(sheet.total)}
-                  <span className="ml-1 text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+              </tfoot>
+            </table>
+          </div>
+        </>
       )}
 
       {!projectId && addable.length > 0 && (
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           <Plus className="size-4 text-muted-foreground" />
           <select
             aria-label="Add a project row"
