@@ -12,7 +12,7 @@ export default function RegisterPage() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
         <div className="space-y-2 text-center">
           <h1 className="font-medium text-3xl">Create your account</h1>
-          <p className="text-muted-foreground text-sm">Free while you try it out.</p>
+          <p className="text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
         </div>
         <RegisterForm />
       </div>

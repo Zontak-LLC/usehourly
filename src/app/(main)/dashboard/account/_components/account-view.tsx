@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 
 import { ExportEverything } from "@/components/export-everything";
+import { SupportHourly } from "@/components/support-hourly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,6 +189,8 @@ export function AccountView() {
         </div>
         <ExportEverything className="self-start" />
       </section>
+
+      <SupportHourly />
 
       <Button variant="outline" className="self-start" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
         Log out
