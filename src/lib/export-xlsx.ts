@@ -1,7 +1,13 @@
 import { fromISODate } from "@/lib/dates";
+import { WEEKLY_AFTER_WORKED_DAYS, weekStart } from "@/lib/export-range";
 import { buildSheet, type SheetEntry } from "@/lib/timesheet";
 
 const dayHeader = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric" });
+// A range can cross months, where "Tue 3" is ambiguous (March 3rd or April 3rd), so it carries the month.
+const dayHeaderWithMonth = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
+const weekHeader = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+
+type Column = { label: string; dates: string[] };
 
 /** 1-based column index → Excel letters (1 → A, 27 → AA). */
 function colLetter(n: number): string {
@@ -18,7 +24,16 @@ function colLetter(n: number): string {
  * (only days with time logged).
  * Sheet 2 "Entries": one row per entry with hours, rate and billable amount.
  */
-export async function buildTimesheetWorkbook(opts: { entries: SheetEntry[]; days: string[] }) {
+export async function buildTimesheetWorkbook(opts: {
+  entries: SheetEntry[];
+  days: string[];
+  /**
+   * For a custom date range: headers carry the month, and a long range switches the grid to one
+   * column per week ("Week of Mar 2"). Without it the grid is exactly as before (one column per
+   * worked day, "Mon 5").
+   */
+  range?: boolean;
+}) {
   const { default: ExcelJS } = await import("exceljs");
   // Leave out zero-hour entries, and any day with no logged time (weekends, days off), so the
   // grid and the entry list only show days that were actually worked. If nothing was logged at
@@ -28,6 +43,25 @@ export async function buildTimesheetWorkbook(opts: { entries: SheetEntry[]; days
   const workedDays = opts.days.filter((d) => worked.has(d));
   const days = workedDays.length > 0 ? workedDays : opts.days;
   const sheet = buildSheet(entries);
+
+  // Columns: normally one per day. A long custom range collapses to one per (Monday-start) week.
+  const weekly = Boolean(opts.range) && days.length > WEEKLY_AFTER_WORKED_DAYS;
+  const columns: Column[] = [];
+  if (weekly) {
+    const byWeek = new Map<string, string[]>();
+    for (const d of days) {
+      const w = weekStart(d);
+      byWeek.set(w, [...(byWeek.get(w) ?? []), d]);
+    }
+    for (const [w, dates] of byWeek) {
+      columns.push({ label: `Week of ${weekHeader.format(fromISODate(w))}`, dates });
+    }
+  } else {
+    const header = opts.range ? dayHeaderWithMonth : dayHeader;
+    for (const d of days) columns.push({ label: header.format(fromISODate(d)), dates: [d] });
+  }
+  const colMinutes = (cells: Record<string, { minutes: number }>, c: Column) =>
+    c.dates.reduce((a, d) => a + (cells[d]?.minutes ?? 0), 0);
   const hours = (m: number) => Math.round((m / 60) * 100) / 100;
 
   const wb = new ExcelJS.Workbook();
@@ -37,15 +71,18 @@ export async function buildTimesheetWorkbook(opts: { entries: SheetEntry[]; days
   // ── Timesheet grid ──────────────────────────────────────────────
   const ws = wb.addWorksheet("Timesheet", { views: [{ state: "frozen", xSplit: 2, ySplit: 1 }] });
   const firstDayCol = 3;
-  const totalCol = firstDayCol + days.length;
-  ws.addRow(["Client", "Project", ...days.map((d) => dayHeader.format(fromISODate(d))), "Total (h)"]);
+  const totalCol = firstDayCol + columns.length;
+  ws.addRow(["Client", "Project", ...columns.map((c) => c.label), "Total (h)"]);
 
   sheet.rows.forEach((r, i) => {
     const rowNum = i + 2;
     const row = ws.addRow([
       r.client,
       r.project,
-      ...days.map((d) => (r.cells[d]?.minutes ? hours(r.cells[d].minutes) : null)),
+      ...columns.map((c) => {
+        const m = colMinutes(r.cells, c);
+        return m ? hours(m) : null;
+      }),
       {
         formula: `SUM(${colLetter(firstDayCol)}${rowNum}:${colLetter(totalCol - 1)}${rowNum})`,
         result: hours(r.total),
@@ -58,9 +95,10 @@ export async function buildTimesheetWorkbook(opts: { entries: SheetEntry[]; days
   const totals = ws.addRow([
     "Total",
     "",
-    ...days.map((d, i) => {
+    ...columns.map((col, i) => {
       const c = colLetter(firstDayCol + i);
-      return sheet.rows.length ? { formula: `SUM(${c}2:${c}${last})`, result: hours(sheet.dayTotals[d] ?? 0) } : 0;
+      const m = col.dates.reduce((a, d) => a + (sheet.dayTotals[d] ?? 0), 0);
+      return sheet.rows.length ? { formula: `SUM(${c}2:${c}${last})`, result: hours(m) } : 0;
     }),
     sheet.rows.length
       ? { formula: `SUM(${colLetter(totalCol)}2:${colLetter(totalCol)}${last})`, result: hours(sheet.total) }
@@ -131,7 +169,12 @@ export async function buildTimesheetWorkbook(opts: { entries: SheetEntry[]; days
 }
 
 /** Browser-only: build the workbook and trigger a file download. */
-export async function downloadTimesheetXlsx(opts: { entries: SheetEntry[]; days: string[]; filename: string }) {
+export async function downloadTimesheetXlsx(opts: {
+  entries: SheetEntry[];
+  days: string[];
+  filename: string;
+  range?: boolean;
+}) {
   const wb = await buildTimesheetWorkbook(opts);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
