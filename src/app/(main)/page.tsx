@@ -9,10 +9,22 @@ import { Supporters } from "@/components/supporters";
 import { APP_CONFIG } from "@/config/app-config";
 import { donateUrl } from "@/lib/donate";
 
-export const metadata: Metadata = {
-  title: "UseHourly: a simple timesheet for freelancers",
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "UseHourly",
+  url: "https://usehourly.app",
   description:
-    "Log your day in seconds. Type 1.5, 1:30 or 90m, press Enter, done. A weekly timesheet, invoices and a year-end report, in one place.",
+    "A free time tracking app for freelancers: quick daily entry, a start/stop timer, a weekly timesheet, invoices and exports.",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+};
+
+export const metadata: Metadata = {
+  title: "UseHourly: free time tracking app for freelancers",
+  description:
+    "UseHourly is a free time tracking app for freelancers. Log your day in seconds, use a start/stop timer, and get a weekly timesheet, invoices and a year-end report. No cost, no ads.",
   alternates: { canonical: "/" },
 };
 
@@ -86,6 +98,7 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
           <LogoMark className="size-8" aria-hidden />
@@ -110,9 +123,9 @@ export default function LandingPage() {
             Log your day in seconds.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            UseHourly is a simple timesheet for freelancers. Type <strong className="text-foreground">1.5</strong>,{" "}
-            <strong className="text-foreground">1:30</strong> or <strong className="text-foreground">90m</strong>, press
-            Enter, and you&rsquo;re done.
+            UseHourly is a free time tracking app and simple timesheet for freelancers. Type{" "}
+            <strong className="text-foreground">1.5</strong>, <strong className="text-foreground">1:30</strong> or{" "}
+            <strong className="text-foreground">90m</strong>, press Enter, and you&rsquo;re done.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/auth/v2/register" className={primary}>
