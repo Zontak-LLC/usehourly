@@ -69,18 +69,25 @@ export function ReportView() {
             Your year at a glance, ready for your accountant or tax software.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
-          <Button variant="outline" onClick={exportXlsx} disabled={!data || exporting}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-2 sm:flex sm:gap-1">
+            <Button size="icon" variant="outline" onClick={() => setYear(year - 1)} aria-label="Previous year">
+              <ChevronLeft />
+            </Button>
+            <Button variant="outline" onClick={() => today && setYear(today)} disabled={year === today}>
+              This year
+            </Button>
+            <Button size="icon" variant="outline" onClick={() => setYear(year + 1)} aria-label="Next year">
+              <ChevronRight />
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full sm:order-first sm:w-auto"
+            onClick={exportXlsx}
+            disabled={!data || exporting}
+          >
             <Download /> {exporting ? "Exporting…" : "Export Excel"}
-          </Button>
-          <Button size="icon" variant="outline" onClick={() => setYear(year - 1)} aria-label="Previous year">
-            <ChevronLeft />
-          </Button>
-          <Button variant="outline" onClick={() => today && setYear(today)} disabled={year === today}>
-            This year
-          </Button>
-          <Button size="icon" variant="outline" onClick={() => setYear(year + 1)} aria-label="Next year">
-            <ChevronRight />
           </Button>
         </div>
       </div>
@@ -166,7 +173,7 @@ export function ReportView() {
             <div className="divide-y">
               {data.clients.map((c) => (
                 <div key={c.clientId} className="px-4 py-3">
-                  <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                     <p className="font-medium">{c.client}</p>
                     <p className="font-mono text-sm tabular-nums">
                       <span className="text-muted-foreground">{h(c.minutes)} · </span>
@@ -177,7 +184,7 @@ export function ReportView() {
                     {data.projects
                       .filter((p) => p.clientId === c.clientId)
                       .map((p) => (
-                        <li key={p.projectId} className="flex items-baseline justify-between gap-3 text-sm">
+                        <li key={p.projectId} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
                           <span className="text-muted-foreground">
                             {p.project}
                             {!p.billable && <span className="ml-2 text-xs">non-billable</span>}
@@ -252,7 +259,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   return (
     <div className="rounded-xl border bg-card px-4 py-3">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-mono font-semibold text-xl tabular-nums">{value}</p>
+      <p className="font-mono font-semibold text-lg tabular-nums sm:text-xl">{value}</p>
       {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
     </div>
   );
@@ -284,40 +291,74 @@ function Table({
 }) {
   const align = (i: number) => (i < textCols ? "" : "text-right font-mono tabular-nums");
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-muted-foreground">
-            {head.map((c, i) => (
-              <th key={c} className={`px-4 py-2 font-normal ${i < textCols ? "" : "text-right"}`}>
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.join("|")} className="border-b last:border-0">
-              {r.map((c, i) => (
-                <td key={`${r[0]}-${head[i]}`} className={`px-4 py-2 ${align(i)}`}>
-                  {c}
-                </td>
+    <>
+      {/* Phones: one small card per row, with a label beside each value. */}
+      <ul className="divide-y sm:hidden">
+        {rows.map((r) => (
+          <li key={r.join("|")} className="px-4 py-3">
+            <p className="font-medium">{r[0]}</p>
+            <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              {r.slice(1).map((c, k) => (
+                <div key={`${r[0]}-${head[k + 1]}`} className="flex items-baseline justify-between gap-2">
+                  <dt className="text-muted-foreground">{head[k + 1]}</dt>
+                  <dd className={k + 1 < textCols ? "text-right" : "text-right font-mono tabular-nums"}>{c}</dd>
+                </div>
               ))}
-            </tr>
-          ))}
-        </tbody>
+            </dl>
+          </li>
+        ))}
         {total && (
-          <tfoot>
-            <tr className="border-t bg-muted/40 font-medium">
-              {total.map((c, i) => (
-                <td key={`t-${head[i]}`} className={`px-4 py-2 ${align(i)}`}>
+          <li className="bg-muted/40 px-4 py-3">
+            <p className="font-medium">{total[0]}</p>
+            <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              {total.slice(1).map((c, k) =>
+                c ? (
+                  <div key={`t-${head[k + 1]}`} className="flex items-baseline justify-between gap-2">
+                    <dt className="text-muted-foreground">{head[k + 1]}</dt>
+                    <dd className="text-right font-medium font-mono tabular-nums">{c}</dd>
+                  </div>
+                ) : null,
+              )}
+            </dl>
+          </li>
+        )}
+      </ul>
+
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left text-muted-foreground">
+              {head.map((c, i) => (
+                <th key={c} className={`px-4 py-2 font-normal ${i < textCols ? "" : "text-right"}`}>
                   {c}
-                </td>
+                </th>
               ))}
             </tr>
-          </tfoot>
-        )}
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.join("|")} className="border-b last:border-0">
+                {r.map((c, i) => (
+                  <td key={`${r[0]}-${head[i]}`} className={`px-4 py-2 ${align(i)}`}>
+                    {c}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+          {total && (
+            <tfoot>
+              <tr className="border-t bg-muted/40 font-medium">
+                {total.map((c, i) => (
+                  <td key={`t-${head[i]}`} className={`px-4 py-2 ${align(i)}`}>
+                    {c}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </>
   );
 }
