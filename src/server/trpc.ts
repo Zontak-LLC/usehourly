@@ -3,10 +3,20 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { Session } from "next-auth";
 import { ZodError } from "zod";
 
+import type { Mailer } from "@/lib/mailer";
+
 // Context is built in ./context.ts so this module stays free of next-auth/Prisma
 // runtime imports and routers can be exercised directly in scenario tests.
 // `ip` is the caller's address when known; register uses it to throttle sign-ups (absent in tests).
-export type Context = { session: Session | null; prisma: PrismaClient; ip?: string | null };
+// `mailer` is null when no email service is configured (see src/lib/mailer.ts); `baseUrl` is used for
+// links inside emails.
+export type Context = {
+  session: Session | null;
+  prisma: PrismaClient;
+  ip?: string | null;
+  mailer?: Mailer | null;
+  baseUrl?: string;
+};
 
 const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {

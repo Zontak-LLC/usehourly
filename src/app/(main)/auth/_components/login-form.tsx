@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { signIn } from "next-auth/react";
@@ -51,6 +52,13 @@ export function LoginForm() {
       <Button type="submit" disabled={pending}>
         {pending ? "Logging in…" : "Log in"}
       </Button>
+      <Link
+        href="/auth/v2/forgot-password"
+        prefetch={false}
+        className="text-center text-muted-foreground text-sm underline"
+      >
+        Forgot your password?
+      </Link>
     </form>
   );
 }

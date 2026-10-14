@@ -20,12 +20,14 @@ model AuthUser {
   logo          String?   // data URL (png/jpeg), resized client-side
   payment_instructions String? // free text printed on invoices (ACH, check...)
   token_version Int      @default(0) // bump to sign out every device (see lib/session-version.ts)
+  email_verified_at DateTime? // set when the address was confirmed through an emailed link
   created_at    DateTime  @default(now())
 
   clients  Client[]
   projects Project[]
   entries  TimeEntry[]
   invoices Invoice[]
+  email_tokens EmailToken[]
 
   @@map("auth_users")
 }
@@ -132,4 +134,20 @@ model RateLimit {
   reset_at Int
 
   @@map("rate_limits")
+}
+
+// A one-time emailed link. `kind` is "verify" or "reset"; only the SHA-256 of the token is kept.
+model EmailToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  kind       String
+  token_hash String   @unique
+  expires_at Int // epoch seconds
+  used_at    Int? // epoch seconds, null until used
+  created_at DateTime @default(now())
+
+  user AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, kind])
+  @@map("email_tokens")
 }

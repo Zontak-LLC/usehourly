@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { appUrl, createMailer } from "@/lib/mailer";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
 
@@ -15,5 +16,5 @@ export async function createContext(req?: Request) {
   }
   // Cloudflare sets cf-connecting-ip; it is the real client address behind the edge.
   const ip = req?.headers.get("cf-connecting-ip") ?? null;
-  return { session, prisma, ip };
+  return { session, prisma, ip, mailer: createMailer(), baseUrl: appUrl() };
 }

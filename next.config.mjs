@@ -5,6 +5,27 @@ if (process.env.NODE_ENV === "development") {
   await initOpenNextCloudflareForDev();
 }
 
+const isProd = process.env.NODE_ENV === "production";
+
+// Content-Security-Policy. Inline scripts stay allowed because Next.js and the theme boot script
+// emit them (a nonce-based policy would make every page dynamic); the rest is locked down: no
+// plugins, no <base> hijack, no framing, forms and fetches only to this origin, images only from
+// this origin or data/blob (logos are data URLs, downloads are blobs).
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  `connect-src 'self'${isProd ? "" : " ws: wss:"}`,
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  ...(isProd ? ["upgrade-insecure-requests"] : []),
+].join("; ");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
@@ -20,6 +41,7 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
+          { key: "Content-Security-Policy", value: csp },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
