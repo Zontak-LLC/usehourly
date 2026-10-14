@@ -1,6 +1,6 @@
 # CLAUDE.md — UseHourly (formerly Hourly)
 
-Time tracking for freelancers. The product name is **UseHourly** (renamed from "Hourly" 2026-10-14 to stay clear of other products called Hourly). Only what people see changed: internal ids are kept on purpose (Worker `hourly`, D1 `hourly-db`, repo `Zontak-LLC/hourly`, the `hourly:lastProject` saved setting, `hourly_rate` fields); download file names are `usehourly-*.xlsx`. Goal: logging a day's time should take seconds (UX is the product).
+Time tracking for freelancers. The product name is **UseHourly** (renamed from "Hourly" 2026-10-14 to stay clear of other products called Hourly). Only what people see changed: internal ids are kept on purpose (Worker `hourly`, D1 `hourly-db`, the `hourly:lastProject` saved setting, `hourly_rate` fields). The GitHub repo is `Zontak-LLC/usehourly` and the local folder is `~/Projects/usehourly` (both renamed from `hourly` on 2026-10-14; the old repo URL redirects); download file names are `usehourly-*.xlsx`. Goal: logging a day's time should take seconds (UX is the product).
 Built on the `arhamkhnz/next-shadcn-admin-dashboard` shell (the Vercel "admin-dashboard" template was Postgres/Auth.js-only, so it was not used). No Material UI — shadcn + Tailwind only.
 
 ## Stack
