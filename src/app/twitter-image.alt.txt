@@ -1,1 +1,1 @@
-Studio Admin open source admin dashboard with shadcn/ui
+Hourly: a simple timesheet for freelancers. Log your day in seconds.

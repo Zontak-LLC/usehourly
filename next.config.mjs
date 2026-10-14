@@ -15,7 +15,7 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      { source: "/", destination: "/dashboard/today", permanent: false },
+      // "/" is the public landing page; src/proxy.ts sends signed-in users on to their day.
       { source: "/dashboard", destination: "/dashboard/today", permanent: false },
     ];
   },

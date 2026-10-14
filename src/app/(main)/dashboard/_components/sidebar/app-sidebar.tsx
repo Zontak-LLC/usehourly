@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
-import { Clock } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
+import { LogoMark } from "@/components/logo";
 import {
   Sidebar,
   SidebarContent,
@@ -42,7 +42,7 @@ export function AppSidebar({ user, ...props }: Props) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link prefetch={false} href="/dashboard/today">
-                <Clock />
+                <LogoMark className="size-6 shrink-0" aria-hidden />
                 <span className="font-semibold text-base">{APP_CONFIG.name}</span>
               </Link>
             </SidebarMenuButton>
