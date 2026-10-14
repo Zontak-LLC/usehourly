@@ -38,7 +38,8 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 
 ## Free, supported by donations
 - Hourly is free: no paywall, no ads, and no payment code anywhere. Donations are optional.
-- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts`. While it is empty every "Support Hourly" button, the landing-page "Hourly is free." band and the footer link stay hidden (`SupportHourly`, `donateUrl()` which only accepts https). To switch on: set it to the live page, e.g. `https://github.com/sponsors/<user-or-org>`, and deploy. Neither `dzontak` nor `Zontak-LLC` had a GitHub Sponsors listing on 2026-10-14 (`hasSponsorsListing: false`); GitHub Sponsors is meant for open-source work and the Hourly repo is private, so the alternatives are Ko-fi or Buy Me a Coffee.
+- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts` (`donateUrl()` only accepts https). It is **on**: https://github.com/sponsors/Zontak-LLC (the Zontak LLC GitHub Sponsors listing, live 2026-10-14; one-time, monthly and custom amounts). It drives the landing page "Hourly is free." band and footer link and the Account page "Support Hourly" card (`SupportHourly`). Set it to "" to hide all of them.
+- GitHub Sponsors is meant for open-source work and the Hourly repo is private; if GitHub ever objects, Ko-fi or Buy Me a Coffee are drop-in replacements (change `DONATE_URL` and `DONATE_PLATFORM`).
 
 ## Timesheet grid & export
 - Every entry row (Today page and the day-editor dialog) has a Move control (`move-popover.tsx`): quick picks around its day or any date; it calls `entry.update({ id, date })` and changes nothing else.
