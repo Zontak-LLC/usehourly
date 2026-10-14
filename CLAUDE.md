@@ -68,7 +68,8 @@ Live: https://usehourly.app (Worker `hourly`, D1 `hourly-db`; the database id is
 - Security headers (nosniff, frame deny, HSTS, referrer, permissions) are set in `next.config.mjs`. There is no Content-Security-Policy yet: the theme boot script and the JSON-LD block are inline and would need nonces.
 - CSV exports prefix text that starts with = + - @ with an apostrophe (`csvField` in `src/lib/export-all.ts`) so a note cannot run as a spreadsheet formula.
 - `removeConsole` keeps `console.error` in production: the tRPC route logs internal errors with it.
-- `.github/workflows/ci.yml` runs biome, tsc and vitest on every push and pull request.
+- `.github/workflows/ci.yml` (GitHub Actions) and `.circleci/config.yml` (CircleCI) both run biome, tsc and vitest on every push. CircleCI also deploys `main`: it writes `wrangler.jsonc` from env vars (`scripts/ci-wrangler-config.mjs`), applies D1 migrations, then `npm run deploy`. Env vars are listed in the README. Delete the GitHub workflow if you want a single CI.
+- Sign-in and sign-up are throttled (`src/lib/rate-limit.ts`, D1 `rate_limits`). Sessions carry `token_version`; a password change or "Log out on all devices" bumps it and `createContext` plus the dashboard layout reject older tokens (`src/lib/session-version.ts`).
 
 ## Not yet built
 A standalone CSV export per week/month (CSV exists only inside the export-everything zip), a printable timesheet PDF for client sign-off, password reset email, **rate limiting on login and register** (the top security gap), session revocation after a password change (JWT sessions stay valid until they expire), email verification on register, Content-Security-Policy.
