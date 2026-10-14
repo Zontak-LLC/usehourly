@@ -37,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user) return null;
         if (!(await compare(parsed.data.password, user.password_hash))) return null;
         await clearRateLimit(prisma, emailKey);
-        return { id: user.id, name: user.name, email: user.email };
+        return { id: user.id, name: user.name, email: user.email, tv: user.token_version };
       },
     }),
   ],

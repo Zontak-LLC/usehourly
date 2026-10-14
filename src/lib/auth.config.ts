@@ -11,11 +11,15 @@ export default {
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user }) {
-      if (user?.id) token.id = user.id;
+      if (user?.id) {
+        token.id = user.id;
+        token.tv = user.tv ?? 0;
+      }
       return token;
     },
     async session({ session, token }) {
       if (token?.id) session.user.id = token.id as string;
+      if (typeof token?.tv === "number") session.user.tv = token.tv;
       return session;
     },
   },

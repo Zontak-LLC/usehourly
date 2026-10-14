@@ -113,8 +113,16 @@ export const accountRouter = router({
       }
       await ctx.prisma.authUser.update({
         where: { id: ctx.userId },
-        data: { password_hash: await hash(input.newPassword, 10) },
+        // Bumping token_version signs out every device, including this one; the browser signs
+        // itself straight back in with the new password.
+        data: { password_hash: await hash(input.newPassword, 10), token_version: { increment: 1 } },
       });
       return { ok: true };
     }),
+
+  /** Sign out every device, including this one. */
+  signOutEverywhere: protectedProcedure.mutation(async ({ ctx }) => {
+    await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { token_version: { increment: 1 } } });
+    return { ok: true };
+  }),
 });

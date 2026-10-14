@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { cn } from "cn";
 
@@ -9,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
+import { sessionStillValid } from "@/lib/session-version";
 import { getPreference } from "@/server/server-actions";
 
 import { LayoutControls } from "./_components/header/layout-controls";
@@ -21,9 +23,14 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   const dbUser = session?.user?.id
     ? await (await getPrisma()).authUser.findUnique({
         where: { id: session.user.id },
-        select: { name: true, email: true },
+        select: { name: true, email: true, token_version: true },
       })
     : null;
+  // Signed in with an old token (password changed, signed out everywhere, or the account is gone):
+  // clear the cookie through a route handler, then land on the login page.
+  if (session?.user?.id && !sessionStillValid(session.user.tv, dbUser?.token_version)) {
+    redirect("/api/session-expired");
+  }
   const user = { name: dbUser?.name ?? "You", email: dbUser?.email ?? "" };
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
