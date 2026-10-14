@@ -34,7 +34,7 @@ export function ExportEverything({
         toast.info("You haven't logged any time yet, so there is nothing to export.");
         return;
       }
-      await downloadExportZip(plan, `hourly-export-${today}.zip`);
+      await downloadExportZip(plan, `usehourly-export-${today}.zip`);
       toast.success(
         `Downloaded ${plan.entryCount} ${plan.entryCount === 1 ? "entry" : "entries"} for ${plan.clientCount} ${
           plan.clientCount === 1 ? "client" : "clients"

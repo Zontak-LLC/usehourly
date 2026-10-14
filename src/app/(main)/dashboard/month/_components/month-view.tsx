@@ -121,7 +121,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           <ExportButton
             entries={entries.data ? shown : undefined}
             days={monthDays}
-            filename={`hourly-${first.slice(0, 7)}.xlsx`}
+            filename={`usehourly-${first.slice(0, 7)}.xlsx`}
           />
           <RangeExport defaultFrom={first} defaultTo={last} projectId={projectId} />
           <Button

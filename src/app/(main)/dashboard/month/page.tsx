@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { MonthView } from "./_components/month-view";
 
-export const metadata: Metadata = { title: "Month · Hourly" };
+export const metadata: Metadata = { title: "Month · UseHourly" };
 
 export default async function MonthPage({
   searchParams,

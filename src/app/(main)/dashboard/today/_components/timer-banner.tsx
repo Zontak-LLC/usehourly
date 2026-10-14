@@ -31,7 +31,7 @@ export function TimerBanner() {
   useEffect(() => {
     if (!running.data?.started_at) return;
     const prev = document.title;
-    document.title = `⏱ ${running.data.project.name} · Hourly`;
+    document.title = `⏱ ${running.data.project.name} · UseHourly`;
     return () => {
       document.title = prev;
     };

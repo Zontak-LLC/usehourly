@@ -65,7 +65,7 @@ export async function buildTimesheetWorkbook(opts: {
   const hours = (m: number) => Math.round((m / 60) * 100) / 100;
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Hourly";
+  wb.creator = "UseHourly";
   wb.created = new Date();
 
   // ── Timesheet grid ──────────────────────────────────────────────
