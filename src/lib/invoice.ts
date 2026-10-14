@@ -79,7 +79,15 @@ export function buildInvoice(entries: InvoiceEntry[]): InvoiceTotals {
 }
 
 export type InvoiceSnapshot = {
-  seller: { name: string; ein: string | null; address: string | null; email: string; logo: string | null };
+  seller: {
+    name: string;
+    ein: string | null;
+    address: string | null;
+    email: string;
+    logo: string | null;
+    // absent on invoices issued before it existed.
+    paymentInstructions?: string | null;
+  };
   // address/logo are absent on invoices issued before they existed.
   client: { name: string; legalName?: string | null; address?: string | null; logo?: string | null };
   number: string;

@@ -46,6 +46,7 @@ export function AccountView() {
         businessName: String(fd.get("businessName") ?? ""),
         ein: String(fd.get("ein") ?? ""),
         address: String(fd.get("address") ?? ""),
+        paymentInstructions: String(fd.get("paymentInstructions") ?? ""),
         logo,
       });
       await utils.account.me.invalidate();
@@ -137,6 +138,18 @@ export function AccountView() {
             rows={3}
             maxLength={300}
           />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="paymentInstructions">How to pay</Label>
+          <Textarea
+            id="paymentInstructions"
+            name="paymentInstructions"
+            defaultValue={me.data.payment_instructions ?? ""}
+            placeholder={"Pay by ACH\nAccount name: …\nRouting number: …\nAccount number: …"}
+            rows={4}
+            maxLength={500}
+          />
+          <p className="text-muted-foreground text-xs">Printed on every invoice. Leave empty to print nothing.</p>
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="logo">Logo</Label>

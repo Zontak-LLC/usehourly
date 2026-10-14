@@ -76,6 +76,17 @@ export const invoiceRouter = router({
         });
       }
     }
+
+    // Invoices issued before "how to pay" existed have no such key (an empty value is stored as
+    // null). Backfill once from the account's current instructions and freeze the result.
+    if (!("paymentInstructions" in snapshot.seller)) {
+      const user = await ctx.prisma.authUser.findUnique({
+        where: { id: ctx.userId },
+        select: { payment_instructions: true },
+      });
+      snapshot.seller = { ...snapshot.seller, paymentInstructions: user?.payment_instructions ?? null };
+      await ctx.prisma.invoice.update({ where: { id: inv.id }, data: { snapshot: JSON.stringify(snapshot) } });
+    }
     return { id: inv.id, snapshot };
   }),
 
@@ -139,6 +150,7 @@ export const invoiceRouter = router({
           address: user.address,
           email: user.email,
           logo: user.logo,
+          paymentInstructions: user.payment_instructions,
         },
         client: { name: client.name, legalName: client.legal_name, address: client.address, logo: client.logo },
         number: input.number,

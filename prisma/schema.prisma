@@ -18,6 +18,7 @@ model AuthUser {
   ein           String?   // normalized NN-NNNNNNN
   address       String?   // multi-line
   logo          String?   // data URL (png/jpeg), resized client-side
+  payment_instructions String? // free text printed on invoices (ACH, check...)
   created_at    DateTime  @default(now())
 
   clients  Client[]
