@@ -51,7 +51,7 @@ export function TimerBanner() {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
+    <div className="sticky top-28 z-30 flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-background px-4 py-3 shadow-sm md:top-2">
       <div className="min-w-0">
         <p className="truncate font-medium text-sm">
           {entry.project.client.name} · {entry.project.name}
@@ -60,7 +60,7 @@ export function TimerBanner() {
       </div>
       <div className="flex items-center gap-3">
         <span className="font-mono text-lg tabular-nums">{clock(elapsed)}</span>
-        <Button size="sm" variant="destructive" onClick={onStop} disabled={stop.isPending}>
+        <Button size="lg" className="h-11" variant="destructive" onClick={onStop} disabled={stop.isPending}>
           <Square /> Stop
         </Button>
       </div>

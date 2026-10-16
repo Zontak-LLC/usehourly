@@ -31,6 +31,14 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 ## Routes
 `/dashboard/today` (quick-add, timer, day list; `?date=`) · `/dashboard/week` (editable timesheet grid + multi-day Fill + Excel export; `?project=`) · `/dashboard/month` (calendar of day/week totals, per-project breakdown, Excel export; `?month=YYYY-MM&project=`) · `/dashboard/report` (annual summary for taxes: hours, earned, quarters, months, clients/projects, invoices; Excel export; `lib/annual-report.ts`) · `/dashboard/invoices` (searchable history; PDF re-download) · `/dashboard/invoices/new` · `/dashboard/clients` · `/dashboard/account` · `/auth/v2/login|register`. `src/proxy.ts` redirects signed-out users to login.
 
+## Beginner-friendly Today screen (2026-10-15)
+- First run is one question ("Who do you work for?", `today/_components/first-run.tsx`): the answer becomes the client and a project named "General" is created behind the scenes (`firstRunNames` in `src/lib/quick-start.ts`). Rate and extra projects live on "My work" (the Clients page).
+- `quick-add.tsx` is timer-first: note, big **Start timer**, then one-tap chips (`DURATION_CHIPS`: 15m/30m/1h/2h/4h) that log immediately with an **Undo** toast (`entry.delete`), then a typed duration (`inputMode="decimal"`). A single project is shown as plain text, not a select. Controls are 44px+ on phones; keyboard hints (`↵`) only show from `md` up.
+- The running timer banner is sticky with a large Stop. Nav words: "My work", "Year summary (taxes)".
+- `bill-hint.tsx`: once any time is logged this week, a dismissible "Make an invoice" card appears on Today (dismissal in localStorage `hourly:hideBillHint`). Sidebar groups Year summary + Account under a muted "More" (`secondary` in `sidebar-items.ts`).
+- PWA: `src/app/manifest.ts` + `public/icons/*` (rendered from `icon.svg`); `/manifest.webmanifest` is public in `route-access.ts`. Phones can Add to Home Screen and open it standalone at `/dashboard/today`.
+- Test: `src/__tests__/first-run-journey.test.ts`.
+
 ## Landing page and brand
 - `/` is a public landing page (`src/app/(main)/page.tsx`); signed-in users are sent on to `/dashboard/today`. The rule lives in `src/lib/route-access.ts` (tested) and is applied by `src/proxy.ts`; `next.config.mjs` must NOT redirect `/` (it used to, and hid the page).
 - Its screenshots (`public/landing/*.webp`) are the real app, taken from a local demo freelancer: register through the UI, seed clients/projects/entries/invoices with `wrangler d1 execute --local`, screenshot Today/Week/Month/Report at 1440x900 @2x with the Next dev badge hidden, then delete the demo rows.

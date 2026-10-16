@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  appleWebApp: { capable: true, title: "UseHourly", statusBarStyle: "default" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
