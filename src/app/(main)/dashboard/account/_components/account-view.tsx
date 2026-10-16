@@ -8,6 +8,7 @@ import { signIn, signOut } from "next-auth/react";
 import { toast } from "sonner";
 
 import { ExportEverything } from "@/components/export-everything";
+import { FeedbackCard } from "@/components/feedback-card";
 import { SupportHourly } from "@/components/support-hourly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -241,6 +242,8 @@ export function AccountView() {
         </div>
         <ExportEverything className="self-start" />
       </section>
+
+      <FeedbackCard />
 
       <SupportHourly />
 
