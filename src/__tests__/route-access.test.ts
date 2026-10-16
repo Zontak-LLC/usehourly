@@ -51,4 +51,9 @@ describe("Who can see which page", () => {
     }
     expect(accessDecision("/privacy/extra", false)).toBe("to-login");
   });
+
+  it("serves the app manifest to signed-out visitors so phones can add it to the home screen", () => {
+    expect(accessDecision("/manifest.webmanifest", false)).toBe("allow");
+    expect(accessDecision("/manifest.webmanifest", true)).toBe("allow");
+  });
 });

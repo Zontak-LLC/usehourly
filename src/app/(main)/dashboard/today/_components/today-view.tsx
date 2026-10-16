@@ -13,9 +13,10 @@ import { addDays, DATE_RE, fromISODate, startOfWeek, toISODate } from "@/lib/dat
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
 
+import { BillHint } from "./bill-hint";
 import { EntryRow } from "./entry-row";
+import { FirstRun } from "./first-run";
 import { QuickAdd } from "./quick-add";
-import { SetupForm } from "./setup-form";
 import { TimerBanner } from "./timer-banner";
 
 const longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
@@ -79,17 +80,15 @@ export function TodayView() {
       ) : hasProjects ? (
         <QuickAdd date={date} timerRunning={!!running.data} />
       ) : (
-        <div className="rounded-xl border border-dashed p-5">
-          <p className="font-medium">Add your first client and project</p>
-          <p className="mb-3 text-muted-foreground text-sm">Then you can log time in a few keystrokes.</p>
-          <SetupForm />
-        </div>
+        <FirstRun />
       )}
 
       <div className="grid grid-cols-2 gap-3">
         <Stat label="This day" value={formatDuration(sum(dayEntries))} />
         <Stat label="This week" value={formatDuration(sum(week.data ?? []))} />
       </div>
+
+      {sum(week.data ?? []) > 0 && <BillHint />}
 
       {week.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -99,7 +98,7 @@ export function TodayView() {
         <Skeleton className="h-32 w-full" />
       ) : dayEntries.length === 0 ? (
         <p className="py-10 text-center text-muted-foreground text-sm">
-          Nothing logged yet. Press <kbd className="rounded bg-muted px-1">n</kbd> and type a duration.
+          Nothing logged yet. Tap <span className="font-medium">Start timer</span> or pick a time above.
         </p>
       ) : (
         <ul className="divide-y rounded-xl border bg-card">
