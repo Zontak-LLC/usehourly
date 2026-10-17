@@ -11,6 +11,7 @@ import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { ProjectFilter, toggleProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { RangeExport } from "@/components/range-export";
+import { ShareTimesheet } from "@/components/share-timesheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -135,6 +136,7 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
             filename={`usehourly-${start}_to_${end}.xlsx`}
           />
           <RangeExport defaultFrom={start} defaultTo={end} projectId={projectId} />
+          <ShareTimesheet defaultFrom={start} defaultTo={end} projectId={projectId} />
           <Button size="icon" variant="outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">
             <ChevronLeft />
           </Button>

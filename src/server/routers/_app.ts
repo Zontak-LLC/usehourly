@@ -8,6 +8,7 @@ import { oauthRouter } from "./oauth";
 import { projectRouter } from "./project";
 import { reportRouter } from "./report";
 import { timeImportRouter } from "./time-import";
+import { timesheetShareRouter } from "./timesheet-share";
 
 export const appRouter = router({
   account: accountRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   timeImport: timeImportRouter,
   oauth: oauthRouter,
   insights: insightsRouter,
+  timesheetShare: timesheetShareRouter,
 });
 
 export type AppRouter = typeof appRouter;

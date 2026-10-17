@@ -9,6 +9,7 @@ import { ExportButton } from "@/components/export-button";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { RangeExport } from "@/components/range-export";
+import { ShareTimesheet } from "@/components/share-timesheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
@@ -125,6 +126,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             filename={`usehourly-${first.slice(0, 7)}.xlsx`}
           />
           <RangeExport defaultFrom={first} defaultTo={last} projectId={projectId} />
+          <ShareTimesheet defaultFrom={first} defaultTo={last} projectId={projectId} />
           <Button
             size="icon"
             variant="outline"
