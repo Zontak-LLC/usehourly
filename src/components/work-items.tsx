@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,12 @@ import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { isLongNote } from "@/lib/notes";
 import type { SheetEntry } from "@/lib/timesheet";
-import { paginate, searchWorkItems } from "@/lib/work-items";
+import { groupByDay, paginate, searchWorkItems } from "@/lib/work-items";
 
-const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
+const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
 /**
- * A period's entries as a searchable list, 7 per page. Click a row to edit that day.
+ * What you worked on in a period: searchable, grouped by day (with the day's total), 7 entries per page. Click a row to edit that day.
  * `period` words the empty state ("month", "week").
  */
 export function WorkItems({
@@ -42,12 +42,13 @@ export function WorkItems({
 
   const matches = searchWorkItems(entries, query);
   const view = paginate(matches, page);
+  const days = groupByDay(view.items, matches);
 
   return (
     <div className="rounded-xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
         <h2 className="font-medium">
-          Work items <span className="font-normal text-muted-foreground text-sm">({matches.length})</span>
+          What you worked on <span className="font-normal text-muted-foreground text-sm">({matches.length})</span>
         </h2>
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -58,7 +59,7 @@ export function WorkItems({
               setPage(1); // a new search always starts on its first page
             }}
             placeholder="Search note, project, client…"
-            aria-label="Search work items"
+            aria-label="Search what you worked on"
             className="h-9 pl-8"
           />
         </div>
@@ -66,56 +67,69 @@ export function WorkItems({
 
       {view.total === 0 ? (
         <p className="px-4 py-8 text-center text-muted-foreground text-sm">
-          {query.trim() ? "No work items match that search." : `No work items this ${period}.`}
+          {query.trim() ? "Nothing matches that search." : `Nothing logged this ${period}.`}
         </p>
       ) : (
-        <ul className="divide-y">
-          {view.items.map((e) => (
-            <li key={e.id}>
-              <button
-                type="button"
-                onClick={() => onOpenDay(e.date)}
-                title="Edit this day"
-                className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
-              >
-                <span className="w-24 shrink-0 pt-0.5 text-muted-foreground text-xs">
-                  {dayFmt.format(fromISODate(e.date))}
+        <div className="divide-y">
+          {days.map((g) => (
+            <section key={g.date} aria-label={dayFmt.format(fromISODate(g.date))}>
+              <h3 className="flex items-baseline justify-between gap-2 bg-muted/40 px-4 py-1.5 font-medium text-sm">
+                {dayFmt.format(fromISODate(g.date))}
+                <span className="font-mono text-muted-foreground text-xs tabular-nums">
+                  {formatDuration(g.minutes)}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 text-sm">
-                    <ProjectMark projectId={e.project_id} color={e.project.client.color} logos={logos} />
-                    <span className="truncate font-medium">{e.project.name}</span>
-                    <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
-                  </span>
-                  {e.note ? (
-                    <span
-                      className={`mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm ${
-                        isLongNote(e.note) && !open.has(e.id) ? "line-clamp-2" : ""
-                      }`}
+              </h3>
+              <ul className="divide-y">
+                {g.items.map((e) => (
+                  <li key={e.id}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenDay(e.date)}
+                      aria-label={`Edit ${dayFmt.format(fromISODate(e.date))}`}
+                      className="group flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
                     >
-                      {e.note}
-                    </span>
-                  ) : (
-                    <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
-                  )}
-                </span>
-                <span className="shrink-0 pt-0.5 font-mono text-sm tabular-nums">
-                  {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
-                </span>
-              </button>
-              {isLongNote(e.note) && (
-                <button
-                  type="button"
-                  onClick={() => toggle(e.id)}
-                  aria-expanded={open.has(e.id)}
-                  className="mb-2 pl-[7.75rem] text-primary text-xs hover:underline"
-                >
-                  {open.has(e.id) ? "Show less" : "Show more"}
-                </button>
-              )}
-            </li>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 text-sm">
+                          <ProjectMark projectId={e.project_id} color={e.project.client.color} logos={logos} />
+                          <span className="truncate font-medium">{e.project.name}</span>
+                          <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
+                        </span>
+                        {e.note ? (
+                          <span
+                            className={`mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm ${
+                              isLongNote(e.note) && !open.has(e.id) ? "line-clamp-2" : ""
+                            }`}
+                          >
+                            {e.note}
+                          </span>
+                        ) : (
+                          <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
+                        )}
+                      </span>
+                      <span className="shrink-0 pt-0.5 font-mono text-sm tabular-nums">
+                        {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
+                      </span>
+                      <Pencil
+                        aria-hidden
+                        className="mt-1 size-3.5 shrink-0 text-muted-foreground md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-visible:opacity-100"
+                      />
+                    </button>
+                    {isLongNote(e.note) && (
+                      <button
+                        type="button"
+                        onClick={() => toggle(e.id)}
+                        aria-expanded={open.has(e.id)}
+                        className="mb-2 min-h-6 pl-4 text-primary text-xs hover:underline"
+                      >
+                        {open.has(e.id) ? "Show less" : "Show more"}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
 
       {view.total > 0 && (

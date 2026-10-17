@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SheetEntry } from "@/lib/timesheet";
-import { paginate, searchWorkItems, WORK_ITEMS_PAGE_SIZE } from "@/lib/work-items";
+import { groupByDay, paginate, searchWorkItems, WORK_ITEMS_PAGE_SIZE } from "@/lib/work-items";
 
 function entry(i: number, over: Partial<SheetEntry> = {}): SheetEntry {
   return {
@@ -63,5 +63,28 @@ describe("month work-items list", () => {
     expect(paginate(hits, 2)).toMatchObject({ from: 8, to: 11 });
     // A bare digit also matches the date (…-10-…), so notes are the place to be specific.
     expect(searchWorkItems(entries, "task 15").map((e) => e.id)).toEqual(["e15"]);
+  });
+});
+
+describe("grouping by day", () => {
+  it("groups a page by date and totals each day across every match, not just the visible page", () => {
+    const all = [
+      entry(1, { date: "2026-10-05", minutes: 30 }),
+      entry(2, { date: "2026-10-05", minutes: 45 }),
+      entry(3, { date: "2026-10-05", minutes: 15 }),
+      entry(4, { date: "2026-10-04", minutes: 60 }),
+    ];
+    const page = all.slice(0, 2); // the page cuts the 5th in half
+    const groups = groupByDay(page, all);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].date).toBe("2026-10-05");
+    expect(groups[0].items.map((e) => e.id)).toEqual(["e1", "e2"]);
+    expect(groups[0].minutes).toBe(90); // 30 + 45 + 15, including the entry on the next page
+
+    const next = groupByDay(all.slice(2), all);
+    expect(next.map((g) => [g.date, g.minutes])).toEqual([
+      ["2026-10-05", 90],
+      ["2026-10-04", 60],
+    ]);
   });
 });
