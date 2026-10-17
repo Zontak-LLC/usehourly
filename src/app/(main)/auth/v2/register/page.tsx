@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { Metadata } from "next";
 
-import { GithubSignIn } from "@/components/github-sign-in";
+import { SocialSignIn } from "@/components/social-sign-in";
 import { TryDemoButton } from "@/components/try-demo-button";
 
 import { RegisterForm } from "../../_components/register-form";
@@ -17,7 +17,7 @@ export default function RegisterPage() {
           <h1 className="font-medium text-3xl">Create your account</h1>
           <p className="text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
         </div>
-        <GithubSignIn />
+        <SocialSignIn />
         <RegisterForm />
         <div className="text-center text-muted-foreground text-sm">
           Just looking?

@@ -32,6 +32,8 @@ model AuthUser {
   reminder_sent_week String? // the week (e.g. 2026-W42) the last reminder went out, so each week sends once
   // The GitHub account this one signs in with ("Sign in with GitHub"); null for password-only accounts.
   github_id     String?   @unique
+  // The Google account ("sub") this one signs in with; null when not linked.
+  google_id     String?   @unique
   created_at    DateTime  @default(now())
 
   clients  Client[]

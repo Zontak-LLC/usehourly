@@ -3,24 +3,26 @@ import { headers } from "next/headers";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import { z } from "zod";
 
 import { normalizeEmail } from "@/lib/email";
-import type { GithubEmail } from "@/lib/github-login";
 import { passwordMatches } from "@/lib/password";
 import { getPrisma } from "@/lib/prisma";
 import { clearRateLimit, hitRateLimit, LOGIN_PER_EMAIL, LOGIN_PER_IP } from "@/lib/rate-limit";
+import type { VerifiedEmail } from "@/lib/social-login";
 import { createDemoUser } from "@/server/demo";
-import { resolveGithubUser } from "@/server/github-signin";
+import { resolveSocialUser } from "@/server/social-signin";
 
 import authConfig from "./auth.config";
 
 const loginSchema = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string().min(1) });
 
-/** "Sign in with GitHub" is offered only when the GitHub OAuth app's id and secret are set. */
+/** Each "Continue with ..." button is offered only when that provider's OAuth id and secret are set. */
 export const githubLoginEnabled = () => Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET);
+export const googleLoginEnabled = () => Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
 
-async function githubEmails(accessToken: string): Promise<GithubEmail[]> {
+async function githubEmails(accessToken: string): Promise<VerifiedEmail[]> {
   const res = await fetch("https://api.github.com/user/emails", {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -29,7 +31,7 @@ async function githubEmails(accessToken: string): Promise<GithubEmail[]> {
     },
   });
   if (!res.ok) throw new Error(`GitHub answered ${res.status} when listing email addresses`);
-  const list = (await res.json()) as GithubEmail[];
+  const list = (await res.json()) as VerifiedEmail[];
   return Array.isArray(list) ? list : [];
 }
 
@@ -37,22 +39,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: {
     ...authConfig.callbacks,
-    // GitHub sign-in: find, link or create the UseHourly account, then hand its id to the session token.
+    // GitHub or Google sign-in: find, link or create the UseHourly account, then hand its id to the session token.
     async signIn({ user, account, profile }) {
-      if (account?.provider !== "github") return true;
+      const provider = account?.provider;
+      if (provider !== "github" && provider !== "google") return true;
       try {
-        if (!account.access_token || profile?.id === undefined) return "/auth/v2/login?error=github";
+        let providerId: string;
+        let emails: VerifiedEmail[];
+        if (provider === "github") {
+          if (!account?.access_token || profile?.id === undefined) return "/auth/v2/login?error=social";
+          providerId = String(profile.id);
+          emails = await githubEmails(account.access_token);
+        } else {
+          // Google states in the sign-in itself whether it has verified the address.
+          if (!profile?.sub || typeof profile.email !== "string") return "/auth/v2/login?error=social";
+          providerId = String(profile.sub);
+          emails = [{ email: profile.email, primary: true, verified: profile.email_verified === true }];
+        }
         const ip = (await headers()).get("cf-connecting-ip");
-        const result = await resolveGithubUser(await getPrisma(), {
-          githubId: String(profile.id),
-          emails: await githubEmails(account.access_token),
-          name: typeof profile.name === "string" ? profile.name : null,
-          login: typeof profile.login === "string" ? profile.login : null,
+        const result = await resolveSocialUser(await getPrisma(), {
+          provider,
+          providerId,
+          emails,
+          name: typeof profile?.name === "string" ? profile.name : null,
+          login: provider === "github" && typeof profile?.login === "string" ? profile.login : null,
           ip,
         });
         if (!result.ok) {
           const why = result.reason === "rate-limited" ? "limit" : result.reason;
-          return `/auth/v2/login?error=github&why=${why}`;
+          return `/auth/v2/login?error=social&why=${why}`;
         }
         user.id = result.user.id;
         user.name = result.user.name;
@@ -60,13 +75,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         user.tv = result.user.token_version;
         return true;
       } catch (err) {
-        console.error("GitHub sign-in failed:", err);
-        return "/auth/v2/login?error=github";
+        console.error(`${provider} sign-in failed:`, err);
+        return "/auth/v2/login?error=social";
       }
     },
   },
   providers: [
     ...(githubLoginEnabled() ? [GitHub({ authorization: { params: { scope: "read:user user:email" } } })] : []),
+    ...(googleLoginEnabled() ? [Google({ authorization: { params: { scope: "openid email profile" } } })] : []),
     // "Try the demo": makes a throwaway account with sample data and signs the visitor in. No password.
     Credentials({
       id: "demo",
