@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { QuickAdd } from "@/app/(main)/dashboard/today/_components/quick-add";
+import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fromISODate } from "@/lib/dates";
@@ -48,11 +49,14 @@ export function DayEditorDialog({ date, onClose }: { date: string | null; onClos
         ) : entries.isLoading ? (
           <Skeleton className="h-24 w-full" />
         ) : entries.data && entries.data.length > 0 ? (
-          <ul className="divide-y rounded-xl border bg-card">
-            {entries.data.map((e) => (
-              <EntryRow key={e.id} entry={e} />
-            ))}
-          </ul>
+          <>
+            <ul className="divide-y rounded-xl border bg-card">
+              {entries.data.map((e) => (
+                <EntryRow key={e.id} entry={e} />
+              ))}
+            </ul>
+            <MergeEntriesBar entries={entries.data} />
+          </>
         ) : (
           <p className="rounded-xl border border-dashed py-6 text-center text-muted-foreground text-sm">
             Nothing logged this day yet.

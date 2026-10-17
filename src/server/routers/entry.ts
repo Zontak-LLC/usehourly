@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { DATE_RE } from "@/lib/dates";
 import { parseDuration } from "@/lib/duration";
+import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 
 import { protectedProcedure, router } from "../trpc";
@@ -191,6 +192,28 @@ export const entryRouter = router({
         result.created++;
       }
       return result;
+    }),
+
+  /**
+   * Fold several entries (same project, same day) into the first one: hours summed, descriptions
+   * joined. All rows must belong to the caller. The kept entry is updated before the others are
+   * removed, so a failure part-way can only leave extra rows, never lose time.
+   */
+  merge: protectedProcedure
+    .input(z.object({ ids: z.array(z.string()).min(2).max(20) }))
+    .mutation(async ({ ctx, input }) => {
+      const ids = [...new Set(input.ids)];
+      const rows = await ctx.prisma.timeEntry.findMany({ where: { id: { in: ids }, user_id: ctx.userId } });
+      if (rows.length !== ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+      const ordered = ids.map((id) => rows.find((r) => r.id === id)!);
+      const plan = planMerge(ordered);
+      if ("error" in plan) throw new TRPCError({ code: "BAD_REQUEST", message: plan.error });
+      await ctx.prisma.timeEntry.update({
+        where: { id: plan.keepId },
+        data: { minutes: plan.minutes, note: plan.note },
+      });
+      await ctx.prisma.timeEntry.deleteMany({ where: { id: { in: plan.deleteIds }, user_id: ctx.userId } });
+      return { id: plan.keepId, minutes: plan.minutes, merged: plan.deleteIds.length + 1 };
     }),
 
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
