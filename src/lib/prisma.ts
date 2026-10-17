@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-let cached: Promise<PrismaClient> | undefined;
+let client: PrismaClient | undefined;
 
 /**
  * Lazily build a PrismaClient bound to the Worker's D1 binding.
@@ -9,19 +9,30 @@ let cached: Promise<PrismaClient> | undefined;
  * otherwise `next build` page-data workers each boot a local workerd against the
  * same SQLite file and fail with SQLITE_BUSY. The client is created on first
  * request and memoised for the life of the isolate.
+ *
+ * Only the FINISHED client is memoised, never a pending promise. A promise created in one request
+ * and awaited in another hangs the second request if the first one ends before it settles; the
+ * runtime then kills it ("Worker's code had hung", Cloudflare Error 1101). That happened when an
+ * assistant fired several tool calls at once at a freshly started Worker. So every request that
+ * finds no client builds (and warms) its own inside its own request context, and the first one
+ * to finish is kept. The duplicate work only happens on a cold start.
  */
-export function getPrisma(): Promise<PrismaClient> {
-  cached ??= (async () => {
-    const [{ PrismaClient }, { PrismaD1 }, { getCloudflareContext }] = await Promise.all([
-      import("@prisma/client"),
-      import("@prisma/adapter-d1"),
-      import("@opennextjs/cloudflare"),
-    ]);
-    const { env } = await getCloudflareContext({ async: true });
-    return new PrismaClient({ adapter: new PrismaD1((env as unknown as { DB: D1Database }).DB) });
-  })().catch((err) => {
-    cached = undefined; // allow a retry on the next request instead of caching the failure
-    throw err;
-  });
-  return cached;
+export async function getPrisma(): Promise<PrismaClient> {
+  if (client) return client;
+  const [{ PrismaClient }, { PrismaD1 }, { getCloudflareContext }] = await Promise.all([
+    import("@prisma/client"),
+    import("@prisma/adapter-d1"),
+    import("@opennextjs/cloudflare"),
+  ]);
+  const { env } = await getCloudflareContext({ async: true });
+  const built = new PrismaClient({ adapter: new PrismaD1((env as unknown as { DB: D1Database }).DB) });
+  // Prisma sets itself up on the first query and keeps that work in a promise of its own. Do it here, in
+  // the request that made the client, so no later request waits on a promise another request started.
+  try {
+    await built.$connect();
+  } catch (err) {
+    console.error("prisma warm-up failed (it will connect on the first query):", err);
+  }
+  client ??= built;
+  return client;
 }
