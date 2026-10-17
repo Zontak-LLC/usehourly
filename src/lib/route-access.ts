@@ -23,6 +23,7 @@ const PUBLIC_FOR_EVERYONE = new Set([
   "/reset-password",
   "/verify-email",
   "/reminders/off",
+  "/stop-emails",
   "/oauth/authorize",
   "/tools/hours-calculator",
   "/manifest.webmanifest",

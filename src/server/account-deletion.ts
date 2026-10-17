@@ -13,6 +13,7 @@ export async function deleteAccountData(prisma: PrismaClient, userId: string): P
   await prisma.emailToken.deleteMany(mine);
   await prisma.timesheetShare.deleteMany(mine);
   await prisma.invoiceLink.deleteMany(mine);
+  await prisma.invoiceEmail.deleteMany(mine);
   await prisma.invoiceLogo.deleteMany(mine);
   await prisma.invoice.deleteMany(mine);
   await prisma.timeEntry.deleteMany(mine);

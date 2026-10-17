@@ -31,6 +31,7 @@ async function world() {
     oauthCode: [{ user_id: "u1" }],
     timesheetShare: [{ user_id: "u1" }, { user_id: "u2" }],
     invoiceLink: [{ user_id: "u1" }, { user_id: "u2" }],
+    invoiceEmail: [{ user_id: "u1" }, { user_id: "u2" }],
   };
   const limiter = memoryRateLimit();
   const model = (name: string) => ({
@@ -52,6 +53,7 @@ async function world() {
     oauthCode: model("oauthCode"),
     timesheetShare: model("timesheetShare"),
     invoiceLink: model("invoiceLink"),
+    invoiceEmail: model("invoiceEmail"),
     authUser: {
       findUnique: vi.fn(
         async ({ where }: { where: { id?: string; email?: string } }) =>
@@ -87,6 +89,7 @@ describe("deleting your own account", () => {
       "oauthCode",
       "timesheetShare",
       "invoiceLink",
+      "invoiceEmail",
     ]) {
       expect(w.count(t, "u1"), t).toBe(0);
     }

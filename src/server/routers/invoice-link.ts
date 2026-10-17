@@ -2,15 +2,9 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { isDemoSession } from "@/lib/demo";
-import { hashToken, newToken } from "@/lib/email-token";
-import {
-  DEFAULT_LINK_EXPIRY_DAYS,
-  LINK_EXPIRY_DAYS,
-  linkStatus,
-  MAX_LIVE_LINKS,
-  MAX_LIVE_LINKS_PER_INVOICE,
-} from "@/lib/invoice-link";
+import { DEFAULT_LINK_EXPIRY_DAYS, LINK_EXPIRY_DAYS, linkStatus } from "@/lib/invoice-link";
 
+import { createInvoiceLink, LinkLimitError } from "../invoice-link";
 import { protectedProcedure, router } from "../trpc";
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
@@ -39,36 +33,12 @@ export const invoiceLinkRouter = router({
         select: { id: true },
       });
       if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Invoice not found." });
-      const now = nowSeconds();
-      const live = { revoked_at: null, expires_at: { gt: now } };
-      const [onInvoice, overall] = await Promise.all([
-        ctx.prisma.invoiceLink.count({ where: { user_id: ctx.userId, invoice_id: invoice.id, ...live } }),
-        ctx.prisma.invoiceLink.count({ where: { user_id: ctx.userId, ...live } }),
-      ]);
-      if (onInvoice >= MAX_LIVE_LINKS_PER_INVOICE) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `This invoice already has ${MAX_LIVE_LINKS_PER_INVOICE} live links. Turn one off first.`,
-        });
+      try {
+        return await createInvoiceLink(ctx.prisma, ctx.userId, invoice.id, input.expiresInDays);
+      } catch (err) {
+        if (err instanceof LinkLimitError) throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
+        throw err;
       }
-      if (overall >= MAX_LIVE_LINKS) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `You have ${MAX_LIVE_LINKS} live invoice links. Turn some off first.`,
-        });
-      }
-      const token = newToken();
-      const row = await ctx.prisma.invoiceLink.create({
-        data: {
-          user_id: ctx.userId,
-          invoice_id: invoice.id,
-          token_hash: await hashToken(token),
-          token_prefix: token.slice(0, 6),
-          expires_at: now + input.expiresInDays * 86_400,
-        },
-        select: { id: true },
-      });
-      return { id: row.id, token };
     }),
 
   /** The links on one invoice, newest first. */
