@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
 import { toast } from "sonner";
 
+import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ExportEverything } from "@/components/export-everything";
-import { FeedbackCard } from "@/components/feedback-card";
 import { SupportHourly } from "@/components/support-hourly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,39 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { fileToLogo } from "@/lib/logo";
 import { trpc } from "@/lib/trpc";
+
+const SECTIONS = [
+  { id: "account", label: "Your account" },
+  { id: "invoices", label: "Invoices" },
+  { id: "data", label: "Your data" },
+  { id: "ai", label: "AI assistants" },
+  { id: "support", label: "Support" },
+] as const;
+
+/** A labelled group of cards, so a long page reads as a few clear topics. */
+function Section({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: (typeof SECTIONS)[number]["id"];
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} aria-labelledby={`${id}-heading`} className="flex scroll-mt-20 flex-col gap-3">
+      <div className="border-b pb-2">
+        <h2 id={`${id}-heading`} className="font-semibold text-lg">
+          {title}
+        </h2>
+        <p className="text-muted-foreground text-sm">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export function AccountView() {
   const router = useRouter();
@@ -105,167 +138,204 @@ export function AccountView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <h1 className="font-semibold text-xl">Account</h1>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <h1 className="font-semibold text-xl">Account</h1>
+        <nav aria-label="Account sections" className="flex flex-wrap gap-2 text-sm">
+          {SECTIONS.map((x) => (
+            <a key={x.id} href={`#${x.id}`} className="rounded-full border px-3 py-1 hover:bg-muted">
+              {x.label}
+            </a>
+          ))}
+        </nav>
+      </div>
 
-      <form onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-        <h2 className="font-medium">Profile</h2>
-        <div className="grid gap-1.5">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" defaultValue={me.data.name ?? ""} required />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" value={me.data.email} disabled />
-          {me.data.email_verified_at ? (
-            <p className="text-emerald-700 text-xs dark:text-emerald-400">Email confirmed.</p>
-          ) : emailEnabled.data?.enabled ? (
-            <p className="text-muted-foreground text-xs">
-              Not confirmed yet.{" "}
-              {verificationSent ? (
-                "We sent you a link. Check your inbox."
-              ) : (
-                <button
-                  type="button"
-                  className="underline"
-                  disabled={sendVerification.isPending}
-                  onClick={async () => {
-                    try {
-                      await sendVerification.mutateAsync();
-                      setVerificationSent(true);
-                    } catch (err) {
-                      toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
-                    }
-                  }}
-                >
-                  Send me a confirmation email
-                </button>
-              )}
+      <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
+        <form onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <h3 className="font-medium">Name and email</h3>
+          <div className="grid gap-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" name="name" defaultValue={me.data.name ?? ""} required />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" value={me.data.email} disabled />
+            {me.data.email_verified_at ? (
+              <p className="text-emerald-700 text-xs dark:text-emerald-400">Email confirmed.</p>
+            ) : emailEnabled.data?.enabled ? (
+              <p className="text-muted-foreground text-xs">
+                Not confirmed yet.{" "}
+                {verificationSent ? (
+                  "We sent you a link. Check your inbox."
+                ) : (
+                  <button
+                    type="button"
+                    className="underline"
+                    disabled={sendVerification.isPending}
+                    onClick={async () => {
+                      try {
+                        await sendVerification.mutateAsync();
+                        setVerificationSent(true);
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
+                      }
+                    }}
+                  >
+                    Send me a confirmation email
+                  </button>
+                )}
+              </p>
+            ) : null}
+          </div>
+          <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
+            Save
+          </Button>
+        </form>
+
+        <form onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <div>
+            <h3 className="font-medium">Change password</h3>
+            <p className="text-muted-foreground text-sm">
+              Changing it signs out your other devices and stops any AI assistant access tokens.
             </p>
-          ) : null}
-        </div>
-        <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
-          Save
-        </Button>
-      </form>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="current">Current password</Label>
+            <Input id="current" name="current" type="password" autoComplete="current-password" required />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="next">New password</Label>
+            <Input id="next" name="next" type="password" autoComplete="new-password" minLength={8} required />
+          </div>
+          <Button type="submit" className="self-start" disabled={changePassword.isPending}>
+            Change password
+          </Button>
+        </form>
 
-      <form onSubmit={saveBusiness} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-        <div>
-          <h2 className="font-medium">Business details</h2>
-          <p className="text-muted-foreground text-sm">Printed on the invoices you send to clients.</p>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="businessName">Business name</Label>
-          <Input
-            id="businessName"
-            name="businessName"
-            defaultValue={me.data.business_name ?? ""}
-            placeholder={me.data.name ?? "Your name or company"}
-            maxLength={100}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="ein">EIN</Label>
-          <Input id="ein" name="ein" defaultValue={me.data.ein ?? ""} placeholder="12-3456789" inputMode="numeric" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="address">Address</Label>
-          <Textarea
-            id="address"
-            name="address"
-            defaultValue={me.data.address ?? ""}
-            placeholder={"123 Main St\nSpringfield, IL 62701"}
-            rows={3}
-            maxLength={300}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="paymentInstructions">How to pay</Label>
-          <Textarea
-            id="paymentInstructions"
-            name="paymentInstructions"
-            defaultValue={me.data.payment_instructions ?? ""}
-            placeholder={"Pay by ACH\nAccount name: …\nRouting number: …\nAccount number: …"}
-            rows={4}
-            maxLength={500}
-          />
-          <p className="text-muted-foreground text-xs">Printed on every invoice. Leave empty to print nothing.</p>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="logo">Logo</Label>
-          <div className="flex items-center gap-3">
-            <div className="flex h-16 w-32 items-center justify-center rounded-lg border bg-white">
-              {logo ? (
-                // biome-ignore lint/performance/noImgElement: a data: URL preview, nothing to optimize
-                <img src={logo} alt="Logo preview" className="max-h-full max-w-full object-contain" />
-              ) : (
-                <span className="text-muted-foreground text-xs">No logo</span>
-              )}
-            </div>
-            <div className="flex flex-col items-start gap-1">
-              <Input id="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={pickLogo} />
-              {logo && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => setLogo(null)}>
-                  Remove logo
-                </Button>
-              )}
+        <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <div>
+            <h3 className="font-medium">Sign out</h3>
+            <p className="text-muted-foreground text-sm">
+              Log out here, or on every device at once. Signing out everywhere also stops every AI assistant access
+              token.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
+              Log out
+            </Button>
+            <Button
+              variant="outline"
+              disabled={signOutEverywhere.isPending}
+              onClick={async () => {
+                try {
+                  await signOutEverywhere.mutateAsync();
+                  await signOut({ callbackUrl: "/auth/v2/login" });
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Couldn't sign out your other devices.");
+                }
+              }}
+            >
+              Log out on all devices
+            </Button>
+          </div>
+        </section>
+      </Section>
+
+      <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
+        <form onSubmit={saveBusiness} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <div>
+            <h3 className="font-medium">Business details</h3>
+            <p className="text-muted-foreground text-sm">Printed on the invoices you send to clients.</p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="businessName">Business name</Label>
+            <Input
+              id="businessName"
+              name="businessName"
+              defaultValue={me.data.business_name ?? ""}
+              placeholder={me.data.name ?? "Your name or company"}
+              maxLength={100}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="ein">EIN</Label>
+            <Input id="ein" name="ein" defaultValue={me.data.ein ?? ""} placeholder="12-3456789" inputMode="numeric" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              name="address"
+              defaultValue={me.data.address ?? ""}
+              placeholder={"123 Main St\nSpringfield, IL 62701"}
+              rows={3}
+              maxLength={300}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="paymentInstructions">How to pay</Label>
+            <Textarea
+              id="paymentInstructions"
+              name="paymentInstructions"
+              defaultValue={me.data.payment_instructions ?? ""}
+              placeholder={"Pay by ACH\nAccount name: …\nRouting number: …\nAccount number: …"}
+              rows={4}
+              maxLength={500}
+            />
+            <p className="text-muted-foreground text-xs">Printed on every invoice. Leave empty to print nothing.</p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="logo">Logo</Label>
+            <div className="flex items-center gap-3">
+              <div className="flex h-16 w-32 items-center justify-center rounded-lg border bg-white">
+                {logo ? (
+                  // biome-ignore lint/performance/noImgElement: a data: URL preview, nothing to optimize
+                  <img src={logo} alt="Logo preview" className="max-h-full max-w-full object-contain" />
+                ) : (
+                  <span className="text-muted-foreground text-xs">No logo</span>
+                )}
+              </div>
+              <div className="flex flex-col items-start gap-1">
+                <Input id="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={pickLogo} />
+                {logo && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setLogo(null)}>
+                    Remove logo
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <Button type="submit" className="self-start" disabled={updateBusiness.isPending}>
-          Save business details
-        </Button>
-      </form>
+          <Button type="submit" className="self-start" disabled={updateBusiness.isPending}>
+            Save business details
+          </Button>
+        </form>
+      </Section>
 
-      <form onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-        <h2 className="font-medium">Change password</h2>
-        <div className="grid gap-1.5">
-          <Label htmlFor="current">Current password</Label>
-          <Input id="current" name="current" type="password" autoComplete="current-password" required />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="next">New password</Label>
-          <Input id="next" name="next" type="password" autoComplete="new-password" minLength={8} required />
-        </div>
-        <Button type="submit" className="self-start" disabled={changePassword.isPending}>
-          Change password
-        </Button>
-      </form>
+      <Section id="data" title="Your data" description="Keep a copy of everything you have logged.">
+        <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <div>
+            <h3 className="font-medium">Download everything</h3>
+            <p className="text-muted-foreground text-sm">
+              Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook,
+              one per client, and plain CSV files.
+            </p>
+          </div>
+          <ExportEverything className="self-start" />
+        </section>
+      </Section>
 
-      <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-        <div>
-          <h2 className="font-medium">Your data</h2>
-          <p className="text-muted-foreground text-sm">
-            Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook, one
-            per client, and plain CSV files.
-          </p>
-        </div>
-        <ExportEverything className="self-start" />
-      </section>
+      <Section
+        id="ai"
+        title="AI assistants"
+        description="Let an assistant such as Claude read your time, log new entries and prepare invoices."
+      >
+        <ApiTokensCard />
+      </Section>
 
-      <FeedbackCard />
-
-      <SupportHourly />
-
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
-          Log out
-        </Button>
-        <Button
-          variant="outline"
-          disabled={signOutEverywhere.isPending}
-          onClick={async () => {
-            try {
-              await signOutEverywhere.mutateAsync();
-              await signOut({ callbackUrl: "/auth/v2/login" });
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't sign out your other devices.");
-            }
-          }}
-        >
-          Log out on all devices
-        </Button>
-      </div>
+      <Section id="support" title="Support" description="UseHourly is free. If it saves you time, you can chip in.">
+        <SupportHourly />
+      </Section>
     </div>
   );
 }

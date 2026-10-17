@@ -2,6 +2,15 @@ import { TRPCError } from "@trpc/server";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 
+import {
+  EXPIRY_CHOICES,
+  expiryToEpoch,
+  hashApiToken,
+  MAX_TOKENS_PER_USER,
+  newApiToken,
+  tokenPrefix,
+  tokenState,
+} from "@/lib/api-token";
 import { normalizeEmail } from "@/lib/email";
 import { hashToken, newToken, RESET_TTL_SECONDS, VERIFY_TTL_SECONDS } from "@/lib/email-token";
 import { resetPasswordMessage, verifyEmailMessage } from "@/lib/mailer";
@@ -271,6 +280,74 @@ export const accountRouter = router({
   /** Sign out every device, including this one. */
   signOutEverywhere: protectedProcedure.mutation(async ({ ctx }) => {
     await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { token_version: { increment: 1 } } });
+    return { ok: true };
+  }),
+
+  // ---- Access tokens for the MCP server (/api/mcp). Only a signed-in browser session can reach
+  // these; no MCP tool exposes them, so a token can never mint or revoke tokens.
+
+  /** The user's tokens, newest first. The secret is never returned again after it is made. */
+  listApiTokens: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.prisma.apiToken.findMany({
+      where: { user_id: ctx.userId },
+      orderBy: { created_at: "desc" },
+      select: {
+        id: true,
+        name: true,
+        prefix: true,
+        access: true,
+        expires_at: true,
+        last_used_at: true,
+        revoked_at: true,
+        created_at: true,
+      },
+    });
+    return rows.map((r) => ({ ...r, state: tokenState(r) }));
+  }),
+
+  /** Make a token. The returned `token` is shown once and only its hash is kept. */
+  createApiToken: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().trim().min(1, 'Give the token a name, like "Claude Code".').max(60),
+        access: z.enum(["read", "write"]),
+        expires: z.enum(EXPIRY_CHOICES.map((c) => c.key) as [string, ...string[]]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const live = await ctx.prisma.apiToken.count({ where: { user_id: ctx.userId, revoked_at: null } });
+      if (live >= MAX_TOKENS_PER_USER) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `You can have ${MAX_TOKENS_PER_USER} active tokens. Revoke one you no longer use first.`,
+        });
+      }
+      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { token_version: true } });
+      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
+
+      const token = newApiToken();
+      const row = await ctx.prisma.apiToken.create({
+        data: {
+          user_id: ctx.userId,
+          name: input.name,
+          token_hash: await hashApiToken(token),
+          prefix: tokenPrefix(token),
+          access: input.access,
+          token_version: user.token_version,
+          expires_at: expiryToEpoch(input.expires as (typeof EXPIRY_CHOICES)[number]["key"]),
+        },
+        select: { id: true, name: true, prefix: true, access: true, expires_at: true },
+      });
+      return { ...row, token };
+    }),
+
+  /** Stop a token from working, now. It stays in the list as "revoked". */
+  revokeApiToken: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    const { count } = await ctx.prisma.apiToken.updateMany({
+      where: { id: input.id, user_id: ctx.userId, revoked_at: null },
+      data: { revoked_at: nowSeconds() },
+    });
+    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Token not found." });
     return { ok: true };
   }),
 });
