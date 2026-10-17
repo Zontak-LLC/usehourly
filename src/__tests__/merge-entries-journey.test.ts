@@ -110,3 +110,35 @@ describe("merge several entries from one day into one", () => {
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
   });
 });
+
+describe("finding days to merge across a week or month", () => {
+  const e = (id: string, date: string, project_id: string, minutes = 30) => ({
+    id,
+    date,
+    project_id,
+    minutes,
+    note: id,
+    started_at: null,
+  });
+
+  it("lists only (day, project) pairs with 2+ entries, oldest first", async () => {
+    const { findMergeGroups } = await import("@/lib/merge-entries");
+    const groups = findMergeGroups([
+      e("a", "2026-10-16", "p1"),
+      e("b", "2026-10-14", "p1"),
+      e("c", "2026-10-16", "p1"),
+      e("d", "2026-10-16", "p2"), // same day, other project: not a pair
+      e("f", "2026-10-14", "p1"),
+      e("g", "2026-10-14", "p1"),
+    ]);
+    expect(groups.map((g) => [g.date, g.projectId, g.entries.map((x) => x.id)])).toEqual([
+      ["2026-10-14", "p1", ["b", "f", "g"]],
+      ["2026-10-16", "p1", ["a", "c"]],
+    ]);
+  });
+
+  it("returns nothing when every day has one entry per project", async () => {
+    const { findMergeGroups } = await import("@/lib/merge-entries");
+    expect(findMergeGroups([e("a", "2026-10-14", "p1"), e("b", "2026-10-15", "p1")])).toEqual([]);
+  });
+});

@@ -6,6 +6,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { DayEditorDialog } from "@/components/day-editor";
 import { ExportButton } from "@/components/export-button";
+import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { RangeExport } from "@/components/range-export";
 import { Button } from "@/components/ui/button";
@@ -284,6 +285,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
               </table>
             )}
           </div>
+
+          <MergeDaysPanel entries={shown} />
 
           {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
           <WorkItems key={`${first}-${projectId}`} entries={shown} onOpenDay={setEditDate} period="month" />

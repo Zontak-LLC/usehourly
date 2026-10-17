@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { DayEditorDialog } from "@/components/day-editor";
 import { ExportButton } from "@/components/export-button";
+import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { RangeExport } from "@/components/range-export";
@@ -322,6 +323,8 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
           </select>
         </div>
       )}
+
+      {!entries.isLoading && !entries.error && <MergeDaysPanel entries={shown} />}
 
       {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
       {!entries.isLoading && !entries.error && (
