@@ -40,7 +40,7 @@ export function SetupForm({ clientId, onDone }: { clientId?: string; onDone?: (p
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
       {!clientId && <Input name="client" placeholder="Client (e.g. Acme)" required className="w-44" autoFocus />}
       <Input name="project" placeholder="Project (e.g. Website)" required className="w-44" autoFocus={!!clientId} />
       <Input name="rate" type="number" min="0" step="0.01" placeholder="Rate $/h" className="w-28" />

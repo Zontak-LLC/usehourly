@@ -31,6 +31,8 @@ const csp = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Development only: lets a second browser session on 127.0.0.1 (separate cookies from localhost) load the app's scripts.
+  allowedDevOrigins: ["127.0.0.1"],
   reactCompiler: true,
   // Do not announce the framework in an X-Powered-By header.
   poweredByHeader: false,

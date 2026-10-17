@@ -162,7 +162,7 @@ export function AccountView() {
         {me.data.is_demo ? (
           <ClaimDemoCard />
         ) : (
-          <form onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <form method="post" onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
             <h3 className="font-medium">Name and email</h3>
             <div className="grid gap-1.5">
               <Label htmlFor="name">Name</Label>
@@ -214,7 +214,7 @@ export function AccountView() {
           </div>
         )}
         {!me.data.is_demo && me.data.has_password && (
-          <form onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <form method="post" onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
             <div>
               <h3 className="font-medium">Change password</h3>
               <p className="text-muted-foreground text-sm">
@@ -309,7 +309,7 @@ export function AccountView() {
       </Section>
 
       <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
-        <form onSubmit={saveBusiness} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+        <form method="post" onSubmit={saveBusiness} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
             <h3 className="font-medium">Business details</h3>
             <p className="text-muted-foreground text-sm">Printed on the invoices you send to clients.</p>

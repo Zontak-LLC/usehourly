@@ -125,7 +125,7 @@ export function QuickAdd({
         Add to the day <span className="font-normal text-muted-foreground">· {dayLabel}</span>
       </h2>
 
-      <form onSubmit={submit} className="flex flex-col gap-3">
+      <form method="post" onSubmit={submit} className="flex flex-col gap-3">
         {onlyProject ? (
           <p className="text-base">
             {onlyClient?.name} · {onlyProject.name}

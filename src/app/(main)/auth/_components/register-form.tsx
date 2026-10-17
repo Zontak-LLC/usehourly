@@ -89,7 +89,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-1.5">
         <Label htmlFor="name">Name</Label>
         <Input id="name" name="name" autoComplete="name" autoFocus required />

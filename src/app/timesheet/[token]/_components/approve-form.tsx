@@ -30,7 +30,7 @@ export function ApproveForm({ token }: { token: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 rounded-xl border bg-card p-4 print:hidden">
+    <form method="post" onSubmit={submit} className="flex flex-col gap-3 rounded-xl border bg-card p-4 print:hidden">
       <div>
         <h2 className="font-semibold text-base">Do these hours look right?</h2>
         <p className="text-muted-foreground text-sm">
