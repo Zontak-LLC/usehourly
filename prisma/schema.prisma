@@ -145,6 +145,8 @@ model Invoice {
   notes         String   @default("")
   snapshot      String
   search_text   String
+  // One line on what the work was (see lib/invoice-summary.ts); empty = not computed yet.
+  summary       String   @default("")
   // Opt-in: remind the client when this invoice is overdue (one day after the due date and again a week after).
   remind_overdue Boolean @default(false)
   reminders_sent Int     @default(0)

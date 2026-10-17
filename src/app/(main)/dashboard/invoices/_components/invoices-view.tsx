@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { CircleCheck, Download, Ellipsis, FileText, Plus, Search, Send, Trash2 } from "lucide-react";
+import { CircleAlert, CircleCheck, Download, Ellipsis, FileText, Plus, Search, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
@@ -159,11 +159,26 @@ export function InvoicesView() {
   const statusOf = (i: Row) => (
     <>
       {i.paid_date ? (
-        <span className="text-success">Paid {fmt(i.paid_date)}</span>
+        <span className="inline-flex items-center gap-1.5 text-success">
+          <CircleCheck aria-hidden className="size-4 shrink-0" />
+          Paid {fmt(i.paid_date)}
+        </span>
       ) : today && i.due_date && i.due_date < today ? (
-        <span className="text-destructive">Overdue · due {fmt(i.due_date)}</span>
+        <span className="inline-flex items-center gap-1.5 text-destructive">
+          <CircleAlert aria-hidden className="size-4 shrink-0" />
+          Overdue · <strong className="font-semibold">due {fmt(i.due_date)}</strong>
+        </span>
       ) : (
-        <span className="text-muted-foreground">Unpaid{i.due_date ? ` · due ${fmt(i.due_date)}` : ""}</span>
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <CircleAlert aria-hidden className="size-4 shrink-0 text-destructive" />
+          Unpaid
+          {i.due_date && (
+            <>
+              {" "}
+              · <strong className="font-semibold text-foreground">due {fmt(i.due_date)}</strong>
+            </>
+          )}
+        </span>
       )}
     </>
   );
@@ -328,67 +343,29 @@ export function InvoicesView() {
         </div>
       ) : (
         <>
-          <ul className="flex flex-col gap-3 md:hidden">
+          <ul className="flex flex-col gap-3">
             {invoices.data?.map((i) => (
-              <li key={i.id} className="rounded-xl border bg-card p-4">
+              <li key={i.id} className="flex flex-col gap-2 rounded-xl border bg-card px-4 py-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-semibold">{i.number}</span>
-                  <span className="font-medium font-mono tabular-nums">{formatMoney(i.total_cents)}</span>
+                  <p className="min-w-0 truncate">
+                    <span className="font-semibold">{i.number}</span>
+                    <span className="text-muted-foreground"> · {i.client_name}</span>
+                  </p>
+                  <p className="shrink-0 font-semibold font-mono text-lg tabular-nums">{formatMoney(i.total_cents)}</p>
                 </div>
-                <p className="mt-0.5">{i.client_name}</p>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {fmt(i.period_from)} – {fmt(i.period_to)}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Issued {fmt(i.issue_date)} · {formatDecimalHours(i.total_minutes)} h
-                </p>
-                <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
-                  <p className="min-w-0 text-sm">{statusOf(i)}</p>
+                {i.summary && <p className="line-clamp-2 break-words text-sm">{i.summary}</p>}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">
+                  <p className="text-sm">{statusOf(i)}</p>
+                  <p className="min-w-0 flex-1 text-muted-foreground text-xs">
+                    {fmt(i.period_from)} – {fmt(i.period_to)} · {formatDecimalHours(i.total_minutes)} h · issued{" "}
+                    {fmt(i.issue_date)}
+                  </p>
                   <div className="flex shrink-0">{actionsOf(i)}</div>
                 </div>
               </li>
             ))}
             <li className="rounded-xl border bg-card">{summary}</li>
           </ul>
-          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="px-4 py-2 font-normal">Invoice</th>
-                  <th className="px-4 py-2 font-normal">Client</th>
-                  <th className="px-4 py-2 font-normal">Period</th>
-                  <th className="px-4 py-2 font-normal">Issued</th>
-                  <th className="px-4 py-2 text-right font-normal">Hours</th>
-                  <th className="px-4 py-2 text-right font-normal">Total</th>
-                  <th className="px-4 py-2 font-normal">Status</th>
-                  <th className="w-32" />
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.data?.map((i) => (
-                  <tr key={i.id} className="border-b last:border-0">
-                    <td className="px-4 py-2.5 font-medium">{i.number}</td>
-                    <td className="px-4 py-2.5">{i.client_name}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground">
-                      {fmt(i.period_from)} – {fmt(i.period_to)}
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{fmt(i.issue_date)}</td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-                      {formatDecimalHours(i.total_minutes)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-medium font-mono tabular-nums">
-                      {formatMoney(i.total_cents)}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs">{statusOf(i)}</td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex justify-end">{actionsOf(i)}</div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="border-t">{summary}</div>
-          </div>
         </>
       )}
 

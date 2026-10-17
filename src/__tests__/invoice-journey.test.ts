@@ -703,3 +703,31 @@ describe("one account cannot use invoices to fill the shared database", () => {
     expect(prisma.logoRows).toHaveLength(0);
   });
 });
+
+describe("invoice summary line", () => {
+  it("lists the first distinct descriptions, then 'more'; falls back to projects and hours", async () => {
+    const { summarizeInvoice } = await import("@/lib/invoice-summary");
+    const line = { projectId: "p1", project: "Website", minutes: 135, rateCents: 10000, amountCents: 22500 };
+    const row = (note: string) => ({ date: "2026-10-02", project: "Website", note, minutes: 30 });
+    expect(
+      summarizeInvoice({
+        lines: [line],
+        detail: [
+          row("- Homepage hero\nmore text"),
+          row("homepage hero"),
+          row("Nav fixes"),
+          row("A"),
+          row("B"),
+          row("C"),
+        ],
+      }),
+    ).toBe("Homepage hero · Nav fixes · A · +2 more");
+    expect(summarizeInvoice({ lines: [line], detail: [row("  "), row("")] })).toBe("Website 2.25 h");
+  });
+
+  it("stores the summary when an invoice is created", async () => {
+    const prisma = mockPrisma();
+    await asCaller(prisma, "u1").invoice.create(input);
+    expect(prisma.invoice.create.mock.calls[0][0].data).toMatchObject({ summary: "homepage hero · nav fixes" });
+  });
+});
