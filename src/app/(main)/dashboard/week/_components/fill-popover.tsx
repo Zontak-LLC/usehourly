@@ -5,10 +5,10 @@ import { useState } from "react";
 import { Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
 import { fromISODate } from "@/lib/dates";
 import { parseDuration } from "@/lib/duration";
 import type { Cell } from "@/lib/timesheet";
@@ -90,13 +90,12 @@ export function FillPopover({
           placeholder="8 · 7.5 · 6:30"
           autoFocus
         />
-        <Textarea
+        <NoteTextarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={setNote}
           placeholder="What did you work on? (same description on every day)"
           aria-label="Description of work"
           rows={2}
-          maxLength={500}
           className="resize-none"
         />
         <div className="flex flex-wrap gap-1">

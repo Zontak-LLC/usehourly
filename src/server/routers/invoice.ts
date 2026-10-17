@@ -137,6 +137,7 @@ export const invoiceRouter = router({
           dueDate: dateSchema.nullable().optional(),
           notes: z.string().trim().max(1000).default(""),
           includeDetail: z.boolean().default(true),
+          compactNotes: z.boolean().default(false),
         })
         .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." }),
     )
@@ -180,6 +181,7 @@ export const invoiceRouter = router({
         periodTo: input.to,
         notes: input.notes,
         includeDetail: input.includeDetail,
+        compactNotes: input.compactNotes,
         lines: totals.lines,
         detail: totals.detail,
         totalMinutes: totals.totalMinutes,

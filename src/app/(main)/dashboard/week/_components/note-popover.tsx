@@ -5,10 +5,10 @@ import { useState } from "react";
 import { StickyNote } from "lucide-react";
 import { toast } from "sonner";
 
+import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
 import { parseDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
 
@@ -93,9 +93,9 @@ export function NotePopover({
             aria-label="Hours"
           />
         )}
-        <Textarea
+        <NoteTextarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={setNote}
           onKeyDown={(e) => {
             // Enter saves (fast path); Shift+Enter adds a line break.
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -106,7 +106,6 @@ export function NotePopover({
           placeholder="What did you work on?"
           aria-label="Description of work"
           rows={3}
-          maxLength={500}
           autoFocus
         />
         <div className="flex items-center justify-between gap-2">

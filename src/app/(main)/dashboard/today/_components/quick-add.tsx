@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Play } from "lucide-react";
 import { toast } from "sonner";
 
+import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { Textarea } from "@/components/ui/textarea";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { trpc } from "@/lib/trpc";
@@ -153,9 +153,9 @@ export function QuickAdd({ date, timerRunning }: { date: string; timerRunning: b
             <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-muted-foreground" />
           </div>
         )}
-        <Textarea
+        <NoteTextarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={setNote}
           onKeyDown={(e) => {
             // Enter adds the typed time, or starts the timer when no time is typed.
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -168,7 +168,6 @@ export function QuickAdd({ date, timerRunning }: { date: string; timerRunning: b
           aria-label="Note"
           rows={1}
           className="min-h-11 resize-none py-2.5 text-base"
-          maxLength={500}
         />
       </div>
 

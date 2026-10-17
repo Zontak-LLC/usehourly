@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -124,13 +125,14 @@ export function AddEntryPopover({
             className="w-32 font-mono"
             autoFocus
           />
-          <Input
+          <NoteTextarea
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={setNote}
             onKeyDown={onEnter}
             placeholder="What did you work on?"
             aria-label="Description of work"
-            maxLength={500}
+            rows={1}
+            className="min-h-9 resize-none py-1.5"
           />
         </div>
         <div className="flex items-center justify-between gap-2">

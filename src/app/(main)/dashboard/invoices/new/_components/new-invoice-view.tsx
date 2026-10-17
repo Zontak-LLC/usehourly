@@ -35,6 +35,7 @@ export function NewInvoiceView() {
   const [netDays, setNetDays] = useState("30");
   const [notes, setNotes] = useState("");
   const [includeDetail, setIncludeDetail] = useState(true);
+  const [compactNotes, setCompactNotes] = useState(false);
 
   useEffect(() => {
     const t = toISODate(new Date());
@@ -81,6 +82,7 @@ export function NewInvoiceView() {
         dueDate: Number.isFinite(days) && days >= 0 ? addDays(today, days) : null,
         notes,
         includeDetail,
+        compactNotes,
       });
       await utils.invoice.list.invalidate();
       try {
@@ -193,6 +195,15 @@ export function NewInvoiceView() {
                 className="size-4"
               />
               Include day-by-day time detail
+            </label>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm">
+              <input
+                type="checkbox"
+                checked={compactNotes}
+                onChange={(e) => setCompactNotes(e.target.checked)}
+                className="size-4"
+              />
+              Short descriptions on the summary (full text stays in the time detail)
             </label>
             <div className="grid gap-1.5 sm:col-span-2">
               <Label htmlFor="notes">Notes / payment terms</Label>

@@ -142,7 +142,7 @@ describe("daily time entry journey", () => {
 
     // A note over the 500-character limit is rejected and nothing is written.
     prisma.timeEntry.update.mockClear();
-    await expect(asCaller(prisma, "u1").entry.update({ id: "e1", note: "x".repeat(501) })).rejects.toThrow();
+    await expect(asCaller(prisma, "u1").entry.update({ id: "e1", note: "x".repeat(2001) })).rejects.toThrow();
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
   });
 

@@ -1,6 +1,7 @@
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
+import { shortNote } from "@/lib/notes";
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric" });
 const fmtDate = (iso: string) => dateFmt.format(fromISODate(iso));
@@ -166,8 +167,11 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
     const seen = new Set<string>();
     const notes: string[] = [];
     for (const d of s.detail) {
-      const n = d.note.trim();
-      if (d.project !== l.project || !n || seen.has(n.toLowerCase())) continue;
+      const full = d.note.trim();
+      if (d.project !== l.project || !full) continue;
+      // Compact mode shortens first, so two notes that start alike collapse into one line.
+      const n = s.compactNotes ? shortNote(full) : full;
+      if (seen.has(n.toLowerCase())) continue;
       seen.add(n.toLowerCase());
       notes.push(n);
     }
