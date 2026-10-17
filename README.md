@@ -14,7 +14,21 @@
 - **Invoices.** Turn billable hours into a PDF invoice, track paid and unpaid, re-download any time.
 - **Annual report.** Hours, earnings, invoiced and received by quarter and month, ready for your accountant.
 - **Export.** Excel for any week, month or custom date range (for example March 3 to April 20), and one zip with everything: every client, all time.
+- **Try it first.** "Try it with sample data" on the home page opens a throwaway account filled with a month of work. No sign-up; keep it with one click if you like it.
+- **Switching from Toggl or Clockify?** Import their CSV export from the Account page. Clients and projects are created for you, and importing the same file twice adds nothing.
+- **Works with AI assistants (MCP).** Claude, Claude Code and other MCP clients can log time, start timers and create invoices for you. See below.
+- **Free calculator.** [Hours calculator](https://usehourly.app/tools/hours-calculator): add up times and get decimal hours, no account needed.
 - **Your data is yours.** Per-user isolation; everything you log can be exported at any time.
+
+## Use it from Claude (MCP server)
+
+UseHourly runs a remote [Model Context Protocol](https://modelcontextprotocol.io) server at `https://usehourly.app/api/mcp` (Streamable HTTP). It has 30 tools for projects, clients, time entries, timers, invoices and reports; each one runs as you, so it only sees your own data. Create a token on Account > AI assistants (read-only or read and write, with an expiry), then:
+
+```bash
+claude mcp add --transport http usehourly https://usehourly.app/api/mcp --header "Authorization: Bearer <your token>"
+```
+
+Then ask: "Log 2 hours on the Acme website for yesterday" or "Make an invoice for Acme for September."
 
 ## Stack
 
