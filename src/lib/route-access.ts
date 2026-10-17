@@ -6,6 +6,7 @@
  *   to their day, so returning users never see the sales page.
  * - `/auth/*` are the log-in and create-account pages: public, but pointless once signed in.
  * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off` and the app manifest are public for everyone, signed in or not.
+ * - `/.well-known/*` is public (the MCP registry reads its domain-verification file there).
  * - everything else needs a signed-in user.
  */
 export type AccessDecision = "allow" | "to-login" | "to-dashboard";
@@ -25,7 +26,7 @@ const PUBLIC_FOR_EVERYONE = new Set([
 ]);
 
 export function accessDecision(pathname: string, signedIn: boolean): AccessDecision {
-  if (PUBLIC_FOR_EVERYONE.has(pathname)) return "allow";
+  if (PUBLIC_FOR_EVERYONE.has(pathname) || pathname.startsWith("/.well-known/")) return "allow";
   const isLanding = pathname === "/";
   const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
   if (signedIn) {

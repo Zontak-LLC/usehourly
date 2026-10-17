@@ -17,4 +17,8 @@ describe("the public hours calculator", () => {
     expect(accessDecision("/tools/hours-calculator", false)).toBe("allow");
     expect(accessDecision("/tools/hours-calculator", true)).toBe("allow");
   });
+
+  it("serves the registry's domain-verification file without signing in", () => {
+    expect(accessDecision("/.well-known/mcp-registry-auth", false)).toBe("allow");
+  });
 });
