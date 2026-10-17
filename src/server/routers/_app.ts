@@ -2,6 +2,7 @@ import { router } from "../trpc";
 import { accountRouter } from "./account";
 import { clientRouter } from "./client";
 import { entryRouter } from "./entry";
+import { insightsRouter } from "./insights";
 import { invoiceRouter } from "./invoice";
 import { oauthRouter } from "./oauth";
 import { projectRouter } from "./project";
@@ -17,6 +18,7 @@ export const appRouter = router({
   report: reportRouter,
   timeImport: timeImportRouter,
   oauth: oauthRouter,
+  insights: insightsRouter,
 });
 
 export type AppRouter = typeof appRouter;

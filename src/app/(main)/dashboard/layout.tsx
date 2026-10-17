@@ -10,6 +10,8 @@ import { DemoBanner } from "@/components/demo-banner";
 import { ThemeSync } from "@/components/theme-sync";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { UsageBeacon } from "@/components/usage-beacon";
+import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
@@ -28,7 +30,15 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   const dbUser = session?.user?.id
     ? await (await getPrisma()).authUser.findUnique({
         where: { id: session.user.id },
-        select: { name: true, email: true, token_version: true, theme_preset: true, theme_mode: true },
+        select: {
+          name: true,
+          email: true,
+          token_version: true,
+          theme_preset: true,
+          theme_mode: true,
+          email_verified_at: true,
+          is_demo: true,
+        },
       })
     : null;
   // Signed in with an old token (password changed, signed out everywhere, or the account is gone):
@@ -38,6 +48,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   }
   const user = { name: dbUser?.name ?? "You", email: dbUser?.email ?? "" };
   const savedTheme = readSavedTheme(dbUser ?? {});
+  const isAdmin = isAdminUser(dbUser);
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
   const [variant, collapsible] = await Promise.all([
@@ -54,7 +65,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         } as React.CSSProperties
       }
     >
-      <AppSidebar user={user} variant={variant} collapsible={collapsible} />
+      <AppSidebar user={user} isAdmin={isAdmin} variant={variant} collapsible={collapsible} />
       <SidebarInset
         className={cn(
           "[html[data-content-layout=centered]_&>*]:mx-auto",
@@ -65,6 +76,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           "min-w-0 overflow-x-clip",
         )}
       >
+        <UsageBeacon />
         <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
         {session?.user?.demo === true && <DemoBanner />}
         <header

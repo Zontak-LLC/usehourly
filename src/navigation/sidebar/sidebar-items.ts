@@ -1,4 +1,5 @@
 import {
+  Activity,
   BarChart3,
   CalendarDays,
   CalendarRange,
@@ -26,4 +27,9 @@ export const navLinks: NavLink[] = [
   { id: "invoices", title: "Invoices", url: "/dashboard/invoices", icon: FileText },
   { id: "clients", title: "My work", url: "/dashboard/clients", icon: Users },
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
+];
+
+/** Shown only to the site owner (see lib/admin.ts). */
+export const adminLinks: NavLink[] = [
+  { id: "insights", title: "Insights", url: "/dashboard/insights", icon: Activity, secondary: true },
 ];
