@@ -1,10 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { clientIpFrom } from "@/lib/client-ip";
 import { wwwAuthenticate } from "@/lib/oauth";
 import { hitRateLimit } from "@/lib/rate-limit";
 
 import { authenticateMcp } from "./auth";
-import { handleMcp, PARSE_ERROR } from "./protocol";
+import { handleMcp, MCP_MAX_BATCH, PARSE_ERROR } from "./protocol";
 
 /** One token may make this many calls a minute: plenty for an assistant, a stop for a runaway loop. */
 export const MCP_PER_TOKEN = { limit: 120, windowSeconds: 60 };
@@ -50,7 +51,7 @@ export async function handleMcpHttp(req: Request, prisma: PrismaClient, appUrl?:
     return json(403, { error: "Origin not allowed." });
   }
 
-  const outcome = await authenticateMcp(prisma, req.headers.get("authorization"), req.headers.get("cf-connecting-ip"));
+  const outcome = await authenticateMcp(prisma, req.headers.get("authorization"), clientIpFrom(req.headers));
   if (!outcome.ok) {
     return json(
       outcome.status,
@@ -62,20 +63,9 @@ export async function handleMcpHttp(req: Request, prisma: PrismaClient, appUrl?:
     );
   }
 
-  const rate = await hitRateLimit(
-    prisma,
-    `mcp:${outcome.auth.tokenId}`,
-    MCP_PER_TOKEN.limit,
-    MCP_PER_TOKEN.windowSeconds,
-  );
-  if (!rate.allowed) {
-    return json(
-      429,
-      { error: "Too many requests. Slow down a little." },
-      { "retry-after": String(rate.retryAfterSeconds) },
-    );
-  }
-
+  // Refuse an oversized body from its declared length before reading any of it.
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES)
+    return json(413, { error: "Request too large." });
   const text = await req.text();
   if (text.length > MAX_BODY_BYTES) return json(413, { error: "Request too large." });
   let body: unknown;
@@ -83,6 +73,24 @@ export async function handleMcpHttp(req: Request, prisma: PrismaClient, appUrl?:
     body = JSON.parse(text);
   } catch {
     return json(400, PARSE_ERROR);
+  }
+
+  // Every message in a batch counts, so a batch cannot multiply the limit.
+  const cost = Array.isArray(body) ? Math.min(Math.max(body.length, 1), MCP_MAX_BATCH + 1) : 1;
+  const rate = await hitRateLimit(
+    prisma,
+    `mcp:${outcome.auth.tokenId}`,
+    MCP_PER_TOKEN.limit,
+    MCP_PER_TOKEN.windowSeconds,
+    undefined,
+    cost,
+  );
+  if (!rate.allowed) {
+    return json(
+      429,
+      { error: "Too many requests. Slow down a little." },
+      { "retry-after": String(rate.retryAfterSeconds) },
+    );
   }
 
   const reply = await handleMcp(body, { prisma, auth: outcome.auth });

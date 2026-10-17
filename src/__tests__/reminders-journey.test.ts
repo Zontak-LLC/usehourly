@@ -41,6 +41,10 @@ const user = (id: string, over: Partial<U> = {}): U => ({
 
 function fakeDb(users: U[], entries: E[] = []) {
   const prisma = {
+    // The hourly job also sweeps old throttle counters and expired links; distinct counts show each is wired up.
+    rateLimit: { deleteMany: vi.fn(async () => ({ count: 7 })) },
+    emailToken: { deleteMany: vi.fn(async () => ({ count: 2 })) },
+    oauthCode: { deleteMany: vi.fn(async () => ({ count: 3 })) },
     authUser: {
       findMany: vi.fn(async ({ where, take }: { where: { id: { gt: string } }; take: number }) =>
         users
@@ -251,8 +255,20 @@ describe("the cron route and the unsubscribe link", () => {
   it("refuses anyone without the key, and says plainly when email isn't set up", async () => {
     expect((await call()).status).toBe(401);
     expect((await call("guess")).status).toBe(401);
+    const db = fakeDb([]);
+    vi.mocked(getPrisma).mockResolvedValue(db as never);
     const ok = await call(await cronToken(SECRET));
-    expect(await ok.json()).toEqual({ skipped: expect.stringContaining("Email is not set up") });
+    // No email service, so nothing is sent, but the housekeeping sweep still runs.
+    expect(await ok.json()).toEqual({
+      skipped: expect.stringContaining("Email is not set up"),
+      housekeeping: { rateLimits: 7, emailTokens: 2, oauthCodes: 3 },
+    });
+    const now = Math.floor(Date.now() / 1000);
+    expect(db.rateLimit.deleteMany).toHaveBeenCalledWith({ where: { reset_at: { lt: now - 3600 } } });
+    expect(db.emailToken.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 7 * 86400 } } });
+    expect(db.oauthCode.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 86400 } } });
+    // A request without the key never reaches the database.
+    expect(vi.mocked(db.rateLimit.deleteMany).mock.calls).toHaveLength(1);
   });
 
   it("sends through the email service with the one-click unsubscribe header when it is set up", async () => {
@@ -263,7 +279,13 @@ describe("the cron route and the unsubscribe link", () => {
     const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const res = await call(await cronToken(SECRET));
-    expect(await res.json()).toEqual({ considered: 1, due: 1, sent: 1, failed: 0 });
+    expect(await res.json()).toEqual({
+      considered: 1,
+      due: 1,
+      sent: 1,
+      failed: 0,
+      housekeeping: { rateLimits: 7, emailTokens: 2, oauthCodes: 3 },
+    });
     const payload = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, { body: string }])[1].body);
     expect(payload).toMatchObject({ to: "a-la@example.com", from: "UseHourly <hello@usehourly.app>" });
     expect(payload.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");

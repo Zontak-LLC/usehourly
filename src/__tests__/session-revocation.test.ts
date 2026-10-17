@@ -4,6 +4,8 @@ import { sessionStillValid } from "@/lib/session-version";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
+
 describe("signing out other devices", () => {
   it("accepts a token that matches the account and refuses one from before a password change", () => {
     expect(sessionStillValid(3, 3)).toBe(true);
@@ -24,6 +26,7 @@ describe("signing out other devices", () => {
   it("bumps the version when the password changes, so every older token dies", async () => {
     const { hash } = await import("bcryptjs");
     const prisma = {
+      ...memoryRateLimit(),
       authUser: {
         findUnique: vi.fn(async () => ({ id: "u1", password_hash: await hash("old-password", 4) })),
         update: vi.fn(async () => ({ id: "u1" })),

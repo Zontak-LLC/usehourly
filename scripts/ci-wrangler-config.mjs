@@ -34,7 +34,8 @@ const config = {
   ],
   vars: { AUTH_URL: appUrl, NEXT_PUBLIC_APP_URL: appUrl },
   triggers: { crons: ["0 * * * *"] },
-  workers_dev: true,
+  // The custom domain is the only public address; a second *.workers.dev origin only adds attack surface.
+  workers_dev: false,
 };
 if (process.env.CUSTOM_DOMAIN) config.routes = [{ pattern: process.env.CUSTOM_DOMAIN, custom_domain: true }];
 

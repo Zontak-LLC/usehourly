@@ -1,3 +1,4 @@
+import { clientIpFrom } from "@/lib/client-ip";
 import { CORS } from "@/lib/oauth";
 import { getPrisma } from "@/lib/prisma";
 import { registerClient } from "@/server/oauth";
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       headers,
     });
   }
-  const result = await registerClient(await getPrisma(), body, req.headers.get("cf-connecting-ip"));
+  const result = await registerClient(await getPrisma(), body, clientIpFrom(req.headers));
   if ("error" in result) {
     const { status, ...err } = result;
     return new Response(JSON.stringify(err), { status: status ?? 400, headers });

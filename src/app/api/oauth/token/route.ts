@@ -1,3 +1,4 @@
+import { clientIpFrom } from "@/lib/client-ip";
 import { CORS } from "@/lib/oauth";
 import { getPrisma } from "@/lib/prisma";
 import { exchangeCode, type TokenRequest } from "@/server/oauth";
@@ -19,9 +20,11 @@ export async function POST(req: Request) {
   }
   let fields: Record<string, unknown> = {};
   try {
-    fields = (req.headers.get("content-type") ?? "").includes("json")
+    const parsed: unknown = (req.headers.get("content-type") ?? "").includes("json")
       ? JSON.parse(text)
       : Object.fromEntries(new URLSearchParams(text));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+    fields = parsed as Record<string, unknown>;
   } catch {
     return new Response(JSON.stringify({ error: "invalid_request", error_description: "Unreadable body." }), {
       status: 400,
@@ -36,7 +39,7 @@ export async function POST(req: Request) {
     client_id: str("client_id"),
     code_verifier: str("code_verifier"),
   };
-  const result = await exchangeCode(await getPrisma(), request, req.headers.get("cf-connecting-ip"));
+  const result = await exchangeCode(await getPrisma(), request, clientIpFrom(req.headers));
   if ("error" in result) {
     const { status, ...err } = result;
     return new Response(JSON.stringify(err), { status: status ?? 400, headers });

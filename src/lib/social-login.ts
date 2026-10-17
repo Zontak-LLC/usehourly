@@ -35,12 +35,14 @@ export type Known = {
   is_demo: boolean;
   /** The id already linked for this same provider, if any. */
   linkedId: string | null;
+  /** True when the account can sign in with a password (someone chose one, whoever that was). */
+  has_password: boolean;
 };
 
 export type SocialDecision =
   | { action: "sign-in"; userId: string }
   | { action: "link"; userId: string }
-  | { action: "take-over"; userId: string } // linked to an account whose address was never confirmed
+  | { action: "take-over"; userId: string } // an account with a password: the password is cleared
   | { action: "create" }
   | { action: "refuse"; reason: "other-account" | "no-verified-email" };
 
@@ -56,7 +58,14 @@ export function decideSocialSignIn(input: {
   if (!known) return { action: "create" };
   if (known.linkedId && known.linkedId !== input.providerId) return { action: "refuse", reason: "other-account" };
   if (known.is_demo) return { action: "refuse", reason: "other-account" };
-  return known.email_verified_at ? { action: "link", userId: known.id } : { action: "take-over", userId: known.id };
+  // An account that can sign in with a password is taken over even when its address was confirmed: anyone
+  // can register with someone else's address and pick the password, and a click on the confirmation
+  // email (or a mail scanner opening it) would otherwise leave that password alive next to the real
+  // owner's Google/GitHub sign-in. Only an account with no password (made through a provider) is
+  // simply linked.
+  return known.email_verified_at && !known.has_password
+    ? { action: "link", userId: known.id }
+    : { action: "take-over", userId: known.id };
 }
 
 /** A display name: the provider's name, else the username, else the part of the address before the @. */

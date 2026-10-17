@@ -207,7 +207,7 @@ describe("registering a client", () => {
       redirect_uris: [REDIRECT],
     });
     expect(JSON.stringify(res)).not.toContain("secret");
-    expect(db.clients[0].name).toBe("Evil  <b>App</b>");
+    expect(db.clients[0].name).toBe("Evil <b>App</b>");
   });
 
   it("refuses a bad body and creates nothing; limits registrations per connection", async () => {

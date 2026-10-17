@@ -222,11 +222,31 @@ describe("resetting a forgotten password", () => {
       code: "PRECONDITION_FAILED",
     });
     const c = w.caller({ ip: "203.0.113.5" });
-    for (let i = 0; i < 5; i++) await c.account.requestPasswordReset({ email: "jo@example.com" });
+    for (let i = 0; i < 3; i++) await c.account.requestPasswordReset({ email: "jo@example.com" });
+    // The fourth from the same connection for the same address is refused...
     await expect(c.account.requestPasswordReset({ email: "jo@example.com" })).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     });
-    expect(w.outbox).toHaveLength(5);
+    expect(w.outbox).toHaveLength(3);
+    // ...but that does not lock the real owner out: asking from another connection still works.
+    await w.caller({ ip: "198.51.100.7" }).account.requestPasswordReset({ email: "jo@example.com" });
+    expect(w.outbox).toHaveLength(4);
+  });
+
+  it("stops one connection from sweeping many addresses, and caps mail to one address overall", async () => {
+    const w = world([await user("u1")]);
+    const noisy = w.caller({ ip: "203.0.113.9" });
+    for (let i = 0; i < 5; i++) await noisy.account.requestPasswordReset({ email: `x${i}@example.com` });
+    await expect(noisy.account.requestPasswordReset({ email: "x6@example.com" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
+    // 20 requests for one address from 20 different places is the ceiling that stops mail-bombing.
+    for (let i = 0; i < 20; i++) {
+      await w.caller({ ip: `192.0.2.${i + 1}` }).account.requestPasswordReset({ email: "jo@example.com" });
+    }
+    await expect(
+      w.caller({ ip: "192.0.2.200" }).account.requestPasswordReset({ email: "jo@example.com" }),
+    ).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
   });
 
   it("rejects a short new password before touching anything", async () => {

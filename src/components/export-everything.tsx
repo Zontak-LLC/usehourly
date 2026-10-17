@@ -21,13 +21,23 @@ export function ExportEverything({
   const utils = trpc.useUtils();
   const [busy, setBusy] = useState(false);
 
+  /** Every entry, fetched a page at a time so no single response is huge. */
+  async function fetchAllEntries() {
+    const all: Awaited<ReturnType<typeof utils.entry.listAll.fetch>>["items"] = [];
+    let cursor: string | null = null;
+    for (let page = 0; page < 200; page++) {
+      const res: Awaited<ReturnType<typeof utils.entry.listAll.fetch>> = await utils.entry.listAll.fetch({ cursor });
+      all.push(...res.items);
+      if (!res.nextCursor) break;
+      cursor = res.nextCursor;
+    }
+    return all;
+  }
+
   async function run() {
     setBusy(true);
     try {
-      const [entries, invoices] = await Promise.all([
-        utils.entry.list.fetch({ from: "1900-01-01", to: "2999-12-31" }),
-        utils.invoice.list.fetch(),
-      ]);
+      const [entries, invoices] = await Promise.all([fetchAllEntries(), utils.invoice.list.fetch()]);
       const today = toISODate(new Date());
       const plan = await planExport({ entries, invoices, today });
       if (plan.entryCount === 0) {

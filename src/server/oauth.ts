@@ -5,6 +5,7 @@ import { newToken } from "@/lib/email-token";
 import {
   type Access,
   CODE_TTL_SECONDS,
+  cleanClientName,
   hashCode,
   MAX_CLIENTS,
   mcpResourceUrl,
@@ -85,7 +86,7 @@ export type AuthorizeCheck =
       requested: Access;
     }
   | { kind: "fatal"; message: string } // never redirect: the client or its address cannot be trusted
-  | { kind: "redirect"; url: string }; // the address is trusted, so the client is told what was wrong
+  | { kind: "redirect"; url: string; host: string }; // the address is trusted, so the client is told what was wrong
 
 /** Checks an authorization request. A bad client or redirect address is never redirected to. */
 export async function checkAuthorizeRequest(
@@ -109,6 +110,7 @@ export async function checkAuthorizeRequest(
   const fail = (error: string, description: string): AuthorizeCheck => ({
     kind: "redirect",
     url: withParams(p.redirect_uri as string, { error, error_description: description, state: p.state }),
+    host: redirectLabel(p.redirect_uri as string),
   });
   if (p.response_type !== "code") return fail("unsupported_response_type", "Only response_type=code is supported.");
   if (p.code_challenge_method !== "S256" || !validChallenge(p.code_challenge)) {
@@ -119,7 +121,7 @@ export async function checkAuthorizeRequest(
   return {
     kind: "ok",
     clientId: client.id,
-    clientName: client.name,
+    clientName: cleanClientName(client.name),
     redirectUri: p.redirect_uri,
     redirectHost: redirectLabel(p.redirect_uri),
     challenge: p.code_challenge as string,

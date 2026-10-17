@@ -30,6 +30,8 @@ const csp = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  // Do not announce the framework in an X-Powered-By header.
+  poweredByHeader: false,
   // Keep Prisma external so workerd resolves the bare specifier OpenNext bundles.
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
   compiler: {

@@ -1,14 +1,18 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { DATE_RE } from "@/lib/dates";
+import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { assertWithinQuota } from "@/lib/quotas";
 
+import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
 import { protectedProcedure, router } from "../trpc";
 
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD");
+const MAX_SNAPSHOT_CHARS = 900_000; // D1 rows top out at 2 MB; keep well under
+const MAX_SEARCH_CHARS = 50_000;
+
+const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 
 const summary = {
   id: true,
@@ -109,7 +113,7 @@ export const invoiceRouter = router({
       snapshot.seller = { ...snapshot.seller, paymentInstructions: user?.payment_instructions ?? null };
       await ctx.prisma.invoice.update({ where: { id: inv.id }, data: { snapshot: JSON.stringify(snapshot) } });
     }
-    return { id: inv.id, snapshot };
+    return { id: inv.id, snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot) };
   }),
 
   /** Suggested next number: INV-<year>-<n>, where n continues from the user's invoice count. */
@@ -141,7 +145,10 @@ export const invoiceRouter = router({
           includeDetail: z.boolean().default(true),
           compactNotes: z.boolean().default(false),
         })
-        .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." }),
+        .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
+        .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
+          message: `Choose a period of up to a year (${MAX_QUERY_DAYS} days).`,
+        }),
     )
     .mutation(async ({ ctx, input }) => {
       const client = await ctx.prisma.client.findFirst({ where: { id: input.clientId, user_id: ctx.userId } });
@@ -172,6 +179,8 @@ export const invoiceRouter = router({
       const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
 
+      const sellerLogoHash = await storeInvoiceLogo(ctx.prisma, ctx.userId, user.logo);
+      const clientLogoHash = await storeInvoiceLogo(ctx.prisma, ctx.userId, client.logo);
       const snapshot: InvoiceSnapshot = {
         seller: {
           name: user.business_name || user.name || user.email,
@@ -179,10 +188,17 @@ export const invoiceRouter = router({
           address: user.address,
           // A demo account has no real address, so the sample invoice shows an obvious placeholder.
           email: user.is_demo ? "you@yourbusiness.example" : user.email,
-          logo: user.logo,
+          logo: null, // stored once in invoice_logos and referenced by hash (see below)
+          logoHash: sellerLogoHash,
           paymentInstructions: user.payment_instructions,
         },
-        client: { name: client.name, legalName: client.legal_name, address: client.address, logo: client.logo },
+        client: {
+          name: client.name,
+          legalName: client.legal_name,
+          address: client.address,
+          logo: null,
+          logoHash: clientLogoHash,
+        },
         number: input.number,
         issueDate: input.issueDate,
         dueDate: input.dueDate ?? null,
@@ -198,6 +214,15 @@ export const invoiceRouter = router({
         totalCents: totals.totalCents,
       };
 
+      const snapshotText = JSON.stringify(snapshot);
+      if (snapshotText.length > MAX_SNAPSHOT_CHARS) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "That invoice has too much detail to store. Choose a shorter period, or turn off the time breakdown.",
+        });
+      }
+
       const created = await ctx.prisma.invoice.create({
         data: {
           user_id: ctx.userId,
@@ -211,12 +236,20 @@ export const invoiceRouter = router({
           total_minutes: totals.totalMinutes,
           total_cents: totals.totalCents,
           notes: input.notes,
-          snapshot: JSON.stringify(snapshot),
-          search_text: buildSearchText(snapshot),
+          snapshot: snapshotText,
+          search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),
         },
         select: { id: true },
       });
-      return { id: created.id, snapshot };
+      // The caller gets the logos back inline so it can draw the PDF at once.
+      return {
+        id: created.id,
+        snapshot: {
+          ...snapshot,
+          seller: { ...snapshot.seller, logo: user.logo },
+          client: { ...snapshot.client, logo: client.logo },
+        } as InvoiceSnapshot,
+      };
     }),
 
   /** Record when an invoice was paid, or pass `paidDate: null` to mark it unpaid again. */
@@ -232,8 +265,23 @@ export const invoiceRouter = router({
     }),
 
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    const row = await ctx.prisma.invoice.findFirst({
+      where: { id: input.id, user_id: ctx.userId },
+      select: { snapshot: true },
+    });
     const { count } = await ctx.prisma.invoice.deleteMany({ where: { id: input.id, user_id: ctx.userId } });
     if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Invoice not found." });
+    if (row) {
+      try {
+        await releaseUnusedInvoiceLogos(
+          ctx.prisma,
+          ctx.userId,
+          logoHashesOf(JSON.parse(row.snapshot) as InvoiceSnapshot),
+        );
+      } catch (e) {
+        console.error("invoice logo cleanup failed:", e); // the invoice is gone; a leftover logo is harmless
+      }
+    }
     return { ok: true };
   }),
 });

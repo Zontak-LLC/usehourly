@@ -20,6 +20,8 @@ import { ThemeSwitcher } from "./_components/header/theme-switcher";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   const session = await auth();
+  // The proxy already sends signed-out visitors away; this is the second lock on the same door.
+  if (!session?.user?.id) redirect("/auth/v2/login");
   // Read the name from the DB, not the JWT, so profile edits show up immediately.
   const dbUser = session?.user?.id
     ? await (await getPrisma()).authUser.findUnique({

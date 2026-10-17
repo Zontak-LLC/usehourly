@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
+
 const createCaller = createCallerFactory(appRouter);
 
 function mockPrisma() {
@@ -310,7 +312,8 @@ describe("member account", () => {
 
   it("changes password only when the current one matches, and stores a new hash", async () => {
     const { hash } = await import("bcryptjs");
-    const prisma = mockPrisma() as ReturnType<typeof mockPrisma> & { authUser: { update: ReturnType<typeof vi.fn> } };
+    const prisma = { ...mockPrisma(), ...memoryRateLimit() } as ReturnType<typeof mockPrisma> &
+      ReturnType<typeof memoryRateLimit> & { authUser: { update: ReturnType<typeof vi.fn> } };
     prisma.authUser.update = vi.fn();
     prisma.authUser.findUnique.mockResolvedValue({ id: "u1", password_hash: await hash("oldpassword", 4) });
     const c = asCaller(prisma, "u1");

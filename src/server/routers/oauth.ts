@@ -40,6 +40,7 @@ export const oauthRouter = router({
         kind: "ok" as const,
         clientName: check.clientName,
         redirectHost: check.redirectHost,
+        redirectUri: check.redirectUri,
         requested: check.requested,
         email: me.email,
       };

@@ -76,7 +76,7 @@ export async function authenticateMcp(
     ok: true,
     auth: {
       userId: row.user.id,
-      access: row.access === "read" ? "read" : "write",
+      access: row.access === "write" ? "write" : "read", // anything unexpected is read-only
       tokenId: row.id,
       tokenName: row.name,
     },

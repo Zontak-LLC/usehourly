@@ -14,7 +14,37 @@ export const MAX_CLIENTS = 20000;
 
 export type Access = "read" | "write";
 
-const BLOCKED_SCHEMES = new Set(["javascript", "data", "file", "vbscript", "blob", "about", "ftp", "ws", "wss"]);
+// Schemes that open other programs or pages instead of handing a code back to an app. Real MCP clients use
+// https, loopback http, or their own scheme (cursor://, vscode://), so everything else below is refused.
+const BLOCKED_SCHEMES = new Set([
+  "javascript",
+  "data",
+  "file",
+  "vbscript",
+  "blob",
+  "about",
+  "ftp",
+  "ws",
+  "wss",
+  "view-source",
+  "search",
+  "search-ms",
+  "intent",
+  "mailto",
+  "tel",
+  "sms",
+  "smsto",
+  "ssh",
+  "telnet",
+  "gopher",
+  "jar",
+  "chrome",
+  "chrome-extension",
+  "moz-extension",
+  "itms",
+  "itms-apps",
+  "itms-services",
+]);
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 /** Why a redirect address cannot be used, or null when it can. Native apps may use their own scheme (cursor://, vscode://). */
@@ -29,10 +59,28 @@ export function redirectUriProblem(uri: unknown): string | null {
   }
   if (u.hash) return "A redirect address must not contain a #fragment.";
   const scheme = u.protocol.slice(0, -1).toLowerCase();
-  if (BLOCKED_SCHEMES.has(scheme)) return `The "${scheme}" scheme cannot be used.`;
+  // ms-* are Windows protocol handlers (ms-msdt, ms-officecmd...): never an OAuth client.
+  if (BLOCKED_SCHEMES.has(scheme) || scheme.startsWith("ms-")) return `The "${scheme}" scheme cannot be used.`;
   if (scheme === "https") return u.username || u.password ? "A redirect address must not contain a login." : null;
   if (scheme === "http") return LOOPBACK_HOSTS.has(u.hostname) ? null : "Plain http is allowed only for localhost.";
   return /^[a-z][a-z0-9+.-]{0,39}$/.test(scheme) ? null : "Unsupported redirect scheme.";
+}
+
+/**
+ * A client's self-declared name as plain, printable text. Control, zero-width and bidirectional
+ * override characters are removed (they can reorder or hide letters on the consent screen); the name is
+ * still unverified, so the consent screen says so.
+ */
+export function cleanClientName(raw: unknown): string {
+  const text =
+    typeof raw === "string"
+      ? raw
+          // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
+          .replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+      : "";
+  return (text || "MCP client").slice(0, MAX_CLIENT_NAME);
 }
 
 export type Registration = { name: string; redirectUris: string[] };
@@ -51,14 +99,7 @@ export function parseRegistration(
     const problem = redirectUriProblem(uri);
     if (problem) return { ok: false, description: problem };
   }
-  const rawName =
-    typeof b.client_name === "string"
-      ? [...b.client_name]
-          .map((c) => (c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127 ? " " : c))
-          .join("")
-          .trim()
-      : "";
-  const name = (rawName || "MCP client").slice(0, MAX_CLIENT_NAME);
+  const name = cleanClientName(b.client_name);
   return { ok: true, value: { name, redirectUris: [...new Set(uris as string[])] } };
 }
 

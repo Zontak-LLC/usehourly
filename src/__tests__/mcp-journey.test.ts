@@ -6,6 +6,7 @@ import { OUTPUT_SCHEMAS } from "@/server/mcp/output-schemas";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 /**
@@ -79,6 +80,7 @@ function setup(over: Partial<TokenRow> = {}) {
   let expectedHash = "";
   const limits = memoryRateLimit();
   const prisma = {
+    ...memoryInvoiceLogos(),
     apiToken: {
       findUnique: vi.fn(async ({ where }: { where: { token_hash: string } }) =>
         where.token_hash === expectedHash ? row : null,
@@ -987,6 +989,51 @@ describe("an assistant tracks a day of work", () => {
     expect(r.isError).toBe(true);
     expect(r.text).toBe("Something went wrong. Please try again.");
     expect(r.text).not.toContain("SQLITE");
+  });
+});
+
+describe("a batch cannot multiply what one token may do", () => {
+  const ping = (id: number) => ({ jsonrpc: "2.0", id, method: "ping" });
+
+  it("refuses more than 20 messages in one batch, and runs none of them", async () => {
+    const s = setup();
+    const res = await s.http(
+      Array.from({ length: 21 }, (_, i) => ({
+        jsonrpc: "2.0",
+        id: i + 1,
+        method: "tools/call",
+        params: { name: "log_time", arguments: { project: "p1", date: "2026-10-09", minutes: 5 } },
+      })),
+    );
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.json)).toContain("at most 20");
+    expect(s.prisma.timeEntry.create).not.toHaveBeenCalled();
+  });
+
+  it("charges every message in a batch against the token's limit", async () => {
+    const s = setup();
+    const batch = Array.from({ length: 20 }, (_, i) => ping(i + 1));
+    // 120 calls a minute: six full batches use it all, the seventh is turned away.
+    for (let i = 0; i < 6; i++) expect((await s.http(batch)).status).toBe(200);
+    const blocked = await s.http(batch);
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+  });
+
+  it("still counts a single message as one", async () => {
+    const s = setup();
+    for (let i = 0; i < 120; i++) expect((await s.http(ping(i + 1))).status).toBe(200);
+    expect((await s.http(ping(999))).status).toBe(429);
+  });
+
+  it("treats a token with an unexpected access value as read-only, never write", async () => {
+    const s = setup({ access: "Write " });
+    const me = await s.call("whoami");
+    expect(me.data).toMatchObject({ token_access: "read" });
+    const attempt = await s.call("delete_entry", { id: "e1" });
+    expect(attempt.isError).toBe(true);
+    expect(attempt.text).toContain("read-only");
+    expect(s.prisma.timeEntry.deleteMany).not.toHaveBeenCalled();
   });
 });
 
