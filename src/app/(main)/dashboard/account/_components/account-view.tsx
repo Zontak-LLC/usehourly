@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
+import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
 import { ImportTime } from "@/components/import-time";
 import { SupportHourly } from "@/components/support-hourly";
@@ -426,6 +427,8 @@ export function AccountView() {
         </section>
 
         <ImportTime />
+
+        {!me.data.is_demo && <DeleteAccountCard hasPassword={me.data.has_password} email={me.data.email} />}
       </Section>
 
       <Section

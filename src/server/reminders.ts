@@ -36,6 +36,7 @@ export async function runWeeklyReminders(opts: {
         weekly_reminder: true,
         is_demo: false,
         email_verified_at: { not: null },
+        email_bounced_at: null,
         timezone: { not: null },
       },
       select: { id: true, name: true, email: true, timezone: true, reminder_sent_week: true },

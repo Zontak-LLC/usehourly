@@ -14,7 +14,9 @@ const isProd = process.env.NODE_ENV === "production";
 const csp = [
   "default-src 'self'",
   // static.cloudflareinsights.com: Cloudflare Web Analytics, injected at the edge in production.
-  `script-src 'self' 'unsafe-inline'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"} https://challenges.cloudflare.com`,
+  // Turnstile (the sign-up robot check) draws its widget in an iframe from Cloudflare.
+  "frame-src https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",

@@ -21,6 +21,7 @@ model AuthUser {
   payment_instructions String? // free text printed on invoices (ACH, check...)
   token_version Int      @default(0) // bump to sign out every device (see lib/session-version.ts)
   email_verified_at DateTime? // set when the address was confirmed through an emailed link
+  email_bounced_at DateTime? // set when the address bounced for good or reported spam; no more reminder mail
   // Demo accounts are made on the "Try the demo" button, filled with sample data, and deleted after a day
   // unless the visitor turns them into a real account (account.claimDemo).
   is_demo       Boolean   @default(false)
