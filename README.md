@@ -104,11 +104,18 @@ Without them the app works as before, and the forgot-password page says email is
 ### Deploy from CircleCI
 
 `.circleci/config.yml` runs the checks on every push and, on `main`, applies the D1 migrations and
-deploys. In the CircleCI project settings add these environment variables:
+deploys. The deploy token is a secret, so keep it out of the project settings: create a **context**
+named `usehourly-production` (Organization Settings > Contexts), add an expression restriction
+`pipeline.git.branch == "main"`, and put the token in it. Only the deploy job on `main` can read it.
+
+| Context variable | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | a token with Workers Scripts: Edit and D1: Edit |
+
+In the CircleCI project settings add these environment variables:
 
 | Variable | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | a token with Workers Scripts: Edit and D1: Edit |
 | `CLOUDFLARE_ACCOUNT_ID` | your Cloudflare account id |
 | `D1_DATABASE_ID` | the id of your D1 database |
 | `APP_URL` | your public address, for example `https://app.example.com` |

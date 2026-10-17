@@ -2,8 +2,10 @@ version: 2.1
 
 # Checks run on every push and pull request. The deploy job runs only on main, after the checks pass.
 #
+# The deploy token lives in a CircleCI CONTEXT named usehourly-production (Organization Settings > Contexts),
+# restricted to `pipeline.git.branch == "main"`, so branches, pull requests and the check job never see it:
+#   CLOUDFLARE_API_TOKEN   token with Workers Scripts:Edit and D1:Edit (in the context only, NOT a project variable)
 # Project environment variables to set in CircleCI (Project Settings > Environment Variables):
-#   CLOUDFLARE_API_TOKEN   token with Workers Scripts:Edit and D1:Edit
 #   CLOUDFLARE_ACCOUNT_ID  your Cloudflare account id
 #   D1_DATABASE_ID         the id of your D1 database
 #   APP_URL                the public address, for example https://usehourly.app
@@ -68,6 +70,7 @@ workflows:
     jobs:
       - check
       - deploy:
+          context: usehourly-production
           requires:
             - check
           filters:

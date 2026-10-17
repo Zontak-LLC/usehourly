@@ -50,6 +50,7 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - **Health check:** `GET/HEAD /api/health` answers `{ok}` 200/503 after `SELECT 1`; point an uptime monitor at it (and at `/api/mcp`).
 - **Backups:** D1 Time Travel is active on `hourly-db` (30 days on the paid plan): `wrangler d1 time-travel info hourly-db`, restore with `wrangler d1 time-travel restore hourly-db --timestamp=<ISO time>` (overwrites live data; try it only in an emergency). `npm run d1:backup` writes a full SQL dump to `backups/` (git-ignored: it holds everyone's data).
 - **Email bounces:** `POST /api/webhooks/resend` (Svix-signed, `RESEND_WEBHOOK_SECRET`, 404 until set). A permanent bounce or spam complaint sets `auth_users.email_bounced_at` and turns the Friday reminder off; transient bounces are ignored. Resend dashboard > Webhooks > `email.bounced`, `email.complained`. Test: `launch-gaps-journey.test.ts`.
+- **CI deploy token (issue #33):** `CLOUDFLARE_API_TOKEN` lives in the CircleCI context `usehourly-production` (restricted to `pipeline.git.branch == "main"`), used by the `deploy` job only; pushing to `main` deploys to production through CircleCI.
 - Deploy order: `npm run d1:migrate:remote` (0017) BEFORE `npm run deploy`.
 
 ## Landing page and brand
@@ -143,7 +144,7 @@ From a deep review of the public site (no cross-tenant access, no auth bypass, n
 - **OAuth consent:** apps are labelled unverified, the full redirect address is shown, "Read only" is always preselected (whatever scope the app asked for), nothing redirects automatically on a malformed request, redirect schemes that launch programs are refused (`BLOCKED_SCHEMES`, `ms-*`), and client names are cleaned of control/bidi characters (`cleanClientName`).
 - **Housekeeping:** the hourly cron route also sweeps spent `rate_limits`, expired email links and expired OAuth codes (`server/housekeeping.ts`), even when email is not set up.
 - **Small things:** `/api/session-expired` only signs out a session that is really stale; the dashboard layout redirects signed-out visitors itself; MCP token access fails closed to read-only; `X-Powered-By` is off; `/.well-known/security.txt` is published (renew its Expires date by 2027-10-17); CI uses `permissions: contents: read` and SHA-pinned actions.
-- **Not done (tracked in #29):** CircleCI deploy token is a project-wide variable (move to a context restricted to main), self-service account deletion and a fuller privacy page, OAuth token replacement matches on display name, bot protection on sign-up.
+- **Not done (tracked in #29):** CircleCI deploy token (a context restricted to main now exists; finish by moving the token into it, see the Launch gaps section), self-service account deletion and a fuller privacy page, OAuth token replacement matches on display name, bot protection on sign-up.
 - Deploy order for this change: `npm run d1:migrate:remote` (0015) BEFORE `npm run deploy`.
 
 ## stdio bridge (2026-10-17, issue #27)
