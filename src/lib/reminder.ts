@@ -1,5 +1,7 @@
 import type { MailMessage } from "@/lib/mailer";
 
+import { renderEmail } from "./email-template";
+
 /**
  * The weekly "log your hours" email: sent once a week, on Friday afternoon in the person's own time
  * zone, to people who turned it on. This file is the pure part: who is due, which week, and what it says.
@@ -126,34 +128,40 @@ export function buildWeeklyReminder(input: {
     return `  ${dayLabel(d).padEnd(13)} ${m ? hours(m) : "nothing logged"}`;
   });
   const missing = days.filter((d) => d <= input.today && !byDay.has(d)).length;
-  const lines = [
-    `Hi${first ? ` ${first}` : ""},`,
-    "",
-    total > 0
-      ? `Here's your week so far (${dayLabel(days[0])} to ${dayLabel(days[4])}):`
-      : "You haven't logged any time this week yet:",
-    "",
-    ...rows,
-    "",
-    total > 0
-      ? `Total: ${hours(total)} across ${projects.size} ${projects.size === 1 ? "project" : "projects"}.`
-      : "Nothing logged so far.",
-    ...(total > 0 && missing > 0
-      ? [
-          `${missing} ${missing === 1 ? "weekday has" : "weekdays have"} nothing logged. Worth a look before the weekend.`,
-        ]
-      : []),
-    "",
-    `Add or fix anything now: ${input.appUrl}/dashboard/week`,
-    "",
-    "UseHourly",
-    "",
-    `You're getting this because you turned on the Friday reminder. Turn it off with one click: ${input.unsubscribeUrl}`,
-  ];
+  const mail = renderEmail({
+    title: "Your week so far",
+    greeting: `Hi${first ? ` ${first}` : ""},`,
+    blocks: [
+      total > 0
+        ? `Here's your week so far (${dayLabel(days[0])} to ${dayLabel(days[4])}):`
+        : "You haven't logged any time this week yet:",
+      {
+        rows: days.map((d): [string, string] => [
+          dayLabel(d),
+          byDay.get(d) ? hours(byDay.get(d) as number) : "nothing logged",
+        ]),
+      },
+      total > 0
+        ? `Total: ${hours(total)} across ${projects.size} ${projects.size === 1 ? "project" : "projects"}.`
+        : "Nothing logged so far.",
+      ...(total > 0 && missing > 0
+        ? [
+            `${missing} ${missing === 1 ? "weekday has" : "weekdays have"} nothing logged. Worth a look before the weekend.`,
+          ]
+        : []),
+      "Add or fix anything now:",
+      { button: { label: "Open my week", url: `${input.appUrl}/dashboard/week` } },
+    ],
+    footnote: {
+      text: "You're getting this because you turned on the Friday reminder.",
+      link: { label: "Turn it off with one click", url: input.unsubscribeUrl },
+    },
+  });
   return {
     to: input.email,
     subject: total > 0 ? `Your week so far: ${hours(total)} logged` : "Friday check-in: time to log your hours?",
-    text: lines.join("\n"),
+    text: mail.text,
+    html: mail.html,
     headers: {
       "List-Unsubscribe": `<${input.oneClickUrl}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

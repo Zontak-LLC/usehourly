@@ -1,7 +1,11 @@
+import { renderEmail } from "./email-template";
+
 export type MailMessage = {
   to: string;
   subject: string;
   text: string;
+  /** The styled version; `text` is always sent too, so apps that block HTML still show the message. */
+  html?: string;
   /** Extra headers, such as List-Unsubscribe. */
   headers?: Record<string, string>;
 };
@@ -17,11 +21,11 @@ export function createMailer(env: Record<string, string | undefined> = process.e
   const from = env.EMAIL_FROM;
   if (!key || !from) return null;
   return {
-    async send({ to, subject, text, headers }) {
+    async send({ to, subject, text, html, headers }) {
       const res = await fetch(`${(env.RESEND_API_URL || "https://api.resend.com").replace(/\/+$/, "")}/emails`, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to, subject, text, ...(headers && { headers }) }),
+        body: JSON.stringify({ from, to, subject, text, ...(html && { html }), ...(headers && { headers }) }),
       });
       if (!res.ok) {
         const detail = (await res.text().catch(() => "")).slice(0, 200);
@@ -37,19 +41,29 @@ export function appUrl(env: Record<string, string | undefined> = process.env): s
 }
 
 export function verifyEmailMessage(to: string, link: string): MailMessage {
-  return {
-    to,
-    subject: "Confirm your email for UseHourly",
-    text: `Hi,\n\nPlease confirm this email address for your UseHourly account:\n\n${link}\n\nThe link works for 24 hours. If you did not create an account, you can ignore this message.\n\nUseHourly`,
-  };
+  const mail = renderEmail({
+    title: "Confirm your email",
+    greeting: "Hi,",
+    blocks: [
+      "Please confirm this email address for your UseHourly account:",
+      { button: { label: "Confirm my email", url: link } },
+      "The link works for 24 hours. If you did not create an account, you can ignore this message.",
+    ],
+  });
+  return { to, subject: "Confirm your email for UseHourly", ...mail };
 }
 
 export function resetPasswordMessage(to: string, link: string): MailMessage {
-  return {
-    to,
-    subject: "Reset your UseHourly password",
-    text: `Hi,\n\nSomeone asked to reset the password for this UseHourly account. To choose a new one, open:\n\n${link}\n\nThe link works for 1 hour and only once. If this was not you, you can ignore this message and your password stays the same.\n\nUseHourly`,
-  };
+  const mail = renderEmail({
+    title: "Reset your password",
+    greeting: "Hi,",
+    blocks: [
+      "Someone asked to reset the password for this UseHourly account. To choose a new one, open:",
+      { button: { label: "Choose a new password", url: link } },
+      "The link works for 1 hour and only once. If this was not you, you can ignore this message and your password stays the same.",
+    ],
+  });
+  return { to, subject: "Reset your UseHourly password", ...mail };
 }
 
 /** Text that came from a stranger (a client's typed name) made safe for a subject line: no line breaks or control characters. */
@@ -61,16 +75,22 @@ const oneLine = (value: string, max: number) =>
     .trim()
     .slice(0, max);
 
-/** Tells the freelancer a client approved a shared timesheet. Plain text, like every other message. */
+/** Tells the freelancer a client approved a shared timesheet. */
 export function timesheetApprovedMessage(
   to: string,
   d: { approver: string; title: string; note: string | null; link: string },
 ): MailMessage {
   const approver = oneLine(d.approver, 80) || "Your client";
-  const note = d.note ? `\nThey added a note:\n\n"${d.note.slice(0, 500)}"\n` : "";
-  return {
-    to,
-    subject: `${approver} approved your timesheet`,
-    text: `Hi,\n\n${approver} approved the hours you shared:\n\n${oneLine(d.title, 160)}\n${note}\nYou can see all your shared timesheets here:\n\n${d.link}\n\nUseHourly`,
-  };
+  const mail = renderEmail({
+    title: "A client approved your timesheet",
+    greeting: "Hi,",
+    blocks: [
+      `${approver} approved the hours you shared:`,
+      { heading: oneLine(d.title, 160) },
+      ...(d.note ? ["They added a note:", { quote: d.note.slice(0, 500) }] : []),
+      "You can see all your shared timesheets here:",
+      { button: { label: "Open my timesheets", url: d.link } },
+    ],
+  });
+  return { to, subject: `${approver} approved your timesheet`, ...mail };
 }
