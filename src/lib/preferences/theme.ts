@@ -67,6 +67,14 @@ export const THEME_PRESET_OPTIONS = [
       dark: "oklch(0.93 0.02 85)",
     },
   },
+  {
+    label: "Mono",
+    value: "mono",
+    primary: {
+      light: "oklch(0.145 0 0)",
+      dark: "oklch(0.985 0 0)",
+    },
+  },
 ] as const;
 
 export const THEME_PRESET_VALUES = THEME_PRESET_OPTIONS.map((p) => p.value);

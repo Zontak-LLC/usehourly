@@ -8,6 +8,7 @@
 @import "../styles/presets/sky.css";
 @import "../styles/presets/lilac.css";
 @import "../styles/presets/ink.css";
+@import "../styles/presets/mono.css";
 @import "../styles/presets/cream.css";
 
 @custom-variant dark (&:is(.dark *));

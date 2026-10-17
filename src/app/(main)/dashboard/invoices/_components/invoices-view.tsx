@@ -4,7 +4,18 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { CircleAlert, CircleCheck, Download, Ellipsis, FileText, Plus, Search, Send, Trash2 } from "lucide-react";
+import {
+  CircleAlert,
+  CircleCheck,
+  CircleDollarSign,
+  Download,
+  Ellipsis,
+  FileText,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
@@ -182,9 +193,19 @@ export function InvoicesView() {
       )}
     </>
   );
-  // One clear action (Send) and one menu with words, instead of a row of unlabeled icons.
+  // Two labelled buttons (Mark paid while unpaid, Send) and one menu with words, instead of a row of unlabeled icons.
   const actionsOf = (i: Row) => (
     <div data-testid="invoice-actions" className="flex items-center gap-1">
+      {!i.paid_date && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-success/40 text-success hover:bg-success-soft hover:text-success"
+          onClick={() => setPaidFor({ id: i.id, number: i.number, paid_date: i.paid_date })}
+        >
+          <CircleDollarSign /> Mark paid
+        </Button>
+      )}
       <Button size="sm" variant="outline" onClick={() => setSendFor({ id: i.id, number: i.number })}>
         <Send /> Send
       </Button>
@@ -196,7 +217,7 @@ export function InvoicesView() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-52">
           <DropdownMenuItem onSelect={() => setPaidFor({ id: i.id, number: i.number, paid_date: i.paid_date })}>
-            <CircleCheck /> {i.paid_date ? "Edit payment…" : "Mark as paid…"}
+            <CircleDollarSign /> {i.paid_date ? "Edit payment…" : "Mark as paid…"}
           </DropdownMenuItem>
           <DropdownMenuItem disabled={busyId === i.id} onSelect={() => void download(i.id)}>
             <Download /> Download PDF
