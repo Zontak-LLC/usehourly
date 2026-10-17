@@ -16,6 +16,7 @@
     "supporters": "node scripts/update-supporters.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "ci": "biome check && tsc --noEmit && vitest run",
     "e2e": "playwright test",
     "e2e:phone": "playwright test --project=phone",
     "e2e:desktop": "playwright test --project=desktop",
