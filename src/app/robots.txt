@@ -1,66 +1,79 @@
 User-Agent: *
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: OAI-SearchBot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Claude-SearchBot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Amzn-SearchBot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: GPTBot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: ClaudeBot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Claude-Web
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: anthropic-ai
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Google-Extended
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Amazonbot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Bytespider
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: CCBot
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 User-Agent: Applebot-Extended
 Allow: /
 Disallow: /api/
+Disallow: /timesheet/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 Sitemap: https://usehourly.app/sitemap.xml

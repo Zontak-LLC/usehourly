@@ -236,14 +236,16 @@ describe("old throttle counters and expired links are swept", () => {
       rateLimit: { deleteMany: vi.fn(async () => ({ count: 11 })) },
       emailToken: { deleteMany: vi.fn(async () => Promise.reject(new Error("boom"))) },
       oauthCode: { deleteMany: vi.fn(async () => ({ count: 4 })) },
+      timesheetShare: { deleteMany: vi.fn(async () => ({ count: 2 })) },
     };
     const quiet = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const done = await runHousekeeping(prisma as never, now);
     quiet.mockRestore();
-    expect(done).toEqual({ rateLimits: 11, emailTokens: 0, oauthCodes: 4 });
+    expect(done).toEqual({ rateLimits: 11, emailTokens: 0, oauthCodes: 4, timesheetShares: 2 });
     expect(prisma.rateLimit.deleteMany).toHaveBeenCalledWith({ where: { reset_at: { lt: now - 3600 } } });
     expect(prisma.emailToken.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 7 * 86400 } } });
     expect(prisma.oauthCode.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 86400 } } });
+    expect(prisma.timesheetShare.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 90 * 86400 } } });
   });
 });
 

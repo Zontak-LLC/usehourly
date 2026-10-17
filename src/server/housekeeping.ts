@@ -1,6 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 
-export type Housekeeping = { rateLimits: number; emailTokens: number; oauthCodes: number };
+import { SHARE_KEEP_AFTER_EXPIRY_DAYS } from "@/lib/timesheet-share";
+
+export type Housekeeping = { rateLimits: number; emailTokens: number; oauthCodes: number; timesheetShares: number };
 
 const HOUR = 3600;
 const DAY = 24 * HOUR;
@@ -29,5 +31,11 @@ export async function runHousekeeping(
       prisma.emailToken.deleteMany({ where: { expires_at: { lt: nowSeconds - 7 * DAY } } }),
     ),
     oauthCodes: await count(() => prisma.oauthCode.deleteMany({ where: { expires_at: { lt: nowSeconds - DAY } } })),
+    // Shared timesheets hold a client's hours, so they are not kept long after they stop working.
+    timesheetShares: await count(() =>
+      prisma.timesheetShare.deleteMany({
+        where: { expires_at: { lt: nowSeconds - SHARE_KEEP_AFTER_EXPIRY_DAYS * DAY } },
+      }),
+    ),
   };
 }

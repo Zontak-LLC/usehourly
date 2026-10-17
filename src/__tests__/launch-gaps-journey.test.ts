@@ -29,6 +29,7 @@ async function world() {
     emailToken: [{ user_id: "u1" }],
     apiToken: [{ user_id: "u1" }, { user_id: "u2" }],
     oauthCode: [{ user_id: "u1" }],
+    timesheetShare: [{ user_id: "u1" }, { user_id: "u2" }],
   };
   const limiter = memoryRateLimit();
   const model = (name: string) => ({
@@ -48,6 +49,7 @@ async function world() {
     emailToken: model("emailToken"),
     apiToken: model("apiToken"),
     oauthCode: model("oauthCode"),
+    timesheetShare: model("timesheetShare"),
     authUser: {
       findUnique: vi.fn(
         async ({ where }: { where: { id?: string; email?: string } }) =>

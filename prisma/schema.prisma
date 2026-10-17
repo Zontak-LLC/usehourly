@@ -48,6 +48,7 @@ model AuthUser {
   email_tokens EmailToken[]
   api_tokens ApiToken[]
   oauth_codes OauthCode[]
+  timesheet_shares TimesheetShare[]
 
   @@index([is_demo, created_at])
   @@map("auth_users")
@@ -255,4 +256,28 @@ model UsageDaily {
 
   @@id([day, page])
   @@map("usage_daily")
+}
+
+// A timesheet a freelancer sends a client for sign-off (issue #34). The link is a random token (only its SHA-256
+// is kept); `snapshot` is frozen JSON of the hours, shown without rates or money. Approval is one conditional update.
+model TimesheetShare {
+  id            String   @id @default(uuid())
+  user_id       String
+  token_hash    String   @unique
+  token_prefix  String
+  title         String
+  period_from   String
+  period_to     String
+  snapshot      String
+  expires_at    Int
+  revoked_at    Int?
+  approved_name String?
+  approved_note String?
+  approved_at   Int?
+  created_at    DateTime @default(now())
+
+  user AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@map("timesheet_shares")
 }
