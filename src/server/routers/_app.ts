@@ -4,6 +4,7 @@ import { clientRouter } from "./client";
 import { entryRouter } from "./entry";
 import { insightsRouter } from "./insights";
 import { invoiceRouter } from "./invoice";
+import { invoiceLinkRouter } from "./invoice-link";
 import { oauthRouter } from "./oauth";
 import { projectRouter } from "./project";
 import { reportRouter } from "./report";
@@ -20,6 +21,7 @@ export const appRouter = router({
   timeImport: timeImportRouter,
   oauth: oauthRouter,
   insights: insightsRouter,
+  invoiceLink: invoiceLinkRouter,
   timesheetShare: timesheetShareRouter,
 });
 

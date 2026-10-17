@@ -49,6 +49,7 @@ model AuthUser {
   api_tokens ApiToken[]
   oauth_codes OauthCode[]
   timesheet_shares TimesheetShare[]
+  invoice_links InvoiceLink[]
 
   @@index([is_demo, created_at])
   @@map("auth_users")
@@ -62,6 +63,7 @@ model Client {
   // Printed in the invoice header's "bill to" block.
   legal_name String?  // full name / company legal name; falls back to `name`
   address    String?  // multi-line
+  email      String?  // where invoices are sent; nothing is sent to it unless the freelancer sends something
   logo       String?  // data URL (png/jpeg), resized client-side
   archived   Boolean  @default(false)
   created_at DateTime @default(now())
@@ -142,6 +144,7 @@ model Invoice {
 
   user   AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
   client Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  links  InvoiceLink[]
 
   @@unique([user_id, number])
   @@index([user_id, issue_date])
@@ -280,4 +283,24 @@ model TimesheetShare {
 
   @@index([user_id, created_at])
   @@map("timesheet_shares")
+}
+
+// A private link to one invoice for the client to view and download (issue #35). The token's SHA-256 is all that is kept;
+// the page shows the invoice's frozen snapshot, so editing anything later never changes what the client sees.
+model InvoiceLink {
+  id           String   @id @default(uuid())
+  user_id      String
+  invoice_id   String
+  token_hash   String   @unique
+  token_prefix String
+  expires_at   Int
+  revoked_at   Int?
+  created_at   DateTime @default(now())
+
+  user    AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  invoice Invoice  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+
+  @@index([invoice_id])
+  @@index([user_id])
+  @@map("invoice_links")
 }
