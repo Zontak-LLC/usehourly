@@ -41,7 +41,7 @@ export function TodayView() {
     { enabled: !!weekStart },
   );
 
-  if (!date) return <Skeleton className="h-64 w-full max-w-3xl" />;
+  if (!date) return <Skeleton className="h-64 w-full max-w-5xl" />;
 
   const go = (d: string) => router.replace(d === today ? "/dashboard/today" : `/dashboard/today?date=${d}`);
   const dayEntries = week.data?.filter((e) => e.date === date) ?? [];
@@ -49,7 +49,7 @@ export function TodayView() {
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <ViewTabs current="day" date={date} />
       <div className="flex items-center justify-between gap-2">
         <div>

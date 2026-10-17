@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { NoteTextarea } from "@/components/note-textarea";
@@ -34,12 +35,15 @@ export function QuickCreate({
   onSelectWeekdays,
   onClear,
   onDone,
+  onExit,
 }: {
   dates: string[];
   entries: SheetEntry[];
   onSelectWeekdays: () => void;
   onClear: () => void;
   onDone: () => void;
+  /** Leave the several-days mode and go back to opening a day on click. */
+  onExit: () => void;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -102,12 +106,22 @@ export function QuickCreate({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-card p-4">
+    <div className="relative flex flex-col gap-3 rounded-xl border border-primary/40 bg-card p-4 pr-12">
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="absolute top-2 right-2 size-8 text-muted-foreground"
+        onClick={onExit}
+        aria-label="Close and go back to editing single days"
+        title="Close: hide this and go back to editing single days"
+      >
+        <X />
+      </Button>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-medium text-sm">
-          Quick add ·{" "}
           {dates.length === 0
-            ? "click days, or drag across them (Ctrl/⌘ adds to the selection)"
+            ? "Pick the days: click them, or drag across them. Clicking a day no longer opens it while this is open; close it with the X."
             : `${dates.length} day${dates.length === 1 ? "" : "s"} selected`}
         </p>
         <div className="flex gap-3 text-xs">

@@ -117,7 +117,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             }}
             aria-pressed={selectMode}
           >
-            <CalendarPlus /> Quick add
+            <CalendarPlus /> Add to several days
           </Button>
           <ProjectFilter value={projectId} onChange={setProjectId} />
           <ShareExportMenu
@@ -165,6 +165,10 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
               }
               onClear={() => setPicked(new Set())}
               onDone={() => setPicked(new Set())}
+              onExit={() => {
+                setSelectMode(false);
+                setPicked(new Set());
+              }}
             />
           )}
 

@@ -76,7 +76,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
   }
 
   return (
-    <li className="group flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 sm:flex-nowrap">
+    <li className="group relative flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 sm:flex-nowrap">
       <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
       <div className="min-w-0 flex-1">
         {editing ? (
@@ -154,7 +154,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
         )}
       </div>
 
-      <div className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-end">
+      <div className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-end sm:pr-1">
         {editing ? (
           <>
             <Input
@@ -186,7 +186,8 @@ export function EntryRow({ entry }: { entry: EntryData }) {
             >
               {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
             </button>
-            <div className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 max-sm:opacity-100">
+            {/* Floats over the row's top-right corner on hover/focus (no space reserved, so the time stays at the edge); inline on phones. */}
+            <div className="flex rounded-lg border bg-card shadow-sm transition-opacity max-sm:border-0 max-sm:shadow-none sm:pointer-events-none sm:absolute sm:top-0 sm:right-2 sm:-translate-y-1/2 sm:opacity-0 sm:focus-within:pointer-events-auto sm:focus-within:opacity-100 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100">
               <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
               <Button
                 size="icon"
