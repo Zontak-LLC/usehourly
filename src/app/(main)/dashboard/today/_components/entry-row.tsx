@@ -80,7 +80,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
       <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
       <div className="min-w-0 flex-1">
         {editing ? (
-          <p className="truncate text-sm">
+          <p className="text-sm">
             <span className="font-medium">{entry.project.name}</span>
             <span className="text-muted-foreground"> · {entry.project.client.name}</span>
           </p>
@@ -109,9 +109,9 @@ export function EntryRow({ entry }: { entry: EntryData }) {
                 <option value={entry.project_id}>{entry.project.name}</option>
               )}
             </select>
-            <p className="-mx-1 flex max-w-full items-center gap-1 truncate rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
-              <span className="truncate font-medium">{entry.project.name}</span>
-              <span className="truncate text-muted-foreground"> · {entry.project.client.name}</span>
+            <p className="-mx-1 flex max-w-full flex-wrap items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
+              <span className="break-words font-medium">{entry.project.name}</span>
+              <span className="break-words text-muted-foreground">· {entry.project.client.name}</span>
               <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
             </p>
           </div>

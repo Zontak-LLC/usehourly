@@ -65,7 +65,7 @@ export function DayEditorDialog({ date, onClose }: { date: string | null; onClos
 
         {date &&
           (hasProjects ? (
-            <QuickAdd date={date} timerRunning={!!running.data} />
+            <QuickAdd date={date} timerRunning={!!running.data} dayMinutes={total} />
           ) : (
             !clients.isLoading && (
               <p className="text-muted-foreground text-sm">
