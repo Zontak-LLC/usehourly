@@ -1,0 +1,29 @@
+/* 
+label: Cream
+value: cream
+*/
+
+/* Accent only: a quiet latte brown on the cream page. */
+:root[data-theme-preset="cream"] {
+  --primary: oklch(0.52 0.07 60);
+  --primary-foreground: oklch(0.99 0.012 90);
+  --ring: oklch(0.52 0.07 60);
+  --accent: oklch(0.94 0.03 80);
+  --chart-1: oklch(0.52 0.07 60);
+  --sidebar-primary: oklch(0.52 0.07 60);
+  --sidebar-primary-foreground: oklch(0.99 0.012 90);
+  --sidebar-accent: oklch(0.94 0.03 80);
+  --sidebar-ring: oklch(0.52 0.07 60);
+}
+
+.dark:root[data-theme-preset="cream"] {
+  --primary: oklch(0.82 0.07 78);
+  --primary-foreground: oklch(0.24 0.02 75);
+  --ring: oklch(0.82 0.07 78);
+  --accent: oklch(0.32 0.03 75);
+  --chart-1: oklch(0.82 0.07 78);
+  --sidebar-primary: oklch(0.82 0.07 78);
+  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-accent: oklch(0.32 0.03 75);
+  --sidebar-ring: oklch(0.82 0.07 78);
+}
