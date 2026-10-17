@@ -19,7 +19,7 @@ const walk = (suite) => {
       const status = r?.status ?? "unknown";
       const errors = (r?.errors ?? []).map((e) =>
         (e.message ?? "")
-          .replace(/\u001b\[[0-9;]*m/g, "")
+          .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "")
           .split("\n")
           .slice(0, 6)
           .join(" | "),

@@ -18,12 +18,20 @@ export type MailMessage = {
  * The From line for a message: the app's own configured address, optionally with a display name. The name is cleaned
  * (no quotes, brackets or control characters), so it cannot change the address or add headers.
  */
+/** Replaces control characters (line breaks, NUL, the Unicode line separators) with a space, without a regex over them. */
+const stripControl = (value: string): string =>
+  [...value]
+    .map((ch) => {
+      const c = ch.charCodeAt(0);
+      return c < 32 || c === 127 || c === 0x2028 || c === 0x2029 ? " " : ch;
+    })
+    .join("");
+
 export function senderFrom(configured: string, name?: string): string {
   if (!name) return configured;
   const address = (/<([^>]+)>/.exec(configured)?.[1] ?? configured).trim();
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
-  const safe = name
-    .replace(/[\u0000-\u001f\u007f"<>\\]+/g, " ")
+  const safe = stripControl(name)
+    .replace(/["<>\\]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 60);
@@ -95,13 +103,7 @@ export function resetPasswordMessage(to: string, link: string): MailMessage {
 }
 
 /** Text that came from a stranger (a client's typed name) made safe for a subject line: no line breaks or control characters. */
-const oneLine = (value: string, max: number) =>
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
-  value
-    .replace(/[\u0000-\u001f\u007f\u2028\u2029]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, max);
+const oneLine = (value: string, max: number) => stripControl(value).replace(/\s+/g, " ").trim().slice(0, max);
 
 /** Tells the freelancer a client approved a shared timesheet. */
 export function timesheetApprovedMessage(

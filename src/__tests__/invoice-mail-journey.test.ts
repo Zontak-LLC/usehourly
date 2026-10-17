@@ -303,7 +303,7 @@ describe("the message a client gets", () => {
     expect(m.replyTo).toBe("ada@example.com");
     expect(m.text).toContain("INV-2026-001 · $540.00 · due Nov 13, 2026");
     expect(m.text).toContain(`${APP}/invoice/tok`);
-    expect(m.text).toContain("Stop these emails: " + base.stopUrl);
+    expect(m.text).toContain(`Stop these emails: ${base.stopUrl}`);
     expect(m.html).toContain('href="https://usehourly.app/stop-emails?e=a&amp;t=b"');
     expect(m.headers).toEqual({
       "List-Unsubscribe": `<${base.oneClickUrl}>`,
