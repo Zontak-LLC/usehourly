@@ -30,6 +30,23 @@ const INSTRUCTIONS = [
   "Ask the user before destructive actions (delete_entry, delete_invoice, merge_entries) and before create_invoice.",
 ].join(" ");
 
+/** The tool list as clients see it; the public server card publishes the same thing. */
+export function toolDefinitions() {
+  return TOOLS.map((t) => ({
+    name: t.name,
+    title: t.title,
+    description: t.description,
+    inputSchema: inputSchemaFor(t.name),
+    annotations: {
+      title: t.title,
+      readOnlyHint: t.access === "read",
+      destructiveHint: t.access === "write" ? Boolean(t.destructive) : false,
+      idempotentHint: Boolean(t.idempotent),
+      openWorldHint: false,
+    },
+  }));
+}
+
 const ERR = {
   parse: -32700,
   invalidRequest: -32600,
@@ -151,19 +168,7 @@ async function dispatch(
     case "tools/list":
       return {
         result: {
-          tools: TOOLS.map((t) => ({
-            name: t.name,
-            title: t.title,
-            description: t.description,
-            inputSchema: inputSchemaFor(t.name),
-            annotations: {
-              title: t.title,
-              readOnlyHint: t.access === "read",
-              destructiveHint: t.access === "write" ? Boolean(t.destructive) : false,
-              idempotentHint: Boolean(t.idempotent),
-              openWorldHint: false,
-            },
-          })),
+          tools: toolDefinitions(),
         },
       };
     case "tools/call":
