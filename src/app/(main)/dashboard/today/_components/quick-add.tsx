@@ -28,7 +28,6 @@ export function QuickAdd({ date, timerRunning }: { date: string; timerRunning: b
   const clients = trpc.clients.list.useQuery();
   const create = trpc.entry.create.useMutation();
   const start = trpc.entry.start.useMutation();
-  const remove = trpc.entry.delete.useMutation();
 
   const [projectId, setProjectId] = useState("");
   const [duration, setDuration] = useState("");
@@ -83,31 +82,6 @@ export function QuickAdd({ date, timerRunning }: { date: string; timerRunning: b
     }
   }
 
-  /** One tap logs that much time on the chosen project, with an Undo for fat-finger mistakes. */
-  async function logChip(minutes: number, label: string) {
-    if (!projectId) return toast.error("Pick a project first.");
-    try {
-      const entry = await create.mutateAsync({ projectId, date, minutes, note });
-      await utils.entry.list.invalidate();
-      setNote("");
-      toast.success(`Added ${label}.`, {
-        action: {
-          label: "Undo",
-          onClick: async () => {
-            try {
-              await remove.mutateAsync({ id: entry.id });
-              await utils.entry.list.invalidate();
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't undo that.");
-            }
-          },
-        },
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save that entry.");
-    }
-  }
-
   async function startTimer() {
     if (!projectId) return toast.error("Pick a project first.");
     try {
@@ -157,74 +131,68 @@ export function QuickAdd({ date, timerRunning }: { date: string; timerRunning: b
           value={note}
           onChange={setNote}
           onKeyDown={(e) => {
-            // Enter adds the typed time, or starts the timer when no time is typed.
+            // Enter saves when a time is typed, otherwise moves on to the time field.
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               if (parsed !== null) void submit();
-              else void startTimer();
+              else durationRef.current?.focus();
             }
           }}
-          placeholder="Add a note (optional)"
-          aria-label="Note"
-          rows={1}
-          className="min-h-11 resize-none py-2.5 text-base"
+          placeholder="What did you work on? (optional)"
+          aria-label="Description"
+          rows={2}
+          className="min-h-20 resize-none py-2.5 text-base"
         />
       </div>
 
-      <Button type="button" size="lg" className="h-14 w-full text-lg" onClick={startTimer} disabled={start.isPending}>
-        <Play className="size-5" /> {timerRunning ? "Switch the timer to this" : "Start timer"}
-      </Button>
-
-      <div className="flex items-center gap-3 text-muted-foreground text-sm">
-        <span className="h-px flex-1 bg-border" />
-        or add time you already worked
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <p className="font-medium text-sm">How long?</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {DURATION_CHIPS.map((c) => (
-            <Button
-              key={c.minutes}
-              type="button"
-              variant="outline"
-              className="h-11 text-base"
-              disabled={create.isPending}
-              onClick={() => logChip(c.minutes, c.label)}
-            >
-              {c.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row sm:items-start">
-        <div className="w-full sm:flex-1">
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="quick-duration" className="font-medium text-sm">
+            How long?
+          </label>
           <Input
+            id="quick-duration"
             ref={durationRef}
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            placeholder="Or type it, like 1.5 or 90m"
-            aria-label="Type a duration"
+            placeholder="Type it, like 1.5, 1:30 or 90m"
             aria-invalid={invalid}
             inputMode="decimal"
             enterKeyHint="done"
-            className="h-11 text-base"
+            className="h-12 text-base"
           />
-          <p className={`mt-1 h-4 text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
+          <p className={`h-4 text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
             {invalid ? "Try 1.5, 1:30 or 90m" : parsed ? `= ${formatDuration(parsed)} h` : ""}
           </p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {DURATION_CHIPS.map((c) => (
+              <Button
+                key={c.minutes}
+                type="button"
+                variant={parsed === c.minutes ? "secondary" : "outline"}
+                aria-pressed={parsed === c.minutes}
+                className="h-11 text-base"
+                onClick={() => {
+                  setDuration(`${c.minutes}m`);
+                  durationRef.current?.focus();
+                }}
+              >
+                {c.label}
+              </Button>
+            ))}
+          </div>
         </div>
-        <Button
-          type="submit"
-          size="lg"
-          disabled={create.isPending || parsed === null}
-          className="h-11 w-full text-base sm:w-auto"
-        >
-          Add time <Kbd className="ml-1 hidden bg-primary-foreground/20 text-primary-foreground md:inline-flex">↵</Kbd>
+        <Button type="submit" size="lg" disabled={create.isPending || parsed === null} className="h-14 w-full text-lg">
+          Save <Kbd className="ml-1 hidden bg-primary-foreground/20 text-primary-foreground md:inline-flex">↵</Kbd>
         </Button>
       </form>
+
+      <div className="flex items-center justify-between gap-3 border-t pt-3 text-muted-foreground text-sm">
+        <span>Haven't done it yet?</span>
+        <Button type="button" variant="ghost" onClick={startTimer} disabled={start.isPending}>
+          <Play className="size-4" /> {timerRunning ? "Switch the timer to this" : "Start a timer"}
+        </Button>
+      </div>
     </div>
   );
 }

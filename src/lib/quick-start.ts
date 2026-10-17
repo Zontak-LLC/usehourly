@@ -1,4 +1,4 @@
-/** One-tap durations shown under "How long?" on Today. */
+/** Quick picks under "How long?" on Today: tapping one fills the time field. */
 export const DURATION_CHIPS = [
   { label: "15 min", minutes: 15 },
   { label: "30 min", minutes: 30 },
