@@ -1,0 +1,29 @@
+/* 
+label: Coral
+value: coral
+*/
+
+/* Accent only: a warm coral with dark text. */
+:root[data-theme-preset="coral"] {
+  --primary: oklch(0.7 0.16 33);
+  --primary-foreground: oklch(0.24 0.02 75);
+  --ring: oklch(0.7 0.16 33);
+  --accent: oklch(0.95 0.035 35);
+  --chart-1: oklch(0.7 0.16 33);
+  --sidebar-primary: oklch(0.7 0.16 33);
+  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-accent: oklch(0.95 0.035 35);
+  --sidebar-ring: oklch(0.7 0.16 33);
+}
+
+.dark:root[data-theme-preset="coral"] {
+  --primary: oklch(0.76 0.13 36);
+  --primary-foreground: oklch(0.24 0.02 75);
+  --ring: oklch(0.76 0.13 36);
+  --accent: oklch(0.32 0.05 35);
+  --chart-1: oklch(0.76 0.13 36);
+  --sidebar-primary: oklch(0.76 0.13 36);
+  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-accent: oklch(0.32 0.05 35);
+  --sidebar-ring: oklch(0.76 0.13 36);
+}

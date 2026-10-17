@@ -28,11 +28,19 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
-    label: "Indigo",
-    value: "indigo",
+    label: "Coral",
+    value: "coral",
     primary: {
-      light: "oklch(0.55 0.2 277)",
-      dark: "oklch(0.7 0.15 277)",
+      light: "oklch(0.7 0.16 33)",
+      dark: "oklch(0.76 0.13 36)",
+    },
+  },
+  {
+    label: "Sky",
+    value: "sky",
+    primary: {
+      light: "oklch(0.58 0.15 245)",
+      dark: "oklch(0.75 0.11 240)",
     },
   },
   {
