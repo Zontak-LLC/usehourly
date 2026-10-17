@@ -8,6 +8,7 @@ Next.js 16, React 19, Tailwind v4, shadcn/ui Â· NextAuth v5 (Credentials, JWT) Â
 
 ## Commands
 ```bash
+npm run ci                  # EXACTLY what CI runs (biome check on the whole project, tsc, vitest): run it before every push
 npm run dev                 # http://localhost:3028 (local D1 via wrangler state)
 npm run d1:migrate:local    # apply migrations/ to local D1 (do this first)
 npx vitest run              # scenario tests (src/__tests__)
