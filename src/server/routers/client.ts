@@ -1,6 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { isDemoSession } from "@/lib/demo";
+import { assertWithinQuota } from "@/lib/quotas";
+
 import { logoSchema } from "../logo-schema";
 import { protectedProcedure, router } from "../trpc";
 
@@ -62,6 +65,12 @@ export const clientRouter = router({
     .mutation(async ({ ctx, input }) => {
       const dup = await ctx.prisma.client.findFirst({ where: { user_id: ctx.userId, name: input.name } });
       if (dup) throw new TRPCError({ code: "CONFLICT", message: `You already have a client named "${input.name}".` });
+      assertWithinQuota(
+        await ctx.prisma.client.count({ where: { user_id: ctx.userId } }),
+        1,
+        "clients",
+        isDemoSession(ctx.session),
+      );
       return ctx.prisma.client.create({ data: { user_id: ctx.userId, ...input } });
     }),
 

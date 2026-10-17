@@ -5,6 +5,7 @@ import { entryRouter } from "./entry";
 import { invoiceRouter } from "./invoice";
 import { projectRouter } from "./project";
 import { reportRouter } from "./report";
+import { timeImportRouter } from "./time-import";
 
 export const appRouter = router({
   account: accountRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   entry: entryRouter,
   invoice: invoiceRouter,
   report: reportRouter,
+  timeImport: timeImportRouter,
 });
 
 export type AppRouter = typeof appRouter;

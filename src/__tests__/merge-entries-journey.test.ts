@@ -29,6 +29,7 @@ const row = (id: string, over: Partial<Row> = {}): Row => ({
 function mockPrisma(rows: Row[]) {
   return {
     timeEntry: {
+      count: vi.fn(async () => 0),
       findMany: vi.fn(async ({ where }) =>
         rows.filter((r) => where.id.in.includes(r.id) && r.user_id === where.user_id),
       ),

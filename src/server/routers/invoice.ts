@@ -2,7 +2,9 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { DATE_RE } from "@/lib/dates";
+import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
+import { assertWithinQuota } from "@/lib/quotas";
 
 import { protectedProcedure, router } from "../trpc";
 
@@ -145,6 +147,12 @@ export const invoiceRouter = router({
       const client = await ctx.prisma.client.findFirst({ where: { id: input.clientId, user_id: ctx.userId } });
       if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
 
+      assertWithinQuota(
+        await ctx.prisma.invoice.count({ where: { user_id: ctx.userId } }),
+        1,
+        "invoices",
+        isDemoSession(ctx.session),
+      );
       const dup = await ctx.prisma.invoice.findFirst({ where: { user_id: ctx.userId, number: input.number } });
       if (dup) throw new TRPCError({ code: "CONFLICT", message: `Invoice number ${input.number} is already used.` });
 
@@ -169,7 +177,8 @@ export const invoiceRouter = router({
           name: user.business_name || user.name || user.email,
           ein: user.ein,
           address: user.address,
-          email: user.email,
+          // A demo account has no real address, so the sample invoice shows an obvious placeholder.
+          email: user.is_demo ? "you@yourbusiness.example" : user.email,
           logo: user.logo,
           paymentInstructions: user.payment_instructions,
         },
@@ -182,6 +191,7 @@ export const invoiceRouter = router({
         notes: input.notes,
         includeDetail: input.includeDetail,
         compactNotes: input.compactNotes,
+        branding: user.invoice_branding,
         lines: totals.lines,
         detail: totals.detail,
         totalMinutes: totals.totalMinutes,

@@ -1,4 +1,10 @@
-export type MailMessage = { to: string; subject: string; text: string };
+export type MailMessage = {
+  to: string;
+  subject: string;
+  text: string;
+  /** Extra headers, such as List-Unsubscribe. */
+  headers?: Record<string, string>;
+};
 export type Mailer = { send(message: MailMessage): Promise<void> };
 
 /**
@@ -11,11 +17,11 @@ export function createMailer(env: Record<string, string | undefined> = process.e
   const from = env.EMAIL_FROM;
   if (!key || !from) return null;
   return {
-    async send({ to, subject, text }) {
+    async send({ to, subject, text, headers }) {
       const res = await fetch(`${(env.RESEND_API_URL || "https://api.resend.com").replace(/\/+$/, "")}/emails`, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to, subject, text }),
+        body: JSON.stringify({ from, to, subject, text, ...(headers && { headers }) }),
       });
       if (!res.ok) {
         const detail = (await res.text().catch(() => "")).slice(0, 200);

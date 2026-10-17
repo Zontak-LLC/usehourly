@@ -1,6 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { isDemoSession } from "@/lib/demo";
+import { assertWithinQuota } from "@/lib/quotas";
+
 import { logoSchema } from "../logo-schema";
 import { protectedProcedure, router } from "../trpc";
 
@@ -20,6 +23,12 @@ export const projectRouter = router({
       const dup = await ctx.prisma.project.findFirst({ where: { client_id: client.id, name: input.name } });
       if (dup)
         throw new TRPCError({ code: "CONFLICT", message: `"${client.name}" already has a project "${input.name}".` });
+      assertWithinQuota(
+        await ctx.prisma.project.count({ where: { user_id: ctx.userId } }),
+        1,
+        "projects",
+        isDemoSession(ctx.session),
+      );
       return ctx.prisma.project.create({
         data: {
           user_id: ctx.userId,

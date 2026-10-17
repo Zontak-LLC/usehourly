@@ -312,9 +312,15 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
       .setFont("helvetica", "normal")
       .setFontSize(8)
       .setTextColor(...MUTED);
-    doc.text(`${s.number} · Page ${i} of ${pages}`, pageW / 2, doc.internal.pageSize.getHeight() - 24, {
-      align: "center",
-    });
+    const footY = doc.internal.pageSize.getHeight() - 24;
+    doc.text(`${s.number} · Page ${i} of ${pages}`, pageW / 2, footY, { align: "center" });
+    if (s.branding) {
+      // A small, quiet credit that links to the app; the seller can turn it off on their Account page.
+      const home = process.env.NEXT_PUBLIC_APP_URL || "https://usehourly.app";
+      const host = home.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+      const credit = `Made with UseHourly · ${host}`;
+      doc.textWithLink(credit, right - doc.getTextWidth(credit), footY, { url: home });
+    }
   }
   return doc;
 }

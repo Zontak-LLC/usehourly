@@ -5,6 +5,8 @@ import { handleMcpHttp, originAllowed } from "@/server/mcp/http";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
+
 /**
  * A person connects an AI assistant to UseHourly: makes a token in the app, the assistant
  * connects over HTTP, lists tools, logs time, runs a timer, issues an invoice. Everything goes
@@ -72,6 +74,7 @@ function setup(over: Partial<TokenRow> = {}) {
     ...over,
   };
   let expectedHash = "";
+  const limits = memoryRateLimit();
   const prisma = {
     apiToken: {
       findUnique: vi.fn(async ({ where }: { where: { token_hash: string } }) =>
@@ -83,12 +86,9 @@ function setup(over: Partial<TokenRow> = {}) {
       findMany: vi.fn(async () => []),
       updateMany: vi.fn(async () => ({ count: 1 })),
     },
-    rateLimit: {
-      findUnique: vi.fn(async () => null),
-      upsert: vi.fn(async () => ({})),
-      update: vi.fn(async () => ({})),
-    },
+    rateLimit: limits.rateLimit,
     client: {
+      count: vi.fn(async () => 0),
       findMany: vi.fn(async () => [acme, globex]),
       findFirst: vi.fn(async () => acme),
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "c9", color: "#6366f1", ...data })),
@@ -96,6 +96,7 @@ function setup(over: Partial<TokenRow> = {}) {
       update: vi.fn(async () => ({ id: "c1" })),
     },
     project: {
+      count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({ id: "p1" })),
       findMany: vi.fn(async () => []),
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "p9", ...data })),
@@ -103,6 +104,7 @@ function setup(over: Partial<TokenRow> = {}) {
       groupBy: vi.fn(),
     },
     timeEntry: {
+      count: vi.fn(async () => 0),
       findMany: vi.fn(async () => [] as unknown[]),
       findFirst: vi.fn(async () => null as unknown),
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => entryRow({ ...data, id: "e2" })),
@@ -177,7 +179,7 @@ function setup(over: Partial<TokenRow> = {}) {
     };
     return { isError: result.isError, text: result.content[0].text, data: result.structuredContent };
   };
-  return { prisma, token, row, http, rpc, call };
+  return { prisma, token, row, http, rpc, call, limits };
 }
 
 describe("making and managing access tokens", () => {
@@ -300,27 +302,27 @@ describe("who may connect", () => {
     expect(stale.json.error).toMatch(/password/);
   });
 
-  it("throttles an address that keeps guessing, and a token that floods", async () => {
-    const guess = setup();
-    guess.prisma.rateLimit.findUnique.mockResolvedValue({
-      key: "k",
-      count: 30,
-      reset_at: Math.floor(Date.now() / 1000) + 600,
-    } as never);
-    const res = await guess.http(
-      { jsonrpc: "2.0", id: 1, method: "ping" },
-      { token: null, headers: { "cf-connecting-ip": "203.0.113.9" } },
+  it("throttles an address that keeps guessing, even when the guesses arrive all at once", async () => {
+    const s = setup();
+    const ping = { jsonrpc: "2.0", id: 1, method: "ping" };
+    const burst = await Promise.all(
+      Array.from({ length: 60 }, () => s.http(ping, { token: null, headers: { "cf-connecting-ip": "203.0.113.9" } })),
     );
-    expect(res.status).toBe(429);
-    expect(res.headers.get("retry-after")).toBeTruthy();
+    expect(burst.filter((r) => r.status === 401)).toHaveLength(30);
+    const blocked = burst.filter((r) => r.status === 429);
+    expect(blocked).toHaveLength(30);
+    expect(blocked[0].headers.get("retry-after")).toBeTruthy();
+    // another address is not affected, and the good token from the blocked address still works
+    expect((await s.http(ping, { token: null, headers: { "cf-connecting-ip": "198.51.100.2" } })).status).toBe(401);
+    expect((await s.http(ping, { headers: { "cf-connecting-ip": "203.0.113.9" } })).status).toBe(200);
+  });
 
-    const flood = setup();
-    flood.prisma.rateLimit.findUnique.mockResolvedValue({
-      key: "k",
-      count: 120,
-      reset_at: Math.floor(Date.now() / 1000) + 30,
-    } as never);
-    expect((await flood.http({ jsonrpc: "2.0", id: 1, method: "ping" })).status).toBe(429);
+  it("throttles a token that floods the server, counting a simultaneous burst exactly", async () => {
+    const s = setup();
+    const ping = { jsonrpc: "2.0", id: 1, method: "ping" };
+    const burst = await Promise.all(Array.from({ length: 150 }, () => s.http(ping)));
+    expect(burst.filter((r) => r.status === 200)).toHaveLength(120);
+    expect(burst.filter((r) => r.status === 429)).toHaveLength(30);
   });
 
   it("refuses other websites, GET and DELETE, bad JSON, and oversized bodies", async () => {

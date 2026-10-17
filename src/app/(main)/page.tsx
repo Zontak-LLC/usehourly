@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { LogoMark } from "@/components/logo";
 import { SupportHourly } from "@/components/support-hourly";
 import { Supporters } from "@/components/supporters";
+import { TryDemoButton } from "@/components/try-demo-button";
 import { APP_CONFIG } from "@/config/app-config";
 import { donateUrl } from "@/lib/donate";
 
@@ -223,11 +224,11 @@ export default function LandingPage() {
             <Link href="/auth/v2/register" className={primary}>
               Create a free account
             </Link>
-            <Link href="/auth/v2/login" className={secondary}>
-              Log in
-            </Link>
+            <TryDemoButton className={secondary}>Try the demo, no sign-up</TryDemoButton>
           </div>
-          <p className="mt-3 text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
+          <p className="mt-3 text-muted-foreground text-sm">
+            Free to use. No paywall, no ads. The demo comes with sample data and is deleted after a day.
+          </p>
 
           <div className="mx-auto mt-14 max-w-4xl text-left">
             <Screen
@@ -372,6 +373,9 @@ export default function LandingPage() {
             >
               Create a free account
             </Link>
+            <TryDemoButton className="mt-4 font-medium text-primary-foreground/90 text-sm underline underline-offset-4 hover:text-primary-foreground">
+              or try the demo first
+            </TryDemoButton>
           </div>
         </section>
       </main>

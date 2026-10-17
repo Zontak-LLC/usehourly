@@ -5,7 +5,7 @@
  * - `/` is the public landing page. Visitors see it; someone already signed in goes straight
  *   to their day, so returning users never see the sales page.
  * - `/auth/*` are the log-in and create-account pages: public, but pointless once signed in.
- * - `/privacy`, `/terms`, `/reset-password`, `/verify-email` and the app manifest are public for everyone, signed in or not.
+ * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off` and the app manifest are public for everyone, signed in or not.
  * - everything else needs a signed-in user.
  */
 export type AccessDecision = "allow" | "to-login" | "to-dashboard";
@@ -19,6 +19,7 @@ const PUBLIC_FOR_EVERYONE = new Set([
   "/terms",
   "/reset-password",
   "/verify-email",
+  "/reminders/off",
   "/manifest.webmanifest",
 ]);
 

@@ -11,10 +11,12 @@ import {
   tokenPrefix,
   tokenState,
 } from "@/lib/api-token";
+import { isDemoEmail, isDemoSession } from "@/lib/demo";
 import { normalizeEmail } from "@/lib/email";
 import { hashToken, newToken, RESET_TTL_SECONDS, VERIFY_TTL_SECONDS } from "@/lib/email-token";
 import { resetPasswordMessage, verifyEmailMessage } from "@/lib/mailer";
 import { describeWait, hitRateLimit, REGISTER_PER_IP } from "@/lib/rate-limit";
+import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
 
 import { logoSchema } from "../logo-schema";
 import { type Context, protectedProcedure, publicProcedure, router } from "../trpc";
@@ -28,7 +30,7 @@ async function issueEmailToken(
   kind: "verify" | "reset",
 ) {
   const mailer = ctx.mailer;
-  if (!mailer) return false;
+  if (!mailer || isDemoEmail(user.email)) return false; // demo addresses are not real mailboxes
   const token = newToken();
   await ctx.prisma.emailToken.deleteMany({ where: { user_id: user.id, kind, used_at: null } });
   await ctx.prisma.emailToken.create({
@@ -113,10 +115,136 @@ export const accountRouter = router({
         logo: true,
         payment_instructions: true,
         email_verified_at: true,
+        invoice_branding: true,
+        is_demo: true,
+        weekly_reminder: true,
       },
     });
     if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
     return user;
+  }),
+
+  /**
+   * Turn the signed-in demo account into a real one: your own name, email and password. The sample
+   * data can be wiped for a fresh start or kept. Signs every device out, so the page signs back in.
+   */
+  claimDemo: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().trim().min(1).max(80),
+        email: z.string().trim().toLowerCase().email(),
+        password: z.string().min(8, "Password must be at least 8 characters.").max(200),
+        startFresh: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.ip) {
+        const r = await hitRateLimit(
+          ctx.prisma,
+          `claim:${ctx.ip}`,
+          REGISTER_PER_IP.limit,
+          REGISTER_PER_IP.windowSeconds,
+        );
+        if (!r.allowed) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Too many attempts. Please try again in ${describeWait(r.retryAfterSeconds)}.`,
+          });
+        }
+      }
+      // Trust the database, not the sign-in token, about whether this is a demo.
+      const me = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { is_demo: true } });
+      if (!me?.is_demo) throw new TRPCError({ code: "BAD_REQUEST", message: "This is already a full account." });
+      const email = normalizeEmail(input.email);
+      if (isDemoEmail(email))
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Please use your own email address." });
+      const taken = await ctx.prisma.authUser.findUnique({ where: { email } });
+      if (taken) throw new TRPCError({ code: "CONFLICT", message: "An account with that email already exists." });
+
+      if (input.startFresh) {
+        // Children first; the sample data is all this account has.
+        await ctx.prisma.invoice.deleteMany({ where: { user_id: ctx.userId } });
+        await ctx.prisma.timeEntry.deleteMany({ where: { user_id: ctx.userId } });
+        await ctx.prisma.project.deleteMany({ where: { user_id: ctx.userId } });
+        await ctx.prisma.client.deleteMany({ where: { user_id: ctx.userId } });
+      }
+      try {
+        await ctx.prisma.authUser.update({
+          where: { id: ctx.userId },
+          data: {
+            name: input.name,
+            email,
+            password_hash: await hash(input.password, 10),
+            is_demo: false,
+            token_version: { increment: 1 },
+            // The sample business details were placeholders.
+            business_name: null,
+            ein: null,
+            address: null,
+            payment_instructions: null,
+          },
+        });
+      } catch (e) {
+        if ((e as { code?: string } | null)?.code === "P2002") {
+          throw new TRPCError({ code: "CONFLICT", message: "An account with that email already exists." });
+        }
+        throw e;
+      }
+      // Best effort, like sign-up: the account works without it.
+      try {
+        await issueEmailToken(ctx, { id: ctx.userId, email }, "verify");
+      } catch (err) {
+        console.error("verification email failed:", err);
+      }
+      return { ok: true };
+    }),
+
+  /**
+   * Turn the Friday "log your hours" email on or off. Turning it on needs the email service to be set
+   * up and the person's address to be confirmed (otherwise anyone could point it at someone else's
+   * mailbox). The browser sends its time zone so "Friday afternoon" is the person's own. If this
+   * week's time has already passed, the first email is next Friday, not in an hour.
+   */
+  setWeeklyReminder: protectedProcedure
+    .input(z.object({ enabled: z.boolean(), timezone: z.string().max(64).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.authUser.findUnique({
+        where: { id: ctx.userId },
+        select: { is_demo: true, email_verified_at: true, timezone: true },
+      });
+      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
+      if (!input.enabled) {
+        await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { weekly_reminder: false } });
+        return { enabled: false };
+      }
+      if (user.is_demo) throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account first." });
+      if (!ctx.mailer) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Email isn't set up yet." });
+      if (!user.email_verified_at) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Please confirm your email address first, using the link under your email above.",
+        });
+      }
+      const timezone = input.timezone ?? user.timezone;
+      if (!timezone || !isValidTimeZone(timezone)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "We couldn't tell your time zone. Please try again." });
+      }
+      const now = new Date();
+      await ctx.prisma.authUser.update({
+        where: { id: ctx.userId },
+        data: {
+          weekly_reminder: true,
+          timezone,
+          reminder_sent_week: reminderTimePassed(now, timezone) ? weekKey(localParts(now, timezone).date) : null,
+        },
+      });
+      return { enabled: true };
+    }),
+
+  /** Show or hide "Made with UseHourly" on invoices issued from now on (issued ones never change). */
+  setInvoiceBranding: protectedProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => {
+    await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { invoice_branding: input.enabled } });
+    return { enabled: input.enabled };
   }),
 
   updateProfile: protectedProcedure
@@ -249,6 +377,9 @@ export const accountRouter = router({
     }
     const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
     if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
+    if (user.is_demo) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Create your account first, then confirm your email." });
+    }
     if (user.email_verified_at) return { ok: true, alreadyVerified: true };
     const r = await hitRateLimit(ctx.prisma, `verify:${user.id}`, 3, 60 * 60);
     if (!r.allowed) {
@@ -315,6 +446,10 @@ export const accountRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Refuse before touching the database; the stored flag is checked again below.
+      if (isDemoSession(ctx.session)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to connect an AI assistant." });
+      }
       const live = await ctx.prisma.apiToken.count({ where: { user_id: ctx.userId, revoked_at: null } });
       if (live >= MAX_TOKENS_PER_USER) {
         throw new TRPCError({
@@ -322,8 +457,14 @@ export const accountRouter = router({
           message: `You can have ${MAX_TOKENS_PER_USER} active tokens. Revoke one you no longer use first.`,
         });
       }
-      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { token_version: true } });
+      const user = await ctx.prisma.authUser.findUnique({
+        where: { id: ctx.userId },
+        select: { token_version: true, is_demo: true },
+      });
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
+      if (user.is_demo) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to connect an AI assistant." });
+      }
 
       const token = newApiToken();
       const row = await ctx.prisma.apiToken.create({

@@ -23,6 +23,7 @@ describe("week grid: filling several days at once", () => {
     const prisma = {
       project: { findFirst: vi.fn().mockResolvedValue({ id: "p1" }) },
       timeEntry: {
+        count: vi.fn(async () => 0),
         findMany: vi.fn().mockResolvedValue(existing),
         create: vi.fn(),
         update: vi.fn(),
@@ -267,6 +268,7 @@ describe("week grid: several entries on the same day", () => {
     const prisma = {
       project: { findFirst: vi.fn().mockResolvedValue({ id: "p1" }) },
       timeEntry: {
+        count: vi.fn(async () => 0),
         create: vi.fn().mockImplementation(async ({ data }: { data: unknown }) => {
           created.push(data);
           return { id: `e${created.length}`, ...(data as object) };

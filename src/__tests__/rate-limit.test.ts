@@ -4,35 +4,11 @@ import { clearRateLimit, describeWait, hitRateLimit } from "@/lib/rate-limit";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
-type Row = { key: string; count: number; reset_at: number };
-
-/** An in-memory stand-in for the rate_limits table. */
-function memoryLimits() {
-  const rows = new Map<string, Row>();
-  return {
-    rows,
-    rateLimit: {
-      findUnique: vi.fn(async ({ where }: { where: { key: string } }) => rows.get(where.key) ?? null),
-      upsert: vi.fn(
-        async ({ where, create, update }: { where: { key: string }; create: Row; update: Partial<Row> }) => {
-          const prev = rows.get(where.key);
-          rows.set(where.key, prev ? { ...prev, ...update } : create);
-        },
-      ),
-      update: vi.fn(async ({ where, data }: { where: { key: string }; data: Partial<Row> }) => {
-        const prev = rows.get(where.key);
-        if (prev) rows.set(where.key, { ...prev, ...data });
-      }),
-      deleteMany: vi.fn(async ({ where }: { where: { key: string } }) => {
-        rows.delete(where.key);
-      }),
-    },
-  };
-}
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 describe("throttling guesses and sign-ups", () => {
   it("allows up to the limit, then refuses with a wait, then opens again after the window", async () => {
-    const db = memoryLimits();
+    const db = memoryRateLimit();
     const t0 = 1_000_000;
     for (let i = 0; i < 3; i++) {
       expect(await hitRateLimit(db as never, "login:email:a@b.c", 3, 900, t0 + i)).toEqual({ allowed: true });
@@ -49,7 +25,7 @@ describe("throttling guesses and sign-ups", () => {
   });
 
   it("clears a counter after a successful sign-in", async () => {
-    const db = memoryLimits();
+    const db = memoryRateLimit();
     await hitRateLimit(db as never, "login:email:a@b.c", 3, 900, 1000);
     await clearRateLimit(db as never, "login:email:a@b.c");
     expect(db.rows.has("login:email:a@b.c")).toBe(false);
@@ -62,8 +38,26 @@ describe("throttling guesses and sign-ups", () => {
     expect(describeWait(840)).toBe("about 14 minutes");
   });
 
+  it("counts every request in a simultaneous burst, so guesses cannot be sent faster than the limit", async () => {
+    const db = memoryRateLimit();
+    const t0 = 2_000_000;
+    const results = await Promise.all(
+      Array.from({ length: 80 }, () => hitRateLimit(db as never, "login:ip:203.0.113.1", 10, 900, t0)),
+    );
+    expect(results.filter((r) => r.allowed)).toHaveLength(10);
+    expect(results.filter((r) => !r.allowed)).toHaveLength(70);
+    expect(db.rows.get("login:ip:203.0.113.1")?.count).toBe(80);
+  });
+
+  it("starts exactly one fresh window when many requests arrive just after the old one ends", async () => {
+    const db = memoryRateLimit([{ key: "k", count: 99, reset_at: 100 }]);
+    const results = await Promise.all(Array.from({ length: 30 }, () => hitRateLimit(db as never, "k", 5, 60, 200)));
+    expect(results.filter((r) => r.allowed)).toHaveLength(5);
+    expect(db.rows.get("k")?.reset_at).toBe(260);
+  });
+
   it("refuses a sixth sign-up from the same address and creates no account", async () => {
-    const db = memoryLimits();
+    const db = memoryRateLimit();
     const prisma = {
       ...db,
       authUser: {

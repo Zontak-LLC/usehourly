@@ -5,6 +5,8 @@ import type { Mailer, MailMessage } from "@/lib/mailer";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
+
 type User = {
   id: string;
   email: string;
@@ -26,7 +28,6 @@ type Token = {
 function world(initial: User[] = []) {
   const users = new Map(initial.map((u) => [u.id, u]));
   const tokens = new Map<string, Token>();
-  const limits = new Map<string, { key: string; count: number; reset_at: number }>();
   let n = 0;
   const prisma = {
     authUser: {
@@ -73,18 +74,7 @@ function world(initial: User[] = []) {
         }
       }),
     },
-    rateLimit: {
-      findUnique: vi.fn(async ({ where }: { where: { key: string } }) => limits.get(where.key) ?? null),
-      upsert: vi.fn(async ({ where, create, update }: { where: { key: string }; create: never; update: object }) => {
-        const prev = limits.get(where.key);
-        limits.set(where.key, prev ? { ...prev, ...update } : create);
-      }),
-      update: vi.fn(async ({ where, data }: { where: { key: string }; data: object }) => {
-        const prev = limits.get(where.key);
-        if (prev) limits.set(where.key, { ...prev, ...data });
-      }),
-      deleteMany: vi.fn(async () => ({ count: 0 })),
-    },
+    rateLimit: memoryRateLimit().rateLimit,
   };
   const outbox: MailMessage[] = [];
   const mailer: Mailer = { send: async (m) => void outbox.push(m) };

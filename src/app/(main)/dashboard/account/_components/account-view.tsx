@@ -8,7 +8,9 @@ import { signIn, signOut } from "next-auth/react";
 import { toast } from "sonner";
 
 import { ApiTokensCard } from "@/components/api-tokens-card";
+import { ClaimDemoCard } from "@/components/claim-demo-card";
 import { ExportEverything } from "@/components/export-everything";
+import { ImportTime } from "@/components/import-time";
 import { SupportHourly } from "@/components/support-hourly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +61,11 @@ export function AccountView() {
   const changePassword = trpc.account.changePassword.useMutation();
   const updateBusiness = trpc.account.updateBusiness.useMutation();
   const signOutEverywhere = trpc.account.signOutEverywhere.useMutation();
+  const setBranding = trpc.account.setInvoiceBranding.useMutation();
+  const setReminder = trpc.account.setWeeklyReminder.useMutation();
+  // Checkboxes respond at once; the saved value takes over when the server answers (or the change is undone).
+  const [brandingChoice, setBrandingChoice] = useState<boolean | null>(null);
+  const [reminderChoice, setReminderChoice] = useState<boolean | null>(null);
   const emailEnabled = trpc.account.emailEnabled.useQuery();
   const sendVerification = trpc.account.sendVerification.useMutation();
   const [verificationSent, setVerificationSent] = useState(false);
@@ -151,66 +158,72 @@ export function AccountView() {
       </div>
 
       <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
-        <form onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <h3 className="font-medium">Name and email</h3>
-          <div className="grid gap-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" defaultValue={me.data.name ?? ""} required />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={me.data.email} disabled />
-            {me.data.email_verified_at ? (
-              <p className="text-emerald-700 text-xs dark:text-emerald-400">Email confirmed.</p>
-            ) : emailEnabled.data?.enabled ? (
-              <p className="text-muted-foreground text-xs">
-                Not confirmed yet.{" "}
-                {verificationSent ? (
-                  "We sent you a link. Check your inbox."
-                ) : (
-                  <button
-                    type="button"
-                    className="underline"
-                    disabled={sendVerification.isPending}
-                    onClick={async () => {
-                      try {
-                        await sendVerification.mutateAsync();
-                        setVerificationSent(true);
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
-                      }
-                    }}
-                  >
-                    Send me a confirmation email
-                  </button>
-                )}
-              </p>
-            ) : null}
-          </div>
-          <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
-            Save
-          </Button>
-        </form>
+        {me.data.is_demo ? (
+          <ClaimDemoCard />
+        ) : (
+          <form onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+            <h3 className="font-medium">Name and email</h3>
+            <div className="grid gap-1.5">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" name="name" defaultValue={me.data.name ?? ""} required />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" value={me.data.email} disabled />
+              {me.data.email_verified_at ? (
+                <p className="text-emerald-700 text-xs dark:text-emerald-400">Email confirmed.</p>
+              ) : emailEnabled.data?.enabled ? (
+                <p className="text-muted-foreground text-xs">
+                  Not confirmed yet.{" "}
+                  {verificationSent ? (
+                    "We sent you a link. Check your inbox."
+                  ) : (
+                    <button
+                      type="button"
+                      className="underline"
+                      disabled={sendVerification.isPending}
+                      onClick={async () => {
+                        try {
+                          await sendVerification.mutateAsync();
+                          setVerificationSent(true);
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
+                        }
+                      }}
+                    >
+                      Send me a confirmation email
+                    </button>
+                  )}
+                </p>
+              ) : null}
+            </div>
+            <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
+              Save
+            </Button>
+          </form>
+        )}
 
-        <form onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div>
-            <h3 className="font-medium">Change password</h3>
-            <p className="text-muted-foreground text-sm">
-              Changing it signs out your other devices and stops any AI assistant access tokens.
-            </p>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="current">Current password</Label>
-            <Input id="current" name="current" type="password" autoComplete="current-password" required />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="next">New password</Label>
-            <Input id="next" name="next" type="password" autoComplete="new-password" minLength={8} required />
-          </div>
-          <Button type="submit" className="self-start" disabled={changePassword.isPending}>
-            Change password
-          </Button>
-        </form>
+        {!me.data.is_demo && (
+          <form onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+            <div>
+              <h3 className="font-medium">Change password</h3>
+              <p className="text-muted-foreground text-sm">
+                Changing it signs out your other devices and stops any AI assistant access tokens.
+              </p>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="current">Current password</Label>
+              <Input id="current" name="current" type="password" autoComplete="current-password" required />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="next">New password</Label>
+              <Input id="next" name="next" type="password" autoComplete="new-password" minLength={8} required />
+            </div>
+            <Button type="submit" className="self-start" disabled={changePassword.isPending}>
+              Change password
+            </Button>
+          </form>
+        )}
 
         <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
@@ -240,6 +253,49 @@ export function AccountView() {
             </Button>
           </div>
         </section>
+
+        {!me.data.is_demo && (
+          <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+            <div>
+              <h3 className="font-medium">Friday reminder</h3>
+              <p className="text-muted-foreground text-sm">
+                One email on Friday afternoon with your week so far, so nothing goes unlogged. Turn it off any time,
+                here or with the link in the email.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="size-4"
+                checked={reminderChoice ?? me.data.weekly_reminder}
+                disabled={setReminder.isPending || !emailEnabled.data?.enabled || !me.data.email_verified_at}
+                onChange={async (e) => {
+                  try {
+                    await setReminder.mutateAsync({
+                      enabled: e.target.checked,
+                      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    });
+                    await utils.account.me.invalidate();
+                    toast.success(
+                      e.target.checked ? "You'll get a reminder on Friday afternoons." : "The reminder is off.",
+                    );
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Couldn't save that.");
+                  }
+                }}
+              />
+              Email me on Friday afternoon with my week so far
+            </label>
+            {emailEnabled.data && !emailEnabled.data.enabled && (
+              <p className="text-muted-foreground text-xs">
+                Email isn&rsquo;t set up on this server yet, so this can&rsquo;t be turned on.
+              </p>
+            )}
+            {emailEnabled.data?.enabled && !me.data.email_verified_at && (
+              <p className="text-muted-foreground text-xs">Confirm your email address above to turn this on.</p>
+            )}
+          </section>
+        )}
       </Section>
 
       <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
@@ -310,9 +366,45 @@ export function AccountView() {
             Save business details
           </Button>
         </form>
+
+        <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <div>
+            <h3 className="font-medium">Invoice footer</h3>
+            <p className="text-muted-foreground text-sm">
+              A small &ldquo;Made with UseHourly&rdquo; line at the bottom of each page of your invoices. It helps other
+              freelancers find a free tool. Turn it off any time; it applies to invoices you issue from now on.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4"
+              checked={brandingChoice ?? me.data.invoice_branding}
+              disabled={setBranding.isPending}
+              onChange={async (e) => {
+                const enabled = e.target.checked;
+                setBrandingChoice(enabled);
+                try {
+                  await setBranding.mutateAsync({ enabled });
+                  await utils.account.me.invalidate();
+                  toast.success(enabled ? "The footer line is on." : "The footer line is off.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Couldn't save that.");
+                } finally {
+                  setBrandingChoice(null);
+                }
+              }}
+            />
+            Show &ldquo;Made with UseHourly&rdquo; on my invoices
+          </label>
+        </section>
       </Section>
 
-      <Section id="data" title="Your data" description="Keep a copy of everything you have logged.">
+      <Section
+        id="data"
+        title="Your data"
+        description="Keep a copy of everything you have logged, or bring your history in from another tool."
+      >
         <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
             <h3 className="font-medium">Download everything</h3>
@@ -323,6 +415,8 @@ export function AccountView() {
           </div>
           <ExportEverything className="self-start" />
         </section>
+
+        <ImportTime />
       </Section>
 
       <Section
@@ -330,7 +424,13 @@ export function AccountView() {
         title="AI assistants"
         description="Let an assistant such as Claude read your time, log new entries and prepare invoices."
       >
-        <ApiTokensCard />
+        {me.data.is_demo ? (
+          <p className="rounded-xl border bg-card p-4 text-muted-foreground text-sm">
+            Create a free account to connect an AI assistant such as Claude.
+          </p>
+        ) : (
+          <ApiTokensCard />
+        )}
       </Section>
 
       <Section id="support" title="Support" description="UseHourly is free. If it saves you time, you can chip in.">

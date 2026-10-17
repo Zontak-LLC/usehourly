@@ -99,6 +99,11 @@ export type InvoiceSnapshot = {
   includeDetail: boolean;
   /** Line items show only the first line of each description (full text stays in the time detail). */
   compactNotes?: boolean;
+  /**
+   * Print "Made with UseHourly" at the foot of each page. Frozen when the invoice is issued, from the
+   * seller's setting at that moment; absent on invoices issued before it existed, which stay unbranded.
+   */
+  branding?: boolean;
   lines: InvoiceLine[];
   detail: InvoiceDetailRow[];
   totalMinutes: number;

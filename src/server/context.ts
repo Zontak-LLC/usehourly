@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { appUrl, createMailer } from "@/lib/mailer";
 import { getPrisma } from "@/lib/prisma";
+import { enforceRequestLimits } from "@/lib/request-limits";
 import { sessionStillValid } from "@/lib/session-version";
 
 export async function createContext(req?: Request) {
@@ -16,5 +17,7 @@ export async function createContext(req?: Request) {
   }
   // Cloudflare sets cf-connecting-ip; it is the real client address behind the edge.
   const ip = req?.headers.get("cf-connecting-ip") ?? null;
+  // Throttle changes per account (or per connection before sign-in); see lib/request-limits.ts.
+  if (req) await enforceRequestLimits(prisma, { method: req.method, userId: session?.user?.id, ip });
   return { session, prisma, ip, mailer: createMailer(), baseUrl: appUrl() };
 }

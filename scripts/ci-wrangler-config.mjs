@@ -20,7 +20,7 @@ const config = {
   $schema: "node_modules/wrangler/config-schema.json",
   name: process.env.WORKER_NAME || "hourly",
   account_id: need("CLOUDFLARE_ACCOUNT_ID"),
-  main: ".open-next/worker.js",
+  main: "custom-worker.ts",
   compatibility_date: "2025-04-01",
   compatibility_flags: ["nodejs_compat"],
   placement: { mode: "smart" },
@@ -33,6 +33,7 @@ const config = {
     },
   ],
   vars: { AUTH_URL: appUrl, NEXT_PUBLIC_APP_URL: appUrl },
+  triggers: { crons: ["0 * * * *"] },
   workers_dev: true,
 };
 if (process.env.CUSTOM_DOMAIN) config.routes = [{ pattern: process.env.CUSTOM_DOMAIN, custom_domain: true }];
