@@ -30,6 +30,8 @@ model AuthUser {
   weekly_reminder Boolean @default(false)
   timezone      String?   // IANA name from the browser, e.g. America/New_York; says when "Friday afternoon" is
   reminder_sent_week String? // the week (e.g. 2026-W42) the last reminder went out, so each week sends once
+  // The GitHub account this one signs in with ("Sign in with GitHub"); null for password-only accounts.
+  github_id     String?   @unique
   created_at    DateTime  @default(now())
 
   clients  Client[]

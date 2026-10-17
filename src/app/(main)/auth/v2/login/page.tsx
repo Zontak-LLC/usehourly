@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { Metadata } from "next";
 
+import { GithubSignIn } from "@/components/github-sign-in";
 import { TryDemoButton } from "@/components/try-demo-button";
 
 import { LoginForm } from "../../_components/login-form";
@@ -16,6 +17,7 @@ export default function LoginPage() {
           <h1 className="font-medium text-3xl">Welcome back</h1>
           <p className="text-muted-foreground text-sm">Log in to track your time.</p>
         </div>
+        <GithubSignIn />
         <LoginForm />
         <div className="text-center text-muted-foreground text-sm">
           Just looking?
