@@ -17,6 +17,9 @@ import { join } from "node:path";
 const BRIDGE_DIR = join(process.cwd(), "bridge");
 const BRIDGE = join(BRIDGE_DIR, "index.mjs");
 const CATALOG_FILE = join(BRIDGE_DIR, "catalog.json");
+const pkgVersion = (
+  JSON.parse(readFileSync(join(process.cwd(), "bridge", "package.json"), "utf8")) as { version: string }
+).version;
 const TOKEN = "uh_test_token_1234567890abcdefghijklmnopqrstuv";
 
 type Rpc = {
@@ -181,7 +184,7 @@ describe("a client connects over stdio", () => {
       });
       const code = await new Promise<number | null>((resolve) => child.on("close", resolve));
       expect(code).toBe(0);
-      expect(out).toContain(flag === "--version" ? "1.0.0" : "USEHOURLY_API_TOKEN");
+      expect(out).toContain(flag === "--version" ? pkgVersion : "USEHOURLY_API_TOKEN");
     }
   });
 });
@@ -337,11 +340,33 @@ describe("the token only ever goes somewhere safe", () => {
     await elsewhere.close();
   });
 
-  it("no longer tells anyone to run an unpublished package", () => {
+  it("tells people to run a package that really is published, and the registry entry points at the same thing", () => {
+    const pkg = JSON.parse(readFileSync(join(BRIDGE_DIR, "package.json"), "utf8")) as {
+      name: string;
+      version: string;
+      mcpName: string;
+    };
+    const server = JSON.parse(readFileSync(join(process.cwd(), "server.json"), "utf8")) as {
+      name: string;
+      version: string;
+      packages: { registryType: string; identifier: string; version: string; transport: { type: string } }[];
+    };
     const readme = readFileSync(join(BRIDGE_DIR, "README.md"), "utf8");
     const bridge = readFileSync(BRIDGE, "utf8");
-    expect(readme).not.toMatch(/"command":\s*"npx"/);
-    expect(bridge).not.toMatch(/"npx"/);
-    expect(readme).toContain("bridge/index.mjs");
+    // The instructions name the package that is on npm.
+    expect(pkg.name).toBe("usehourly-mcp");
+    expect(readme).toContain(`"args": ["-y", "${pkg.name}"]`);
+    expect(bridge).toContain(`"${pkg.name}"`);
+    // The official registry only accepts an npm package whose package.json names the server (mcpName),
+    // and the entry must point at this exact package and version.
+    expect(pkg.mcpName).toBe(server.name);
+    expect(server.packages).toHaveLength(1);
+    expect(server.packages[0]).toMatchObject({
+      registryType: "npm",
+      identifier: pkg.name,
+      version: pkg.version,
+      transport: { type: "stdio" },
+    });
+    expect(server.version).toBe(pkg.version);
   });
 });

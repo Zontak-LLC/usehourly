@@ -35,7 +35,7 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
       "Set USEHOURLY_API_TOKEN to a token from UseHourly > Account > AI assistants.",
       "Optional: USEHOURLY_MCP_URL to point at another server.",
       "",
-      'Example (Claude Desktop): { "command": "node", "args": ["/path/to/usehourly/bridge/index.mjs"],',
+      'Example (Claude Desktop): { "command": "npx", "args": ["-y", "usehourly-mcp"],',
       '  "env": { "USEHOURLY_API_TOKEN": "uh_..." } }',
     ].join("\n"),
   );
