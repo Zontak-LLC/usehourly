@@ -39,6 +39,10 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - PWA: `src/app/manifest.ts` + `public/icons/*` (rendered from `icon.svg`); `/manifest.webmanifest` is public in `route-access.ts`. Phones can Add to Home Screen and open it standalone at `/dashboard/today`.
 - Test: `src/__tests__/first-run-journey.test.ts`.
 
+## Colours and themes (2026-10-17)
+- Default palette ("Sunshine") lives in `src/app/globals.css` `:root` / `.dark`: sunshine amber primary (the logo's crossbar colour), cream page, warm ink text, white cards. Dark text sits on amber buttons, never white. Mint is only for good news: `--success` / `--success-soft` (`text-success`, `bg-success-soft`) on paid invoices and "Email confirmed".
+- Users pick an accent in the gear menu (Theme Preset): Sunshine (default), Mint, Indigo, Graphite (the old black and white). Presets are `src/styles/presets/*.css` with `label:`/`value:` comments and override accent variables only; `THEME_PRESET_OPTIONS` in `src/lib/preferences/theme.ts` is the generated list (the generator script exists but no npm script runs it, so edit that block by hand when adding a preset). Client colour dots are the user's own and are not themed.
+
 ## Landing page and brand
 - `/` is a public landing page (`src/app/(main)/page.tsx`); signed-in users are sent on to `/dashboard/today`. The rule lives in `src/lib/route-access.ts` (tested) and is applied by `src/proxy.ts`; `next.config.mjs` must NOT redirect `/` (it used to, and hid the page).
 - Its screenshots (`public/landing/*.webp`) are the real app, taken from a local demo freelancer: register through the UI, seed clients/projects/entries/invoices with `wrangler d1 execute --local`, screenshot Today/Week/Month/Report at 1440x900 @2x with the Next dev badge hidden, then delete the demo rows.

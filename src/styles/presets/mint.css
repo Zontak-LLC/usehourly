@@ -1,0 +1,29 @@
+/* 
+label: Mint
+value: mint
+*/
+
+/* Accent only: the cream page, warm ink and card colours come from the default palette in globals.css. */
+:root[data-theme-preset="mint"] {
+  --primary: oklch(0.7 0.125 170);
+  --primary-foreground: oklch(0.24 0.02 75);
+  --ring: oklch(0.7 0.125 170);
+  --accent: oklch(0.95 0.04 170);
+  --chart-1: oklch(0.7 0.125 170);
+  --sidebar-primary: oklch(0.7 0.125 170);
+  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-accent: oklch(0.95 0.04 170);
+  --sidebar-ring: oklch(0.7 0.125 170);
+}
+
+.dark:root[data-theme-preset="mint"] {
+  --primary: oklch(0.78 0.12 170);
+  --primary-foreground: oklch(0.24 0.02 75);
+  --ring: oklch(0.78 0.12 170);
+  --accent: oklch(0.32 0.04 170);
+  --chart-1: oklch(0.78 0.12 170);
+  --sidebar-primary: oklch(0.78 0.12 170);
+  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-accent: oklch(0.32 0.04 170);
+  --sidebar-ring: oklch(0.78 0.12 170);
+}
