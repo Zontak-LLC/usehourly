@@ -2,6 +2,7 @@ import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
 import { shortNote } from "@/lib/notes";
+import { describeRounding } from "@/lib/rounding";
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric" });
 const fmtDate = (iso: string) => dateFmt.format(fromISODate(iso));
@@ -245,6 +246,24 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
       .setTextColor(...INK);
     doc.text(payLines, MARGIN, y + 14);
     y += 14 + payLines.length * 13 + 16;
+  }
+
+  // ── Rounding rule (only when one was applied) ───────────────────────────
+  if (s.rounding) {
+    if (y > 700) {
+      doc.addPage();
+      y = MARGIN;
+    }
+    const said = `${describeRounding(s.rounding)}${
+      s.loggedMinutes === undefined ? "" : ` Logged: ${formatDecimalHours(s.loggedMinutes)} h.`
+    }`;
+    doc
+      .setFont("helvetica", "italic")
+      .setFontSize(9)
+      .setTextColor(...MUTED);
+    const sayLines = doc.splitTextToSize(said, pageW - MARGIN * 2) as string[];
+    doc.text(sayLines, MARGIN, y);
+    y += sayLines.length * 12 + 12;
   }
 
   // ── Notes / payment terms ───────────────────────────────────────────────

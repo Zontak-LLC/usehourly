@@ -7,6 +7,7 @@ import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
 import { getPrisma } from "@/lib/prisma";
+import { describeRounding } from "@/lib/rounding";
 import { findInvoiceLinkByToken } from "@/server/invoice-link";
 import { withInvoiceLogos } from "@/server/invoice-logos";
 
@@ -152,6 +153,13 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
           </tfoot>
         </table>
       </div>
+
+      {s.rounding && (
+        <p className="text-muted-foreground text-sm">
+          {describeRounding(s.rounding)}
+          {s.loggedMinutes !== undefined && ` Logged: ${formatDecimalHours(s.loggedMinutes)} h.`}
+        </p>
+      )}
 
       {s.notes && <p className="whitespace-pre-wrap break-words text-sm">{s.notes}</p>}
 

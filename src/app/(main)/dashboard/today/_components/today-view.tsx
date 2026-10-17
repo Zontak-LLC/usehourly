@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ViewTabs } from "@/components/view-tabs";
 import { addDays, DATE_RE, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
@@ -50,18 +50,13 @@ export function TodayView() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+      <ViewTabs current="day" date={date} />
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="font-semibold text-xl">{date === today ? "Today" : longDate.format(fromISODate(date))}</h1>
           {date === today && <p className="text-muted-foreground text-sm">{longDate.format(fromISODate(date))}</p>}
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="outline" asChild>
-            <Link href={`/dashboard/month?month=${date.slice(0, 7)}`}>
-              <CalendarDays />
-              <span className="hidden sm:inline">Month</span>
-            </Link>
-          </Button>
           <Button size="icon" variant="outline" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
             <ChevronLeft />
           </Button>

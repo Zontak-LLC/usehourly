@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isDemoSession } from "@/lib/demo";
 import { emailField } from "@/lib/email";
 import { assertWithinQuota } from "@/lib/quotas";
+import { roundingSchema } from "@/lib/rounding";
 
 import { logoSchema } from "../logo-schema";
 import { protectedProcedure, router } from "../trpc";
@@ -25,7 +26,17 @@ export const clientRouter = router({
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const c = await ctx.prisma.client.findFirst({
       where: { id: input.id, user_id: ctx.userId },
-      select: { id: true, name: true, legal_name: true, address: true, email: true, logo: true },
+      select: {
+        id: true,
+        name: true,
+        legal_name: true,
+        address: true,
+        email: true,
+        logo: true,
+        round_step: true,
+        round_mode: true,
+        round_min: true,
+      },
     });
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
     return c;
@@ -41,6 +52,8 @@ export const clientRouter = router({
         address: z.string().trim().max(300),
         // Where this client's invoices are sent. Left out = unchanged; empty = removed.
         email: z.union([z.literal(""), emailField]).optional(),
+        // Billing rounding for this client's invoices. Left out = unchanged.
+        rounding: roundingSchema.optional(),
         logo: logoSchema,
       }),
     )
@@ -58,6 +71,9 @@ export const clientRouter = router({
           legal_name: input.legalName || null,
           address: input.address || null,
           ...(input.email === undefined ? {} : { email: input.email || null }),
+          ...(input.rounding
+            ? { round_step: input.rounding.step, round_mode: input.rounding.mode, round_min: input.rounding.min }
+            : {}),
           logo: input.logo,
         },
         select: { id: true },

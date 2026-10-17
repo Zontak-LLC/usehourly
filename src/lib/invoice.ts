@@ -1,3 +1,5 @@
+import { billedMinutes, NO_ROUNDING, type Rounding } from "./rounding";
+
 /** Pure invoice math, shared by the server (which snapshots) and the builder page (live preview). */
 
 export type InvoiceEntry = {
@@ -23,6 +25,8 @@ export type InvoiceTotals = {
   lines: InvoiceLine[];
   detail: InvoiceDetailRow[];
   totalMinutes: number;
+  /** Minutes actually logged; differs from totalMinutes only when a rounding rule applies. */
+  loggedMinutes: number;
   totalCents: number;
   /** Billable projects included at a $0 rate — almost certainly a missing rate. */
   zeroRateProjects: string[];
@@ -36,11 +40,12 @@ export function amountCents(minutes: number, rateCents: number): number {
   return Math.round((minutes * rateCents) / 60);
 }
 
-export function buildInvoice(entries: InvoiceEntry[]): InvoiceTotals {
+export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_ROUNDING): InvoiceTotals {
   const byProject = new Map<string, InvoiceLine>();
   const detail: InvoiceDetailRow[] = [];
   let skippedMinutes = 0;
   let runningTimers = 0;
+  let loggedMinutes = 0;
 
   for (const e of entries) {
     if (!e.project.billable) {
@@ -57,9 +62,11 @@ export function buildInvoice(entries: InvoiceEntry[]): InvoiceTotals {
       rateCents: e.project.hourly_rate,
       amountCents: 0,
     };
-    line.minutes += e.minutes;
+    const billed = billedMinutes(e.minutes, rounding);
+    loggedMinutes += e.minutes;
+    line.minutes += billed;
     byProject.set(e.project_id, line);
-    detail.push({ date: e.date, project: e.project.name, note: e.note, minutes: e.minutes });
+    detail.push({ date: e.date, project: e.project.name, note: e.note, minutes: billed });
   }
 
   const lines = [...byProject.values()]
@@ -71,6 +78,7 @@ export function buildInvoice(entries: InvoiceEntry[]): InvoiceTotals {
     lines,
     detail,
     totalMinutes: lines.reduce((a, l) => a + l.minutes, 0),
+    loggedMinutes,
     totalCents: lines.reduce((a, l) => a + l.amountCents, 0),
     zeroRateProjects: lines.filter((l) => l.rateCents === 0).map((l) => l.project),
     skippedMinutes,
@@ -112,6 +120,10 @@ export type InvoiceSnapshot = {
    * seller's setting at that moment; absent on invoices issued before it existed, which stay unbranded.
    */
   branding?: boolean;
+  /** The client's rounding rule when the invoice was issued; absent = exact minutes. Minutes above are already rounded. */
+  rounding?: Rounding;
+  /** Minutes actually logged, kept when a rounding rule changed the billed total. */
+  loggedMinutes?: number;
   lines: InvoiceLine[];
   detail: InvoiceDetailRow[];
   totalMinutes: number;
