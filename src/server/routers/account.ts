@@ -28,7 +28,9 @@ import {
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
 import { isThemeMode, isThemePreset } from "@/lib/theme-sync";
+import { turnstileEnabled, turnstileSiteKey, verifyTurnstile } from "@/lib/turnstile";
 
+import { deleteAccountData } from "../account-deletion";
 import { logoSchema } from "../logo-schema";
 import { type Context, protectedProcedure, publicProcedure, router } from "../trpc";
 
@@ -80,15 +82,22 @@ export const accountRouter = router({
     google: Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET),
   })),
 
+  /** The public key for the sign-up robot check, or null when it is not set up (the form then shows no widget). */
+  signupCheck: publicProcedure.query(() => ({ siteKey: turnstileEnabled() ? turnstileSiteKey() : null })),
+
   register: publicProcedure
     .input(
       z.object({
         name: z.string().trim().min(1).max(80),
         email: emailField,
         password: z.string().min(8, "Password must be at least 8 characters.").max(200),
+        // A box people never see: only a script fills it in.
+        website: z.string().max(200).optional(),
+        captcha: z.string().max(4096).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.website) throw new TRPCError({ code: "BAD_REQUEST", message: "Couldn't create your account." });
       if (ctx.ip) {
         const r = await hitRateLimit(
           ctx.prisma,
@@ -102,6 +111,12 @@ export const accountRouter = router({
             message: `Too many sign-ups from this connection. Please try again in ${describeWait(r.retryAfterSeconds)}.`,
           });
         }
+      }
+      if (turnstileEnabled() && !(await verifyTurnstile(input.captcha, ctx.ip))) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Please confirm you're not a robot, then try again.",
+        });
       }
       const email = normalizeEmail(input.email);
       const existing = await ctx.prisma.authUser.findUnique({ where: { email } });
@@ -483,6 +498,49 @@ export const accountRouter = router({
     }),
 
   /** Sign out every device, including this one. */
+  /**
+   * Deletes the account and all its data for good. Asks for the password (or, for an account that only
+   * signs in with GitHub or Google, the email address typed out), and limits wrong tries like a password change.
+   */
+  deleteAccount: protectedProcedure
+    .input(z.object({ confirm: z.string().min(1).max(254) }))
+    .mutation(async ({ ctx, input }) => {
+      if (isDemoSession(ctx.session)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Sample accounts are removed automatically after a day. Create a real account to keep your data.",
+        });
+      }
+      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
+      if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Account not found." });
+      const attempts = await hitRateLimit(
+        ctx.prisma,
+        `delacct:${ctx.userId}`,
+        CHANGE_PASSWORD_ATTEMPTS.limit,
+        CHANGE_PASSWORD_ATTEMPTS.windowSeconds,
+      );
+      if (!attempts.allowed) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Too many tries. Please wait ${describeWait(attempts.retryAfterSeconds)} and try again.`,
+        });
+      }
+      const confirmed =
+        user.password_hash === NO_PASSWORD_HASH
+          ? normalizeEmail(input.confirm) === user.email
+          : await compare(input.confirm, user.password_hash);
+      if (!confirmed) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            user.password_hash === NO_PASSWORD_HASH ? "That isn't your email address." : "Password is incorrect.",
+        });
+      }
+      await deleteAccountData(ctx.prisma, ctx.userId);
+      await clearRateLimit(ctx.prisma, `delacct:${ctx.userId}`);
+      return { deleted: true };
+    }),
+
   signOutEverywhere: protectedProcedure.mutation(async ({ ctx }) => {
     await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { token_version: { increment: 1 } } });
     return { ok: true };

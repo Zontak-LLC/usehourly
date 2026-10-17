@@ -37,7 +37,12 @@ export default function PrivacyPage() {
       <h2>Your choices</h2>
       <ul>
         <li>You can export everything you have entered at any time from the Account page.</li>
-        <li>To delete your account and data, write to us and we will do it.</li>
+        <li>
+          You can delete your account yourself at the bottom of “Your data” on the Account page. That removes your
+          clients, projects, time entries, invoices and settings from our database straight away. Backups kept by our
+          hosting provider for disaster recovery expire on their own within 30 days.
+        </li>
+        <li>If an email address bounces or is reported as spam, we stop sending reminders to it.</li>
       </ul>
       <h2>Contact</h2>
       <p>

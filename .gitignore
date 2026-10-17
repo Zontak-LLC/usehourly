@@ -16,6 +16,9 @@
 # production
 /build
 
+# database dumps made by npm run d1:backup (they hold everyone's data)
+/backups/
+
 # misc
 .DS_Store
 *.pem
