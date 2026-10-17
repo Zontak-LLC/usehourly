@@ -4,6 +4,8 @@
 
 **Live:** https://usehourly.app · Free to use, no paywall, no ads.
 
+[![smithery badge](https://smithery.ai/badge/dzontak/usehourly)](https://smithery.ai/servers/dzontak/usehourly)
+
 ![The weekly timesheet](public/landing/week.webp)
 
 ## What it does
