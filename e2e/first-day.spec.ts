@@ -175,8 +175,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("mark it paid", async () => {
     await page.goto("/dashboard/invoices");
-    await page.getByRole("button", { name: /More actions for INV-/ }).click();
-    await page.getByRole("menuitem", { name: /Mark as paid/ }).click();
+    await page.getByRole("button", { name: "Mark paid", exact: true }).click(); // the button on the card
     await page.getByLabel("Date the money arrived").fill(today());
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(
@@ -186,7 +185,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
         .first(),
     ).toBeVisible();
     await shot("invoice-paid");
-    // A row offers one clear action and one menu, not a cluster of icons (usability pass #38).
+    // A row offers labelled buttons and one menu, not a cluster of icons (usability pass #38); once paid, just Send and the menu.
     const controls = await page.getByTestId("invoice-actions").first().locator("button, a").count();
     expect.soft(controls, "controls on an invoice row").toBeLessThanOrEqual(2);
     await audit("invoices with one invoice");
