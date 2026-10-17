@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { hashApiToken, newApiToken } from "@/lib/api-token";
 import { handleMcpHttp, originAllowed } from "@/server/mcp/http";
+import { OUTPUT_SCHEMAS } from "@/server/mcp/output-schemas";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -14,6 +15,8 @@ import { memoryRateLimit } from "./helpers/memory-rate-limit";
  */
 
 const createCaller = createCallerFactory(appRouter);
+/** Tools whose successful result has been checked against its outputSchema (see `call` in setup). */
+const outputChecked = new Set<string>();
 const URL_MCP = "https://usehourly.app/api/mcp";
 const APP = "https://usehourly.app";
 
@@ -177,6 +180,16 @@ function setup(over: Partial<TokenRow> = {}) {
       content: { text: string }[];
       structuredContent?: Record<string, unknown>;
     };
+    // Every successful result in every scenario must match the outputSchema the tool advertises.
+    if (!result.isError) {
+      const schema = OUTPUT_SCHEMAS[name];
+      expect(schema, `${name} has an output schema`).toBeDefined();
+      const checked = schema.safeParse(result.structuredContent);
+      outputChecked.add(name);
+      expect(checked.success, `${name} result matches its outputSchema: ${JSON.stringify(checked.error?.issues)}`).toBe(
+        true,
+      );
+    }
     return { isError: result.isError, text: result.content[0].text, data: result.structuredContent };
   };
   return { prisma, token, row, http, rpc, call, limits };
@@ -405,6 +418,21 @@ describe("the protocol", () => {
     }
     expect(new Set(names).size).toBe(names.length);
     for (const t of tools) expect(t.inputSchema.type).toBe("object");
+    // Every tool says what it returns (an object schema), and every parameter explains itself.
+    for (const t of tools as unknown as {
+      name: string;
+      inputSchema: { properties?: Record<string, { description?: string }> };
+      outputSchema?: { type: string; properties?: object };
+    }[]) {
+      expect(t.outputSchema?.type, `${t.name} outputSchema`).toBe("object");
+      expect(Object.keys(t.outputSchema?.properties ?? {}).length, `${t.name} outputSchema properties`).toBeGreaterThan(
+        0,
+      );
+      for (const [param, def] of Object.entries(t.inputSchema.properties ?? {})) {
+        expect(def.description, `${t.name}.${param} has a description`).toBeTruthy();
+      }
+    }
+    expect(Object.keys(OUTPUT_SCHEMAS).sort()).toEqual([...names].sort());
     const by = Object.fromEntries(tools.map((t) => [t.name, t.annotations]));
     expect(by.list_entries).toMatchObject({ readOnlyHint: true, destructiveHint: false });
     expect(by.log_time).toMatchObject({ readOnlyHint: false, destructiveHint: false });
@@ -774,8 +802,14 @@ describe("an assistant tracks a day of work", () => {
       seller: { name: "Jo", logo: "data:image/png;base64,AAAA" },
       client: { name: "Acme", logo: "data:image/png;base64,BBBB" },
       number: "INV-2026-001",
-      lines: [{ project: "Website", minutes: 90 }],
-      detail: [{ date: "2026-10-02" }],
+      issueDate: "2026-11-01",
+      dueDate: null,
+      periodFrom: "2026-10-01",
+      periodTo: "2026-10-31",
+      notes: "",
+      includeDetail: true,
+      lines: [{ projectId: "p1", project: "Website", minutes: 90, rateCents: 10000, amountCents: 15000 }],
+      detail: [{ date: "2026-10-02", project: "Website", note: "homepage", minutes: 90 }],
       totalMinutes: 90,
       totalCents: 15000,
       paymentInstructions: null,
@@ -832,11 +866,133 @@ describe("an assistant tracks a day of work", () => {
     expect((await s.call("parse_duration", { text: "banana" })).data).toMatchObject({ minutes: null });
   });
 
+  it("reviews clients and the year, then tidies up clients, projects and an invoice", async () => {
+    // Clients and billing details (the database returns logo: null for a client without one).
+    s.prisma.client.findFirst.mockResolvedValue({
+      id: "c1",
+      name: "Acme",
+      legal_name: "Acme Holdings, Inc.",
+      address: "500 Market St",
+      logo: null,
+    } as never);
+    const clients = await s.call("list_clients");
+    expect(clients.data?.clients).toHaveLength(2);
+    expect(clients.data?.clients).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Acme", legal_name: "Acme Holdings, Inc." })]),
+    );
+    expect((await s.call("get_client", { client: "Acme" })).data).toMatchObject({
+      id: "c1",
+      legal_name: "Acme Holdings, Inc.",
+      address: "500 Market St",
+      has_logo: false,
+    });
+
+    // Hours per project: 90 minutes this month, 4 hours in all.
+    s.prisma.timeEntry.groupBy
+      .mockResolvedValueOnce([{ project_id: "p1", _sum: { minutes: 240 } }] as never)
+      .mockResolvedValueOnce([{ project_id: "p1", _sum: { minutes: 90 } }] as never);
+    const totals = await s.call("project_totals", { from: "2026-10-01", to: "2026-10-31" });
+    expect(totals.data?.projects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ project: "Acme / Website", hours_in_range: 1.5, hours_all_time: 4 }),
+      ]),
+    );
+
+    // The year: 90 billable minutes at $100/h earn $150, one invoice issued and paid.
+    s.prisma.timeEntry.findMany.mockResolvedValue([{ date: "2026-10-09", minutes: 90, project_id: "p1" }] as never);
+    s.prisma.project.findMany.mockResolvedValue([
+      {
+        id: "p1",
+        name: "Website",
+        hourly_rate: 10000,
+        billable: true,
+        client_id: "c1",
+        client: { id: "c1", name: "Acme" },
+      },
+    ] as never);
+    s.prisma.invoice.findMany.mockResolvedValue([
+      {
+        number: "INV-2026-001",
+        client_name: "Acme",
+        issue_date: "2026-10-31",
+        paid_date: "2026-11-05",
+        total_cents: 15000,
+        total_minutes: 90,
+      },
+    ] as never);
+    const year = await s.call("annual_report", { year: 2026 });
+    expect(year.data).toMatchObject({
+      year: 2026,
+      totals: { minutes: 90, earnedCents: 15000, workedDays: 1, entryCount: 1 },
+      invoices: { count: 1, totalCents: 15000 },
+      received: { count: 1, totalCents: 15000 },
+      outstanding: { count: 0, totalCents: 0 },
+    });
+    expect(year.data?.months).toHaveLength(12);
+    expect(year.data?.quarters).toHaveLength(4);
+
+    // Suggested invoice number continues from the two invoices already numbered this year.
+    expect((await s.call("next_invoice_number", { year: 2026 })).data).toEqual({ number: "INV-2026-003" });
+
+    // Edit and archive a client: only the owner's rows are touched, the name stays.
+    const edited = await s.call("update_client", { client: "Acme", address: "1 New Rd" });
+    expect(edited.data).toEqual({ ok: true, client: "Acme" });
+    expect(s.prisma.client.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "c1" }, data: expect.objectContaining({ address: "1 New Rd" }) }),
+    );
+    expect((await s.call("archive_client", { client: "Globex" })).data).toEqual({ ok: true, archived: "Globex" });
+    expect(s.prisma.client.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "c2", user_id: "u1" }, data: { archived: true } }),
+    );
+
+    // Change a project's rate (dollars in, cents stored).
+    s.prisma.project.findFirst.mockResolvedValue({ id: "p1", name: "Website", client_id: "c1" } as never);
+    (s.prisma.project as Record<string, unknown>).update = vi.fn(
+      async ({ data }: { data: Record<string, unknown> }) => ({
+        id: "p1",
+        name: "Website",
+        billable: true,
+        ...data,
+      }),
+    );
+    const updated = await s.call("update_project", { project: "Acme / Website", hourly_rate: 120.5 });
+    expect(updated.data).toMatchObject({ project: { id: "p1", name: "Website", hourly_rate: 120.5, billable: true } });
+
+    // Bring an archived project back: the client is restored with it.
+    s.prisma.project.findMany.mockResolvedValue([
+      {
+        id: "p4",
+        name: "Old site",
+        hourly_rate: 5000,
+        billable: true,
+        client: { id: "c1", name: "Acme" },
+      },
+    ] as never);
+    s.prisma.project.findFirst.mockResolvedValue({ id: "p4", client_id: "c1" } as never);
+    const restored = await s.call("unarchive_project", { project: "Acme / Old site" });
+    expect(restored.data).toEqual({ ok: true, restored: "Acme / Old site" });
+    expect(s.prisma.client.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "c1", user_id: "u1" }, data: { archived: false } }),
+    );
+
+    // Delete an invoice by id: scoped to the owner.
+    const invoiceId = "5b0d6b5e-5b0e-4f4e-8a40-0d3c2b1a9f10";
+    expect((await s.call("delete_invoice", { invoice: invoiceId })).data).toEqual({ ok: true });
+    expect(s.prisma.invoice.deleteMany).toHaveBeenCalledWith({ where: { id: invoiceId, user_id: "u1" } });
+  });
+
   it("never shows raw database errors", async () => {
     s.prisma.timeEntry.create.mockRejectedValueOnce(new Error("SQLITE_ERROR: no such table: time_entries"));
     const r = await s.call("log_time", { project: "p1", date: "2026-10-09", minutes: 30 });
     expect(r.isError).toBe(true);
     expect(r.text).toBe("Something went wrong. Please try again.");
     expect(r.text).not.toContain("SQLITE");
+  });
+});
+
+describe("every tool's output is checked", () => {
+  it("has seen a successful result from each tool, and each one matched its outputSchema", () => {
+    const missing = Object.keys(OUTPUT_SCHEMAS).filter((n) => !outputChecked.has(n));
+    expect(missing).toEqual([]);
   });
 });
