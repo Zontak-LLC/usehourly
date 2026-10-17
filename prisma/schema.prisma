@@ -40,6 +40,7 @@ model AuthUser {
   invoices Invoice[]
   email_tokens EmailToken[]
   api_tokens ApiToken[]
+  oauth_codes OauthCode[]
 
   @@index([is_demo, created_at])
   @@map("auth_users")
@@ -187,4 +188,38 @@ model ApiToken {
 
   @@index([user_id])
   @@map("api_tokens")
+}
+
+/// An MCP client (Claude, Cursor, Smithery...) that registered itself to ask for access through OAuth.
+model OauthClient {
+  id            String   @id @default(uuid()) // the OAuth client_id
+  name          String
+  redirect_uris String // JSON array of the exact addresses it may be sent back to
+  created_at    DateTime @default(now())
+
+  codes OauthCode[]
+
+  @@map("oauth_clients")
+}
+
+/// A one-time authorization code: made when the user approves, traded for an access token within minutes.
+model OauthCode {
+  id             String  @id @default(uuid())
+  code_hash      String  @unique // SHA-256; the code itself is never stored
+  client_id      String
+  user_id        String
+  redirect_uri   String
+  code_challenge String // PKCE S256 challenge
+  access         String // "read" | "write", chosen on the consent screen
+  expires_at     Int // epoch seconds
+  used_at        Int? // set when traded (or burned by a failed attempt)
+  token_id       String? // the ApiToken it produced, so a replayed code can revoke it
+  created_at     DateTime @default(now())
+
+  user   AuthUser    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  client OauthClient @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("oauth_codes")
 }

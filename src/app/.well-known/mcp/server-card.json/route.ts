@@ -16,8 +16,9 @@ export function GET() {
     transport: { type: "streamable-http", endpoint: "/api/mcp" },
     authentication: {
       required: true,
-      schemes: ["bearer"],
-      description: "Create a personal access token at usehourly.app under Account > AI assistants.",
+      schemes: ["oauth2", "bearer"],
+      description:
+        "OAuth 2.1 with PKCE and dynamic client registration (see /.well-known/oauth-authorization-server), or a personal access token from usehourly.app under Account > AI assistants.",
     },
     capabilities: { tools: {}, resources: {}, prompts: {} },
     tools: toolDefinitions(),

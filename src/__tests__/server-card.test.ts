@@ -13,7 +13,7 @@ describe("the public MCP server card", () => {
       tools: { name: string; inputSchema: { type: string } }[];
     };
     expect(card.serverInfo.name).toBe("usehourly");
-    expect(card.authentication).toMatchObject({ required: true, schemes: ["bearer"] });
+    expect(card.authentication).toMatchObject({ required: true, schemes: ["oauth2", "bearer"] });
     expect(card.tools).toHaveLength(toolDefinitions().length);
     expect(card.tools.length).toBeGreaterThanOrEqual(30);
     expect(card.tools.map((t) => t.name)).toEqual(expect.arrayContaining(["log_time", "create_invoice"]));
