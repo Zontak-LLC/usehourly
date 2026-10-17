@@ -47,3 +47,17 @@ export function planMerge(entries: MergeInput[]): MergePlan | { error: string } 
   }
   return { keepId: first.id, deleteIds: rest.map((e) => e.id), minutes, note };
 }
+
+export type MergeGroup<T extends MergeInput> = { date: string; projectId: string; entries: T[] };
+
+/** Every (day, project) pair that has two or more entries, oldest day first. */
+export function findMergeGroups<T extends MergeInput>(entries: T[]): MergeGroup<T>[] {
+  const byKey = new Map<string, MergeGroup<T>>();
+  for (const e of entries) {
+    const key = `${e.date}|${e.project_id}`;
+    const g = byKey.get(key) ?? { date: e.date, projectId: e.project_id, entries: [] };
+    g.entries.push(e);
+    byKey.set(key, g);
+  }
+  return [...byKey.values()].filter((g) => g.entries.length >= 2).sort((a, b) => a.date.localeCompare(b.date));
+}
