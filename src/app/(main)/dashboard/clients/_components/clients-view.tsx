@@ -5,8 +5,17 @@ import { useEffect, useState } from "react";
 import { Archive, ChevronDown, Pencil, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
+import { LogoPicker } from "@/components/logo-picker";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -149,25 +158,8 @@ function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
         </p>
       </fieldset>
       <div className="grid gap-1.5">
-        <Label htmlFor={`cl-${id}`}>Logo</Label>
-        <div className="flex items-center gap-3">
-          <div className="flex h-16 w-32 items-center justify-center rounded-lg border bg-white">
-            {logo ? (
-              // biome-ignore lint/performance/noImgElement: a data: URL preview, nothing to optimize
-              <img src={logo} alt="Client logo preview" className="max-h-full max-w-full object-contain" />
-            ) : (
-              <span className="text-muted-foreground text-xs">No logo</span>
-            )}
-          </div>
-          <div className="flex flex-col items-start gap-1">
-            <Input id={`cl-${id}`} type="file" accept="image/png,image/jpeg,image/webp" onChange={pickLogo} />
-            {logo && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setLogo(null)}>
-                Remove logo
-              </Button>
-            )}
-          </div>
-        </div>
+        <Label>Logo</Label>
+        <LogoPicker value={logo} onPick={pickLogo} onRemove={() => setLogo(null)} name="client logo" />
       </div>
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={update.isPending}>
@@ -266,11 +258,41 @@ export function ClientsView() {
     }
   }
 
-  async function archive(kind: "client" | "project", id: string) {
+  const unarchiveClient = trpc.clients.unarchive.useMutation();
+  const archivedClients = trpc.clients.listArchived.useQuery(undefined, { enabled: showArchived });
+  async function restoreClient(id: string) {
+    try {
+      await unarchiveClient.mutateAsync({ id });
+      await Promise.all([utils.clients.list.invalidate(), utils.clients.listArchived.invalidate()]);
+      toast.success("Client restored.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't restore that client.");
+    }
+  }
+  const [confirming, setConfirming] = useState<{ kind: "client" | "project"; id: string; name: string } | null>(null);
+
+  async function archive(kind: "client" | "project", id: string, name: string) {
+    setConfirming(null);
     try {
       await (kind === "client" ? archiveClient : archiveProject).mutateAsync({ id });
-      await utils.clients.list.invalidate();
-      toast.success("Archived. Existing time entries are kept.");
+      await Promise.all([
+        utils.clients.list.invalidate(),
+        utils.clients.listArchived.invalidate(),
+        utils.project.listArchived.invalidate(),
+      ]);
+      toast.success(`${name} archived. Your logged time is kept.`, {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            try {
+              await (kind === "client" ? unarchiveClient : unarchiveProject).mutateAsync({ id });
+              await Promise.all([utils.clients.list.invalidate(), utils.project.listArchived.invalidate()]);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Couldn't undo that.");
+            }
+          },
+        },
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't archive that.");
     }
@@ -278,6 +300,27 @@ export function ClientsView() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+      <Dialog open={!!confirming} onOpenChange={(o) => !o && setConfirming(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Archive {confirming?.name}?</DialogTitle>
+            <DialogDescription>
+              {confirming?.kind === "client"
+                ? "It disappears from the lists and the invoice builder. Your logged time and past invoices are kept, and importing time for it brings it back."
+                : "It disappears from the project pickers. Your logged time and past invoices are kept, and you can restore it under Archived projects."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(null)}>
+              Keep it
+            </Button>
+            <Button onClick={() => confirming && archive(confirming.kind, confirming.id, confirming.name)}>
+              Archive
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div>
         <h1 className="font-semibold text-xl">My work</h1>
         <p className="text-muted-foreground text-sm">
@@ -318,7 +361,11 @@ export function ClientsView() {
               >
                 <Pencil /> Billing details
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => archive("client", c.id)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setConfirming({ kind: "client", id: c.id, name: c.name })}
+              >
                 <Archive /> Archive
               </Button>
             </span>
@@ -362,38 +409,13 @@ export function ClientsView() {
                     <label className="flex items-center gap-1.5 text-sm">
                       <input type="checkbox" name="billable" defaultChecked={p.billable} /> Billable
                     </label>
-                    <span className="flex items-center gap-2">
-                      <span className="flex size-9 items-center justify-center rounded-lg border bg-white">
-                        {(logoDraft === undefined ? logos[p.id] : logoDraft) ? (
-                          // biome-ignore lint/performance/noImgElement: a data: URL preview
-                          <img
-                            src={(logoDraft === undefined ? logos[p.id] : logoDraft) ?? ""}
-                            alt="Project logo"
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground">Logo</span>
-                        )}
-                      </span>
-                      <label className="cursor-pointer text-muted-foreground text-xs underline">
-                        {logos[p.id] || logoDraft ? "Change" : "Add logo"}
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          className="sr-only"
-                          onChange={pickProjectLogo}
-                        />
-                      </label>
-                      {(logoDraft === undefined ? logos[p.id] : logoDraft) && (
-                        <button
-                          type="button"
-                          className="text-muted-foreground text-xs underline"
-                          onClick={() => setLogoDraft(null)}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </span>
+                    <LogoPicker
+                      compact
+                      value={logoDraft === undefined ? logos[p.id] : logoDraft}
+                      onPick={pickProjectLogo}
+                      onRemove={() => setLogoDraft(null)}
+                      name="project logo"
+                    />
                     <Button type="submit" size="sm" disabled={updateProject.isPending}>
                       Save
                     </Button>
@@ -448,7 +470,7 @@ export function ClientsView() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => archive("project", p.id)}
+                      onClick={() => setConfirming({ kind: "project", id: p.id, name: p.name })}
                       aria-label={`Archive ${p.name}`}
                     >
                       <Archive />
@@ -469,7 +491,7 @@ export function ClientsView() {
       )}
       <div>
         <Button variant="ghost" size="sm" onClick={() => setShowArchived((v) => !v)}>
-          <ChevronDown className={showArchived ? "rotate-180" : ""} /> Archived projects
+          <ChevronDown className={showArchived ? "rotate-180" : ""} /> Archived clients and projects
         </Button>
         {showArchived && (
           <ul className="mt-2 divide-y rounded-xl border bg-card">
@@ -477,7 +499,19 @@ export function ClientsView() {
             {archived.error && (
               <li className="p-3 text-destructive text-sm">Couldn't load: {archived.error.message}</li>
             )}
-            {archived.data?.length === 0 && <li className="p-3 text-muted-foreground text-sm">Nothing archived.</li>}
+            {archived.data?.length === 0 && archivedClients.data?.length === 0 && (
+              <li className="p-3 text-muted-foreground text-sm">Nothing archived.</li>
+            )}
+            {archivedClients.data?.map((c) => (
+              <li key={c.id} className="flex items-center justify-between px-4 py-2 text-sm">
+                <span>
+                  {c.name} <span className="text-muted-foreground">· client</span>
+                </span>
+                <Button size="sm" variant="ghost" onClick={() => restoreClient(c.id)}>
+                  <RotateCcw /> Restore
+                </Button>
+              </li>
+            ))}
             {archived.data?.map((p) => (
               <li key={p.id} className="flex items-center justify-between px-4 py-2 text-sm">
                 <span>

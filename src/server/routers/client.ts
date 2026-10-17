@@ -22,6 +22,15 @@ export const clientRouter = router({
     }),
   ),
 
+  /** Archived clients, so they can be restored. */
+  listArchived: protectedProcedure.query(({ ctx }) =>
+    ctx.prisma.client.findMany({
+      where: { user_id: ctx.userId, archived: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ),
+
   /** One client's billing details, including the logo (not in `list`). */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const c = await ctx.prisma.client.findFirst({
@@ -98,6 +107,15 @@ export const clientRouter = router({
     const { count } = await ctx.prisma.client.updateMany({
       where: { id: input.id, user_id: ctx.userId },
       data: { archived: true },
+    });
+    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
+    return { ok: true };
+  }),
+
+  unarchive: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    const { count } = await ctx.prisma.client.updateMany({
+      where: { id: input.id, user_id: ctx.userId },
+      data: { archived: false },
     });
     if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
     return { ok: true };

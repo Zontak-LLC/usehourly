@@ -12,6 +12,7 @@ import { ClaimDemoCard } from "@/components/claim-demo-card";
 import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
 import { ImportTime } from "@/components/import-time";
+import { LogoPicker } from "@/components/logo-picker";
 import { SupportHourly } from "@/components/support-hourly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -352,25 +353,8 @@ export function AccountView() {
             <p className="text-muted-foreground text-xs">Printed on every invoice. Leave empty to print nothing.</p>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="logo">Logo</Label>
-            <div className="flex items-center gap-3">
-              <div className="flex h-16 w-32 items-center justify-center rounded-lg border bg-white">
-                {logo ? (
-                  // biome-ignore lint/performance/noImgElement: a data: URL preview, nothing to optimize
-                  <img src={logo} alt="Logo preview" className="max-h-full max-w-full object-contain" />
-                ) : (
-                  <span className="text-muted-foreground text-xs">No logo</span>
-                )}
-              </div>
-              <div className="flex flex-col items-start gap-1">
-                <Input id="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={pickLogo} />
-                {logo && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setLogo(null)}>
-                    Remove logo
-                  </Button>
-                )}
-              </div>
-            </div>
+            <Label>Logo</Label>
+            <LogoPicker value={logo} onPick={pickLogo} onRemove={() => setLogo(null)} name="business logo" />
           </div>
           <Button type="submit" className="self-start" disabled={updateBusiness.isPending}>
             Save business details
