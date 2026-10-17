@@ -5,7 +5,7 @@
 /* Theme preset styles: these override CSS variables based on the selected data-theme-preset */
 @import "../styles/presets/mint.css";
 @import "../styles/presets/indigo.css";
-@import "../styles/presets/graphite.css";
+@import "../styles/presets/ink.css";
 
 @custom-variant dark (&:is(.dark *));
 

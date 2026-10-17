@@ -1,10 +1,10 @@
 /* 
-label: Graphite
-value: graphite
+label: Ink
+value: ink
 */
 
 /* Accent only: the cream page, warm ink and card colours come from the default palette in globals.css. */
-:root[data-theme-preset="graphite"] {
+:root[data-theme-preset="ink"] {
   --primary: oklch(0.24 0.02 75);
   --primary-foreground: oklch(0.99 0.012 90);
   --ring: oklch(0.24 0.02 75);
@@ -16,7 +16,7 @@ value: graphite
   --sidebar-ring: oklch(0.24 0.02 75);
 }
 
-.dark:root[data-theme-preset="graphite"] {
+.dark:root[data-theme-preset="ink"] {
   --primary: oklch(0.93 0.02 85);
   --primary-foreground: oklch(0.2 0.012 80);
   --ring: oklch(0.93 0.02 85);

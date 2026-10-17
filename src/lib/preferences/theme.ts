@@ -36,8 +36,8 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
-    label: "Graphite",
-    value: "graphite",
+    label: "Ink",
+    value: "ink",
     primary: {
       light: "oklch(0.24 0.02 75)",
       dark: "oklch(0.93 0.02 85)",
