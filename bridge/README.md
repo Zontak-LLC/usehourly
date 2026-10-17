@@ -9,15 +9,15 @@ A stdio bridge to the [UseHourly](https://usehourly.app) MCP server, for MCP cli
 {
   "mcpServers": {
     "usehourly": {
-      "command": "node",
-      "args": ["/path/to/usehourly/bridge/index.mjs"],
+      "command": "npx",
+      "args": ["-y", "usehourly-mcp"],
       "env": { "USEHOURLY_API_TOKEN": "uh_..." }
     }
   }
 }
 ```
 
-Clone this repo and point `args` at `bridge/index.mjs` as above. There is no `npx` install yet: the package is not published on npm, so do not run anything named `usehourly-mcp` from npm.
+This package is [`usehourly-mcp` on npm](https://www.npmjs.com/package/usehourly-mcp) (published by the UseHourly maintainers, MIT). To run it from a clone of this repo instead, use `"command": "node"` and point `args` at `bridge/index.mjs`.
 
 ## How it works
 
@@ -26,4 +26,4 @@ Clone this repo and point `args` at `bridge/index.mjs` as above. There is no `np
 - `tools/call`, `resources/read` and `prompts/get` are sent to the hosted server with your token as the bearer token. Every call runs as the token's owner.
 - `USEHOURLY_MCP_URL` points the bridge at another server (default `https://usehourly.app/api/mcp`). It must be https (plain http only for localhost), and redirects are refused, so the token never leaves for another address.
 
-`catalog.json` is generated from the server's real definitions (`npm run mcp:catalog` in the repo root); a test fails if it goes stale.
+`catalog.json` is generated from the server's real definitions (`npm run mcp:catalog` in the repo root); a test fails if it goes stale. The list of tools is baked into each published version, so a new tool shows up for `npx` users only after a new version is published (calls always go to the live server).

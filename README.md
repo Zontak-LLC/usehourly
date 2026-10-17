@@ -44,7 +44,7 @@ VS Code (`.vscode/mcp.json`):
 { "servers": { "usehourly": { "type": "http", "url": "https://usehourly.app/api/mcp", "headers": { "Authorization": "Bearer <your token>" } } } }
 ```
 
-For clients that can only run local (stdio) servers, such as Claude Desktop, there is a small bridge in [`bridge/`](bridge/README.md): run `node bridge/index.mjs` with `USEHOURLY_API_TOKEN` set to your token.
+For clients that can only run local (stdio) servers, such as Claude Desktop, there is a small bridge published on npm ([`usehourly-mcp`](bridge/README.md)): set the command to `npx` with args `["-y", "usehourly-mcp"]` and `USEHOURLY_API_TOKEN` to your token.
 
 Then ask: "Log 2 hours on the Acme website for yesterday" or "Make an invoice for Acme for September."
 
