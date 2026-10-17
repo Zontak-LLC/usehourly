@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 
 import { GITHUB_REFUSAL } from "@/lib/github-login";
+import { safeNext } from "@/lib/safe-next";
 import { trpc } from "@/lib/trpc";
 
 const ERRORS: Record<string, string> = {
@@ -47,7 +48,7 @@ export function GithubSignIn() {
           setBusy(true);
           setProblem(null);
           try {
-            await signIn("github", { redirectTo: "/dashboard/today" });
+            await signIn("github", { redirectTo: safeNext(new URLSearchParams(window.location.search).get("next")) });
           } catch {
             setProblem("Couldn't reach GitHub. Check your connection and try again.");
             setBusy(false);

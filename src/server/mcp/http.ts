@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { wwwAuthenticate } from "@/lib/oauth";
 import { hitRateLimit } from "@/lib/rate-limit";
 
 import { authenticateMcp } from "./auth";
@@ -55,7 +56,7 @@ export async function handleMcpHttp(req: Request, prisma: PrismaClient, appUrl?:
       outcome.status,
       { error: outcome.message },
       {
-        ...(outcome.status === 401 && { "www-authenticate": 'Bearer realm="usehourly"' }),
+        ...(outcome.status === 401 && { "www-authenticate": wwwAuthenticate(appUrl ?? "https://usehourly.app") }),
         ...(outcome.retryAfterSeconds && { "retry-after": String(outcome.retryAfterSeconds) }),
       },
     );

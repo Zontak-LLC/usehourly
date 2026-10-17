@@ -21,6 +21,7 @@ const PUBLIC_FOR_EVERYONE = new Set([
   "/reset-password",
   "/verify-email",
   "/reminders/off",
+  "/oauth/authorize",
   "/tools/hours-calculator",
   "/manifest.webmanifest",
 ]);

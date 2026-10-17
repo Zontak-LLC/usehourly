@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { safeNext } from "@/lib/safe-next";
 
 export function LoginForm() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function LoginForm() {
         toast.error("Wrong email or password.");
         return;
       }
-      router.replace("/dashboard/today");
+      router.replace(safeNext(new URLSearchParams(window.location.search).get("next")));
       router.refresh();
     } catch {
       toast.error("Couldn't reach the server. Check your connection and try again.");
