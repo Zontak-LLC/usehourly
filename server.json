@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.Zontak-LLC/usehourly",
+  "name": "app.usehourly/usehourly",
   "title": "UseHourly",
-  "description": "Time tracking for freelancers: log time, run timers, manage clients and projects, and create invoices.",
+  "description": "Freelancer time tracking: log time, run timers, manage clients and projects, make invoices.",
   "version": "0.1.0",
   "websiteUrl": "https://usehourly.app",
   "repository": { "url": "https://github.com/Zontak-LLC/usehourly", "source": "github" },
