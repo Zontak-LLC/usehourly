@@ -50,7 +50,7 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - **Health check:** `GET/HEAD /api/health` answers `{ok}` 200/503 after `SELECT 1`; point an uptime monitor at it (and at `/api/mcp`).
 - **Backups:** D1 Time Travel is active on `hourly-db` (30 days on the paid plan): `wrangler d1 time-travel info hourly-db`, restore with `wrangler d1 time-travel restore hourly-db --timestamp=<ISO time>` (overwrites live data; try it only in an emergency). `npm run d1:backup` writes a full SQL dump to `backups/` (git-ignored: it holds everyone's data).
 - **Email bounces:** `POST /api/webhooks/resend` (Svix-signed, `RESEND_WEBHOOK_SECRET`, 404 until set). A permanent bounce or spam complaint sets `auth_users.email_bounced_at` and turns the Friday reminder off; transient bounces are ignored. Resend dashboard > Webhooks > `email.bounced`, `email.complained`. Test: `launch-gaps-journey.test.ts`.
-- **CI deploy token (issue #33):** `CLOUDFLARE_API_TOKEN` lives in the CircleCI context `usehourly-production` (restricted to `pipeline.git.branch == "main"`), used by the `deploy` job only; pushing to `main` deploys to production through CircleCI.
+- **CI deploy token (issue #33):** `CLOUDFLARE_API_TOKEN` lives in the CircleCI context `usehourly-production` (restricted to `pipeline.git.branch == "main"`), used by the `deploy` job only; pushing to `main` is the release: CircleCI runs the checks, applies D1 migrations, then deploys. Do not also run `npm run deploy` by hand (the owner chose this workflow on 2026-10-17: work locally, a push ships).
 - Deploy order: `npm run d1:migrate:remote` (0017) BEFORE `npm run deploy`.
 
 ## Usage tracking and Insights (2026-10-17, issue #37, migration 0018)
