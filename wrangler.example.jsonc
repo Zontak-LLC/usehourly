@@ -5,7 +5,7 @@
   // Your Cloudflare account id (Workers & Pages overview, right-hand side). Pinned so a deploy
   // never guesses when your token can see more than one account.
   "account_id": "<your-cloudflare-account-id>",
-  "main": ".open-next/worker.js",
+  "main": "custom-worker.ts",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
   // Run the Worker near D1: Prisma's D1 adapter makes several round-trips per query.
@@ -21,5 +21,7 @@
     "AUTH_URL": "https://app.example.com",
     "NEXT_PUBLIC_APP_URL": "https://app.example.com"
   },
+  // Runs the Friday reminder emails (custom-worker.ts); it does nothing until email is set up.
+  "triggers": { "crons": ["0 * * * *"] },
   "workers_dev": true
 }

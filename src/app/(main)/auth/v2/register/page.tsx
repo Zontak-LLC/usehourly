@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { Metadata } from "next";
 
+import { TryDemoButton } from "@/components/try-demo-button";
+
 import { RegisterForm } from "../../_components/register-form";
 
 export const metadata: Metadata = { title: "Create account · UseHourly" };
@@ -15,6 +17,12 @@ export default function RegisterPage() {
           <p className="text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
         </div>
         <RegisterForm />
+        <div className="text-center text-muted-foreground text-sm">
+          Just looking?
+          <TryDemoButton className="ml-1 text-foreground underline underline-offset-4">
+            Try the demo first
+          </TryDemoButton>
+        </div>
       </div>
       <div className="absolute top-5 flex w-full justify-end px-10 text-muted-foreground text-sm">
         <span>

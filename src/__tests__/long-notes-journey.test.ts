@@ -12,6 +12,7 @@ function mockPrisma() {
   return {
     project: { findFirst: vi.fn(async () => ({ id: "p1" })) },
     timeEntry: {
+      count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }) => ({ id: "e1", ...data })),
       findFirst: vi.fn(async () => ({ id: "e1", user_id: "u1" })),
       findMany: vi.fn(async () => []),

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { cn } from "cn";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
+import { DemoBanner } from "@/components/demo-banner";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
@@ -59,6 +60,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           "min-w-0 overflow-x-clip",
         )}
       >
+        {session?.user?.demo === true && <DemoBanner />}
         <header
           className={cn(
             "flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",

@@ -9,14 +9,17 @@ const createCaller = createCallerFactory(appRouter);
 function mockPrisma() {
   return {
     client: {
+      count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => null),
       create: vi.fn(async ({ data }) => ({ id: "c1", ...data })),
     },
     project: {
+      count: vi.fn(async () => 0),
       findFirst: vi.fn(),
       create: vi.fn(async ({ data }) => ({ id: "p1", ...data })),
     },
     timeEntry: {
+      count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }) => ({ id: "e1", ...data })),
       deleteMany: vi.fn(async () => ({ count: 1 })),
     },

@@ -1,10 +1,14 @@
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import type { Session } from "next-auth";
 import { z } from "zod";
 
 import { DATE_RE } from "@/lib/dates";
+import { isDemoSession } from "@/lib/demo";
 import { parseDuration } from "@/lib/duration";
 import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
+import { assertWithinQuota } from "@/lib/quotas";
 
 import { protectedProcedure, router } from "../trpc";
 
@@ -15,6 +19,19 @@ const minutesSchema = z
   .min(1)
   .max(24 * 60);
 const noteSchema = z.string().trim().max(NOTE_MAX).default("");
+
+/** Refuses a write that would take the account past its entry limit (see lib/quotas.ts). */
+async function assertEntryQuota(
+  ctx: { prisma: PrismaClient; userId: string; session: Session | null },
+  adding: number,
+) {
+  assertWithinQuota(
+    await ctx.prisma.timeEntry.count({ where: { user_id: ctx.userId } }),
+    adding,
+    "entries",
+    isDemoSession(ctx.session),
+  );
+}
 
 // Logos are large; they travel separately (project.logos / clients.get), never with entries.
 const withProject = {
@@ -51,6 +68,7 @@ export const entryRouter = router({
       }
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
+      await assertEntryQuota(ctx, 1);
       return ctx.prisma.timeEntry.create({
         data: { user_id: ctx.userId, project_id: project.id, date: input.date, minutes, note: input.note },
         include: withProject,
@@ -117,6 +135,7 @@ export const entryRouter = router({
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
       const note = input.note || undefined;
+      await assertEntryQuota(ctx, input.cells.filter((c) => c.minutes > 0).length);
 
       const wanted = new Map(input.cells.map((c) => [c.date, c.minutes])); // last write wins per date
       const existing = await ctx.prisma.timeEntry.findMany({
@@ -171,6 +190,7 @@ export const entryRouter = router({
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
 
       const dates = [...new Set(input.dates)].sort();
+      await assertEntryQuota(ctx, dates.length);
       const taken = new Set<string>();
       if (input.skipExisting) {
         const existing = await ctx.prisma.timeEntry.findMany({
@@ -236,6 +256,7 @@ export const entryRouter = router({
     .mutation(async ({ ctx, input }) => {
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
+      await assertEntryQuota(ctx, 1);
       const now = new Date();
       const running = await ctx.prisma.timeEntry.findFirst({
         where: { user_id: ctx.userId, started_at: { not: null } },

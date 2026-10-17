@@ -1,17 +1,6 @@
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-
 import { createContext } from "@/server/context";
-import { appRouter } from "@/server/routers/_app";
+import { handleTrpc } from "@/server/trpc-handler";
 
-const handler = (req: Request) =>
-  fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req,
-    router: appRouter,
-    createContext: () => createContext(req),
-    onError: ({ error, path }) => {
-      if (error.code === "INTERNAL_SERVER_ERROR") console.error(`tRPC ${path}:`, error);
-    },
-  });
+const handler = (req: Request) => handleTrpc(req, () => createContext(req));
 
 export { handler as GET, handler as POST };

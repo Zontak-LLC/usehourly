@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { Metadata } from "next";
 
+import { TryDemoButton } from "@/components/try-demo-button";
+
 import { LoginForm } from "../../_components/login-form";
 
 export const metadata: Metadata = { title: "Log in · UseHourly" };
@@ -15,6 +17,12 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">Log in to track your time.</p>
         </div>
         <LoginForm />
+        <div className="text-center text-muted-foreground text-sm">
+          Just looking?
+          <TryDemoButton className="ml-1 text-foreground underline underline-offset-4">
+            Try the demo first
+          </TryDemoButton>
+        </div>
       </div>
       <div className="absolute top-5 flex w-full justify-end px-10 text-muted-foreground text-sm">
         <span>

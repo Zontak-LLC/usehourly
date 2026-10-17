@@ -21,6 +21,7 @@ const user = {
 function mockPrisma() {
   return {
     client: {
+      count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({
         id: "c1",
         name: "Acme",
@@ -31,6 +32,7 @@ function mockPrisma() {
       update: vi.fn(async () => ({ id: "c1" })),
     },
     timeEntry: {
+      count: vi.fn(async () => 0),
       findMany: vi.fn(async () => [
         {
           date: "2026-10-02",
