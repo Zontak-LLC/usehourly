@@ -118,5 +118,9 @@ Live: https://usehourly.app (Worker `hourly`, D1 `hourly-db`; the database id is
 - Code: `src/lib/oauth.ts` (pure rules), `src/server/oauth.ts`, `src/server/routers/oauth.ts`, routes under `src/app/api/oauth/` and `src/app/.well-known/`, page `src/app/oauth/authorize/`. Tables `oauth_clients`, `oauth_codes` (migration 0013). Test: `oauth-journey.test.ts` (mutation-checked: PKCE, redirect matching, atomic claim); also verified in a real browser end to end.
 - Deploy order: `npm run d1:migrate:remote` (0013) BEFORE `npm run deploy`.
 
+## Smithery listing (2026-10-17)
+- UseHourly is listed on Smithery as a remote HTTP server (registered by URL `https://usehourly.app/api/mcp`; no `smithery.yaml` is needed or kept in the repo). Smithery connects through the OAuth flow above (dynamic client registration), and falls back to the public server card for tool discovery. Claude Code has it as `usehourly-smithery` next to the direct `usehourly` entry; both show the same 30 tools.
+- `server.json` is the official MCP registry entry (`app.usehourly/usehourly`), not Smithery's. Its `Authorization` header is optional (OAuth clients send none); keep its `version` in step with the server card (`1.0.0`). Republish to the registry after editing it.
+
 ## Not yet built
 A standalone CSV export per week/month (CSV exists only inside the export-everything zip), a printable timesheet PDF for client sign-off, a nonce-based Content-Security-Policy (the current one allows inline scripts), a bounce/complaint webhook for the email service.
