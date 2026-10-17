@@ -207,8 +207,8 @@ export function AccountView() {
           <div className="rounded-xl border bg-card p-4">
             <h3 className="font-medium">Password</h3>
             <p className="text-muted-foreground text-sm">
-              You sign in with GitHub, so there is no password to change. If you also want one, use "Forgot password" on
-              the log-in page.
+              You sign in with GitHub or Google, so there is no password to change. If you also want one, use "Forgot
+              password" on the log-in page.
             </p>
           </div>
         )}

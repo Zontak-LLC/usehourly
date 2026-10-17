@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { decideGithubSignIn, NO_PASSWORD_HASH, pickVerifiedEmail } from "@/lib/github-login";
 import { REGISTER_PER_IP } from "@/lib/rate-limit";
-import { resolveGithubUser } from "@/server/github-signin";
+import { decideSocialSignIn, NO_PASSWORD_HASH, pickVerifiedEmail } from "@/lib/social-login";
 import { appRouter } from "@/server/routers/_app";
+import { resolveSocialUser } from "@/server/social-signin";
 import { createCallerFactory } from "@/server/trpc";
 
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
@@ -14,6 +14,7 @@ type U = {
   email: string;
   password_hash: string;
   github_id: string | null;
+  google_id: string | null;
   email_verified_at: Date | null;
   is_demo: boolean;
   token_version: number;
@@ -27,15 +28,18 @@ function fakeDb(seed: U[] = []) {
   const prisma = {
     rateLimit: limiter.rateLimit,
     authUser: {
-      findUnique: vi.fn(async ({ where }: { where: { github_id?: string; email?: string; id?: string } }) => {
-        const u = users.find(
-          (x) =>
-            (where.github_id && x.github_id === where.github_id) ||
-            (where.email && x.email === where.email) ||
-            (where.id && x.id === where.id),
-        );
-        return u ? { ...u } : null;
-      }),
+      findUnique: vi.fn(
+        async ({ where }: { where: { github_id?: string; google_id?: string; email?: string; id?: string } }) => {
+          const u = users.find(
+            (x) =>
+              (where.github_id && x.github_id === where.github_id) ||
+              (where.google_id && x.google_id === where.google_id) ||
+              (where.email && x.email === where.email) ||
+              (where.id && x.id === where.id),
+          );
+          return u ? { ...u } : null;
+        },
+      ),
       update: vi.fn(
         async ({
           where,
@@ -57,6 +61,7 @@ function fakeDb(seed: U[] = []) {
           id: `u${++n}`,
           name: null,
           github_id: null,
+          google_id: null,
           email_verified_at: null,
           is_demo: false,
           token_version: 0,
@@ -76,6 +81,7 @@ const user = (over: Partial<U>): U => ({
   email: "jo@example.com",
   password_hash: "$2b$10$abcdefghijklmnopqrstuv",
   github_id: null,
+  google_id: null,
   email_verified_at: null,
   is_demo: false,
   token_version: 3,
@@ -105,8 +111,9 @@ describe("choosing the address GitHub vouches for", () => {
 describe("signing in with GitHub", () => {
   it("creates an account for a newcomer: confirmed address, no password, GitHub id kept", async () => {
     const db = fakeDb();
-    const r = await resolveGithubUser(db.prisma, {
-      githubId: "42",
+    const r = await resolveSocialUser(db.prisma, {
+      provider: "github",
+      providerId: "42",
       emails,
       name: "Jo Rivers",
       login: "jo",
@@ -119,9 +126,10 @@ describe("signing in with GitHub", () => {
 
   it("recognises the same GitHub account next time, even after its email changed", async () => {
     const db = fakeDb();
-    await resolveGithubUser(db.prisma, { githubId: "42", emails, name: "Jo", login: "jo" });
-    const again = await resolveGithubUser(db.prisma, {
-      githubId: "42",
+    await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails, name: "Jo", login: "jo" });
+    const again = await resolveSocialUser(db.prisma, {
+      provider: "github",
+      providerId: "42",
       emails: [{ email: "new@elsewhere.com", primary: true, verified: true }],
       login: "jo",
     });
@@ -131,7 +139,7 @@ describe("signing in with GitHub", () => {
 
   it("links to an existing account whose address was confirmed, and keeps its password", async () => {
     const db = fakeDb([user({ email_verified_at: new Date() })]);
-    const r = await resolveGithubUser(db.prisma, { githubId: "42", emails });
+    const r = await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails });
     expect(r).toMatchObject({ ok: true, created: false, user: { id: "u0" } });
     expect(db.users[0]).toMatchObject({ github_id: "42", token_version: 3 });
     expect(db.users[0].password_hash).not.toBe(NO_PASSWORD_HASH);
@@ -139,7 +147,7 @@ describe("signing in with GitHub", () => {
 
   it("takes over an account whose address was never confirmed: old password dead, old sessions signed out", async () => {
     const db = fakeDb([user({ email_verified_at: null })]);
-    const r = await resolveGithubUser(db.prisma, { githubId: "42", emails });
+    const r = await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails });
     expect(r).toMatchObject({ ok: true, user: { id: "u0", token_version: 4 } });
     expect(db.users[0].password_hash).toBe(NO_PASSWORD_HASH);
     expect(db.users[0].email_verified_at).toBeInstanceOf(Date);
@@ -147,15 +155,16 @@ describe("signing in with GitHub", () => {
 
   it("refuses an address that belongs to an account linked to a different GitHub account", async () => {
     const db = fakeDb([user({ github_id: "99", email_verified_at: new Date() })]);
-    const r = await resolveGithubUser(db.prisma, { githubId: "42", emails });
-    expect(r).toEqual({ ok: false, reason: "other-github" });
+    const r = await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails });
+    expect(r).toEqual({ ok: false, reason: "other-account" });
     expect(db.users[0].github_id).toBe("99");
   });
 
   it("refuses when GitHub shares no verified address, and creates nothing", async () => {
     const db = fakeDb();
-    const r = await resolveGithubUser(db.prisma, {
-      githubId: "42",
+    const r = await resolveSocialUser(db.prisma, {
+      provider: "github",
+      providerId: "42",
       emails: [{ email: "a@b.c", primary: true, verified: false }],
     });
     expect(r).toEqual({ ok: false, reason: "no-verified-email" });
@@ -165,35 +174,107 @@ describe("signing in with GitHub", () => {
   it("limits how many accounts one connection can create, but still lets existing GitHub users in", async () => {
     const db = fakeDb();
     for (let i = 0; i < REGISTER_PER_IP.limit; i++) {
-      const r = await resolveGithubUser(db.prisma, {
-        githubId: `g${i}`,
+      const r = await resolveSocialUser(db.prisma, {
+        provider: "github",
+        providerId: `g${i}`,
         emails: [{ email: `p${i}@x.com`, primary: true, verified: true }],
         ip: "9.9.9.9",
       });
       expect(r.ok).toBe(true);
     }
-    const blocked = await resolveGithubUser(db.prisma, {
-      githubId: "gNew",
+    const blocked = await resolveSocialUser(db.prisma, {
+      provider: "github",
+      providerId: "gNew",
       emails: [{ email: "late@x.com", primary: true, verified: true }],
       ip: "9.9.9.9",
     });
     expect(blocked).toEqual({ ok: false, reason: "rate-limited" });
-    const existing = await resolveGithubUser(db.prisma, { githubId: "g0", emails, ip: "9.9.9.9" });
+    const existing = await resolveSocialUser(db.prisma, {
+      provider: "github",
+      providerId: "g0",
+      emails,
+      ip: "9.9.9.9",
+    });
     expect(existing.ok).toBe(true);
   });
 });
 
 describe("decisions that must not change", () => {
-  const known = { id: "u", github_id: null, email_verified_at: new Date(), is_demo: false };
+  const known = { id: "u", linkedId: null, email_verified_at: new Date(), is_demo: false };
   it("never links a demo account", () => {
     expect(
-      decideGithubSignIn({
-        githubId: "1",
+      decideSocialSignIn({
+        providerId: "1",
         verifiedEmail: "a@b.c",
-        byGithubId: null,
+        byProviderId: null,
         byEmail: { ...known, is_demo: true },
       }),
     ).toMatchObject({ action: "refuse" });
+  });
+});
+
+describe("signing in with Google", () => {
+  const googleEmails = [{ email: "Jo@Example.com", primary: true, verified: true }];
+
+  it("creates an account for a newcomer, with the Google id and no password", async () => {
+    const db = fakeDb();
+    const r = await resolveSocialUser(db.prisma, {
+      provider: "google",
+      providerId: "sub-1",
+      emails: googleEmails,
+      name: "Jo Rivers",
+    });
+    expect(r).toMatchObject({ ok: true, created: true, user: { email: "jo@example.com", name: "Jo Rivers" } });
+    expect(db.users[0]).toMatchObject({ google_id: "sub-1", github_id: null, password_hash: NO_PASSWORD_HASH });
+  });
+
+  it("refuses an address Google has not verified, and creates nothing", async () => {
+    const db = fakeDb();
+    const r = await resolveSocialUser(db.prisma, {
+      provider: "google",
+      providerId: "sub-1",
+      emails: [{ email: "jo@example.com", primary: true, verified: false }],
+    });
+    expect(r).toEqual({ ok: false, reason: "no-verified-email" });
+    expect(db.users).toHaveLength(0);
+  });
+
+  it("the same Google account gets back in; links to a confirmed password account and to a GitHub-made one", async () => {
+    const password = fakeDb([user({ email_verified_at: new Date() })]);
+    expect(
+      await resolveSocialUser(password.prisma, { provider: "google", providerId: "sub-1", emails: googleEmails }),
+    ).toMatchObject({ ok: true, user: { id: "u0" } });
+    expect(password.users[0]).toMatchObject({ google_id: "sub-1", token_version: 3 });
+    expect(
+      await resolveSocialUser(password.prisma, { provider: "google", providerId: "sub-1", emails: [] }),
+    ).toMatchObject({ ok: true, user: { id: "u0" } });
+
+    const viaGithub = fakeDb([
+      user({ github_id: "42", email_verified_at: new Date(), password_hash: NO_PASSWORD_HASH }),
+    ]);
+    expect(
+      await resolveSocialUser(viaGithub.prisma, { provider: "google", providerId: "sub-9", emails: googleEmails }),
+    ).toMatchObject({ ok: true, user: { id: "u0" } });
+    expect(viaGithub.users[0]).toMatchObject({ github_id: "42", google_id: "sub-9" });
+  });
+
+  it("takes over an unconfirmed account the same way GitHub does, and refuses a different Google account", async () => {
+    const unconfirmed = fakeDb([user({ email_verified_at: null })]);
+    const r = await resolveSocialUser(unconfirmed.prisma, {
+      provider: "google",
+      providerId: "sub-1",
+      emails: googleEmails,
+    });
+    expect(r).toMatchObject({ ok: true, user: { token_version: 4 } });
+    expect(unconfirmed.users[0].password_hash).toBe(NO_PASSWORD_HASH);
+
+    const taken = fakeDb([user({ google_id: "someone-else", email_verified_at: new Date() })]);
+    expect(
+      await resolveSocialUser(taken.prisma, { provider: "google", providerId: "sub-1", emails: googleEmails }),
+    ).toEqual({
+      ok: false,
+      reason: "other-account",
+    });
   });
 });
 

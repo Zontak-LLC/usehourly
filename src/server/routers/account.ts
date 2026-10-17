@@ -14,10 +14,10 @@ import {
 import { isDemoEmail, isDemoSession } from "@/lib/demo";
 import { normalizeEmail } from "@/lib/email";
 import { hashToken, newToken, RESET_TTL_SECONDS, VERIFY_TTL_SECONDS } from "@/lib/email-token";
-import { NO_PASSWORD_HASH } from "@/lib/github-login";
 import { resetPasswordMessage, verifyEmailMessage } from "@/lib/mailer";
 import { describeWait, hitRateLimit, REGISTER_PER_IP } from "@/lib/rate-limit";
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
+import { NO_PASSWORD_HASH } from "@/lib/social-login";
 
 import { logoSchema } from "../logo-schema";
 import { type Context, protectedProcedure, publicProcedure, router } from "../trpc";
@@ -64,9 +64,10 @@ export const accountRouter = router({
   /** Whether this installation can send email. Pages use it to say so plainly when it cannot. */
   emailEnabled: publicProcedure.query(({ ctx }) => ({ enabled: Boolean(ctx.mailer) })),
 
-  /** Whether the login pages should offer "Continue with GitHub". */
-  githubEnabled: publicProcedure.query(() => ({
-    enabled: Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET),
+  /** Which "Continue with ..." buttons the login pages should offer. */
+  socialEnabled: publicProcedure.query(() => ({
+    github: Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET),
+    google: Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET),
   })),
 
   register: publicProcedure
@@ -311,7 +312,7 @@ export const accountRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            'This account signs in with GitHub and has no password. Use "Forgot password" on the login page to set one.',
+            'This account signs in with GitHub or Google and has no password. Use "Forgot password" on the login page to set one.',
         });
       }
       if (!user || !(await compare(input.currentPassword, user.password_hash))) {
