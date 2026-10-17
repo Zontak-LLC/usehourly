@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { DayEditorDialog } from "@/components/day-editor";
 import { ExportButton } from "@/components/export-button";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
-import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
+import { ProjectFilter, toggleProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { RangeExport } from "@/components/range-export";
 import { Button } from "@/components/ui/button";
@@ -254,9 +254,19 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
                     <td className="px-3 py-1.5">
                       <div className="flex items-center gap-1">
                         <ProjectMark projectId={r.projectId} color={r.color} logos={logos} />
-                        <span className="min-w-0 flex-1 truncate">
+                        {/* Click a row's name to show only that project; click it again to see them all. */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProjectId(toggleProjectFilter(projectId, r.projectId));
+                            setLastProject("");
+                          }}
+                          aria-pressed={projectId === r.projectId}
+                          title={projectId === r.projectId ? "Show all projects" : `Show only ${r.project}`}
+                          className="-mx-1 min-w-0 flex-1 cursor-pointer truncate rounded px-1 text-left hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none aria-pressed:font-medium"
+                        >
                           {r.project} <span className="text-muted-foreground">· {r.client}</span>
-                        </span>
+                        </button>
                         <FillPopover
                           projectId={r.projectId}
                           label={r.project}

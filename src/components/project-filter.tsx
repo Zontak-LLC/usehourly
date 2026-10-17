@@ -22,6 +22,9 @@ export function useProjectFilter(initial?: string) {
   return [projectId, setProjectId] as const;
 }
 
+/** Clicking a row's name filters to that project; clicking the one already filtered clears the filter. */
+export const toggleProjectFilter = (current: string, clicked: string) => (current === clicked ? "" : clicked);
+
 export function ProjectFilter({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const clients = trpc.clients.list.useQuery();
   return (
