@@ -28,6 +28,7 @@ model AuthUser {
   entries  TimeEntry[]
   invoices Invoice[]
   email_tokens EmailToken[]
+  api_tokens ApiToken[]
 
   @@map("auth_users")
 }
@@ -150,4 +151,28 @@ model EmailToken {
 
   @@index([user_id, kind])
   @@map("email_tokens")
+}
+
+// A personal access token for the MCP server (/api/mcp). Only the SHA-256 of the secret is kept,
+// so a database leak cannot be turned into working tokens. `prefix` is the first characters of the
+// token, shown in the list so people can tell their tokens apart. `access` is "read" or "write".
+// `token_version` is the account's value when the token was made: a password change or "Log out on
+// all devices" bumps the account's number and so kills every token made before it.
+model ApiToken {
+  id            String    @id @default(uuid())
+  user_id       String
+  name          String
+  token_hash    String    @unique
+  prefix        String
+  access        String    @default("write")
+  token_version Int       @default(0)
+  expires_at    Int? // epoch seconds, null = never
+  last_used_at  Int? // epoch seconds
+  revoked_at    Int? // epoch seconds, null until revoked
+  created_at    DateTime  @default(now())
+
+  user AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("api_tokens")
 }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { ArrowRight, Bot, KeyRound, MessageSquare, Server, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 
 import { LogoMark } from "@/components/logo";
@@ -19,6 +20,14 @@ const JSON_LD = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  featureList: [
+    "Quick daily time entry",
+    "Start/stop timer",
+    "Weekly timesheet and month calendar",
+    "Invoices as PDF",
+    "Year-end report and Excel export",
+    "MCP server for AI assistants such as Claude",
+  ],
 };
 
 export const metadata: Metadata = {
@@ -32,6 +41,88 @@ const primary =
   "inline-flex h-12 items-center justify-center rounded-lg bg-primary px-6 font-medium text-base text-primary-foreground transition-colors hover:bg-primary/90";
 const secondary =
   "inline-flex h-12 items-center justify-center rounded-lg border bg-background px-6 font-medium text-base transition-colors hover:bg-muted";
+
+const AI_POINTS = [
+  {
+    Icon: MessageSquare,
+    title: "Ask in plain words",
+    body: "Log 1h30 on a project, move an entry, or get hours per project for the month.",
+  },
+  {
+    Icon: KeyRound,
+    title: "You hold the key",
+    body: "Make an access token on your Account page. Choose read only or read and change, and revoke it any time.",
+  },
+  {
+    Icon: ShieldCheck,
+    title: "Only your own data",
+    body: "An assistant sees just your account, and it can't change your password or make more tokens.",
+  },
+];
+
+/** A simple spark mark for Claude, drawn here (not Anthropic's logo file). */
+function ClaudeSpark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="#D97757"
+      strokeLinecap="round"
+      strokeWidth="4"
+    >
+      {Array.from({ length: 12 }, (_, i) => {
+        const deg = i * 30;
+        const a = (deg * Math.PI) / 180;
+        const r2 = i % 2 ? 16 : 21;
+        return (
+          <line
+            key={`ray-${deg}`}
+            x1={24 + 6 * Math.cos(a)}
+            y1={24 + 6 * Math.sin(a)}
+            x2={24 + r2 * Math.cos(a)}
+            y2={24 + r2 * Math.sin(a)}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function FlowNode({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex w-[5.25rem] flex-col items-center gap-2 text-center sm:w-28">
+      <div className="flex size-14 items-center justify-center rounded-2xl border bg-card shadow-sm sm:size-20">
+        {children}
+      </div>
+      <p className="font-medium text-sm leading-tight">{label}</p>
+    </div>
+  );
+}
+
+/** Claude, then the MCP server, then UseHourly: how an assistant reaches your time. */
+function McpFlow() {
+  return (
+    <div
+      className="flex items-start justify-center gap-0.5 sm:gap-3"
+      role="img"
+      aria-label="Diagram: your AI assistant, such as Claude, talks to the UseHourly MCP server, which reads and writes your UseHourly time."
+    >
+      <FlowNode label="Claude">
+        <ClaudeSpark className="size-8 sm:size-11" />
+      </FlowNode>
+      <ArrowRight className="mt-5 size-4 shrink-0 text-muted-foreground sm:mt-8 sm:size-6" aria-hidden />
+      <FlowNode label="MCP server">
+        <Server className="size-8 text-muted-foreground sm:size-9" aria-hidden />
+      </FlowNode>
+      <ArrowRight className="mt-5 size-4 shrink-0 text-muted-foreground sm:mt-8 sm:size-6" aria-hidden />
+      <FlowNode label="UseHourly">
+        <LogoMark className="size-8 sm:size-11" aria-hidden />
+      </FlowNode>
+    </div>
+  );
+}
 
 /** A screenshot in a simple window frame. The pictures are the real app, not mock-ups. */
 function Screen({
@@ -180,6 +271,72 @@ export default function LandingPage() {
             </section>
           ))}
         </div>
+
+        <section id="ai-assistants" className="border-t">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2">
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 font-medium text-sm">
+                <Bot className="size-4" aria-hidden />
+                New: works with your AI assistant
+              </p>
+              <h2 className="mt-4 font-semibold text-3xl tracking-tight md:text-4xl">
+                Tell your assistant. It&rsquo;s logged.
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                UseHourly supports <strong className="text-foreground">MCP</strong>, the open standard that lets AI
+                assistants such as Claude work with your apps. Connect one and you can log time, run the timer and check
+                your week just by asking.
+              </p>
+              <ul className="mt-6 grid gap-4">
+                {AI_POINTS.map(({ Icon, title, body }) => (
+                  <li key={title} className="flex gap-3">
+                    <Icon className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
+                    <div>
+                      <p className="font-semibold">{title}</p>
+                      <p className="text-muted-foreground">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/auth/v2/register" className={primary}>
+                  Create a free account
+                </Link>
+              </div>
+              <p className="mt-3 text-muted-foreground text-sm">
+                Works with Claude and other MCP-compatible assistants. Free, like the rest of UseHourly.
+              </p>
+            </div>
+
+            <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
+              <McpFlow />
+              <figure className="w-full">
+                <div
+                  className="grid gap-3 rounded-2xl border bg-card p-4 shadow-sm"
+                  role="img"
+                  aria-label="Example conversation: a freelancer asks an AI assistant to log 1 hour 30 minutes on the Acme website project, and the assistant confirms it was logged."
+                >
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground text-sm">
+                    Log 1h30 on Acme / Website for fixing the checkout bug.
+                  </div>
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm">
+                    Done. I logged <strong>1.5 hours</strong> on Acme / Website for today: &ldquo;Fixed the checkout
+                    bug.&rdquo; That brings this week to <strong>12.5 hours</strong>.
+                  </div>
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground text-sm">
+                    Great. Start the timer on Support.
+                  </div>
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm">
+                    Timer started on Acme / Support.
+                  </div>
+                </div>
+                <figcaption className="mt-3 text-center text-muted-foreground text-xs">
+                  An example conversation. Your assistant&rsquo;s wording will differ.
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+        </section>
 
         <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
           <h2 className="text-center font-semibold text-3xl tracking-tight md:text-4xl">
