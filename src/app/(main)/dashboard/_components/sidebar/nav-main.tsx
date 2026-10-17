@@ -11,9 +11,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { navLinks } from "@/navigation/sidebar/sidebar-items";
+import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
-export function NavMain() {
+export function NavMain({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const render = (items: typeof navLinks) =>
@@ -34,7 +34,7 @@ export function NavMain() {
       </SidebarGroup>
       <SidebarGroup>
         <SidebarGroupLabel>More</SidebarGroupLabel>
-        <SidebarMenu>{render(navLinks.filter((l) => l.secondary))}</SidebarMenu>
+        <SidebarMenu>{render([...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])])}</SidebarMenu>
       </SidebarGroup>
     </>
   );

@@ -21,9 +21,9 @@ import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 
-type Props = React.ComponentProps<typeof Sidebar> & { user: { name: string; email: string } };
+type Props = React.ComponentProps<typeof Sidebar> & { user: { name: string; email: string }; isAdmin?: boolean };
 
-export function AppSidebar({ user, ...props }: Props) {
+export function AppSidebar({ user, isAdmin = false, ...props }: Props) {
   const { sidebarVariant, sidebarCollapsible, isSynced } = usePreferencesStore(
     useShallow((s) => ({
       sidebarVariant: s.values.sidebar_variant,
@@ -53,7 +53,7 @@ export function AppSidebar({ user, ...props }: Props) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain />
+        <NavMain isAdmin={isAdmin} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

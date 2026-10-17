@@ -245,3 +245,14 @@ model OauthCode {
   @@index([expires_at])
   @@map("oauth_codes")
 }
+
+// Page views per day, counted with no user id, no cookie and no content (issue #37). `page` is one of
+// USAGE_PAGES in lib/usage.ts, so the table cannot grow beyond days x pages.
+model UsageDaily {
+  day   String
+  page  String
+  count Int    @default(0)
+
+  @@id([day, page])
+  @@map("usage_daily")
+}

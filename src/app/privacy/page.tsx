@@ -27,6 +27,10 @@ export default function PrivacyPage() {
       <ul>
         <li>We use it only to run the app for you: to show your timesheets, reports, invoices and exports.</li>
         <li>We do not sell your data, we do not show ads, and we do not share your entries with anyone.</li>
+        <li>
+          We count how many times each page of the app is opened, per day, to see which parts are used. The count holds
+          no name, email address, account identifier or anything you type, and uses no cookies.
+        </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>
       <h2>Where it lives</h2>
