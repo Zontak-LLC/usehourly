@@ -3,7 +3,7 @@
   "name": "app.usehourly/usehourly",
   "title": "UseHourly",
   "description": "Freelancer time tracking: log time, run timers, manage clients and projects, make invoices.",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "websiteUrl": "https://usehourly.app",
   "repository": { "url": "https://github.com/Zontak-LLC/usehourly", "source": "github" },
   "remotes": [
@@ -13,8 +13,8 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer <personal access token>. Create one on Account > AI assistants at usehourly.app.",
-          "isRequired": true,
+          "description": "Optional. MCP clients that support OAuth (Claude, Cursor, Smithery) connect with log in and approve and need no header. For a client that cannot, use Bearer <personal access token> from Account > AI assistants at usehourly.app.",
+          "isRequired": false,
           "isSecret": true
         }
       ]
