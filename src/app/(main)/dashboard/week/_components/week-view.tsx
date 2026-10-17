@@ -6,12 +6,10 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { DayEditorDialog } from "@/components/day-editor";
-import { ExportButton } from "@/components/export-button";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { ProjectFilter, toggleProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
-import { RangeExport } from "@/components/range-export";
-import { ShareTimesheet } from "@/components/share-timesheet";
+import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,7 +120,7 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
             <span className="md:hidden"> · tap a day to add or change time</span>
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div data-testid="timesheet-toolbar" className="flex flex-wrap items-center gap-1">
           <ProjectFilter
             value={projectId}
             onChange={(id) => {
@@ -130,13 +128,15 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
               setLastProject(""); // the filter is the project in play now
             }}
           />
-          <ExportButton
+          <ShareExportMenu
             entries={entries.data ? shown : undefined}
             days={days}
             filename={`usehourly-${start}_to_${end}.xlsx`}
+            period="week"
+            defaultFrom={start}
+            defaultTo={end}
+            projectId={projectId}
           />
-          <RangeExport defaultFrom={start} defaultTo={end} projectId={projectId} />
-          <ShareTimesheet defaultFrom={start} defaultTo={end} projectId={projectId} />
           <Button size="icon" variant="outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">
             <ChevronLeft />
           </Button>

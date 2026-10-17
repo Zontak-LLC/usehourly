@@ -4,14 +4,21 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { CircleCheck, Download, FileText, Plus, Search, Trash2 } from "lucide-react";
+import { CircleCheck, Download, Ellipsis, FileText, Plus, Search, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { SendInvoice } from "@/components/send-invoice";
-import { ShareInvoice } from "@/components/share-invoice";
+import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fromISODate, toISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
@@ -23,69 +30,56 @@ const dateFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "sh
 const fmt = (iso: string) => dateFmt.format(fromISODate(iso));
 
 /** Mark an invoice paid on a date (defaults to today), change that date, or mark it unpaid. */
-function PaidPopover({
-  number,
-  paidDate,
+function PaidDialog({
+  invoice,
   today,
   onSave,
+  onClose,
   busy,
 }: {
-  number: string;
-  paidDate: string | null;
+  invoice: { number: string; paid_date: string | null } | null;
   today: string;
   onSave: (date: string | null) => Promise<void>;
+  onClose: () => void;
   busy: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [date, setDate] = useState(paidDate ?? today);
+  const [date, setDate] = useState(today);
+  useEffect(() => {
+    if (invoice) setDate(invoice.paid_date ?? today);
+  }, [invoice, today]);
 
   async function save(next: string | null) {
     await onSave(next);
-    setOpen(false);
+    onClose();
   }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) setDate(paidDate ?? today);
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          size="icon"
-          variant="ghost"
-          aria-label={paidDate ? `Edit payment of ${number}` : `Mark ${number} paid`}
-          title={paidDate ? "Edit payment" : "Mark paid"}
-        >
-          <CircleCheck className={paidDate ? "text-success" : ""} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 space-y-3" align="end">
-        <p className="font-medium text-sm">
-          {paidDate ? "Payment received" : "Mark as paid"} · {number}
-        </p>
+    <Dialog open={invoice !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="flex flex-col gap-4 sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>
+            {invoice?.paid_date ? "Payment received" : "Mark as paid"} · {invoice?.number}
+          </DialogTitle>
+          <DialogDescription>When did the money arrive? It counts toward that year's income.</DialogDescription>
+        </DialogHeader>
         <div className="grid gap-1.5">
-          <label htmlFor={`paid-${number}`} className="text-muted-foreground text-xs">
-            Date the money arrived
-          </label>
-          <Input id={`paid-${number}`} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <Label htmlFor="paid-date">Date the money arrived</Label>
+          <Input id="paid-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="flex items-center justify-between gap-2">
-          {paidDate ? (
-            <Button size="sm" variant="ghost" disabled={busy} onClick={() => save(null)}>
+          {invoice?.paid_date ? (
+            <Button variant="ghost" disabled={busy} onClick={() => save(null)}>
               Mark unpaid
             </Button>
           ) : (
             <span />
           )}
-          <Button size="sm" disabled={busy || !date} onClick={() => save(date)}>
+          <Button disabled={busy || !date} onClick={() => save(date)}>
             {busy ? "Saving…" : "Save"}
           </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -119,6 +113,8 @@ export function InvoicesView() {
   const del = trpc.invoice.delete.useMutation();
   const markPaid = trpc.invoice.markPaid.useMutation();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [sendFor, setSendFor] = useState<{ id: string; number: string } | null>(null);
+  const [paidFor, setPaidFor] = useState<{ id: string; number: string; paid_date: string | null } | null>(null);
 
   async function download(id: string) {
     setBusyId(id);
@@ -154,6 +150,8 @@ export function InvoicesView() {
   }
 
   const filtering = !!q || !!clientId || status !== "all" || !!from || !!to;
+  // Nothing to search or filter until the first invoice exists.
+  const showFilters = invoices.isLoading || filtering || sort !== "newest" || (invoices.data?.length ?? 0) > 0;
   const total = (invoices.data ?? []).reduce((a, i) => a + i.total_cents, 0);
   const unpaid = (invoices.data ?? []).filter((i) => !i.paid_date).reduce((a, i) => a + i.total_cents, 0);
 
@@ -169,39 +167,32 @@ export function InvoicesView() {
       )}
     </>
   );
+  // One clear action (Send) and one menu with words, instead of a row of unlabeled icons.
   const actionsOf = (i: Row) => (
-    <>
-      <PaidPopover
-        // Re-mount when the saved payment changes so the date field resets.
-        key={`${i.id}:${i.paid_date ?? ""}`}
-        number={i.number}
-        paidDate={i.paid_date}
-        today={today ?? ""}
-        busy={markPaid.isPending}
-        onSave={(date) => setPaid(i.id, i.number, date)}
-      />
-      <Button
-        size="icon"
-        variant="ghost"
-        aria-label={`Download ${i.number} as PDF`}
-        title="Download PDF"
-        disabled={busyId === i.id}
-        onClick={() => download(i.id)}
-      >
-        <Download />
+    <div data-testid="invoice-actions" className="flex items-center gap-1">
+      <Button size="sm" variant="outline" onClick={() => setSendFor({ id: i.id, number: i.number })}>
+        <Send /> Send
       </Button>
-      <SendInvoice invoiceId={i.id} number={i.number} />
-      <ShareInvoice invoiceId={i.id} number={i.number} />
-      <Button
-        size="icon"
-        variant="ghost"
-        aria-label={`Delete ${i.number}`}
-        title="Delete"
-        onClick={() => remove(i.id, i.number)}
-      >
-        <Trash2 />
-      </Button>
-    </>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="ghost" aria-label={`More actions for ${i.number}`}>
+            <Ellipsis />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-52">
+          <DropdownMenuItem onSelect={() => setPaidFor({ id: i.id, number: i.number, paid_date: i.paid_date })}>
+            <CircleCheck /> {i.paid_date ? "Edit payment…" : "Mark as paid…"}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={busyId === i.id} onSelect={() => void download(i.id)}>
+            <Download /> Download PDF
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onSelect={() => void remove(i.id, i.number)}>
+            <Trash2 /> Delete invoice…
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 
   const summary = (
@@ -232,90 +223,94 @@ export function InvoicesView() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <div className="relative min-w-56 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Search number, client, project or note…"
-            aria-label="Search invoices"
-            className="h-9 pl-8"
-          />
-        </div>
-        <select
-          value={clientId}
-          onChange={(e) => setClientId(e.target.value)}
-          aria-label="Filter by client"
-          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-        >
-          <option value="">All clients</option>
-          {clients.data?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as "all" | "unpaid" | "paid")}
-          aria-label="Filter by payment status"
-          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-        >
-          <option value="all">All statuses</option>
-          <option value="unpaid">Unpaid</option>
-          <option value="paid">Paid</option>
-        </select>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as typeof sort)}
-          aria-label="Sort invoices"
-          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-        >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="highest">Highest amount</option>
-          <option value="lowest">Lowest amount</option>
-        </select>
-      </div>
+      {showFilters && (
+        <>
+          <div className="flex flex-wrap gap-2">
+            <div className="relative min-w-56 flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Search number, client, project or note…"
+                aria-label="Search invoices"
+                className="h-9 pl-8"
+              />
+            </div>
+            <select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              aria-label="Filter by client"
+              className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            >
+              <option value="">All clients</option>
+              {clients.data?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "all" | "unpaid" | "paid")}
+              aria-label="Filter by payment status"
+              className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            >
+              <option value="all">All statuses</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as typeof sort)}
+              aria-label="Sort invoices"
+              className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="highest">Highest amount</option>
+              <option value="lowest">Lowest amount</option>
+            </select>
+          </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Issued from</span>
-        <Input
-          type="date"
-          value={from}
-          max={to || undefined}
-          onChange={(e) => setFrom(e.target.value)}
-          aria-label="Issued from"
-          className="h-9 w-40"
-        />
-        <span className="text-muted-foreground">to</span>
-        <Input
-          type="date"
-          value={to}
-          min={from || undefined}
-          onChange={(e) => setTo(e.target.value)}
-          aria-label="Issued to"
-          className="h-9 w-40"
-        />
-        {(filtering || sort !== "newest") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setText("");
-              setQ("");
-              setClientId("");
-              setStatus("all");
-              setFrom("");
-              setTo("");
-              setSort("newest");
-            }}
-          >
-            Clear all
-          </Button>
-        )}
-      </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Issued from</span>
+            <Input
+              type="date"
+              value={from}
+              max={to || undefined}
+              onChange={(e) => setFrom(e.target.value)}
+              aria-label="Issued from"
+              className="h-9 w-40"
+            />
+            <span className="text-muted-foreground">to</span>
+            <Input
+              type="date"
+              value={to}
+              min={from || undefined}
+              onChange={(e) => setTo(e.target.value)}
+              aria-label="Issued to"
+              className="h-9 w-40"
+            />
+            {(filtering || sort !== "newest") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setText("");
+                  setQ("");
+                  setClientId("");
+                  setStatus("all");
+                  setFrom("");
+                  setTo("");
+                  setSort("newest");
+                }}
+              >
+                Clear all
+              </Button>
+            )}
+          </div>
+        </>
+      )}
 
       {invoices.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -396,6 +391,15 @@ export function InvoicesView() {
           </div>
         </>
       )}
+
+      <SendInvoiceDialog invoice={sendFor} onClose={() => setSendFor(null)} />
+      <PaidDialog
+        invoice={paidFor}
+        today={today ?? ""}
+        busy={markPaid.isPending}
+        onSave={(date) => (paidFor ? setPaid(paidFor.id, paidFor.number, date) : Promise.resolve())}
+        onClose={() => setPaidFor(null)}
+      />
     </div>
   );
 }

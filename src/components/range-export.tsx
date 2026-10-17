@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { CalendarRange, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { ExportEverything } from "@/components/export-everything";
 import { ProjectFilter } from "@/components/project-filter";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { addDays, toISODate } from "@/lib/dates";
 import { checkRange, describeRange, PRESETS, presetRange, rangeFilename } from "@/lib/export-range";
 import { downloadTimesheetXlsx } from "@/lib/export-xlsx";
@@ -22,16 +22,19 @@ import { trpc } from "@/lib/trpc";
  * It starts on the range you are looking at and the project you filtered to.
  */
 export function RangeExport({
+  open,
+  onOpenChange,
   defaultFrom,
   defaultTo,
   projectId: initialProject = "",
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   defaultFrom: string;
   defaultTo: string;
   projectId?: string;
 }) {
   const utils = trpc.useUtils();
-  const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
   const [projectId, setProjectId] = useState(initialProject);
@@ -39,15 +42,13 @@ export function RangeExport({
 
   const check = checkRange(from, to);
 
-  function onOpenChange(next: boolean) {
-    if (next) {
-      // Start from what the screen is showing each time it opens.
-      setFrom(defaultFrom);
-      setTo(defaultTo);
-      setProjectId(initialProject);
-    }
-    setOpen(next);
-  }
+  // Start from what the screen is showing each time the panel opens.
+  useEffect(() => {
+    if (!open) return;
+    setFrom(defaultFrom);
+    setTo(defaultTo);
+    setProjectId(initialProject);
+  }, [open, defaultFrom, defaultTo, initialProject]);
 
   async function exportRange() {
     if (!check.ok) return;
@@ -67,7 +68,7 @@ export function RangeExport({
         range: true,
       });
       toast.success("Your timesheet has been downloaded.");
-      setOpen(false);
+      onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     } finally {
@@ -78,17 +79,12 @@ export function RangeExport({
   const today = toISODate(new Date());
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline">
-          <CalendarRange /> Date range…
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="flex w-80 flex-col gap-4">
-        <div>
-          <p className="font-medium">Export a date range</p>
-          <p className="text-muted-foreground text-sm">Pick any start and end date.</p>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex flex-col gap-4 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Export a date range</DialogTitle>
+          <DialogDescription>Pick any start and end date. You get an Excel file.</DialogDescription>
+        </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
@@ -137,7 +133,7 @@ export function RangeExport({
           <p className="mb-2 text-muted-foreground text-sm">Need all of it? Every client, all time.</p>
           <ExportEverything variant="ghost" className="w-full justify-start" />
         </div>
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -264,7 +264,7 @@ export function NewInvoiceView() {
                 <li>
                   ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at $0.00. Set it under{" "}
                   <Link href="/dashboard/clients" className="underline">
-                    Clients &amp; projects
+                    My work
                   </Link>
                   .
                 </li>

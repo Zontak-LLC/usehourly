@@ -5,11 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { DayEditorDialog } from "@/components/day-editor";
-import { ExportButton } from "@/components/export-button";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
-import { RangeExport } from "@/components/range-export";
-import { ShareTimesheet } from "@/components/share-timesheet";
+import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
@@ -108,7 +106,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             {formatDuration(sheet.total)} logged ({formatDecimalHours(sheet.total)} h)
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div data-testid="timesheet-toolbar" className="flex flex-wrap items-center gap-1">
           <Button
             variant={selectMode ? "default" : "outline"}
             onClick={() => {
@@ -120,13 +118,15 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             <CalendarPlus /> Quick add
           </Button>
           <ProjectFilter value={projectId} onChange={setProjectId} />
-          <ExportButton
+          <ShareExportMenu
             entries={entries.data ? shown : undefined}
             days={monthDays}
             filename={`usehourly-${first.slice(0, 7)}.xlsx`}
+            period="month"
+            defaultFrom={first}
+            defaultTo={last}
+            projectId={projectId}
           />
-          <RangeExport defaultFrom={first} defaultTo={last} projectId={projectId} />
-          <ShareTimesheet defaultFrom={first} defaultTo={last} projectId={projectId} />
           <Button
             size="icon"
             variant="outline"
