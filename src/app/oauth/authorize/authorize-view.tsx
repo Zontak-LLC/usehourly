@@ -43,15 +43,11 @@ export function AuthorizeView() {
       window.location.replace(`/auth/v2/login?next=${next}`);
     }
   }, [notSignedIn]);
-  // A client that sent the user back to its own address with an error: carry on there.
-  useEffect(() => {
-    if (inspect.data?.kind === "redirect") window.location.replace(inspect.data.url);
-  }, [inspect.data]);
-
   async function answer(allow: boolean) {
     setProblem(null);
     try {
-      const chosen = access ?? (inspect.data?.kind === "ok" ? inspect.data.requested : "read");
+      // Read-only unless the person picks otherwise, whatever the app asked for.
+      const chosen = access ?? "read";
       const res = await decide.mutateAsync({ params, allow, access: chosen });
       setLeaving(true);
       window.location.assign(res.redirectUrl);
@@ -70,7 +66,7 @@ export function AuthorizeView() {
     </div>
   );
 
-  if (inspect.isLoading || notSignedIn || inspect.data?.kind === "redirect") {
+  if (inspect.isLoading || notSignedIn) {
     return frame(<p className="text-muted-foreground">One moment…</p>);
   }
   if (inspect.error) {
@@ -87,10 +83,27 @@ export function AuthorizeView() {
       </div>,
     );
   }
+  if (inspect.data?.kind === "redirect") {
+    // The app's own request was malformed. Nothing is sent anywhere until the person chooses to go back.
+    return frame(
+      <div className="space-y-3">
+        <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          This connection request could not be completed. The app sent something UseHourly does not accept.
+        </div>
+        <a
+          href={inspect.data.url}
+          rel="noopener noreferrer"
+          className="inline-block rounded-md border px-3 py-2 text-sm underline"
+        >
+          Go back to {inspect.data.host}
+        </a>
+      </div>,
+    );
+  }
   if (inspect.data?.kind !== "ok") return null;
 
   const data = inspect.data;
-  const chosen = access ?? data.requested;
+  const chosen = access ?? "read";
   return frame(
     <>
       <div className="space-y-2">
@@ -100,6 +113,20 @@ export function AuthorizeView() {
           {data.email}). If you allow it, you will be sent back to{" "}
           <strong className="text-foreground">{data.redirectHost}</strong>.
         </p>
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+          <p className="font-medium">Unverified app</p>
+          <p className="mt-1 text-muted-foreground">
+            This app registered itself and chose its own name. UseHourly has not checked who made it. It will be sent
+            to:
+          </p>
+          <code className="mt-1 block break-all">{data.redirectUri}</code>
+        </div>
+        {data.requested === "write" && (
+          <p className="text-muted-foreground text-xs">
+            The app asked to be able to change your data. "Read only" is selected: choose "Read and change" only if you
+            want that.
+          </p>
+        )}
       </div>
 
       <fieldset className="space-y-2">

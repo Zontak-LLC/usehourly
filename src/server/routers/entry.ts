@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import type { Session } from "next-auth";
 import { z } from "zod";
 
-import { DATE_RE } from "@/lib/dates";
+import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { parseDuration } from "@/lib/duration";
 import { planMerge } from "@/lib/merge-entries";
@@ -12,7 +12,10 @@ import { assertWithinQuota } from "@/lib/quotas";
 
 import { protectedProcedure, router } from "../trpc";
 
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD");
+const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
+/** Entries per page of `listAll`. */
+const LIST_ALL_PAGE = 2_000;
+
 const minutesSchema = z
   .number()
   .int()
@@ -39,14 +42,42 @@ const withProject = {
 } as const;
 
 export const entryRouter = router({
-  /** Entries in [from, to] inclusive, newest first. */
-  list: protectedProcedure.input(z.object({ from: dateSchema, to: dateSchema })).query(({ ctx, input }) =>
-    ctx.prisma.timeEntry.findMany({
-      where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
-      include: withProject,
-      orderBy: [{ date: "desc" }, { created_at: "desc" }],
+  /** Entries in [from, to] inclusive, newest first. At most a year at a time (see `listAll` for everything). */
+  list: protectedProcedure
+    .input(
+      z
+        .object({ from: dateSchema, to: dateSchema })
+        .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
+        .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
+          message: `Choose a range of up to a year (${MAX_QUERY_DAYS} days).`,
+        }),
+    )
+    .query(({ ctx, input }) =>
+      ctx.prisma.timeEntry.findMany({
+        where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
+        include: withProject,
+        orderBy: [{ date: "desc" }, { created_at: "desc" }],
+      }),
+    ),
+
+  /**
+   * Every entry, a page at a time (for "export everything"). Pass the previous page's `nextCursor`
+   * until it comes back null. A page is bounded, so no single response can be enormous.
+   */
+  listAll: protectedProcedure
+    .input(z.object({ cursor: z.string().max(100).nullish() }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.prisma.timeEntry.findMany({
+        where: { user_id: ctx.userId },
+        include: withProject,
+        orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
+        take: LIST_ALL_PAGE + 1,
+        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 0 } : {}),
+      });
+      const more = rows.length > LIST_ALL_PAGE;
+      const items = more ? rows.slice(0, LIST_ALL_PAGE) : rows;
+      return { items, nextCursor: more ? rows[LIST_ALL_PAGE].id : null };
     }),
-  ),
 
   /** Quick-add. Accepts either `minutes` or free-form `duration` text ("1.5", "1:30", "90m"). */
   create: protectedProcedure

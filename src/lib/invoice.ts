@@ -87,9 +87,17 @@ export type InvoiceSnapshot = {
     logo: string | null;
     // absent on invoices issued before it existed.
     paymentInstructions?: string | null;
+    /** sha-256 of the logo stored in invoice_logos (new invoices keep `logo` null and point here). */
+    logoHash?: string | null;
   };
   // address/logo are absent on invoices issued before they existed.
-  client: { name: string; legalName?: string | null; address?: string | null; logo?: string | null };
+  client: {
+    name: string;
+    legalName?: string | null;
+    address?: string | null;
+    logo?: string | null;
+    logoHash?: string | null;
+  };
   number: string;
   issueDate: string;
   dueDate: string | null;

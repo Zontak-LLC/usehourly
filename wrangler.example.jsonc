@@ -23,5 +23,5 @@
   },
   // Runs the Friday reminder emails (custom-worker.ts); it does nothing until email is set up.
   "triggers": { "crons": ["0 * * * *"] },
-  "workers_dev": true
+  "workers_dev": false
 }

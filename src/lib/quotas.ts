@@ -8,8 +8,8 @@ import { TRPCError } from "@trpc/server";
 export const QUOTAS = {
   clients: 200,
   projects: 500,
-  entries: 200_000,
-  invoices: 10_000,
+  entries: 50_000,
+  invoices: 2_000,
 } as const;
 
 /** A demo account is a sandbox, so it gets a much smaller allowance. */

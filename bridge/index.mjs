@@ -35,11 +35,31 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
       "Set USEHOURLY_API_TOKEN to a token from UseHourly > Account > AI assistants.",
       "Optional: USEHOURLY_MCP_URL to point at another server.",
       "",
-      'Example (Claude Desktop): { "command": "npx", "args": ["-y", "usehourly-mcp"],',
+      'Example (Claude Desktop): { "command": "node", "args": ["/path/to/usehourly/bridge/index.mjs"],',
       '  "env": { "USEHOURLY_API_TOKEN": "uh_..." } }',
     ].join("\n"),
   );
   process.exit(0);
+}
+
+// The token goes to this address in a header, so it must be one that cannot be read on the way: https, or
+// a program on this same machine.
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
+function endpointProblem(address) {
+  let url;
+  try {
+    url = new URL(address);
+  } catch {
+    return `USEHOURLY_MCP_URL is not a valid address: ${address}`;
+  }
+  if (url.protocol === "https:") return null;
+  if (url.protocol === "http:" && LOOPBACK.has(url.hostname)) return null;
+  return "USEHOURLY_MCP_URL must start with https:// (plain http is allowed only for localhost).";
+}
+const badEndpoint = endpointProblem(ENDPOINT);
+if (badEndpoint) {
+  console.error(`usehourly-mcp: ${badEndpoint}`);
+  process.exit(1);
 }
 
 const reply = (id, result) => ({ jsonrpc: "2.0", id, result });
@@ -63,6 +83,7 @@ async function forward(msg) {
   try {
     res = await fetch(ENDPOINT, {
       method: "POST",
+      redirect: "error", // never follow a redirect with the token attached
       headers: {
         "content-type": "application/json",
         accept: "application/json",

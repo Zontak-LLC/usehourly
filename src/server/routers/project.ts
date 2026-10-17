@@ -4,7 +4,7 @@ import { z } from "zod";
 import { isDemoSession } from "@/lib/demo";
 import { assertWithinQuota } from "@/lib/quotas";
 
-import { logoSchema } from "../logo-schema";
+import { projectLogoSchema } from "../logo-schema";
 import { protectedProcedure, router } from "../trpc";
 
 export const projectRouter = router({
@@ -58,7 +58,7 @@ export const projectRouter = router({
         hourlyRate: z.number().int().min(0).max(10_000_00).optional(),
         billable: z.boolean().optional(),
         // undefined = leave as is; null = remove the logo.
-        logo: logoSchema.optional(),
+        logo: projectLogoSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

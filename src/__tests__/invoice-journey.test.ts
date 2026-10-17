@@ -5,6 +5,8 @@ import { buildInvoicePdf } from "@/lib/invoice-pdf";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
+
 const createCaller = createCallerFactory(appRouter);
 
 const user = {
@@ -20,6 +22,7 @@ const user = {
 
 function mockPrisma() {
   return {
+    ...memoryInvoiceLogos(),
     client: {
       count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({
@@ -250,15 +253,54 @@ describe("client invoice journey", () => {
     expect(prisma.invoice.deleteMany).toHaveBeenCalledWith({ where: { id: "inv1", user_id: "u1" } });
   });
 
-  it("snapshots the client's billing address and logo onto the invoice", async () => {
+  it("keeps the client's billing address on the invoice and stores each logo once, by reference", async () => {
     const prisma = mockPrisma();
-    const { snapshot } = await asCaller(prisma, "u1").invoice.create(input);
-    expect(snapshot.client).toEqual({
+    const clientLogo = "data:image/png;base64,iVBORw0KGgo=";
+    const sellerLogo = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+    prisma.client.findFirst.mockResolvedValue({
+      id: "c1",
+      name: "Acme",
+      legal_name: "Acme Holdings, Inc.",
+      address: "500 Market St\nSan Francisco, CA",
+      logo: clientLogo,
+    } as never);
+    prisma.authUser.findUnique.mockResolvedValue({ ...user, logo: sellerLogo } as never);
+    const c = asCaller(prisma, "u1");
+
+    // The call hands the logos back inline so the PDF can be drawn at once.
+    const first = await c.invoice.create(input);
+    expect(first.snapshot.client).toMatchObject({
       name: "Acme",
       legalName: "Acme Holdings, Inc.",
       address: "500 Market St\nSan Francisco, CA",
-      logo: null,
+      logo: clientLogo,
     });
+    expect(first.snapshot.seller.logo).toBe(sellerLogo);
+
+    // What is stored carries no copy of either image, only their hashes.
+    const stored = JSON.parse(prisma.invoice.create.mock.calls[0][0].data.snapshot as string);
+    expect(stored.client.logo).toBeNull();
+    expect(stored.seller.logo).toBeNull();
+    expect(stored.client.logoHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(stored.seller.logoHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(stored)).not.toContain("iVBORw0KGgo");
+    expect(JSON.stringify(stored)).not.toContain("/9j/4AAQ");
+    expect(prisma.logoRows.map((r) => r.data).sort()).toEqual([clientLogo, sellerLogo].sort());
+
+    // A second invoice with the same logos stores nothing new.
+    await c.invoice.create({ ...input, number: "INV-2026-004" });
+    expect(prisma.logoRows).toHaveLength(2);
+
+    // Reading an invoice back puts the logos in again, from the table, for its owner only.
+    const row = { id: "inv1", client_id: "c1", snapshot: JSON.stringify(stored) };
+    prisma.invoice.findFirst.mockResolvedValueOnce(row as never);
+    const got = await c.invoice.get({ id: "inv1" });
+    expect(got.snapshot.client.logo).toBe(clientLogo);
+    expect(got.snapshot.seller.logo).toBe(sellerLogo);
+    prisma.invoice.findFirst.mockResolvedValueOnce(row as never);
+    const other = await asCaller(prisma, "u2").invoice.get({ id: "inv1" });
+    expect(other.snapshot.client.logo).toBeNull();
+    expect(other.snapshot.seller.logo).toBeNull();
   });
 
   it("updates a client's billing details only for its owner, and rejects duplicate names and bad logos", async () => {
@@ -521,5 +563,105 @@ describe("client invoice journey", () => {
     // Project and Description are separate columns; a note-less entry says so instead of going blank.
     expect(text).toContain("No description");
     expect(text).not.toContain("—");
+  });
+});
+
+describe("one account cannot use invoices to fill the shared database", () => {
+  const logoFor = (n: number) => `data:image/png;base64,AAAA${n}`;
+
+  it("refuses a period longer than a year, a reversed one and a date that does not exist, and writes nothing", async () => {
+    const prisma = mockPrisma();
+    const c = asCaller(prisma, "u1");
+    await expect(c.invoice.create({ ...input, from: "2025-01-01", to: "2026-10-31" })).rejects.toThrow(/up to a year/);
+    await expect(c.invoice.create({ ...input, from: "2026-10-31", to: "2026-10-01" })).rejects.toThrow(/before/);
+    await expect(c.invoice.create({ ...input, from: "2026-02-30", to: "2026-03-31" })).rejects.toThrow(/real date/);
+    expect(prisma.invoice.create).not.toHaveBeenCalled();
+    // exactly a leap-sized year is fine
+    await c.invoice.create({ ...input, from: "2026-01-01", to: "2027-01-01", number: "INV-2026-900" });
+    expect(prisma.invoice.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops after 30 different logos, because each stored image costs the shared database", async () => {
+    const prisma = mockPrisma();
+    let n = 0;
+    prisma.authUser.findUnique.mockImplementation(async () => ({ ...user, logo: logoFor(n) }) as never);
+    const c = asCaller(prisma, "u1");
+    for (n = 0; n < 30; n++) await c.invoice.create({ ...input, number: `INV-2026-${100 + n}` });
+    expect(prisma.logoRows).toHaveLength(30);
+    n = 30; // a 31st different logo
+    await expect(c.invoice.create({ ...input, number: "INV-2026-200" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringContaining("30 different logos"),
+    });
+    expect(prisma.invoice.create).toHaveBeenCalledTimes(30);
+    // an already stored logo keeps working
+    n = 7;
+    await c.invoice.create({ ...input, number: "INV-2026-201" });
+    expect(prisma.invoice.create).toHaveBeenCalledTimes(31);
+    expect(prisma.logoRows).toHaveLength(30);
+  });
+
+  it("refuses an invoice whose stored copy would be enormous, and writes nothing", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findMany.mockResolvedValue(
+      Array.from({ length: 600 }, () => ({
+        date: "2026-10-02",
+        minutes: 10,
+        note: "n".repeat(2000),
+        started_at: null,
+        project_id: "p1",
+        project: { name: "Website", hourly_rate: 10000, billable: true },
+      })) as never,
+    );
+    await expect(asCaller(prisma, "u1").invoice.create(input)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringContaining("too much detail"),
+    });
+    expect(prisma.invoice.create).not.toHaveBeenCalled();
+  });
+
+  it("keeps the search text small however many entries an invoice has", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findMany.mockResolvedValue(
+      Array.from({ length: 200 }, (_, i) => ({
+        date: "2026-10-02",
+        minutes: 10,
+        note: `${i} ${"word ".repeat(380)}`,
+        started_at: null,
+        project_id: "p1",
+        project: { name: "Website", hourly_rate: 10000, billable: true },
+      })) as never,
+    );
+    await asCaller(prisma, "u1").invoice.create(input);
+    const stored = prisma.invoice.create.mock.calls[0][0].data as Record<string, string>;
+    expect(stored.search_text.length).toBeLessThanOrEqual(50_000);
+  });
+
+  it("drops a stored logo with the last invoice that used it, and keeps it while another still does", async () => {
+    const prisma = mockPrisma();
+    const clientLogo = "data:image/png;base64,iVBORw0KGgo=";
+    prisma.client.findFirst.mockResolvedValue({
+      id: "c1",
+      name: "Acme",
+      legal_name: null,
+      address: null,
+      logo: clientLogo,
+    } as never);
+    const c = asCaller(prisma, "u1");
+    await c.invoice.create(input);
+    const snapshot = prisma.invoice.create.mock.calls[0][0].data.snapshot as string;
+    expect(prisma.logoRows).toHaveLength(1);
+
+    // another invoice still points at the same image: it stays
+    prisma.invoice.findFirst
+      .mockResolvedValueOnce({ snapshot } as never)
+      .mockResolvedValueOnce({ id: "inv2" } as never);
+    await c.invoice.delete({ id: "inv1" });
+    expect(prisma.logoRows).toHaveLength(1);
+
+    // nothing else uses it: it goes
+    prisma.invoice.findFirst.mockResolvedValueOnce({ snapshot } as never);
+    await c.invoice.delete({ id: "inv2" });
+    expect(prisma.logoRows).toHaveLength(0);
   });
 });

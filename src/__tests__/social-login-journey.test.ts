@@ -137,12 +137,27 @@ describe("signing in with GitHub", () => {
     expect(db.users).toHaveLength(1);
   });
 
-  it("links to an existing account whose address was confirmed, and keeps its password", async () => {
+  it("takes over a confirmed password account too: the password is dead and other sessions are signed out", async () => {
+    // Anyone can register with another person's address and pick the password; confirming the address
+    // (or a mail scanner opening the link) must not leave that password alive beside the owner's GitHub.
     const db = fakeDb([user({ email_verified_at: new Date() })]);
     const r = await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails });
-    expect(r).toMatchObject({ ok: true, created: false, user: { id: "u0" } });
-    expect(db.users[0]).toMatchObject({ github_id: "42", token_version: 3 });
-    expect(db.users[0].password_hash).not.toBe(NO_PASSWORD_HASH);
+    expect(r).toMatchObject({ ok: true, created: false, user: { id: "u0", token_version: 4 } });
+    expect(db.users[0]).toMatchObject({ github_id: "42", token_version: 4 });
+    expect(db.users[0].password_hash).toBe(NO_PASSWORD_HASH);
+  });
+
+  it("just links a confirmed account that has no password, leaving its sessions alone", async () => {
+    const db = fakeDb([user({ email_verified_at: new Date(), password_hash: NO_PASSWORD_HASH, google_id: "g-1" })]);
+    const r = await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails });
+    expect(r).toMatchObject({ ok: true, user: { id: "u0", token_version: 3 } });
+    expect(db.users[0]).toMatchObject({ github_id: "42", google_id: "g-1", token_version: 3 });
+  });
+
+  it("never hands the password hash back to the caller", async () => {
+    const db = fakeDb([user({ email_verified_at: new Date(), github_id: "42" })]);
+    const r = await resolveSocialUser(db.prisma, { provider: "github", providerId: "42", emails });
+    expect(r.ok && Object.keys(r.user).sort()).toEqual(["email", "id", "name", "token_version"]);
   });
 
   it("takes over an account whose address was never confirmed: old password dead, old sessions signed out", async () => {
@@ -200,7 +215,7 @@ describe("signing in with GitHub", () => {
 });
 
 describe("decisions that must not change", () => {
-  const known = { id: "u", linkedId: null, email_verified_at: new Date(), is_demo: false };
+  const known = { id: "u", linkedId: null, email_verified_at: new Date(), is_demo: false, has_password: false };
   it("never links a demo account", () => {
     expect(
       decideSocialSignIn({
@@ -210,6 +225,19 @@ describe("decisions that must not change", () => {
         byEmail: { ...known, is_demo: true },
       }),
     ).toMatchObject({ action: "refuse" });
+  });
+  it("takes over any account that can sign in with a password, and links one that cannot", () => {
+    const decide = (over: object) =>
+      decideSocialSignIn({
+        providerId: "1",
+        verifiedEmail: "a@b.c",
+        byProviderId: null,
+        byEmail: { ...known, ...over },
+      });
+    expect(decide({ has_password: true })).toEqual({ action: "take-over", userId: "u" });
+    expect(decide({ has_password: true, email_verified_at: null })).toEqual({ action: "take-over", userId: "u" });
+    expect(decide({ has_password: false })).toEqual({ action: "link", userId: "u" });
+    expect(decide({ has_password: false, email_verified_at: null })).toEqual({ action: "take-over", userId: "u" });
   });
 });
 
@@ -239,12 +267,12 @@ describe("signing in with Google", () => {
     expect(db.users).toHaveLength(0);
   });
 
-  it("the same Google account gets back in; links to a confirmed password account and to a GitHub-made one", async () => {
+  it("the same Google account gets back in; takes over a confirmed password account and links a GitHub-made one", async () => {
     const password = fakeDb([user({ email_verified_at: new Date() })]);
     expect(
       await resolveSocialUser(password.prisma, { provider: "google", providerId: "sub-1", emails: googleEmails }),
     ).toMatchObject({ ok: true, user: { id: "u0" } });
-    expect(password.users[0]).toMatchObject({ google_id: "sub-1", token_version: 3 });
+    expect(password.users[0]).toMatchObject({ google_id: "sub-1", token_version: 4, password_hash: NO_PASSWORD_HASH });
     expect(
       await resolveSocialUser(password.prisma, { provider: "google", providerId: "sub-1", emails: [] }),
     ).toMatchObject({ ok: true, user: { id: "u0" } });

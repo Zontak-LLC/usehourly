@@ -1,6 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
+import { MAX_BATCH } from "@/lib/trpc-limits";
+
 import type { McpAuth } from "./auth";
 import { OUTPUT_SCHEMAS } from "./output-schemas";
 import {
@@ -293,6 +295,12 @@ async function handleOne(raw: unknown, deps: McpDeps): Promise<RpcResponse | nul
 export async function handleMcp(body: unknown, deps: McpDeps): Promise<{ status: number; body?: unknown }> {
   if (Array.isArray(body)) {
     if (body.length === 0) return { status: 400, body: fail(null, ERR.invalidRequest, "Empty batch.") };
+    if (body.length > MCP_MAX_BATCH) {
+      return {
+        status: 400,
+        body: fail(null, ERR.invalidRequest, `Too many messages in one batch (at most ${MCP_MAX_BATCH}).`),
+      };
+    }
     const replies = (await Promise.all(body.map((m) => handleOne(m, deps)))).filter(
       (r): r is RpcResponse => r !== null,
     );
@@ -302,5 +310,8 @@ export async function handleMcp(body: unknown, deps: McpDeps): Promise<{ status:
   if (!reply) return { status: 202 };
   return { status: reply.error?.code === ERR.invalidRequest ? 400 : 200, body: reply };
 }
+
+/** Most JSON-RPC messages one POST may carry; each also counts against the token's rate limit. */
+export const MCP_MAX_BATCH = MAX_BATCH;
 
 export const PARSE_ERROR = fail(null, ERR.parse, "Parse error: the body is not valid JSON.");

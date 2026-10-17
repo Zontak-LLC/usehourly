@@ -26,6 +26,8 @@ const select = {
   email_verified_at: true,
   is_demo: true,
 } as const;
+// The lookups also read the password hash to tell whether the account has a password; it never leaves here.
+const lookupSelect = { ...select, password_hash: true } as const;
 
 /**
  * Finds, links or creates the UseHourly account for a GitHub or Google sign-in (rules in
@@ -46,17 +48,24 @@ export async function resolveSocialUser(
   const column = PROVIDER_COLUMN[input.provider];
   const verifiedEmail = pickVerifiedEmail(input.emails);
   const toKnown = (
-    u: { id: string; email_verified_at: Date | null; is_demo: boolean } & Record<string, unknown>,
+    u: { id: string; email_verified_at: Date | null; is_demo: boolean; password_hash: string } & Record<
+      string,
+      unknown
+    >,
   ): Known => ({
     id: u.id,
     email_verified_at: u.email_verified_at,
     is_demo: u.is_demo,
+    has_password: u.password_hash !== NO_PASSWORD_HASH,
     linkedId: (u[column] as string | null) ?? null,
   });
 
-  const byProviderRow = await prisma.authUser.findUnique({ where: { [column]: input.providerId } as never, select });
+  const byProviderRow = await prisma.authUser.findUnique({
+    where: { [column]: input.providerId } as never,
+    select: lookupSelect,
+  });
   const byEmailRow = verifiedEmail
-    ? await prisma.authUser.findUnique({ where: { email: verifiedEmail }, select })
+    ? await prisma.authUser.findUnique({ where: { email: verifiedEmail }, select: lookupSelect })
     : null;
   const decision = decideSocialSignIn({
     providerId: input.providerId,
@@ -68,8 +77,10 @@ export async function resolveSocialUser(
   switch (decision.action) {
     case "refuse":
       return { ok: false, reason: decision.reason };
-    case "sign-in":
-      return { ok: true, user: byProviderRow as NonNullable<typeof byProviderRow>, created: false };
+    case "sign-in": {
+      const { id, name, email, token_version } = byProviderRow as NonNullable<typeof byProviderRow>;
+      return { ok: true, user: { id, name, email, token_version }, created: false };
+    }
     case "link": {
       const user = await prisma.authUser.update({
         where: { id: decision.userId },

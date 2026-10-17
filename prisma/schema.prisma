@@ -40,6 +40,7 @@ model AuthUser {
   projects Project[]
   entries  TimeEntry[]
   invoices Invoice[]
+  invoice_logos InvoiceLogo[]
   email_tokens EmailToken[]
   api_tokens ApiToken[]
   oauth_codes OauthCode[]
@@ -141,6 +142,21 @@ model Invoice {
   @@index([user_id, issue_date])
   @@index([user_id, paid_date])
   @@map("invoices")
+}
+
+// A business or client logo as printed on an invoice, stored once per distinct image. Invoice snapshots
+// point at it by hash instead of each carrying its own copy (up to 400 KB per logo per invoice).
+model InvoiceLogo {
+  id         String   @id @default(uuid())
+  user_id    String
+  hash       String // sha-256 of `data`
+  data       String // png/jpeg data URL
+  created_at DateTime @default(now())
+
+  user AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, hash])
+  @@map("invoice_logos")
 }
 
 // Fixed-window counters used to throttle sign-in and register. `reset_at` is epoch seconds.

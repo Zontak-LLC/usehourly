@@ -25,7 +25,7 @@ describe("one account cannot fill the shared database", () => {
       asUser(prisma).entry.create({ projectId: "p1", date: "2026-10-09", minutes: 30 }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("limit of 200,000 entries"),
+      message: expect.stringContaining("limit of 50,000 entries"),
     });
     expect(prisma.timeEntry.count).toHaveBeenCalledWith({ where: { user_id: "u1" } });
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();

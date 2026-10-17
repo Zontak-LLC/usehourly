@@ -59,7 +59,10 @@ type Seen = { method?: string; auth?: string; body: Record<string, unknown> };
 
 /** A stand-in for the hosted server: records requests, answers with `respond`. */
 async function fakeRemote(
-  respond: (body: Record<string, unknown>, req: IncomingMessage) => { status: number; json: unknown },
+  respond: (
+    body: Record<string, unknown>,
+    req: IncomingMessage,
+  ) => { status: number; json: unknown; headers?: Record<string, string> },
 ) {
   const seen: Seen[] = [];
   const server: Server = createServer((req, res) => {
@@ -71,7 +74,7 @@ async function fakeRemote(
       const body = JSON.parse(raw || "{}") as Record<string, unknown>;
       seen.push({ method: req.method, auth: req.headers.authorization, body });
       const r = respond(body, req);
-      res.writeHead(r.status, { "content-type": "application/json" });
+      res.writeHead(r.status, { "content-type": "application/json", ...(r.headers ?? {}) });
       res.end(JSON.stringify(r.json));
     });
   });
@@ -288,5 +291,57 @@ describe("when something is wrong the assistant is told in plain words", () => {
     expect(res.content[0].text).toContain("Couldn't reach UseHourly");
     expect(r.out).not.toContain(TOKEN);
     expect(r.err).not.toContain(TOKEN);
+  });
+});
+
+describe("the token only ever goes somewhere safe", () => {
+  it("refuses to start when the address is plain http on another machine, or not an address at all", async () => {
+    for (const url of ["http://example.com/api/mcp", "ftp://example.com/x", "not a url"]) {
+      const r = await runBridge([{ jsonrpc: "2.0", id: 1, method: "ping" }], {
+        USEHOURLY_MCP_URL: url,
+        USEHOURLY_API_TOKEN: TOKEN,
+      });
+      expect(r.code, url).toBe(1);
+      expect(r.out, url).toBe(""); // nothing on the protocol channel
+      expect(r.err, url).toContain("USEHOURLY_MCP_URL");
+      expect(r.err).not.toContain(TOKEN);
+    }
+  });
+
+  it("accepts https and loopback http, and still answers the offline handshake", async () => {
+    remote = await fakeRemote(echoOk);
+    const r = await runBridge([{ jsonrpc: "2.0", id: 1, method: "ping" }], {
+      USEHOURLY_MCP_URL: remote.url, // http://127.0.0.1:<port>
+      USEHOURLY_API_TOKEN: TOKEN,
+    });
+    expect(r.code).toBe(0);
+    expect(r.byId(1).result).toEqual({});
+    const secure = await runBridge([{ jsonrpc: "2.0", id: 1, method: "ping" }], {
+      USEHOURLY_MCP_URL: "https://usehourly.app/api/mcp",
+    });
+    expect(secure.code).toBe(0);
+  });
+
+  it("does not follow a redirect, so the token never reaches the address it points to", async () => {
+    const elsewhere = await fakeRemote(echoOk);
+    remote = await fakeRemote(() => ({ status: 302, json: {}, headers: { location: elsewhere.url } }));
+    const r = await runBridge(
+      [{ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "whoami", arguments: {} } }],
+      { USEHOURLY_MCP_URL: remote.url, USEHOURLY_API_TOKEN: TOKEN },
+    );
+    const res = r.byId(1).result as { isError: boolean; content: { text: string }[] };
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain("Couldn't reach UseHourly");
+    expect(remote.seen).toHaveLength(1);
+    expect(elsewhere.seen).toHaveLength(0); // the other address never saw a request, let alone the token
+    await elsewhere.close();
+  });
+
+  it("no longer tells anyone to run an unpublished package", () => {
+    const readme = readFileSync(join(BRIDGE_DIR, "README.md"), "utf8");
+    const bridge = readFileSync(BRIDGE, "utf8");
+    expect(readme).not.toMatch(/"command":\s*"npx"/);
+    expect(bridge).not.toMatch(/"npx"/);
+    expect(readme).toContain("bridge/index.mjs");
   });
 });

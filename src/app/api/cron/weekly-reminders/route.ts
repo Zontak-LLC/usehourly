@@ -1,6 +1,7 @@
 import { appUrl, createMailer } from "@/lib/mailer";
 import { getPrisma } from "@/lib/prisma";
 import { verifyCronToken } from "@/lib/reminder-token";
+import { runHousekeeping } from "@/server/housekeeping";
 import { runWeeklyReminders } from "@/server/reminders";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +18,16 @@ export async function POST(req: Request) {
       headers: { "content-type": "application/json" },
     });
   }
+  // Sweep old throttle counters and expired links first: it needs no email service.
+  const prisma = await getPrisma();
+  const housekeeping = await runHousekeeping(prisma);
   const mailer = createMailer();
   if (!mailer) {
-    // Email is not set up: nothing to do, and say so plainly instead of pretending.
-    return Response.json({ skipped: "Email is not set up (RESEND_API_KEY and EMAIL_FROM)." });
+    // Email is not set up: nothing to send, and say so plainly instead of pretending to.
+    return Response.json({ skipped: "Email is not set up (RESEND_API_KEY and EMAIL_FROM).", housekeeping });
   }
-  const result = await runWeeklyReminders({ prisma: await getPrisma(), mailer, appUrl: appUrl(), secret });
-  return Response.json(result, { headers: { "cache-control": "no-store" } });
+  const result = await runWeeklyReminders({ prisma, mailer, appUrl: appUrl(), secret });
+  return Response.json({ ...result, housekeeping }, { headers: { "cache-control": "no-store" } });
 }
 
 export const GET = () => new Response(null, { status: 405, headers: { allow: "POST" } });

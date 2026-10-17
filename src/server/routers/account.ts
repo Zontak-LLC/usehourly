@@ -12,10 +12,19 @@ import {
   tokenState,
 } from "@/lib/api-token";
 import { isDemoEmail, isDemoSession } from "@/lib/demo";
-import { normalizeEmail } from "@/lib/email";
+import { emailField, normalizeEmail } from "@/lib/email";
 import { hashToken, newToken, RESET_TTL_SECONDS, VERIFY_TTL_SECONDS } from "@/lib/email-token";
 import { resetPasswordMessage, verifyEmailMessage } from "@/lib/mailer";
-import { describeWait, hitRateLimit, REGISTER_PER_IP } from "@/lib/rate-limit";
+import {
+  CHANGE_PASSWORD_ATTEMPTS,
+  clearRateLimit,
+  describeWait,
+  hitRateLimit,
+  REGISTER_PER_IP,
+  RESET_PER_EMAIL,
+  RESET_PER_EMAIL_AND_IP,
+  RESET_PER_IP,
+} from "@/lib/rate-limit";
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
 
@@ -74,7 +83,7 @@ export const accountRouter = router({
     .input(
       z.object({
         name: z.string().trim().min(1).max(80),
-        email: z.string().trim().toLowerCase().email(),
+        email: emailField,
         password: z.string().min(8, "Password must be at least 8 characters.").max(200),
       }),
     )
@@ -145,7 +154,7 @@ export const accountRouter = router({
     .input(
       z.object({
         name: z.string().trim().min(1).max(80),
-        email: z.string().trim().toLowerCase().email(),
+        email: emailField,
         password: z.string().min(8, "Password must be at least 8 characters.").max(200),
         startFresh: z.boolean(),
       }),
@@ -315,9 +324,23 @@ export const accountRouter = router({
             'This account signs in with GitHub or Google and has no password. Use "Forgot password" on the login page to set one.',
         });
       }
+      // A stolen session must not be able to guess the current password at the speed of the write limit.
+      const attempts = await hitRateLimit(
+        ctx.prisma,
+        `chpw:${ctx.userId}`,
+        CHANGE_PASSWORD_ATTEMPTS.limit,
+        CHANGE_PASSWORD_ATTEMPTS.windowSeconds,
+      );
+      if (!attempts.allowed) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Too many tries. Please wait ${describeWait(attempts.retryAfterSeconds)} and try again.`,
+        });
+      }
       if (!user || !(await compare(input.currentPassword, user.password_hash))) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Current password is incorrect." });
       }
+      await clearRateLimit(ctx.prisma, `chpw:${ctx.userId}`);
       await ctx.prisma.authUser.update({
         where: { id: ctx.userId },
         // Bumping token_version signs out every device, including this one; the browser signs
@@ -328,37 +351,47 @@ export const accountRouter = router({
     }),
 
   /** Email a sign-in-free link to choose a new password. Always answers the same, so it cannot be used to probe for accounts. */
-  requestPasswordReset: publicProcedure
-    .input(z.object({ email: z.string().trim().toLowerCase().email() }))
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.mailer) {
+  requestPasswordReset: publicProcedure.input(z.object({ email: emailField })).mutation(async ({ ctx, input }) => {
+    if (!ctx.mailer) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Password reset by email isn't set up yet. Please write to the site owner.",
+      });
+    }
+    const email = normalizeEmail(input.email);
+    // Check the connection first, so a flood of made-up addresses from one place does not fill the table or
+    // use up the real owner's allowance. The per-address ceilings only stop mail-bombing: a stranger
+    // asking again and again from one connection is stopped by the connection limits, not by locking
+    // the address for everyone.
+    const checks = [
+      ...(ctx.ip
+        ? [
+            { key: `reset:ip:${ctx.ip}`, ...RESET_PER_IP },
+            { key: `reset:pair:${email}|${ctx.ip}`, ...RESET_PER_EMAIL_AND_IP },
+          ]
+        : []),
+      { key: `reset:email:${email}`, ...RESET_PER_EMAIL },
+    ];
+    for (const c of checks) {
+      const r = await hitRateLimit(ctx.prisma, c.key, c.limit, c.windowSeconds);
+      if (!r.allowed) {
         throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Password reset by email isn't set up yet. Please write to the site owner.",
+          code: "TOO_MANY_REQUESTS",
+          message: `Too many reset requests. Please try again in ${describeWait(r.retryAfterSeconds)}.`,
         });
       }
-      const email = normalizeEmail(input.email);
-      const keys = [`reset:email:${email}`, ...(ctx.ip ? [`reset:ip:${ctx.ip}`] : [])];
-      for (const key of keys) {
-        const r = await hitRateLimit(ctx.prisma, key, 5, 60 * 60);
-        if (!r.allowed) {
-          throw new TRPCError({
-            code: "TOO_MANY_REQUESTS",
-            message: `Too many reset requests. Please try again in ${describeWait(r.retryAfterSeconds)}.`,
-          });
-        }
+    }
+    const user = await ctx.prisma.authUser.findUnique({ where: { email } });
+    if (user) {
+      try {
+        await issueEmailToken(ctx, { id: user.id, email: user.email }, "reset");
+      } catch (err) {
+        console.error("password reset email failed:", err);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Couldn't send the email. Please try again." });
       }
-      const user = await ctx.prisma.authUser.findUnique({ where: { email } });
-      if (user) {
-        try {
-          await issueEmailToken(ctx, { id: user.id, email: user.email }, "reset");
-        } catch (err) {
-          console.error("password reset email failed:", err);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Couldn't send the email. Please try again." });
-        }
-      }
-      return { ok: true };
-    }),
+    }
+    return { ok: true };
+  }),
 
   /** Choose a new password with a link from the email. Signs every device out. */
   resetPassword: publicProcedure

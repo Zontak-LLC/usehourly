@@ -6,17 +6,18 @@ import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { z } from "zod";
 
-import { normalizeEmail } from "@/lib/email";
+import { clientIpFrom } from "@/lib/client-ip";
+import { emailField, normalizeEmail } from "@/lib/email";
+import { loginAllowed, loginSucceeded } from "@/lib/login-throttle";
 import { passwordMatches } from "@/lib/password";
 import { getPrisma } from "@/lib/prisma";
-import { clearRateLimit, hitRateLimit, LOGIN_PER_EMAIL, LOGIN_PER_IP } from "@/lib/rate-limit";
 import type { VerifiedEmail } from "@/lib/social-login";
 import { createDemoUser } from "@/server/demo";
 import { resolveSocialUser } from "@/server/social-signin";
 
 import authConfig from "./auth.config";
 
-const loginSchema = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string().min(1) });
+const loginSchema = z.object({ email: emailField, password: z.string().min(1).max(200) });
 
 /** Each "Continue with ..." button is offered only when that provider's OAuth id and secret are set. */
 export const githubLoginEnabled = () => Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET);
@@ -56,7 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           providerId = String(profile.sub);
           emails = [{ email: profile.email, primary: true, verified: profile.email_verified === true }];
         }
-        const ip = (await headers()).get("cf-connecting-ip");
+        const ip = clientIpFrom(await headers());
         const result = await resolveSocialUser(await getPrisma(), {
           provider,
           providerId,
@@ -90,7 +91,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {},
       async authorize(_credentials, request) {
         try {
-          const made = await createDemoUser(await getPrisma(), { ip: request?.headers?.get("cf-connecting-ip") });
+          const made = await createDemoUser(await getPrisma(), { ip: clientIpFrom(request?.headers) });
           if (!made.ok) return null;
           const { id, name, email, token_version } = made.user;
           return { id, name, email, tv: token_version, demo: true };
@@ -108,23 +109,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const prisma = await getPrisma();
         const email = normalizeEmail(parsed.data.email);
 
-        // Throttle guessing: per address and per connection. A throttled attempt is simply refused,
-        // the same as a wrong password, so it reveals nothing about the account.
-        const ip = request?.headers?.get("cf-connecting-ip");
-        const emailKey = `login:email:${email}`;
-        const byEmail = await hitRateLimit(prisma, emailKey, LOGIN_PER_EMAIL.limit, LOGIN_PER_EMAIL.windowSeconds);
-        if (!byEmail.allowed) return null;
-        if (ip) {
-          const byIp = await hitRateLimit(prisma, `login:ip:${ip}`, LOGIN_PER_IP.limit, LOGIN_PER_IP.windowSeconds);
-          if (!byIp.allowed) return null;
-        }
+        // Throttle guessing (see lib/login-throttle.ts); a refused attempt looks like a wrong password.
+        const ip = clientIpFrom(request?.headers);
+        if (!(await loginAllowed(prisma, email, ip))) return null;
 
         const user = await prisma.authUser.findUnique({ where: { email } });
         if (!user || !(await passwordMatches(parsed.data.password, user.password_hash))) {
           if (!user) await passwordMatches(parsed.data.password, null); // same cost as a wrong password
           return null;
         }
-        await clearRateLimit(prisma, emailKey);
+        await loginSucceeded(prisma, email, ip);
         return { id: user.id, name: user.name, email: user.email, tv: user.token_version };
       },
     }),
