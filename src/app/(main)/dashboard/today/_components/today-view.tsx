@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
+import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, DATE_RE, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
@@ -101,11 +102,14 @@ export function TodayView() {
           Nothing logged yet. Tap <span className="font-medium">Start timer</span> or pick a time above.
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
-          {dayEntries.map((e) => (
-            <EntryRow key={e.id} entry={e} />
-          ))}
-        </ul>
+        <>
+          <ul className="divide-y rounded-xl border bg-card">
+            {dayEntries.map((e) => (
+              <EntryRow key={e.id} entry={e} />
+            ))}
+          </ul>
+          <MergeEntriesBar entries={dayEntries} />
+        </>
       )}
     </div>
   );
