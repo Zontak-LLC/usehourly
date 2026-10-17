@@ -36,8 +36,9 @@ const walk = (suite) => {
 for (const s of results.suites ?? []) walk(s);
 
 const passed = rows.filter((r) => r.status === "passed").length;
-const failed = rows.filter((r) => r.status !== "passed");
-const lines = [`# Site test summary`, ``, `${passed} of ${rows.length} tests passed.`, ``];
+const skipped = rows.filter((r) => r.status === "skipped").length;
+const failed = rows.filter((r) => r.status !== "passed" && r.status !== "skipped");
+const lines = [`# Site test summary`, ``, `${passed} of ${rows.length - skipped} tests passed${skipped ? ` (${skipped} skipped on purpose)` : ""}.`, ``];
 if (failed.length) {
   lines.push(`## Failures`, ``);
   for (const f of failed)

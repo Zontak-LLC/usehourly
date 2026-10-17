@@ -494,6 +494,44 @@ describe("client invoice journey", () => {
     expect(text).not.toContain("Idle");
   });
 
+  it("refuses to make an invoice that would total $0.00, and stores nothing", async () => {
+    const prisma = mockPrisma();
+    // every billable project in the period is at a $0 rate (the usual mistake: the rate was never set)
+    prisma.timeEntry.findMany.mockResolvedValue([
+      {
+        date: "2026-10-02",
+        minutes: 90,
+        note: "homepage hero",
+        started_at: null,
+        project_id: "p1",
+        project: { name: "General", hourly_rate: 0, billable: true },
+      },
+    ] as never);
+    await expect(asCaller(prisma, "u1").invoice.create(input)).rejects.toThrow(/\$0\.00.*Set the rates under My work/);
+    expect(prisma.invoice.create).not.toHaveBeenCalled();
+    // one project with a rate is enough: the invoice is real, the unpaid-rate project is simply listed at $0
+    prisma.timeEntry.findMany.mockResolvedValue([
+      {
+        date: "2026-10-02",
+        minutes: 60,
+        note: "a",
+        started_at: null,
+        project_id: "p1",
+        project: { name: "General", hourly_rate: 0, billable: true },
+      },
+      {
+        date: "2026-10-03",
+        minutes: 60,
+        note: "b",
+        started_at: null,
+        project_id: "p2",
+        project: { name: "Website", hourly_rate: 10000, billable: true },
+      },
+    ] as never);
+    const { snapshot } = await asCaller(prisma, "u1").invoice.create(input);
+    expect(snapshot.totalCents).toBe(10000);
+  });
+
   it("flags zero-rate projects and running timers", () => {
     const t = buildInvoice([
       {

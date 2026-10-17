@@ -56,7 +56,7 @@ export function LoginForm() {
       <Link
         href="/auth/v2/forgot-password"
         prefetch={false}
-        className="text-center text-muted-foreground text-sm underline"
+        className="block py-2 text-center text-muted-foreground text-sm underline"
       >
         Forgot your password?
       </Link>

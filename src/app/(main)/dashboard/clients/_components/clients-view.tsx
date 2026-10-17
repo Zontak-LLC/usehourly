@@ -301,15 +301,19 @@ export function ClientsView() {
                         </option>
                       ))}
                     </select>
-                    <Input
-                      name="rate"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={(p.hourly_rate / 100).toFixed(2)}
-                      className="w-24"
-                      aria-label="Rate per hour"
-                    />
+                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                      $
+                      <Input
+                        name="rate"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={(p.hourly_rate / 100).toFixed(2)}
+                        className="w-24"
+                        aria-label="Rate per hour"
+                      />
+                      /h
+                    </span>
                     <label className="flex items-center gap-1.5 text-sm">
                       <input type="checkbox" name="billable" defaultChecked={p.billable} /> Billable
                     </label>
@@ -369,8 +373,14 @@ export function ClientsView() {
                   <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
                     <ProjectMark projectId={p.id} color={c.color} logos={logos} />
                     {p.name}
-                    {p.hourly_rate > 0 && (
+                    {p.hourly_rate > 0 ? (
                       <span className="text-muted-foreground">${(p.hourly_rate / 100).toFixed(2)}/h</span>
+                    ) : (
+                      p.billable && (
+                        <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
+                          No hourly rate yet
+                        </span>
+                      )
                     )}
                     {!p.billable && <span className="text-muted-foreground text-xs">non-billable</span>}
                   </span>

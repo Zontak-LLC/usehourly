@@ -175,13 +175,13 @@ export function AccountView() {
                 <p className="text-success text-xs">Email confirmed.</p>
               ) : emailEnabled.data?.enabled ? (
                 <p className="text-muted-foreground text-xs">
-                  Not confirmed yet.{" "}
+                  Not confirmed yet. Confirming it turns on the Friday reminder and lets you email invoices.{" "}
                   {verificationSent ? (
                     "We sent you a link. Check your inbox."
                   ) : (
                     <button
                       type="button"
-                      className="underline"
+                      className="inline-block py-2 underline"
                       disabled={sendVerification.isPending}
                       onClick={async () => {
                         try {
@@ -273,7 +273,7 @@ export function AccountView() {
                 here or with the link in the email.
               </p>
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-8 items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 className="size-4"
@@ -385,7 +385,7 @@ export function AccountView() {
               freelancers find a free tool. Turn it off any time; it applies to invoices you issue from now on.
             </p>
           </div>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-8 items-center gap-2 text-sm">
             <input
               type="checkbox"
               className="size-4"

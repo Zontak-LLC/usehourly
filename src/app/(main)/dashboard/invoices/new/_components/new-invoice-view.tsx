@@ -67,6 +67,8 @@ export function NewInvoiceView() {
       buildInvoice(((entries.data ?? []) as unknown as InvoiceEntry[]).filter((e) => e.project.client_id === clientId)),
     [entries.data, clientId],
   );
+  // A $0.00 invoice is never what anyone means: block it and say why.
+  const nothingToBill = totals.lines.length > 0 && totals.totalCents === 0;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -187,24 +189,29 @@ export function NewInvoiceView() {
                 onChange={(e) => setNetDays(e.target.value)}
               />
             </div>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={includeDetail}
-                onChange={(e) => setIncludeDetail(e.target.checked)}
-                className="size-4"
-              />
-              Include day-by-day time detail
-            </label>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={compactNotes}
-                onChange={(e) => setCompactNotes(e.target.checked)}
-                className="size-4"
-              />
-              Short descriptions on the summary (full text stays in the time detail)
-            </label>
+            <details className="rounded-lg border px-3 py-2 sm:col-span-2">
+              <summary className="cursor-pointer font-medium text-sm">More options</summary>
+              <div className="mt-3 flex flex-col gap-2">
+                <label className="flex min-h-8 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={includeDetail}
+                    onChange={(e) => setIncludeDetail(e.target.checked)}
+                    className="size-4"
+                  />
+                  Add a day-by-day list of the time
+                </label>
+                <label className="flex min-h-8 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={compactNotes}
+                    onChange={(e) => setCompactNotes(e.target.checked)}
+                    className="size-4"
+                  />
+                  Shorten descriptions in the summary (the full text stays in the day-by-day list)
+                </label>
+              </div>
+            </details>
             <div className="grid gap-1.5 sm:col-span-2">
               <Label htmlFor="notes">Notes / payment terms</Label>
               <Textarea
@@ -276,8 +283,21 @@ export function NewInvoiceView() {
             </ul>
           )}
 
+          {nothingToBill && (
+            <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
+              Every project in this period has a $0.00 rate, so this invoice would be $0.00. Set the hourly rates under{" "}
+              <Link href="/dashboard/clients" className="font-medium underline">
+                My work
+              </Link>{" "}
+              first, then come back.
+            </p>
+          )}
+
           <div className="flex gap-2">
-            <Button type="submit" disabled={create.isPending || !validRange || totals.lines.length === 0}>
+            <Button
+              type="submit"
+              disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
+            >
               {create.isPending ? "Creating…" : "Create invoice & download PDF"}
             </Button>
             <Button type="button" variant="outline" asChild>

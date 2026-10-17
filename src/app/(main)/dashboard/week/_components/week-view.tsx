@@ -115,7 +115,8 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
             {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))}
             <span className="max-md:hidden">
               {" "}
-              · type in any cell, use the wand to fill several days, or + on a day to add more entries
+              · type hours in any box. The small note icon in a box adds a description, the wand on a project fills
+              several days at once, and + on a day adds another entry
             </span>
             <span className="md:hidden"> · tap a day to add or change time</span>
           </p>
@@ -306,7 +307,7 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
                       {sheet.dayTotals[d] ? formatDuration(sheet.dayTotals[d]) : "–"}
                     </td>
                   ))}
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                  <td className="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
                     {formatDuration(sheet.total)}
                     <span className="ml-1 text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
                   </td>

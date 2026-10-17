@@ -164,8 +164,8 @@ const FEATURES = [
     id: "week",
     title: "A real weekly timesheet.",
     body: "Every project and every day in one grid. Type straight into any cell, fill several days at once, then export the week to Excel.",
-    image: { src: "/landing/week.webp", width: 2100, height: 820 },
-    alt: "The weekly timesheet: projects down the side, the days of the week across, with totals and an Export Excel button.",
+    image: { src: "/landing/week-v2.webp", width: 2144, height: 840 },
+    alt: "The weekly timesheet: projects down the side, the days of the week across, with totals, and a Share & export menu.",
     // A wide, dense table: it gets the full width, under its text, so the numbers stay readable.
     wide: true,
   },
@@ -173,7 +173,7 @@ const FEATURES = [
     id: "month",
     title: "See the whole month at a glance.",
     body: "A calendar that shows how every day and week added up, with a breakdown by project underneath. Spot a light week before it costs you.",
-    image: { src: "/landing/month.webp", width: 2100, height: 1280 },
+    image: { src: "/landing/month-v2.webp", width: 2144, height: 1090 },
     alt: "The month calendar: each day shaded by hours logged, with weekly totals on the right.",
     wide: false,
   },
@@ -181,8 +181,8 @@ const FEATURES = [
     id: "year",
     title: "Ready for invoices and tax time.",
     body: "Turn your tracked hours into invoices you can send as a PDF. At year end, see hours, earnings, invoiced and received by quarter and by month, ready for your accountant.",
-    image: { src: "/landing/report.webp", width: 1850, height: 1150 },
-    alt: "The annual report: hours worked, earned, invoiced, received and outstanding, with a table by quarter.",
+    image: { src: "/landing/report-v2.webp", width: 1888, height: 1230 },
+    alt: "The year summary: hours worked, earned, invoiced, received and outstanding, with a table by quarter.",
     wide: false,
   },
 ] as const;
@@ -232,10 +232,10 @@ export default function LandingPage() {
 
           <div className="mx-auto mt-14 max-w-4xl text-left">
             <Screen
-              src="/landing/today.webp"
-              alt="The Today screen: a project, a time box that accepts 1.5, 1:30 or 90m, and the day's entries with totals for the day and the week."
-              width={1616}
-              height={820}
+              src="/landing/today-v2.webp"
+              alt="The Today screen: pick a project, type a time like 1.5, 1:30 or 90m or tap a quick pick, add a note, and the day's entries with totals for the day and the week."
+              width={1632}
+              height={1762}
               priority
             />
           </div>
@@ -373,7 +373,7 @@ export default function LandingPage() {
             >
               Create a free account
             </Link>
-            <TryDemoButton className="mt-4 font-medium text-primary-foreground/90 text-sm underline underline-offset-4 hover:text-primary-foreground">
+            <TryDemoButton className="mt-2 inline-block py-2 font-medium text-primary-foreground/90 text-sm underline underline-offset-4 hover:text-primary-foreground">
               or try the demo first
             </TryDemoButton>
           </div>
@@ -396,10 +396,10 @@ export default function LandingPage() {
           >
             Report a bug
           </a>
-          <Link href="/privacy" className="hover:text-foreground">
+          <Link href="/privacy" className="inline-block py-2 hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/terms" className="hover:text-foreground">
+          <Link href="/terms" className="inline-block py-2 hover:text-foreground">
             Terms
           </Link>
           <Link href="/auth/v2/login" className="hover:text-foreground">

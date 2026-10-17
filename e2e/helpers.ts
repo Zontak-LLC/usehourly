@@ -129,7 +129,12 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
             ? el.closest("label")
             : null;
         if (wrap) r = wrap.getBoundingClientRect();
-        if (r.width > 2 && r.height > 2 && (r.width < 24 || r.height < 24)) {
+        // A link in the middle of a sentence is exempt (WCAG 2.5.8): skip it when its paragraph has more text than the link.
+        const sentence =
+          el instanceof HTMLAnchorElement &&
+          el.parentElement?.matches("p, li") &&
+          (el.parentElement.textContent ?? "").length > (el.textContent ?? "").length + 15;
+        if (!sentence && r.width > 2 && r.height > 2 && (r.width < 24 || r.height < 24)) {
           tips.push(
             `small tap target ${Math.round(r.width)}x${Math.round(r.height)}px (24px is the minimum): ${name || snippet(el)}`,
           );

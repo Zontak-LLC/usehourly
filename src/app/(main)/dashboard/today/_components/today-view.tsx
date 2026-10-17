@@ -84,12 +84,15 @@ export function TodayView() {
         <FirstRun />
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <Stat label="This day" value={formatDuration(sum(dayEntries))} />
-        <Stat label="This week" value={formatDuration(sum(week.data ?? []))} />
-      </div>
+      {/* Nothing to total or to bill until there is a project to log against (the first-run question comes first). */}
+      {hasProjects && (
+        <div className="grid grid-cols-2 gap-3">
+          <Stat label="This day" value={formatDuration(sum(dayEntries))} />
+          <Stat label="This week" value={formatDuration(sum(week.data ?? []))} />
+        </div>
+      )}
 
-      {sum(week.data ?? []) > 0 && <BillHint />}
+      {hasProjects && sum(week.data ?? []) > 0 && <BillHint />}
 
       {week.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -97,7 +100,7 @@ export function TodayView() {
         </p>
       ) : week.isLoading ? (
         <Skeleton className="h-32 w-full" />
-      ) : dayEntries.length === 0 ? (
+      ) : !hasProjects ? null : dayEntries.length === 0 ? (
         <p className="py-10 text-center text-muted-foreground text-sm">
           Nothing logged yet. Type a time above, or start a timer.
         </p>
