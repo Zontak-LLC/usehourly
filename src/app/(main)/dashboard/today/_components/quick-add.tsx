@@ -15,6 +15,8 @@ import { DURATION_CHIPS } from "@/lib/quick-start";
 import { trpc } from "@/lib/trpc";
 
 const LAST_PROJECT_KEY = "hourly:lastProject";
+/** With this many projects or fewer, the project is picked with buttons instead of a drop-down. */
+const MAX_PROJECT_BUTTONS = 4;
 
 function readLast(): string {
   try {
@@ -126,6 +128,30 @@ export function QuickAdd({
           <p className="text-base">
             {onlyClient?.name} · {onlyProject.name}
           </p>
+        ) : projects.length <= MAX_PROJECT_BUTTONS ? (
+          // A few projects: big buttons, the chosen one stays pressed.
+          <div role="radiogroup" aria-label="Project" className="grid grid-cols-2 gap-2">
+            {clients.data?.flatMap((c) =>
+              c.projects.map((p) => (
+                <Button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={projectId === p.id}
+                  variant={projectId === p.id ? "default" : "outline"}
+                  onClick={() => remember(p.id)}
+                  className="h-auto min-h-12 flex-col items-start gap-0 px-3 py-2 text-left"
+                >
+                  <span className="max-w-full break-words font-medium text-base">{p.name}</span>
+                  <span
+                    className={`max-w-full break-words font-normal text-xs ${projectId === p.id ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+                  >
+                    {c.name}
+                  </span>
+                </Button>
+              )),
+            )}
+          </div>
         ) : (
           <div className="relative w-full">
             <select
