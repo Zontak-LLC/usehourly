@@ -16,7 +16,11 @@ export default function PrivacyPage() {
       </p>
       <h2>What we store</h2>
       <ul>
-        <li>Your account details: your name, your email address and your sign-in credentials.</li>
+        <li>
+          Your account details: your name, your email address and your sign-in credentials. If you sign in with GitHub,
+          we receive your GitHub name, your verified email address and your GitHub account number, and nothing else; we
+          cannot see your repositories.
+        </li>
         <li>What you enter: clients, projects, time entries, notes, rates and invoices.</li>
       </ul>
       <h2>What we do with it</h2>

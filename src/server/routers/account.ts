@@ -14,6 +14,7 @@ import {
 import { isDemoEmail, isDemoSession } from "@/lib/demo";
 import { normalizeEmail } from "@/lib/email";
 import { hashToken, newToken, RESET_TTL_SECONDS, VERIFY_TTL_SECONDS } from "@/lib/email-token";
+import { NO_PASSWORD_HASH } from "@/lib/github-login";
 import { resetPasswordMessage, verifyEmailMessage } from "@/lib/mailer";
 import { describeWait, hitRateLimit, REGISTER_PER_IP } from "@/lib/rate-limit";
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
@@ -62,6 +63,11 @@ const LINK_PROBLEM = "This link has expired or was already used. Please request 
 export const accountRouter = router({
   /** Whether this installation can send email. Pages use it to say so plainly when it cannot. */
   emailEnabled: publicProcedure.query(({ ctx }) => ({ enabled: Boolean(ctx.mailer) })),
+
+  /** Whether the login pages should offer "Continue with GitHub". */
+  githubEnabled: publicProcedure.query(() => ({
+    enabled: Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET),
+  })),
 
   register: publicProcedure
     .input(
@@ -118,10 +124,16 @@ export const accountRouter = router({
         invoice_branding: true,
         is_demo: true,
         weekly_reminder: true,
+        password_hash: true,
       },
     });
     if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
-    return user;
+    // Accounts made with GitHub have no password until they choose one through "Forgot password".
+    return {
+      ...user,
+      has_password: user.password_hash !== NO_PASSWORD_HASH && !user.is_demo,
+      password_hash: undefined,
+    };
   }),
 
   /**
@@ -295,6 +307,13 @@ export const accountRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
+      if (user?.password_hash === NO_PASSWORD_HASH) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            'This account signs in with GitHub and has no password. Use "Forgot password" on the login page to set one.',
+        });
+      }
       if (!user || !(await compare(input.currentPassword, user.password_hash))) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Current password is incorrect." });
       }
