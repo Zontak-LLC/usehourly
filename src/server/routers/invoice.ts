@@ -4,6 +4,7 @@ import { z } from "zod";
 import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
+import { summarizeInvoice } from "@/lib/invoice-summary";
 import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
 
@@ -28,6 +29,7 @@ const summary = {
   total_minutes: true,
   total_cents: true,
   notes: true,
+  summary: true,
   created_at: true,
 } as const;
 
@@ -53,8 +55,8 @@ export const invoiceRouter = router({
         })
         .optional(),
     )
-    .query(({ ctx, input }) =>
-      ctx.prisma.invoice.findMany({
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.prisma.invoice.findMany({
         where: {
           user_id: ctx.userId,
           ...((input?.from || input?.to) && {
@@ -75,8 +77,23 @@ export const invoiceRouter = router({
                 ? [{ total_cents: "asc" }, { issue_date: "desc" }]
                 : [{ issue_date: "desc" }, { created_at: "desc" }],
         take: 200,
-      }),
-    ),
+      });
+      // Invoices made before summaries existed have an empty one: work it out once from the frozen
+      // snapshot and keep it (a few rows at most, the first time the history is opened).
+      return Promise.all(
+        rows.map(async (r) => {
+          if (r.summary) return r;
+          const row = await ctx.prisma.invoice.findFirst({
+            where: { id: r.id, user_id: ctx.userId },
+            select: { snapshot: true },
+          });
+          if (!row) return r;
+          const text = summarizeInvoice(JSON.parse(row.snapshot) as InvoiceSnapshot);
+          if (text) await ctx.prisma.invoice.update({ where: { id: r.id }, data: { summary: text } });
+          return { ...r, summary: text };
+        }),
+      );
+    }),
 
   /** The frozen snapshot the PDF is rendered from. */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
@@ -252,6 +269,7 @@ export const invoiceRouter = router({
           notes: input.notes,
           snapshot: snapshotText,
           search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),
+          summary: summarizeInvoice(snapshot),
         },
         select: { id: true },
       });
