@@ -74,7 +74,14 @@ function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean })
 
       {info.isLoading && <p className="text-muted-foreground text-sm">Loading…</p>}
       {data?.blocked && (
-        <p className="rounded-lg border border-destructive/40 p-2 text-destructive text-sm">{data.blocked}</p>
+        <p className="rounded-lg border border-destructive/40 p-2 text-destructive text-sm">
+          {data.blocked}{" "}
+          {data.blocked.includes("Confirm your own email") && (
+            <Link href="/dashboard/account" className="font-medium underline">
+              Go to Account
+            </Link>
+          )}
+        </p>
       )}
       {noAddress && (
         <p className="rounded-lg border p-2 text-sm">

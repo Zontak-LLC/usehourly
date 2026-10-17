@@ -6,7 +6,7 @@
 
 [![smithery badge](https://smithery.ai/badge/dzontak/usehourly)](https://smithery.ai/servers/dzontak/usehourly)
 
-![The weekly timesheet](public/landing/week.webp)
+![The weekly timesheet](public/landing/week-v2.webp)
 
 ## What it does
 

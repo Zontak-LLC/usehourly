@@ -175,6 +175,13 @@ export const invoiceRouter = router({
       if (totals.lines.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "No billable time for this client in that period." });
       }
+      if (totals.totalCents === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Every project in that period has an hourly rate of $0, so the invoice would be $0.00. Set the rates under My work first.",
+        });
+      }
 
       const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });

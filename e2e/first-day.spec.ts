@@ -41,6 +41,10 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("say who you work for (the only first-run question)", async () => {
     await expect(page.getByText("Who do you work for?")).toBeVisible();
+    // Nothing to total or point at yet: no "type a time above" with nothing above, no 0:00 tiles.
+    await expect(page.getByText(/Welcome! Let's get your first hours logged/)).toBeVisible();
+    await expect(page.getByText(/Type a time above/)).toBeHidden();
+    await expect(page.getByText("This week", { exact: true })).toBeHidden();
     await shot("first-run");
     await audit("first run");
     await page.getByPlaceholder(/company or a person/i).fill("Acme Studio");
@@ -94,9 +98,18 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await audit("month");
   });
 
+  await test.step("an invoice at a $0 rate is blocked, with the way out", async () => {
+    await page.goto("/dashboard/invoices/new");
+    await expect(page.getByText(/would be \$0\.00/)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Create invoice/ })).toBeDisabled();
+    await expect(page.getByRole("link", { name: "My work" }).first()).toBeVisible();
+    await shot("invoice-blocked-at-zero");
+  });
+
   await test.step("set the project's hourly rate under My work", async () => {
     await page.goto("/dashboard/clients");
     await expect(page.getByRole("heading", { name: "My work", level: 1 })).toBeVisible();
+    await expect(page.getByText("No hourly rate yet")).toBeVisible(); // a missing rate is visible, not silent
     await shot("my-work-before");
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Rate per hour").fill("60");

@@ -270,7 +270,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
                           type="button"
                           onClick={() => setProjectId(r.projectId)}
                           title="Show only this project"
-                          className="text-left hover:underline"
+                          className="inline-block py-1.5 text-left hover:underline"
                         >
                           {r.project} <span className="text-muted-foreground">· {r.client}</span>
                         </button>

@@ -21,7 +21,7 @@ export default function LoginPage() {
         <LoginForm />
         <div className="text-center text-muted-foreground text-sm">
           Just looking?
-          <TryDemoButton className="ml-1 text-foreground underline underline-offset-4">
+          <TryDemoButton className="ml-1 inline-block py-2 text-foreground underline underline-offset-4">
             Try the demo first
           </TryDemoButton>
         </div>
@@ -29,7 +29,7 @@ export default function LoginPage() {
       <div className="absolute top-5 flex w-full justify-end px-10 text-muted-foreground text-sm">
         <span>
           New here?{" "}
-          <Link prefetch={false} className="text-foreground" href="/auth/v2/register">
+          <Link prefetch={false} className="inline-block py-2 text-foreground" href="/auth/v2/register">
             Create an account
           </Link>
         </span>
