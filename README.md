@@ -30,6 +30,18 @@ claude mcp add --transport http usehourly https://usehourly.app/api/mcp --header
 
 That example is for Claude Code. Other clients just need the URL and an `Authorization: Bearer <token>` header in their MCP settings.
 
+Cursor (`~/.cursor/mcp.json`):
+
+```json
+{ "mcpServers": { "usehourly": { "url": "https://usehourly.app/api/mcp", "headers": { "Authorization": "Bearer <your token>" } } } }
+```
+
+VS Code (`.vscode/mcp.json`):
+
+```json
+{ "servers": { "usehourly": { "type": "http", "url": "https://usehourly.app/api/mcp", "headers": { "Authorization": "Bearer <your token>" } } } }
+```
+
 Then ask: "Log 2 hours on the Acme website for yesterday" or "Make an invoice for Acme for September."
 
 ## Stack
