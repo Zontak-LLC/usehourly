@@ -45,8 +45,8 @@ export function WorkItems({
   const days = groupByDay(view.items, matches);
 
   return (
-    <div className="rounded-xl border bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-medium">
           What you worked on <span className="font-normal text-muted-foreground text-sm">({matches.length})</span>
         </h2>
@@ -66,14 +66,18 @@ export function WorkItems({
       </div>
 
       {view.total === 0 ? (
-        <p className="px-4 py-8 text-center text-muted-foreground text-sm">
+        <p className="rounded-xl border bg-card px-4 py-8 text-center text-muted-foreground text-sm">
           {query.trim() ? "Nothing matches that search." : `Nothing logged this ${period}.`}
         </p>
       ) : (
-        <div className="divide-y">
+        <div className="flex flex-col gap-3">
           {days.map((g) => (
-            <section key={g.date} aria-label={dayFmt.format(fromISODate(g.date))}>
-              <h3 className="flex items-baseline justify-between gap-2 bg-muted/40 px-4 py-1.5 font-medium text-sm">
+            <section
+              key={g.date}
+              aria-label={dayFmt.format(fromISODate(g.date))}
+              className="overflow-hidden rounded-xl border bg-card"
+            >
+              <h3 className="flex items-baseline justify-between gap-2 border-b bg-muted/40 px-4 py-2 font-medium text-sm">
                 {dayFmt.format(fromISODate(g.date))}
                 <span className="font-mono text-muted-foreground text-xs tabular-nums">
                   {formatDuration(g.minutes)}
@@ -133,7 +137,7 @@ export function WorkItems({
       )}
 
       {view.total > 0 && (
-        <div className="flex items-center justify-between gap-2 border-t px-4 py-2">
+        <div className="flex items-center justify-between gap-2 rounded-xl border bg-card px-4 py-2">
           <p className="text-muted-foreground text-xs">
             Showing {view.from}–{view.to} of {view.total}
           </p>
