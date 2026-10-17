@@ -32,3 +32,18 @@ export function paginate<T>(items: T[], page: number, size = WORK_ITEMS_PAGE_SIZ
     to: Math.min(start + size, total),
   };
 }
+
+export type DayGroup<T> = { date: string; minutes: number; items: T[] };
+
+/** Consecutive items of the same date become one group; `minutes` totals that date across ALL matches. */
+export function groupByDay<T extends { date: string; minutes: number }>(items: T[], all: T[]): DayGroup<T>[] {
+  const totals = new Map<string, number>();
+  for (const e of all) totals.set(e.date, (totals.get(e.date) ?? 0) + e.minutes);
+  const groups: DayGroup<T>[] = [];
+  for (const e of items) {
+    const last = groups[groups.length - 1];
+    if (last && last.date === e.date) last.items.push(e);
+    else groups.push({ date: e.date, minutes: totals.get(e.date) ?? 0, items: [e] });
+  }
+  return groups;
+}
