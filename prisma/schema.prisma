@@ -28,6 +28,9 @@ model AuthUser {
   invoice_branding Boolean @default(true)
   // Weekly "log your hours" email (opt-in; needs a confirmed email address and the email service).
   weekly_reminder Boolean @default(false)
+  // Colour (theme preset) and light/dark mode, saved so they follow the account to other devices; null = never chosen.
+  theme_preset  String?
+  theme_mode    String?
   timezone      String?   // IANA name from the browser, e.g. America/New_York; says when "Friday afternoon" is
   reminder_sent_week String? // the week (e.g. 2026-W42) the last reminder went out, so each week sends once
   // The GitHub account this one signs in with ("Sign in with GitHub"); null for password-only accounts.
