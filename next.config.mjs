@@ -31,6 +31,8 @@ const csp = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Browser tests build into their own folder so they can run beside the normal dev server (NEXT_DIST_DIR=.next-e2e).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Development only: lets a second browser session on 127.0.0.1 (separate cookies from localhost) load the app's scripts.
   allowedDevOrigins: ["127.0.0.1"],
   reactCompiler: true,

@@ -54,4 +54,11 @@ wrangler.jsonc
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-/.claude/
+/.claude/*
+!/.claude/skills/
+
+# browser tests (Playwright): reports, screenshots, the separate dev build
+/e2e/report/
+/test-results/
+/playwright-report/
+/.next-e2e/

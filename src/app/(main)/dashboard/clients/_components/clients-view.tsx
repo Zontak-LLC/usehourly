@@ -239,6 +239,7 @@ export function ClientsView() {
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
+          aria-label="New client name"
           placeholder="New client name"
           required
           className="min-w-0 flex-1 sm:max-w-xs sm:flex-none"
