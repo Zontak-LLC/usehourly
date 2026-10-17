@@ -1,0 +1,2616 @@
+{
+  "protocolVersions": ["2025-06-18", "2025-03-26", "2024-11-05"],
+  "serverInfo": {
+    "name": "usehourly",
+    "title": "UseHourly",
+    "version": "1.0.0"
+  },
+  "instructions": "UseHourly tracks a freelancer's time. Time is whole minutes; dates are local calendar dates (YYYY-MM-DD). The server runs in UTC and does not know the user's today: always pass the date you mean. Name projects as \"Client / Project\" or by id (list_projects shows both). Money is in dollars. Before adding time, check list_entries for that day so nothing is logged twice. Ask the user before destructive actions (delete_entry, delete_invoice, merge_entries) and before create_invoice.",
+  "capabilities": {
+    "tools": {
+      "listChanged": false
+    },
+    "resources": {
+      "listChanged": false
+    },
+    "prompts": {
+      "listChanged": false
+    }
+  },
+  "tools": [
+    {
+      "name": "whoami",
+      "title": "Who am I",
+      "description": "The signed-in account (name, email, business details printed on invoices) and what this token may do (read or write). Call this first to confirm the connection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": ["string", "null"]
+          },
+          "email": {
+            "type": "string"
+          },
+          "member_since": {
+            "type": "string",
+            "description": "ISO time the account was made"
+          },
+          "token_access": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "What this token may do"
+          },
+          "business": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": ["string", "null"]
+              },
+              "ein": {
+                "type": ["string", "null"]
+              },
+              "address": {
+                "type": ["string", "null"]
+              },
+              "payment_instructions": {
+                "type": ["string", "null"]
+              },
+              "has_logo": {
+                "type": "boolean"
+              }
+            },
+            "required": ["name", "ein", "address", "payment_instructions", "has_logo"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["id", "name", "email", "member_since", "token_access", "business"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Who am I",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_projects",
+      "title": "List projects",
+      "description": "Every active project with its client and hourly rate. Use the \"label\" (\"Client / Project\") or the id wherever a project is asked for. Set include_archived to also see archived ones.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_archived": {
+            "default": false,
+            "description": "Also list archived projects",
+            "type": "boolean"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "client_id": {
+                  "type": "string"
+                },
+                "client": {
+                  "type": "string",
+                  "description": "Client name"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "\"Client / Project\""
+                },
+                "hourly_rate": {
+                  "type": "number",
+                  "description": "Dollars per hour"
+                },
+                "hourly_rate_cents": {
+                  "type": "number"
+                },
+                "billable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "client_id",
+                "client",
+                "label",
+                "hourly_rate",
+                "hourly_rate_cents",
+                "billable"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "archived": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "client_id": {
+                  "type": "string"
+                },
+                "client": {
+                  "type": "string",
+                  "description": "Client name"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "\"Client / Project\""
+                },
+                "hourly_rate": {
+                  "type": "number",
+                  "description": "Dollars per hour"
+                },
+                "hourly_rate_cents": {
+                  "type": "number"
+                },
+                "billable": {
+                  "type": "boolean"
+                },
+                "archived": {
+                  "type": "boolean",
+                  "const": true
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "client_id",
+                "client",
+                "label",
+                "hourly_rate",
+                "hourly_rate_cents",
+                "billable",
+                "archived"
+              ],
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": ["projects"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "List projects",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_clients",
+      "title": "List clients",
+      "description": "Active clients, each with its active projects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "clients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "color": {
+                  "type": ["string", "null"]
+                },
+                "legal_name": {
+                  "type": ["string", "null"]
+                },
+                "address": {
+                  "type": ["string", "null"]
+                },
+                "projects": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "hourly_rate": {
+                        "type": "number"
+                      },
+                      "billable": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["id", "name", "hourly_rate", "billable"],
+                    "additionalProperties": {}
+                  }
+                }
+              },
+              "required": ["id", "name", "color", "legal_name", "address", "projects"],
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": ["clients"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "List clients",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_client",
+      "title": "Get client billing details",
+      "description": "One client's billing details: full legal name and address as printed on invoices.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Client id or exact client name"
+          }
+        },
+        "required": ["client"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "legal_name": {
+            "type": ["string", "null"]
+          },
+          "address": {
+            "type": ["string", "null"]
+          },
+          "has_logo": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "name", "legal_name", "address", "has_logo"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Get client billing details",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_entries",
+      "title": "List time entries",
+      "description": "Time entries between two dates (inclusive), newest first, with totals per project and per day. Optionally limited to one project. Use this for 'what did I log last week' and to check a day before adding time.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "First day to include, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last day to include (inclusive), YYYY-MM-DD"
+          },
+          "project": {
+            "description": "Only this project: id or \"Client / Project\"",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["from", "to"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total_minutes": {
+                "type": "number"
+              },
+              "total_hours": {
+                "type": "number"
+              },
+              "by_project": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "string"
+                    },
+                    "client": {
+                      "type": "string"
+                    },
+                    "minutes": {
+                      "type": "number"
+                    },
+                    "hours": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["project", "client", "minutes", "hours"],
+                  "additionalProperties": {}
+                }
+              },
+              "by_date": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "minutes": {
+                      "type": "number"
+                    },
+                    "hours": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["date", "minutes", "hours"],
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": ["total_minutes", "total_hours", "by_project", "by_date"],
+            "additionalProperties": {}
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Entry id"
+                },
+                "date": {
+                  "type": "string",
+                  "description": "Local calendar date, YYYY-MM-DD"
+                },
+                "minutes": {
+                  "type": "number",
+                  "description": "Whole minutes"
+                },
+                "hours": {
+                  "type": "number",
+                  "description": "Hours, rounded to 2 decimals"
+                },
+                "note": {
+                  "type": "string",
+                  "description": "What was done"
+                },
+                "running": {
+                  "type": "boolean",
+                  "description": "True while the timer is running"
+                },
+                "started_at": {
+                  "description": "ISO time the timer started, or null",
+                  "type": ["string", "null"]
+                },
+                "project": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "name"],
+                  "additionalProperties": {}
+                },
+                "client": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "name"],
+                  "additionalProperties": {}
+                }
+              },
+              "required": ["id", "date", "minutes", "hours", "note", "running", "started_at", "project", "client"],
+              "additionalProperties": {}
+            },
+            "description": "Newest first, at most 500"
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "True when more than 500 entries matched"
+          }
+        },
+        "required": ["from", "to", "summary", "entries", "truncated"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "List time entries",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "project_totals",
+      "title": "Hours per project",
+      "description": "Logged hours per project: all time and within a date range (for example this month).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "First day of the range, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last day of the range (inclusive), YYYY-MM-DD"
+          }
+        },
+        "required": ["from", "to"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "project": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "hours_in_range": {
+                  "type": "number"
+                },
+                "hours_all_time": {
+                  "type": "number"
+                }
+              },
+              "required": ["project", "id", "hours_in_range", "hours_all_time"],
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": ["from", "to", "projects"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Hours per project",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_running_timer",
+      "title": "Running timer",
+      "description": "The timer that is running now, with elapsed minutes, or null when none is running.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "running": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Entry id"
+                  },
+                  "date": {
+                    "type": "string",
+                    "description": "Local calendar date, YYYY-MM-DD"
+                  },
+                  "minutes": {
+                    "type": "number",
+                    "description": "Whole minutes"
+                  },
+                  "hours": {
+                    "type": "number",
+                    "description": "Hours, rounded to 2 decimals"
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "What was done"
+                  },
+                  "running": {
+                    "type": "boolean",
+                    "description": "True while the timer is running"
+                  },
+                  "started_at": {
+                    "description": "ISO time the timer started, or null",
+                    "type": ["string", "null"]
+                  },
+                  "project": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "name"],
+                    "additionalProperties": {}
+                  },
+                  "client": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "name"],
+                    "additionalProperties": {}
+                  },
+                  "elapsed_minutes": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "id",
+                  "date",
+                  "minutes",
+                  "hours",
+                  "note",
+                  "running",
+                  "started_at",
+                  "project",
+                  "client",
+                  "elapsed_minutes"
+                ],
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The running timer, or null"
+          }
+        },
+        "required": ["running"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Running timer",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "annual_report",
+      "title": "Year summary for taxes",
+      "description": "One calendar year: hours and earnings by quarter, month, client and project, plus invoices issued and paid (cash and accrual views).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100,
+            "description": "Calendar year, e.g. 2026"
+          }
+        },
+        "required": ["year"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number"
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "minutes": {
+                "type": "number"
+              },
+              "billableMinutes": {
+                "type": "number"
+              },
+              "earnedCents": {
+                "type": "number"
+              },
+              "nonBillableMinutes": {
+                "type": "number"
+              },
+              "entryCount": {
+                "type": "number"
+              },
+              "workedDays": {
+                "type": "number"
+              }
+            },
+            "required": ["minutes", "billableMinutes", "earnedCents", "nonBillableMinutes", "entryCount", "workedDays"],
+            "additionalProperties": {}
+          },
+          "months": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minutes": {
+                  "type": "number"
+                },
+                "billableMinutes": {
+                  "type": "number"
+                },
+                "earnedCents": {
+                  "type": "number"
+                },
+                "month": {
+                  "type": "number"
+                },
+                "receivedCents": {
+                  "type": "number"
+                }
+              },
+              "required": ["minutes", "billableMinutes", "earnedCents", "month", "receivedCents"],
+              "additionalProperties": {}
+            }
+          },
+          "quarters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minutes": {
+                  "type": "number"
+                },
+                "billableMinutes": {
+                  "type": "number"
+                },
+                "earnedCents": {
+                  "type": "number"
+                },
+                "quarter": {
+                  "type": "number"
+                },
+                "receivedCents": {
+                  "type": "number"
+                }
+              },
+              "required": ["minutes", "billableMinutes", "earnedCents", "quarter", "receivedCents"],
+              "additionalProperties": {}
+            }
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minutes": {
+                  "type": "number"
+                },
+                "billableMinutes": {
+                  "type": "number"
+                },
+                "earnedCents": {
+                  "type": "number"
+                },
+                "projectId": {
+                  "type": "string"
+                },
+                "project": {
+                  "type": "string"
+                },
+                "clientId": {
+                  "type": "string"
+                },
+                "client": {
+                  "type": "string"
+                },
+                "billable": {
+                  "type": "boolean"
+                },
+                "rateCents": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "minutes",
+                "billableMinutes",
+                "earnedCents",
+                "projectId",
+                "project",
+                "clientId",
+                "client",
+                "billable",
+                "rateCents"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "clients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minutes": {
+                  "type": "number"
+                },
+                "billableMinutes": {
+                  "type": "number"
+                },
+                "earnedCents": {
+                  "type": "number"
+                },
+                "clientId": {
+                  "type": "string"
+                },
+                "client": {
+                  "type": "string"
+                },
+                "projects": {
+                  "type": "number"
+                }
+              },
+              "required": ["minutes", "billableMinutes", "earnedCents", "clientId", "client", "projects"],
+              "additionalProperties": {}
+            }
+          },
+          "invoices": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "number"
+              },
+              "totalCents": {
+                "type": "number"
+              },
+              "list": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "string"
+                    },
+                    "client_name": {
+                      "type": "string"
+                    },
+                    "issue_date": {
+                      "type": "string"
+                    },
+                    "paid_date": {
+                      "type": ["string", "null"]
+                    },
+                    "total_cents": {
+                      "type": "number"
+                    },
+                    "total_minutes": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["number", "client_name", "issue_date", "paid_date", "total_cents", "total_minutes"],
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": ["count", "totalCents", "list"],
+            "additionalProperties": {},
+            "description": "Invoices issued in the year (accrual view)"
+          },
+          "received": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "number"
+              },
+              "totalCents": {
+                "type": "number"
+              },
+              "list": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "string"
+                    },
+                    "client_name": {
+                      "type": "string"
+                    },
+                    "issue_date": {
+                      "type": "string"
+                    },
+                    "paid_date": {
+                      "type": ["string", "null"]
+                    },
+                    "total_cents": {
+                      "type": "number"
+                    },
+                    "total_minutes": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["number", "client_name", "issue_date", "paid_date", "total_cents", "total_minutes"],
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": ["count", "totalCents", "list"],
+            "additionalProperties": {},
+            "description": "Payments received in the year (cash view)"
+          },
+          "outstanding": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "number"
+              },
+              "totalCents": {
+                "type": "number"
+              }
+            },
+            "required": ["count", "totalCents"],
+            "additionalProperties": {},
+            "description": "Issued this year and still unpaid at year end"
+          }
+        },
+        "required": [
+          "year",
+          "totals",
+          "months",
+          "quarters",
+          "projects",
+          "clients",
+          "invoices",
+          "received",
+          "outstanding"
+        ],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Year summary for taxes",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_invoices",
+      "title": "List invoices",
+      "description": "Invoice history (newest 200 at most). Filter by text, client, paid status or issue-date range.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "description": "Matches number, client, notes, project names and entry notes",
+            "type": "string",
+            "maxLength": 100
+          },
+          "client": {
+            "description": "Only this client: id or exact name",
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "default": "all",
+            "description": "Filter by whether the invoice has been paid",
+            "type": "string",
+            "enum": ["all", "unpaid", "paid"]
+          },
+          "issued_from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Only invoices issued on or after this date"
+          },
+          "issued_to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Only invoices issued on or before this date"
+          },
+          "sort": {
+            "default": "newest",
+            "description": "newest/oldest by issue date, highest/lowest by total",
+            "type": "string",
+            "enum": ["newest", "oldest", "highest", "lowest"]
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "unpaid_total": {
+            "type": "number",
+            "description": "Dollars still unpaid across the matches"
+          },
+          "invoices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "number": {
+                  "type": "string"
+                },
+                "client": {
+                  "type": "string"
+                },
+                "issue_date": {
+                  "type": "string"
+                },
+                "due_date": {
+                  "type": ["string", "null"]
+                },
+                "paid_date": {
+                  "type": ["string", "null"]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["paid", "unpaid"]
+                },
+                "period_from": {
+                  "type": "string"
+                },
+                "period_to": {
+                  "type": "string"
+                },
+                "hours": {
+                  "type": "number"
+                },
+                "total": {
+                  "type": "number",
+                  "description": "Dollars"
+                },
+                "total_cents": {
+                  "type": "number"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "number",
+                "client",
+                "issue_date",
+                "due_date",
+                "paid_date",
+                "status",
+                "period_from",
+                "period_to",
+                "hours",
+                "total",
+                "total_cents",
+                "notes"
+              ],
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": ["count", "unpaid_total", "invoices"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "List invoices",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_invoice",
+      "title": "Get an invoice",
+      "description": "The frozen invoice as issued: seller, client, lines per project and totals. Set include_detail for the per-entry breakdown. Logos are left out.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Invoice id or invoice number, e.g. INV-2026-004"
+          },
+          "include_detail": {
+            "default": false,
+            "description": "Include the per-entry breakdown under the lines",
+            "type": "boolean"
+          }
+        },
+        "required": ["invoice"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              },
+              "dueDate": {
+                "type": ["string", "null"]
+              },
+              "periodFrom": {
+                "type": "string"
+              },
+              "periodTo": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "string"
+              },
+              "seller": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name"],
+                "additionalProperties": {}
+              },
+              "client": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name"],
+                "additionalProperties": {}
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "projectId": {
+                      "type": "string"
+                    },
+                    "project": {
+                      "type": "string"
+                    },
+                    "minutes": {
+                      "type": "number"
+                    },
+                    "rateCents": {
+                      "type": "number"
+                    },
+                    "amountCents": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["projectId", "project", "minutes", "rateCents", "amountCents"],
+                  "additionalProperties": {}
+                }
+              },
+              "detail": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "project": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "minutes": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["date", "project", "note", "minutes"],
+                  "additionalProperties": {}
+                }
+              },
+              "totalMinutes": {
+                "type": "number"
+              },
+              "totalCents": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "number",
+              "issueDate",
+              "dueDate",
+              "periodFrom",
+              "periodTo",
+              "notes",
+              "seller",
+              "client",
+              "lines",
+              "totalMinutes",
+              "totalCents"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["id", "snapshot"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Get an invoice",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "next_invoice_number",
+      "title": "Next invoice number",
+      "description": "The suggested next invoice number for a year, such as INV-2026-004.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100,
+            "description": "Year of the invoice issue date, e.g. 2026"
+          }
+        },
+        "required": ["year"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "For example INV-2026-004"
+          }
+        },
+        "required": ["number"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Next invoice number",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "parse_duration",
+      "title": "Parse a duration",
+      "description": "Turn text like \"1h30\", \"1:30\" or \"2.5\" into whole minutes, the way UseHourly reads it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The duration text to read, e.g. 1h30"
+          }
+        },
+        "required": ["text"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "minutes": {
+            "description": "Whole minutes, or null when the text could not be read",
+            "type": ["number", "null"]
+          },
+          "hours": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": ["minutes"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Parse a duration",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "log_time",
+      "title": "Log time",
+      "description": "Add one time entry: a project, a date, how long, and what was done. Give minutes or a duration text. This adds a new entry; it never merges with an existing one. Check list_entries first if the day may already be logged.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project id, or \"Client / Project\" (just the project name works when it is unique)"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "The day the work was done, YYYY-MM-DD"
+          },
+          "minutes": {
+            "description": "Whole minutes worked (use this or duration)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "duration": {
+            "description": "Duration text such as \"1h30\" (use this or minutes)",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "description": "What was done (max 2,000 characters)",
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": ["project", "date"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "logged": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Entry id"
+              },
+              "date": {
+                "type": "string",
+                "description": "Local calendar date, YYYY-MM-DD"
+              },
+              "minutes": {
+                "type": "number",
+                "description": "Whole minutes"
+              },
+              "hours": {
+                "type": "number",
+                "description": "Hours, rounded to 2 decimals"
+              },
+              "note": {
+                "type": "string",
+                "description": "What was done"
+              },
+              "running": {
+                "type": "boolean",
+                "description": "True while the timer is running"
+              },
+              "started_at": {
+                "description": "ISO time the timer started, or null",
+                "type": ["string", "null"]
+              },
+              "project": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              },
+              "client": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              }
+            },
+            "required": ["id", "date", "minutes", "hours", "note", "running", "started_at", "project", "client"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["logged"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Log time",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "log_time_on_days",
+      "title": "Log the same time on several days",
+      "description": "Add the same entry (project, minutes, note) on up to 31 dates. Days that already have time for this project are skipped and reported unless skip_existing is false.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project id, or \"Client / Project\" (just the project name works when it is unique)"
+          },
+          "dates": {
+            "minItems": 1,
+            "maxItems": 31,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Local calendar date, YYYY-MM-DD"
+            },
+            "description": "The days to log, YYYY-MM-DD (1 to 31 dates)"
+          },
+          "minutes": {
+            "description": "Whole minutes per day (use this or duration)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "duration": {
+            "description": "Duration text per day, such as \"1h30\" (use this or minutes)",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "description": "What was done (max 2,000 characters)",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "skip_existing": {
+            "default": true,
+            "description": "Skip days that already have time for this project (default true)",
+            "type": "boolean"
+          }
+        },
+        "required": ["project", "dates"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "\"Client / Project\""
+          },
+          "minutes": {
+            "type": "number",
+            "description": "Minutes logged on each day"
+          },
+          "created": {
+            "type": "number",
+            "description": "Days that got an entry"
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Days skipped because they already had time"
+          }
+        },
+        "required": ["project", "minutes", "created", "skipped"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Log the same time on several days",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_day_totals",
+      "title": "Set a project's total for days",
+      "description": "Set one project's total minutes for up to 31 days: more than 0 creates or updates that day's single entry, 0 clears it. Days that hold several entries or a running timer are skipped and reported, never merged. A note, when given, is applied to every day written.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project id, or \"Client / Project\" (just the project name works when it is unique)"
+          },
+          "cells": {
+            "minItems": 1,
+            "maxItems": 31,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "description": "The day, YYYY-MM-DD"
+                },
+                "minutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1440,
+                  "description": "Total minutes for that day; 0 clears it"
+                }
+              },
+              "required": ["date", "minutes"]
+            },
+            "description": "One item per day to set (1 to 31 days)"
+          },
+          "note": {
+            "description": "Description applied to every day written",
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": ["project", "cells"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "\"Client / Project\""
+          },
+          "created": {
+            "type": "number"
+          },
+          "updated": {
+            "type": "number"
+          },
+          "deleted": {
+            "type": "number"
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Days skipped: several entries or a running timer"
+          }
+        },
+        "required": ["project", "created", "updated", "deleted", "skipped"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Set a project's total for days",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_entry",
+      "title": "Edit an entry",
+      "description": "Change an entry's project, date, minutes or note. Only the fields you pass change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The entry id (from list_entries)"
+          },
+          "project": {
+            "description": "Move the entry to this project: id or \"Client / Project\"",
+            "type": "string",
+            "minLength": 1
+          },
+          "date": {
+            "description": "Move the entry to this day, YYYY-MM-DD",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "minutes": {
+            "description": "New whole minutes (use this or duration)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "duration": {
+            "description": "New duration text such as \"1h30\" (use this or minutes)",
+            "type": "string"
+          },
+          "note": {
+            "description": "New description (max 2,000 characters)",
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": ["id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "updated": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Entry id"
+              },
+              "date": {
+                "type": "string",
+                "description": "Local calendar date, YYYY-MM-DD"
+              },
+              "minutes": {
+                "type": "number",
+                "description": "Whole minutes"
+              },
+              "hours": {
+                "type": "number",
+                "description": "Hours, rounded to 2 decimals"
+              },
+              "note": {
+                "type": "string",
+                "description": "What was done"
+              },
+              "running": {
+                "type": "boolean",
+                "description": "True while the timer is running"
+              },
+              "started_at": {
+                "description": "ISO time the timer started, or null",
+                "type": ["string", "null"]
+              },
+              "project": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              },
+              "client": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              }
+            },
+            "required": ["id", "date", "minutes", "hours", "note", "running", "started_at", "project", "client"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["updated"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Edit an entry",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "merge_entries",
+      "title": "Merge entries",
+      "description": "Fold several entries (same project, same day) into the first one: minutes are added and notes joined. The others are removed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "minItems": 2,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Ids of the entries to merge; the first one is kept (2 to 20, same project and day)"
+          }
+        },
+        "required": ["ids"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The kept entry"
+          },
+          "minutes": {
+            "type": "number",
+            "description": "Its new total"
+          },
+          "merged": {
+            "type": "number",
+            "description": "How many entries were folded together"
+          }
+        },
+        "required": ["id", "minutes", "merged"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Merge entries",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "delete_entry",
+      "title": "Delete an entry",
+      "description": "Permanently delete one time entry. Confirm with the user before calling this.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The entry id (from list_entries)"
+          }
+        },
+        "required": ["id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": ["ok"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Delete an entry",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "start_timer",
+      "title": "Start the timer",
+      "description": "Start a timer on a project. A timer that is already running is stopped first, so only one runs at a time.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project id, or \"Client / Project\" (just the project name works when it is unique)"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "The day the timer starts on, YYYY-MM-DD"
+          },
+          "note": {
+            "default": "",
+            "description": "What is being worked on (max 2,000 characters)",
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": ["project", "date"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "started": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Entry id"
+              },
+              "date": {
+                "type": "string",
+                "description": "Local calendar date, YYYY-MM-DD"
+              },
+              "minutes": {
+                "type": "number",
+                "description": "Whole minutes"
+              },
+              "hours": {
+                "type": "number",
+                "description": "Hours, rounded to 2 decimals"
+              },
+              "note": {
+                "type": "string",
+                "description": "What was done"
+              },
+              "running": {
+                "type": "boolean",
+                "description": "True while the timer is running"
+              },
+              "started_at": {
+                "description": "ISO time the timer started, or null",
+                "type": ["string", "null"]
+              },
+              "project": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              },
+              "client": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              }
+            },
+            "required": ["id", "date", "minutes", "hours", "note", "running", "started_at", "project", "client"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["started"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Start the timer",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "stop_timer",
+      "title": "Stop the timer",
+      "description": "Stop the running timer. Elapsed time is rounded up to the next minute (at least 1).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "stopped": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Entry id"
+              },
+              "date": {
+                "type": "string",
+                "description": "Local calendar date, YYYY-MM-DD"
+              },
+              "minutes": {
+                "type": "number",
+                "description": "Whole minutes"
+              },
+              "hours": {
+                "type": "number",
+                "description": "Hours, rounded to 2 decimals"
+              },
+              "note": {
+                "type": "string",
+                "description": "What was done"
+              },
+              "running": {
+                "type": "boolean",
+                "description": "True while the timer is running"
+              },
+              "started_at": {
+                "description": "ISO time the timer started, or null",
+                "type": ["string", "null"]
+              },
+              "project": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              },
+              "client": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": {}
+              }
+            },
+            "required": ["id", "date", "minutes", "hours", "note", "running", "started_at", "project", "client"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["stopped"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Stop the timer",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_client",
+      "title": "Create a client",
+      "description": "Add a client. Names are unique per account.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "The client's name (unique per account, max 80 characters)"
+          },
+          "color": {
+            "description": "Hex colour such as #6366f1",
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "required": ["name"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "color": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["id", "name", "color"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["client"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Create a client",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_client",
+      "title": "Edit a client",
+      "description": "Rename a client or change the legal name and address printed on its invoices. Only the fields you pass change; the logo is kept.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Client id or exact client name"
+          },
+          "name": {
+            "description": "New display name",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "legal_name": {
+            "description": "Empty string clears it",
+            "type": "string",
+            "maxLength": 150
+          },
+          "address": {
+            "description": "Empty string clears it",
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": ["client"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "client": {
+            "type": "string",
+            "description": "The client's name now"
+          }
+        },
+        "required": ["ok", "client"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Edit a client",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "archive_client",
+      "title": "Archive a client",
+      "description": "Hide a client from the lists. Its time and invoices are kept.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Client id or exact client name"
+          }
+        },
+        "required": ["client"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "archived": {
+            "type": "string",
+            "description": "The client's name"
+          }
+        },
+        "required": ["ok", "archived"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Archive a client",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_project",
+      "title": "Create a project",
+      "description": "Add a project under a client, with an hourly rate in dollars and whether it is billable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Client id or exact client name"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "The project's name (max 80 characters)"
+          },
+          "hourly_rate": {
+            "default": 0,
+            "description": "Dollars per hour, e.g. 85 or 62.5 (default 0)",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "billable": {
+            "default": true,
+            "description": "Whether the time goes on invoices (default true)",
+            "type": "boolean"
+          }
+        },
+        "required": ["client", "name"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "hourly_rate": {
+                "type": "number"
+              },
+              "billable": {
+                "type": "boolean"
+              }
+            },
+            "required": ["id", "label", "hourly_rate", "billable"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["project"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Create a project",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_project",
+      "title": "Edit a project",
+      "description": "Rename a project, move it to another client, or change its rate or billable flag. Only the fields you pass change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project id, or \"Client / Project\" (just the project name works when it is unique)"
+          },
+          "name": {
+            "description": "New project name",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "client": {
+            "description": "Move the project to this client",
+            "type": "string",
+            "minLength": 1
+          },
+          "hourly_rate": {
+            "description": "New dollars per hour, e.g. 85 or 62.5",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "billable": {
+            "description": "Whether the time goes on invoices",
+            "type": "boolean"
+          }
+        },
+        "required": ["project"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "hourly_rate": {
+                "type": "number"
+              },
+              "billable": {
+                "type": "boolean"
+              }
+            },
+            "required": ["id", "name", "hourly_rate", "billable"],
+            "additionalProperties": {}
+          }
+        },
+        "required": ["project"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Edit a project",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "archive_project",
+      "title": "Archive a project",
+      "description": "Hide a project from the lists. Its time and invoices are kept.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project id, or \"Client / Project\" (just the project name works when it is unique)"
+          }
+        },
+        "required": ["project"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "archived": {
+            "type": "string",
+            "description": "\"Client / Project\""
+          }
+        },
+        "required": ["ok", "archived"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Archive a project",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "unarchive_project",
+      "title": "Restore a project",
+      "description": "Bring an archived project (and its client, if archived) back.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Archived project id or \"Client / Project\""
+          }
+        },
+        "required": ["project"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "restored": {
+            "type": "string",
+            "description": "\"Client / Project\""
+          }
+        },
+        "required": ["ok", "restored"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Restore a project",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_invoice",
+      "title": "Create an invoice",
+      "description": "Issue an invoice for a client from billable time between two dates. Totals are computed on the server from the logged entries (one line per project). The number defaults to the next INV-<year>-NNN. This creates a permanent record; confirm the client, period and dates with the user first.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Client id or exact client name"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "First day of the billed period"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last day of the billed period"
+          },
+          "issue_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "The invoice date, YYYY-MM-DD"
+          },
+          "due_date": {
+            "description": "Payment due date, YYYY-MM-DD, or null for none",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Local calendar date, YYYY-MM-DD"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "number": {
+            "description": "Invoice number; defaults to the next INV-<year>-NNN",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "notes": {
+            "default": "",
+            "description": "Notes printed on the invoice (max 1,000 characters)",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "include_detail": {
+            "default": true,
+            "description": "Print each entry under the lines",
+            "type": "boolean"
+          },
+          "compact_notes": {
+            "default": false,
+            "description": "Shorten entry descriptions to about 100 characters",
+            "type": "boolean"
+          }
+        },
+        "required": ["client", "from", "to", "issue_date"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "client": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string",
+            "description": "\"YYYY-MM-DD to YYYY-MM-DD\""
+          },
+          "hours": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number",
+            "description": "Dollars"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "projectId": {
+                  "type": "string"
+                },
+                "project": {
+                  "type": "string"
+                },
+                "minutes": {
+                  "type": "number"
+                },
+                "rateCents": {
+                  "type": "number"
+                },
+                "amountCents": {
+                  "type": "number"
+                }
+              },
+              "required": ["projectId", "project", "minutes", "rateCents", "amountCents"],
+              "additionalProperties": {}
+            },
+            "description": "One line per project"
+          }
+        },
+        "required": ["id", "number", "client", "period", "hours", "total", "lines"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Create an invoice",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "mark_invoice_paid",
+      "title": "Mark an invoice paid or unpaid",
+      "description": "Record the date an invoice was paid (this matters for cash-basis taxes), or pass null to mark it unpaid again.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Invoice id or invoice number, e.g. INV-2026-004"
+          },
+          "paid_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Local calendar date, YYYY-MM-DD"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "YYYY-MM-DD, or null for unpaid"
+          }
+        },
+        "required": ["invoice", "paid_date"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "paidDate": {
+            "description": "The paid date, or null when marked unpaid",
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["ok", "paidDate"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Mark an invoice paid or unpaid",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "delete_invoice",
+      "title": "Delete an invoice",
+      "description": "Permanently delete an invoice record. The time entries stay. Confirm with the user before calling this.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Invoice id or invoice number, e.g. INV-2026-004"
+          }
+        },
+        "required": ["invoice"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": ["ok"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Delete an invoice",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    }
+  ],
+  "resources": [
+    {
+      "uri": "usehourly://projects",
+      "name": "projects",
+      "title": "Projects and clients",
+      "description": "Every active project with its client and rate.",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "usehourly://timer",
+      "name": "timer",
+      "title": "Running timer",
+      "description": "The running timer, if any.",
+      "mimeType": "application/json"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "uriTemplate": "usehourly://entries/{from}/{to}",
+      "name": "entries",
+      "title": "Time entries in a date range",
+      "description": "Entries between two dates (YYYY-MM-DD), with totals.",
+      "mimeType": "application/json"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "log_session_time",
+      "title": "Log time for work just done",
+      "description": "Turn a description of finished work and how long it took into a UseHourly entry.",
+      "arguments": [
+        {
+          "name": "date",
+          "description": "Local date, YYYY-MM-DD",
+          "required": true
+        },
+        {
+          "name": "duration",
+          "description": "How long, e.g. \"1h30\"",
+          "required": true
+        },
+        {
+          "name": "what",
+          "description": "What was worked on",
+          "required": true
+        },
+        {
+          "name": "project",
+          "description": "Project, as \"Client / Project\" (optional)",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "week_summary",
+      "title": "Summarize a week",
+      "description": "Hours per project and per day for the week starting on a Monday.",
+      "arguments": [
+        {
+          "name": "week_start",
+          "description": "The Monday, YYYY-MM-DD",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "invoice_client",
+      "title": "Prepare an invoice",
+      "description": "Review a client's unbilled time and issue an invoice after confirmation.",
+      "arguments": [
+        {
+          "name": "client",
+          "description": "Client name",
+          "required": true
+        },
+        {
+          "name": "from",
+          "description": "First day to bill, YYYY-MM-DD",
+          "required": true
+        },
+        {
+          "name": "to",
+          "description": "Last day to bill, YYYY-MM-DD",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
