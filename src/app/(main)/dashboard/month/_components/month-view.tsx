@@ -70,6 +70,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
+  // The project list always shows every project, so picking one never hides the others.
+  const allRows = useMemo(() => buildSheet((entries.data ?? []) as unknown as SheetEntry[]).rows, [entries.data]);
 
   if (!first) return <Skeleton className="h-96 w-full" />;
 
@@ -258,39 +260,49 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card">
-            <h2 className="border-b px-4 py-3 font-medium">By project</h2>
-            {sheet.rows.length === 0 ? (
-              <p className="px-4 py-8 text-center text-muted-foreground text-sm">No time logged this month.</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-medium">By project</h2>
+              {projectId && (
+                <Button size="sm" variant="outline" onClick={() => setProjectId("")}>
+                  Show all projects
+                </Button>
+              )}
+            </div>
+            {allRows.length === 0 ? (
+              <p className="rounded-xl border bg-card px-4 py-8 text-center text-muted-foreground text-sm">
+                No time logged this month.
+              </p>
             ) : (
-              <table className="w-full text-sm">
-                <tbody>
-                  {sheet.rows.map((r) => (
-                    <tr key={r.projectId} className="border-b last:border-0">
-                      <td className="px-4 py-2">
-                        <span
-                          className="mr-2 inline-block size-2.5 rounded-full"
-                          style={{ backgroundColor: r.color }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setProjectId(r.projectId)}
-                          title="Show only this project"
-                          className="inline-block py-1.5 text-left hover:underline"
-                        >
-                          {r.project} <span className="text-muted-foreground">· {r.client}</span>
-                        </button>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-muted-foreground tabular-nums sm:px-4">
-                        {formatDecimalHours(r.total)} h
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-2 text-right font-medium font-mono tabular-nums sm:px-4">
-                        {formatDuration(r.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {allRows.map((r) => {
+                  const on = r.projectId === projectId;
+                  return (
+                    <button
+                      key={r.projectId}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setProjectId(on ? "" : r.projectId)}
+                      title={on ? "Show all projects again" : "Show only this project"}
+                      className={`flex min-h-20 flex-col justify-between gap-2 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-muted ${
+                        on ? "border-primary bg-primary/10" : projectId ? "text-muted-foreground" : ""
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 text-sm">
+                        <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{r.project}</span>
+                          <span className="block truncate text-muted-foreground text-xs">{r.client}</span>
+                        </span>
+                      </span>
+                      <span className="flex items-baseline justify-between gap-2 font-mono tabular-nums">
+                        <span className="font-semibold text-lg">{formatDuration(r.total)}</span>
+                        <span className="text-muted-foreground text-xs">{formatDecimalHours(r.total)} h</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
