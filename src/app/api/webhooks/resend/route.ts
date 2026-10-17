@@ -1,5 +1,6 @@
 import { getPrisma } from "@/lib/prisma";
 import { addressesToSuppress, verifySvix } from "@/lib/resend-webhook";
+import { suppressEmails } from "@/server/invoice-mail";
 
 /**
  * Resend calls this when a message bounces for good or is reported as spam. We note it on the account
@@ -28,7 +29,10 @@ export async function POST(req: Request) {
   }
   const emails = addressesToSuppress(event);
   if (emails.length > 0) {
-    await (await getPrisma()).authUser.updateMany({
+    const prisma = await getPrisma();
+    // Any address that bounced for good or complained, a client's included, is never mailed again.
+    await suppressEmails(prisma, emails, "bounced-or-complained");
+    await prisma.authUser.updateMany({
       where: { email: { in: emails }, email_bounced_at: null },
       data: { email_bounced_at: new Date(), weekly_reminder: false },
     });

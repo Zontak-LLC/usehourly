@@ -47,6 +47,7 @@ function fakeDb(users: U[], entries: E[] = []) {
     oauthCode: { deleteMany: vi.fn(async () => ({ count: 3 })) },
     timesheetShare: { deleteMany: vi.fn(async () => ({ count: 1 })) },
     invoiceLink: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+    invoice: { findMany: vi.fn(async () => []), updateMany: vi.fn(async () => ({ count: 0 })) },
     authUser: {
       findMany: vi.fn(async ({ where, take }: { where: { id: { gt: string } }; take: number }) =>
         users
@@ -286,6 +287,7 @@ describe("the cron route and the unsubscribe link", () => {
       due: 1,
       sent: 1,
       failed: 0,
+      invoiceReminders: { considered: 0, sent: 0, skipped: 0, retry: 0 },
       housekeeping: { rateLimits: 7, emailTokens: 2, oauthCodes: 3, timesheetShares: 1, invoiceLinks: 1 },
     });
     const payload = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, { body: string }])[1].body);

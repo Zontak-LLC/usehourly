@@ -50,6 +50,7 @@ model AuthUser {
   oauth_codes OauthCode[]
   timesheet_shares TimesheetShare[]
   invoice_links InvoiceLink[]
+  invoice_emails InvoiceEmail[]
 
   @@index([is_demo, created_at])
   @@map("auth_users")
@@ -140,11 +141,15 @@ model Invoice {
   notes         String   @default("")
   snapshot      String
   search_text   String
+  // Opt-in: remind the client when this invoice is overdue (one day after the due date and again a week after).
+  remind_overdue Boolean @default(false)
+  reminders_sent Int     @default(0)
   created_at    DateTime @default(now())
 
   user   AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
   client Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
   links  InvoiceLink[]
+  emails InvoiceEmail[]
 
   @@unique([user_id, number])
   @@index([user_id, issue_date])
@@ -303,4 +308,30 @@ model InvoiceLink {
   @@index([invoice_id])
   @@index([user_id])
   @@map("invoice_links")
+}
+
+// An address that must not be mailed: the recipient asked to stop, or it bounced for good. Checked before every client email.
+model EmailSuppression {
+  email      String   @id
+  reason     String
+  created_at DateTime @default(now())
+
+  @@map("email_suppressions")
+}
+
+// One row per email sent about an invoice (the invoice's history and what the daily limits are checked against).
+model InvoiceEmail {
+  id         String   @id @default(uuid())
+  user_id    String
+  invoice_id String
+  to_email   String
+  kind       String // "invoice" or "reminder"
+  created_at DateTime @default(now())
+
+  user    AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  invoice Invoice  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+
+  @@index([invoice_id, created_at])
+  @@index([user_id])
+  @@map("invoice_emails")
 }

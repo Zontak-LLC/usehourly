@@ -39,3 +39,12 @@ export async function verifyCronToken(secret: string, header: string | null): Pr
   if (!secret || !m) return false;
   return sameString(await cronToken(secret), m[1]);
 }
+
+/** A signed "stop emailing me" token for one recipient address (an invoice email's footer link and its one-click header). */
+export const stopEmailToken = (secret: string, email: string) =>
+  hmac(secret, `stop-emails:${email.trim().toLowerCase()}`);
+
+export async function verifyStopEmailToken(secret: string, email: string, token: string): Promise<boolean> {
+  if (!secret || !email || !token) return false;
+  return sameString(await stopEmailToken(secret, email), token);
+}

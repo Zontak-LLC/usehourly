@@ -2,6 +2,7 @@ import { appUrl, createMailer } from "@/lib/mailer";
 import { getPrisma } from "@/lib/prisma";
 import { verifyCronToken } from "@/lib/reminder-token";
 import { runHousekeeping } from "@/server/housekeeping";
+import { runInvoiceReminders } from "@/server/invoice-reminders";
 import { runWeeklyReminders } from "@/server/reminders";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,9 @@ export async function POST(req: Request) {
     return Response.json({ skipped: "Email is not set up (RESEND_API_KEY and EMAIL_FROM).", housekeeping });
   }
   const result = await runWeeklyReminders({ prisma, mailer, appUrl: appUrl(), secret });
-  return Response.json({ ...result, housekeeping }, { headers: { "cache-control": "no-store" } });
+  // Overdue-invoice reminders (only for invoices whose owner turned them on) ride the same hourly run.
+  const invoiceReminders = await runInvoiceReminders({ prisma, mailer, appUrl: appUrl(), secret });
+  return Response.json({ ...result, invoiceReminders, housekeeping }, { headers: { "cache-control": "no-store" } });
 }
 
 export const GET = () => new Response(null, { status: 405, headers: { allow: "POST" } });
