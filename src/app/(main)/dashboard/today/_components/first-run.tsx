@@ -37,7 +37,7 @@ export function FirstRun() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:p-6">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:p-6">
       <div>
         <h2 className="font-semibold text-xl">Welcome! Let's start your first timer.</h2>
         <p className="mt-1 text-muted-foreground text-base">

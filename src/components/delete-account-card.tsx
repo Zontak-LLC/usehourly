@@ -37,7 +37,7 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
         </p>
       </div>
       {open ? (
-        <form onSubmit={submit} className="flex flex-col gap-3">
+        <form method="post" onSubmit={submit} className="flex flex-col gap-3">
           <div className="grid gap-1.5">
             <Label htmlFor="delete-confirm">
               {hasPassword ? "Type your password to confirm" : `Type your email (${email}) to confirm`}

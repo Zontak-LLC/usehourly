@@ -98,7 +98,7 @@ export function ApiTokensCard() {
         </p>
       </div>
 
-      <form onSubmit={make} className="grid gap-3">
+      <form method="post" onSubmit={make} className="grid gap-3">
         <div className="grid gap-1.5">
           <Label htmlFor="token-name">Name</Label>
           <Input

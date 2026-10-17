@@ -47,7 +47,7 @@ export function ClaimDemoCard() {
           no card.
         </p>
       </div>
-      <form onSubmit={submit} className="grid gap-3">
+      <form method="post" onSubmit={submit} className="grid gap-3">
         <div className="grid gap-1.5">
           <Label htmlFor="claim-name">Your name</Label>
           <Input id="claim-name" name="name" autoComplete="name" required maxLength={80} />

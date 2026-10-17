@@ -44,7 +44,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-1.5">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" autoComplete="email" autoFocus required />

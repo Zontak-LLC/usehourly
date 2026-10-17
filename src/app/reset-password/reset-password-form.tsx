@@ -57,7 +57,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-1.5">
         <Label htmlFor="password">New password</Label>
         <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />

@@ -87,6 +87,10 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - Account deletion removes the history; the stop list is about recipients and is kept.
 - Test: `invoice-mail-journey.test.ts` (mutation-checked: confirmed-owner rule, stop list, per-recipient cap, link turned off after a failed send, the conditional reminder claim). Not tested against a real mailbox yet: the first live send is the real check (try one to your own address).
 
+## Forms must post (2026-10-17, found in the first-day walkthrough)
+- Every `<form>` declares `method="post"`. A form with no method submits with GET when its script has not loaded (a slow phone, a blocked script), which put a typed PASSWORD in the address bar during the walkthrough. `forms-never-use-get.test.ts` fails on any form without it. `next.config.mjs` allows `127.0.0.1` in development (`allowedDevOrigins`), so a second browser session with separate cookies can be used for walkthroughs: register a throwaway user there, then delete it.
+- Walkthrough tip: the local robot check needs a real Cloudflare widget, which cannot be clicked in automation, so start the dev server with `TURNSTILE_SITE_KEY= TURNSTILE_SECRET_KEY= npm run dev` for a test run, then restart it normally.
+
 ## Landing page and brand
 - `/` is a public landing page (`src/app/(main)/page.tsx`); signed-in users are sent on to `/dashboard/today`. The rule lives in `src/lib/route-access.ts` (tested) and is applied by `src/proxy.ts`; `next.config.mjs` must NOT redirect `/` (it used to, and hid the page).
 - Its screenshots (`public/landing/*.webp`) are the real app, taken from a local demo freelancer: register through the UI, seed clients/projects/entries/invoices with `wrangler d1 execute --local`, screenshot Today/Week/Month/Report at 1440x900 @2x with the Next dev badge hidden, then delete the demo rows.

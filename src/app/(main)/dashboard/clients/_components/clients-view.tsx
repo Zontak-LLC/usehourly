@@ -64,7 +64,7 @@ function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
     return <p className="px-4 py-3 text-destructive text-sm">Couldn't load client: {client.error?.message}</p>;
   }
   return (
-    <form onSubmit={save} className="flex flex-col gap-3 border-b bg-muted/30 px-4 py-3">
+    <form method="post" onSubmit={save} className="flex flex-col gap-3 border-b bg-muted/30 px-4 py-3">
       <div className="grid gap-1.5">
         <Label htmlFor={`cn-${id}`}>Client name</Label>
         <Input id={`cn-${id}`} name="name" defaultValue={client.data.name} required maxLength={80} />
@@ -235,7 +235,7 @@ export function ClientsView() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="font-semibold text-xl">Clients &amp; projects</h1>
 
-      <form onSubmit={addClient} className="flex gap-2">
+      <form method="post" onSubmit={addClient} className="flex gap-2">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -277,7 +277,11 @@ export function ClientsView() {
             {c.projects.map((p) =>
               editingId === p.id ? (
                 <li key={p.id} className="px-4 py-3">
-                  <form onSubmit={(e) => saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
+                  <form
+                    method="post"
+                    onSubmit={(e) => saveProject(e, p.id)}
+                    className="flex flex-wrap items-center gap-2"
+                  >
                     <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
                     <select
                       name="clientId"
