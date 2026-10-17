@@ -6,6 +6,7 @@
 @import "../styles/presets/mint.css";
 @import "../styles/presets/indigo.css";
 @import "../styles/presets/ink.css";
+@import "../styles/presets/cream.css";
 
 @custom-variant dark (&:is(.dark *));
 

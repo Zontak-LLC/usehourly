@@ -36,6 +36,14 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
+    label: "Cream",
+    value: "cream",
+    primary: {
+      light: "oklch(0.52 0.07 60)",
+      dark: "oklch(0.82 0.07 78)",
+    },
+  },
+  {
     label: "Ink",
     value: "ink",
     primary: {
