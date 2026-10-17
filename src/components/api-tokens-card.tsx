@@ -155,7 +155,27 @@ export function ApiTokensCard() {
             text={`claude mcp add --transport http usehourly ${endpoint} --header "Authorization: Bearer ${fresh.token}"`}
           />
           <CopyBox
-            label="Or any MCP client that reads a JSON config"
+            label="Cursor: put in ~/.cursor/mcp.json"
+            text={JSON.stringify(
+              { mcpServers: { usehourly: { url: endpoint, headers: { Authorization: `Bearer ${fresh.token}` } } } },
+              null,
+              2,
+            )}
+          />
+          <CopyBox
+            label="VS Code: put in .vscode/mcp.json"
+            text={JSON.stringify(
+              {
+                servers: {
+                  usehourly: { type: "http", url: endpoint, headers: { Authorization: `Bearer ${fresh.token}` } },
+                },
+              },
+              null,
+              2,
+            )}
+          />
+          <CopyBox
+            label="Any other MCP client that reads a JSON config"
             text={JSON.stringify(
               {
                 mcpServers: {
