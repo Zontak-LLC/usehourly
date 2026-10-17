@@ -21,7 +21,7 @@ const when = (d: Date | string) =>
 const LINK_STATUS: Record<LinkStatus, string> = { live: "Works now", revoked: "Turned off", expired: "Expired" };
 
 /** Email the invoice to the client from "<you> via UseHourly"; their reply comes to you. Optional overdue reminders. */
-function EmailSection({ invoiceId, number, open }: { invoiceId: string; number: string; open: boolean }) {
+function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean }) {
   const utils = trpc.useUtils();
   const send = trpc.invoiceMail.send.useMutation();
   const setReminders = trpc.invoiceMail.setReminders.useMutation();
@@ -277,7 +277,7 @@ export function SendInvoiceDialog({
         </DialogHeader>
         {invoice && (
           <>
-            <EmailSection invoiceId={invoice.id} number={invoice.number} open={open} />
+            <EmailSection invoiceId={invoice.id} open={open} />
             <LinkSection invoiceId={invoice.id} open={open} />
           </>
         )}

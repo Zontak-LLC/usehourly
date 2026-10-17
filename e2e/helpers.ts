@@ -169,6 +169,7 @@ type Fixtures = {
 };
 
 export const test = base.extend<Fixtures>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring pattern even when no fixture is used
   isPhone: async ({}, use, testInfo) => use(testInfo.project.name === "phone"),
   page: async ({ page }, use) => {
     const problems: string[] = [];

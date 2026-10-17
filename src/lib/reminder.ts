@@ -123,10 +123,6 @@ export function buildWeeklyReminder(input: {
     total += e.minutes;
   }
   const first = (input.name ?? "").trim().split(/\s+/)[0];
-  const rows = days.map((d) => {
-    const m = byDay.get(d) ?? 0;
-    return `  ${dayLabel(d).padEnd(13)} ${m ? hours(m) : "nothing logged"}`;
-  });
   const missing = days.filter((d) => d <= input.today && !byDay.has(d)).length;
   const mail = renderEmail({
     title: "Your week so far",
