@@ -25,6 +25,7 @@ export default defineConfig({
   workers: 1,
   timeout: 180_000,
   expect: { timeout: 15_000 },
+  globalSetup: "./e2e/global-setup.ts",
   globalTeardown: external ? undefined : "./e2e/global-teardown.ts",
   use: { baseURL: BASE, trace: "retain-on-failure", actionTimeout: 20_000 },
   projects: [

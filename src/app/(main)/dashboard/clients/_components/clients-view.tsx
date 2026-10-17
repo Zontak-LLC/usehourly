@@ -233,7 +233,12 @@ export function ClientsView() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-      <h1 className="font-semibold text-xl">Clients &amp; projects</h1>
+      <div>
+        <h1 className="font-semibold text-xl">My work</h1>
+        <p className="text-muted-foreground text-sm">
+          Your clients, and the projects you do for each. Hourly rates live here.
+        </p>
+      </div>
 
       <form method="post" onSubmit={addClient} className="flex gap-2">
         <Input

@@ -50,7 +50,7 @@ export function AddEntryPopover({
   const dayTotal = dayEntries.reduce((sum, e) => sum + e.minutes, 0);
 
   async function add() {
-    if (!selected) return toast.error("Add a project first (Clients & projects).");
+    if (!selected) return toast.error("Add a project first (under My work).");
     const minutes = parseDuration(duration);
     if (minutes === null || minutes < 1 || minutes > 24 * 60) {
       hoursRef.current?.focus();

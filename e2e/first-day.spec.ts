@@ -96,7 +96,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("set the project's hourly rate under My work", async () => {
     await page.goto("/dashboard/clients");
-    await expect(page.getByRole("heading", { name: /clients/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My work", level: 1 })).toBeVisible();
     await shot("my-work-before");
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Rate per hour").fill("60");
@@ -121,8 +121,25 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(page.getByText(/confirmed|verified/i).first()).toBeVisible();
   });
 
+  await test.step("each page is named like its menu entry", async () => {
+    if (isPhone) return; // the phone menu is a drawer; the names are checked on desktop
+    await page.goto("/dashboard/today");
+    const pages: [menu: string, heading: RegExp, title: RegExp][] = [
+      ["Invoices", /^Invoices$/, /^Invoices/],
+      ["My work", /^My work$/, /^My work/],
+      ["Year summary (taxes)", /^Year summary/, /^Year summary/],
+      ["Account", /^Account$/, /^Account/],
+    ];
+    for (const [menu, heading, title] of pages) {
+      await page.getByRole("link", { name: menu, exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
+      await expect(page).toHaveTitle(title);
+    }
+  });
+
   await test.step("make an invoice from the logged time", async () => {
     await page.goto("/dashboard/invoices");
+    await expect(page.getByLabel("Search invoices")).toBeHidden(); // nothing to search yet
     await shot("invoices-empty");
     await audit("invoices empty");
     await page
@@ -145,7 +162,8 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("mark it paid", async () => {
     await page.goto("/dashboard/invoices");
-    await page.getByRole("button", { name: /Mark INV-\d{4}-001 paid/ }).click();
+    await page.getByRole("button", { name: /More actions for INV-/ }).click();
+    await page.getByRole("menuitem", { name: /Mark as paid/ }).click();
     await page.getByLabel("Date the money arrived").fill(today());
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(
@@ -155,13 +173,16 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
         .first(),
     ).toBeVisible();
     await shot("invoice-paid");
+    // A row offers one clear action and one menu, not a cluster of icons (usability pass #38).
+    const controls = await page.getByTestId("invoice-actions").first().locator("button, a").count();
+    expect.soft(controls, "controls on an invoice row").toBeLessThanOrEqual(2);
     await audit("invoices with one invoice");
     await a11y("invoices");
   });
 
   let invoiceUrl = "";
   await test.step("get a private link to the invoice and open it as the client", async () => {
-    await page.getByRole("button", { name: /Get a link to INV/ }).click();
+    await page.getByRole("button", { name: "Send", exact: true }).click();
     await page.getByRole("button", { name: "Make a link" }).click();
     invoiceUrl = await page.getByLabel("Invoice link").inputValue();
     expect(invoiceUrl).toMatch(/\/invoice\/\S{40,}/);
@@ -177,13 +198,19 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
       caret: "initial",
     });
     await anon.close();
+    await page.keyboard.press("Escape");
   });
 
   await test.step("share the week for sign-off, the client approves, the owner is emailed", async () => {
     await clearMail();
     await page.goto("/dashboard/week");
-    await page.getByRole("button", { name: /share for sign-off/i }).click();
-    await shot("share-popover");
+    // The toolbar is the filter, one Share & export menu and the date arrows (usability pass #38).
+    const toolbar = await page.getByTestId("timesheet-toolbar").locator("button:visible, select:visible").count();
+    expect.soft(toolbar, "controls in the Week toolbar").toBeLessThanOrEqual(5);
+    await page.getByRole("button", { name: /Share & export/ }).click();
+    await shot("share-and-export-menu");
+    await page.getByRole("menuitem", { name: /Send to a client for sign-off/ }).click();
+    await shot("share-dialog");
     await page.getByRole("button", { name: "Make a link" }).click();
     const url = await page.getByLabel("Timesheet link").inputValue();
     const anon = await anonymous(browser, info);
@@ -214,7 +241,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(page.getByText("Client updated.")).toBeVisible(); // wait for the save before leaving the page
     await page.goto("/dashboard/invoices");
     await clearMail();
-    await page.getByRole("button", { name: /Email INV-\d{4}-001 to the client/ }).click();
+    await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText("Loading…")).toBeHidden();
     await shot("email-panel");
     await page.getByLabel(/A note to include/).fill("Thanks for a great week.");
@@ -236,7 +263,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await anon.close();
     // after opting out, the same button refuses
     await page.reload();
-    await page.getByRole("button", { name: /Email INV-\d{4}-001 to the client/ }).click();
+    await page.getByRole("button", { name: "Send", exact: true }).click();
     await page.getByRole("button", { name: "Send the email" }).click();
     await expect(page.getByText(/asked not to get emails/i)).toBeVisible();
   });

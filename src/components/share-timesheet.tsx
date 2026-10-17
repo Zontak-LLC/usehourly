@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Check, Copy, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { checkRange, describeRange } from "@/lib/export-range";
 import { DEFAULT_SHARE_EXPIRY_DAYS, SHARE_EXPIRY_DAYS, type ShareStatus } from "@/lib/timesheet-share";
 import { trpc } from "@/lib/trpc";
@@ -25,10 +25,14 @@ const STATUS_LABEL: Record<ShareStatus, string> = {
  * check, print and approve. Lives next to the export buttons on Week and Month and starts on what the screen shows.
  */
 export function ShareTimesheet({
+  open,
+  onOpenChange,
   defaultFrom,
   defaultTo,
   projectId: initialProject = "",
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   defaultFrom: string;
   defaultTo: string;
   projectId?: string;
@@ -37,7 +41,6 @@ export function ShareTimesheet({
   const clients = trpc.clients.list.useQuery();
   const create = trpc.timesheetShare.create.useMutation();
   const revoke = trpc.timesheetShare.revoke.useMutation();
-  const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
   // "" = everything, "c:<id>" = one client, "p:<id>" = one project
@@ -50,16 +53,15 @@ export function ShareTimesheet({
 
   const check = checkRange(from, to);
 
-  function onOpenChange(next: boolean) {
-    if (next) {
-      setFrom(defaultFrom);
-      setTo(defaultTo);
-      setScope(initialProject ? `p:${initialProject}` : "");
-      setLink(null);
-      setCopied(false);
-    }
-    setOpen(next);
-  }
+  // Start from what the screen is showing each time the panel opens.
+  useEffect(() => {
+    if (!open) return;
+    setFrom(defaultFrom);
+    setTo(defaultTo);
+    setScope(initialProject ? `p:${initialProject}` : "");
+    setLink(null);
+    setCopied(false);
+  }, [open, defaultFrom, defaultTo, initialProject]);
 
   async function make() {
     if (!check.ok) return;
@@ -101,23 +103,15 @@ export function ShareTimesheet({
   }
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline">
-          <Send /> Share for sign-off
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="flex max-h-[80vh] w-96 max-w-[calc(100vw-2rem)] flex-col gap-4 overflow-y-auto"
-      >
-        <div>
-          <p className="font-medium">Send hours to a client</p>
-          <p className="text-muted-foreground text-sm">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-4 overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Send hours to a client</DialogTitle>
+          <DialogDescription>
             Makes a private link to a frozen copy of these hours (no rates or money). Your client can print it and
             approve it.
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
         {link ? (
           <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-3">
@@ -226,7 +220,7 @@ export function ShareTimesheet({
             </ul>
           </div>
         )}
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }

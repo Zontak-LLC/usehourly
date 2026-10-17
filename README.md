@@ -14,7 +14,7 @@
 - **Weekly timesheet.** Every project and every day in one editable grid. Fill several days at once, add more entries to a day, move an entry to another date.
 - **Month calendar** with per-project totals.
 - **Invoices.** Turn billable hours into a PDF invoice, track paid and unpaid, re-download any time.
-- **Annual report.** Hours, earnings, invoiced and received by quarter and month, ready for your accountant.
+- **Year summary.** Hours, earnings, invoiced and received by quarter and month, ready for your accountant.
 - **Export.** Excel for any week, month or custom date range (for example March 3 to April 20), and one zip with everything: every client, all time.
 - **Try it first.** "Try it with sample data" on the home page opens a throwaway account filled with a month of work. No sign-up; keep it with one click if you like it.
 - **Switching from Toggl or Clockify?** Import their CSV export from the Account page. Clients and projects are created for you, and importing the same file twice adds nothing.

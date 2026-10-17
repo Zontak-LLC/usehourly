@@ -71,7 +71,7 @@ export function DayEditorDialog({ date, onClose }: { date: string | null; onClos
               <p className="text-muted-foreground text-sm">
                 Add a client and project under{" "}
                 <Link href="/dashboard/clients" className="underline">
-                  Clients &amp; projects
+                  My work
                 </Link>{" "}
                 to log time.
               </p>
