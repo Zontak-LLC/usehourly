@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Zontak-LLC/usehourly",
+  "title": "UseHourly",
+  "description": "Time tracking for freelancers: log time, run timers, manage clients and projects, and create invoices.",
+  "version": "0.1.0",
+  "websiteUrl": "https://usehourly.app",
+  "repository": { "url": "https://github.com/Zontak-LLC/usehourly", "source": "github" },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://usehourly.app/api/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <personal access token>. Create one on Account > AI assistants at usehourly.app.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
