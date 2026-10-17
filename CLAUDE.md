@@ -109,6 +109,13 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - **Phone tap targets:** standalone links and options got taller hit areas (footer links, log in / sign up links, "Forgot your password?", the checkboxes on Account and the invoice builder, the Month project name). The page check no longer flags a link in the middle of a sentence (WCAG 2.5.8). The suite now reports 3 pieces of advice instead of 17.
 - **Landing pictures** are retaken from the real app: `LANDING_SHOTS=1 npx playwright test e2e/landing-shots.spec.ts --project=desktop` (sample-data demo, tall window, the latest weekday), then `python3 scripts/landing-images.py` (crops, pads, converts to webp with `cwebp`, prints the sizes for `src/app/(main)/page.tsx`). **Next caches optimised images by file name, so every retake needs a NEW name:** run with `LANDING_VERSION=v3` and update the `-v2` paths in `page.tsx` and the README.
 
+## Billing rounding (2026-10-17, issue #36, migration 0022)
+- Per client (`clients.round_step` 0/6/15/30, `round_mode` up|nearest, `round_min` minimum minutes per entry), edited under "Billing details" on My work. `lib/rounding.ts` `billedMinutes` rounds EACH entry (zero stays zero) inside `buildInvoice(entries, rounding)`, so the builder preview and `invoice.create` use the same math. Lines and detail carry billed minutes; the snapshot also stores `rounding` and `loggedMinutes` (only when a rule applies), and the PDF, the invoice link page and the builder preview say what was rounded. Stored entries are never changed.
+- Decision: the timesheet export and the sign-off sheet stay on raw logged time (rounding is a billing matter). Test: `billing-rounding-journey.test.ts`. Run `npm run d1:migrate:remote` BEFORE deploy for 0022 (CircleCI does it).
+
+## Day | Week | Month tabs (2026-10-17)
+- `components/view-tabs.tsx` is the switcher at the top of Today, Week and Month; each tab carries the date being viewed (`/dashboard/week?date=`, `/dashboard/month?month=`, `/dashboard/today?date=`).
+
 ## Landing page and brand
 - `/` is a public landing page (`src/app/(main)/page.tsx`); signed-in users are sent on to `/dashboard/today`. The rule lives in `src/lib/route-access.ts` (tested) and is applied by `src/proxy.ts`; `next.config.mjs` must NOT redirect `/` (it used to, and hid the page).
 - Its screenshots (`public/landing/*.webp`) are the real app, taken from a local demo freelancer: register through the UI, seed clients/projects/entries/invoices with `wrangler d1 execute --local`, screenshot Today/Week/Month/Report at 1440x900 @2x with the Next dev badge hidden, then delete the demo rows.

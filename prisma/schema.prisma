@@ -66,6 +66,10 @@ model Client {
   address    String?  // multi-line
   email      String?  // where invoices are sent; nothing is sent to it unless the freelancer sends something
   logo       String?  // data URL (png/jpeg), resized client-side
+  // Billing rounding, applied per entry when an invoice is built (0 = exact minutes). See lib/rounding.ts.
+  round_step Int      @default(0)
+  round_mode String   @default("up") // "up" | "nearest"
+  round_min  Int      @default(0)    // minimum billed minutes per entry (0 = none)
   archived   Boolean  @default(false)
   created_at DateTime @default(now())
 

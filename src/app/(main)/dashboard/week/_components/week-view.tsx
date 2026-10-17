@@ -13,6 +13,7 @@ import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ViewTabs } from "@/components/view-tabs";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration, parseDuration } from "@/lib/duration";
@@ -27,7 +28,7 @@ const dayLabel = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "nu
 const rangeLabel = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 const longDayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "short", day: "numeric" });
 
-export function WeekView({ initialProject }: { initialProject?: string }) {
+export function WeekView({ initialProject, initialDate }: { initialProject?: string; initialDate?: string }) {
   const utils = trpc.useUtils();
   const [today, setToday] = useState<string | null>(null);
   const [start, setStart] = useState<string | null>(null);
@@ -39,8 +40,8 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
   useEffect(() => {
     const t = toISODate(new Date());
     setToday(t);
-    setStart(startOfWeek(t));
-  }, []);
+    setStart(startOfWeek(initialDate ?? t));
+  }, [initialDate]);
 
   const end = start ? addDays(start, 6) : "";
   const entries = trpc.entry.list.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
@@ -108,6 +109,7 @@ export function WeekView({ initialProject }: { initialProject?: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+      <ViewTabs current="week" date={today && today >= start && today <= end ? today : start} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="font-semibold text-xl">Weekly timesheet</h1>

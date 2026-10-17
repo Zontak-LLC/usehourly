@@ -10,6 +10,7 @@ import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ViewTabs } from "@/components/view-tabs";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -99,6 +100,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+      <ViewTabs current="month" date={today && today >= first && today <= last ? today : first} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="font-semibold text-xl">{monthTitle.format(fromISODate(first))}</h1>

@@ -17,6 +17,7 @@ import { addDays, toISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
 import { buildInvoice, formatMoney, type InvoiceEntry } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
 import { trpc } from "@/lib/trpc";
 
 export function NewInvoiceView() {
@@ -60,12 +61,23 @@ export function NewInvoiceView() {
   const entries = trpc.entry.list.useQuery({ from, to }, { enabled: validRange });
 
   // Live preview uses the same math the server will snapshot.
+  const rounding: Rounding = useMemo(
+    () => ({
+      step: client?.round_step ?? 0,
+      mode: client?.round_mode === "nearest" ? "nearest" : "up",
+      min: client?.round_min ?? 0,
+    }),
+    [client?.round_step, client?.round_mode, client?.round_min],
+  );
   const totals = useMemo(
     () =>
       // Match by the project's client (not the active-project list) so archived projects count,
       // exactly as the server does.
-      buildInvoice(((entries.data ?? []) as unknown as InvoiceEntry[]).filter((e) => e.project.client_id === clientId)),
-    [entries.data, clientId],
+      buildInvoice(
+        ((entries.data ?? []) as unknown as InvoiceEntry[]).filter((e) => e.project.client_id === clientId),
+        rounding,
+      ),
+    [entries.data, clientId, rounding],
   );
   // A $0.00 invoice is never what anyone means: block it and say why.
   const nothingToBill = totals.lines.length > 0 && totals.totalCents === 0;
@@ -264,6 +276,17 @@ export function NewInvoiceView() {
               </table>
             )}
           </div>
+
+          {isRounding(rounding) && totals.lines.length > 0 && (
+            <p className="text-muted-foreground text-sm">
+              {describeRounding(rounding)} You logged {formatDecimalHours(totals.loggedMinutes)} h and will bill{" "}
+              {formatDecimalHours(totals.totalMinutes)} h. Change it under{" "}
+              <Link href="/dashboard/clients" className="underline">
+                My work
+              </Link>
+              .
+            </p>
+          )}
 
           {(totals.zeroRateProjects.length > 0 || totals.runningTimers > 0 || totals.skippedMinutes > 0) && (
             <ul className="flex flex-col gap-1 text-muted-foreground text-sm">

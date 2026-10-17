@@ -5,6 +5,7 @@ import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { assertWithinQuota } from "@/lib/quotas";
+import { isRounding, type Rounding } from "@/lib/rounding";
 
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
 import { protectedProcedure, router } from "../trpc";
@@ -171,7 +172,12 @@ export const invoiceRouter = router({
         },
         include: { project: true },
       });
-      const totals = buildInvoice(entries);
+      const rounding: Rounding = {
+        step: client.round_step ?? 0,
+        mode: client.round_mode === "nearest" ? "nearest" : "up",
+        min: client.round_min ?? 0,
+      };
+      const totals = buildInvoice(entries, rounding);
       if (totals.lines.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "No billable time for this client in that period." });
       }
@@ -219,6 +225,7 @@ export const invoiceRouter = router({
         detail: totals.detail,
         totalMinutes: totals.totalMinutes,
         totalCents: totals.totalCents,
+        ...(isRounding(rounding) ? { rounding, loggedMinutes: totals.loggedMinutes } : {}),
       };
 
       const snapshotText = JSON.stringify(snapshot);

@@ -49,6 +49,11 @@ function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
         legalName: String(fd.get("legalName") ?? ""),
         address: String(fd.get("address") ?? ""),
         email: String(fd.get("email") ?? "").trim(),
+        rounding: {
+          step: Number(fd.get("roundStep")),
+          mode: fd.get("roundMode") === "nearest" ? "nearest" : "up",
+          min: Number(fd.get("roundMin")),
+        },
         logo,
       });
       await Promise.all([utils.clients.list.invalidate(), utils.clients.get.invalidate({ id })]);
@@ -103,6 +108,46 @@ function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
         />
         <p className="text-muted-foreground text-xs">Kept private. Nothing is sent to it unless you send something.</p>
       </div>
+      <fieldset className="grid gap-1.5">
+        <legend className="font-medium text-sm">Round the time on invoices</legend>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <select
+            name="roundStep"
+            aria-label="Round to"
+            defaultValue={client.data.round_step}
+            className="h-9 rounded-lg border border-input bg-transparent px-2 dark:bg-input/30"
+          >
+            <option value={0}>Don't round</option>
+            <option value={6}>Every 6 minutes (0.1 h)</option>
+            <option value={15}>Every 15 minutes</option>
+            <option value={30}>Every 30 minutes</option>
+          </select>
+          <select
+            name="roundMode"
+            aria-label="Round up or to the nearest"
+            defaultValue={client.data.round_mode}
+            className="h-9 rounded-lg border border-input bg-transparent px-2 dark:bg-input/30"
+          >
+            <option value="up">Round up</option>
+            <option value="nearest">Round to the nearest</option>
+          </select>
+          <select
+            name="roundMin"
+            aria-label="Minimum per entry"
+            defaultValue={client.data.round_min}
+            className="h-9 rounded-lg border border-input bg-transparent px-2 dark:bg-input/30"
+          >
+            <option value={0}>No minimum</option>
+            <option value={15}>At least 15 min per entry</option>
+            <option value={30}>At least 30 min per entry</option>
+            <option value={60}>At least 1 h per entry</option>
+          </select>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Applies when you make an invoice, entry by entry. Your logged time never changes, and the invoice says what
+          was rounded.
+        </p>
+      </fieldset>
       <div className="grid gap-1.5">
         <Label htmlFor={`cl-${id}`}>Logo</Label>
         <div className="flex items-center gap-3">
