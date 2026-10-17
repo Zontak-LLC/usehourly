@@ -1,0 +1,29 @@
+/* 
+label: Lilac
+value: lilac
+*/
+
+/* Accent only: a soft lilac purple. */
+:root[data-theme-preset="lilac"] {
+  --primary: oklch(0.57 0.17 295);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.57 0.17 295);
+  --accent: oklch(0.95 0.03 295);
+  --chart-1: oklch(0.57 0.17 295);
+  --sidebar-primary: oklch(0.57 0.17 295);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.03 295);
+  --sidebar-ring: oklch(0.57 0.17 295);
+}
+
+.dark:root[data-theme-preset="lilac"] {
+  --primary: oklch(0.74 0.12 297);
+  --primary-foreground: oklch(0.22 0.04 295);
+  --ring: oklch(0.74 0.12 297);
+  --accent: oklch(0.32 0.05 295);
+  --chart-1: oklch(0.74 0.12 297);
+  --sidebar-primary: oklch(0.74 0.12 297);
+  --sidebar-primary-foreground: oklch(0.22 0.04 295);
+  --sidebar-accent: oklch(0.32 0.05 295);
+  --sidebar-ring: oklch(0.74 0.12 297);
+}

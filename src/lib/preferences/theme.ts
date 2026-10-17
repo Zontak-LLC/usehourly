@@ -44,6 +44,14 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
+    label: "Lilac",
+    value: "lilac",
+    primary: {
+      light: "oklch(0.57 0.17 295)",
+      dark: "oklch(0.74 0.12 297)",
+    },
+  },
+  {
     label: "Cream",
     value: "cream",
     primary: {
