@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
 import type { McpAuth } from "./auth";
+import { OUTPUT_SCHEMAS } from "./output-schemas";
 import {
   callerFor,
   describeError,
@@ -37,6 +38,7 @@ export function toolDefinitions() {
     title: t.title,
     description: t.description,
     inputSchema: inputSchemaFor(t.name),
+    outputSchema: outputSchemaFor(t.name),
     annotations: {
       title: t.title,
       readOnlyHint: t.access === "read",
@@ -87,6 +89,23 @@ function inputSchemaFor(name: string): Record<string, unknown> {
     const { $schema: _drop, ...rest } = generated;
     s = rest;
     schemaCache.set(name, s);
+  }
+  return s;
+}
+
+/** The JSON Schema for what a tool returns in structuredContent, computed once. */
+const outputCache = new Map<string, Record<string, unknown>>();
+function outputSchemaFor(name: string): Record<string, unknown> {
+  let s = outputCache.get(name);
+  if (!s) {
+    const schema = OUTPUT_SCHEMAS[name];
+    if (!schema) throw new Error(`Tool "${name}" has no output schema (add it to output-schemas.ts).`);
+    const { $schema: _drop, ...rest } = z.toJSONSchema(schema, { io: "output", unrepresentable: "any" }) as Record<
+      string,
+      unknown
+    >;
+    s = rest;
+    outputCache.set(name, s);
   }
   return s;
 }

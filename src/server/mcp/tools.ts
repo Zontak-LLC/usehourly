@@ -299,7 +299,7 @@ export const TOOLS: McpTool[] = [
       'Every active project with its client and hourly rate. Use the "label" ("Client / Project") or the id wherever a project is asked for. Set include_archived to also see archived ones.',
     access: "read",
     idempotent: true,
-    input: z.object({ include_archived: z.boolean().default(false) }),
+    input: z.object({ include_archived: z.boolean().default(false).describe("Also list archived projects") }),
     run: async (c, a) => {
       const active = await listProjects(c);
       if (!a.include_archived) return { projects: active };
@@ -373,7 +373,11 @@ export const TOOLS: McpTool[] = [
     access: "read",
     idempotent: true,
     input: z
-      .object({ from: date, to: date, project: projectRef.optional() })
+      .object({
+        from: date.describe("First day to include, YYYY-MM-DD"),
+        to: date.describe("Last day to include (inclusive), YYYY-MM-DD"),
+        project: projectRef.optional().describe('Only this project: id or "Client / Project"'),
+      })
       .refine((v) => v.from <= v.to, { message: "from must be on or before to." }),
     run: async (c, a) => {
       let rows = (await c.entry.list({ from: a.from, to: a.to })) as EntryRow[];
@@ -398,7 +402,10 @@ export const TOOLS: McpTool[] = [
     description: "Logged hours per project: all time and within a date range (for example this month).",
     access: "read",
     idempotent: true,
-    input: z.object({ from: date, to: date }),
+    input: z.object({
+      from: date.describe("First day of the range, YYYY-MM-DD"),
+      to: date.describe("Last day of the range (inclusive), YYYY-MM-DD"),
+    }),
     run: async (c, a) => {
       const [totals, projects] = await Promise.all([c.project.totals(a), listProjects(c)]);
       return {
@@ -438,7 +445,7 @@ export const TOOLS: McpTool[] = [
       "One calendar year: hours and earnings by quarter, month, client and project, plus invoices issued and paid (cash and accrual views).",
     access: "read",
     idempotent: true,
-    input: z.object({ year: z.number().int().min(2000).max(2100) }),
+    input: z.object({ year: z.number().int().min(2000).max(2100).describe("Calendar year, e.g. 2026") }),
     run: (c, a) => c.report.annual(a),
   }),
 
@@ -455,11 +462,14 @@ export const TOOLS: McpTool[] = [
         .max(100)
         .optional()
         .describe("Matches number, client, notes, project names and entry notes"),
-      client: clientRef.optional(),
-      status: z.enum(["all", "unpaid", "paid"]).default("all"),
-      issued_from: date.optional(),
-      issued_to: date.optional(),
-      sort: z.enum(["newest", "oldest", "highest", "lowest"]).default("newest"),
+      client: clientRef.optional().describe("Only this client: id or exact name"),
+      status: z.enum(["all", "unpaid", "paid"]).default("all").describe("Filter by whether the invoice has been paid"),
+      issued_from: date.describe("Only invoices issued on or after this date").optional(),
+      issued_to: date.describe("Only invoices issued on or before this date").optional(),
+      sort: z
+        .enum(["newest", "oldest", "highest", "lowest"])
+        .default("newest")
+        .describe("newest/oldest by issue date, highest/lowest by total"),
     }),
     run: async (c, a) => {
       const clientId = a.client ? (await resolveClient(c, a.client)).id : undefined;
@@ -487,7 +497,10 @@ export const TOOLS: McpTool[] = [
       "The frozen invoice as issued: seller, client, lines per project and totals. Set include_detail for the per-entry breakdown. Logos are left out.",
     access: "read",
     idempotent: true,
-    input: z.object({ invoice: invoiceRef, include_detail: z.boolean().default(false) }),
+    input: z.object({
+      invoice: invoiceRef,
+      include_detail: z.boolean().default(false).describe("Include the per-entry breakdown under the lines"),
+    }),
     run: async (c, a) => {
       const id = await findInvoiceId(c, a.invoice);
       const { snapshot } = await c.invoice.get({ id });
@@ -503,7 +516,9 @@ export const TOOLS: McpTool[] = [
     description: "The suggested next invoice number for a year, such as INV-2026-004.",
     access: "read",
     idempotent: true,
-    input: z.object({ year: z.number().int().min(2000).max(2100) }),
+    input: z.object({
+      year: z.number().int().min(2000).max(2100).describe("Year of the invoice issue date, e.g. 2026"),
+    }),
     run: (c, a) => c.invoice.nextNumber(a),
   }),
 
@@ -513,7 +528,7 @@ export const TOOLS: McpTool[] = [
     description: 'Turn text like "1h30", "1:30" or "2.5" into whole minutes, the way UseHourly reads it.',
     access: "read",
     idempotent: true,
-    input: z.object({ text: durationText }),
+    input: z.object({ text: durationText.describe("The duration text to read, e.g. 1h30") }),
     run: async (_c, a) => {
       const m = parseDuration(a.text);
       return m ? { minutes: m, hours: hours(m) } : { minutes: null, error: "Couldn't read that duration." };
@@ -530,10 +545,10 @@ export const TOOLS: McpTool[] = [
     input: z
       .object({
         project: projectRef,
-        date,
-        minutes: minutesInt.optional(),
-        duration: durationText.optional(),
-        note: noteText.default(""),
+        date: date.describe("The day the work was done, YYYY-MM-DD"),
+        minutes: minutesInt.optional().describe("Whole minutes worked (use this or duration)"),
+        duration: durationText.optional().describe('Duration text such as "1h30" (use this or minutes)'),
+        note: noteText.default("").describe("What was done (max 2,000 characters)"),
       })
       .refine(needsDuration, { message: "Give minutes or a duration." }),
     run: async (c, a) => {
@@ -558,11 +573,14 @@ export const TOOLS: McpTool[] = [
     input: z
       .object({
         project: projectRef,
-        dates: z.array(date).min(1).max(31),
-        minutes: minutesInt.optional(),
-        duration: durationText.optional(),
-        note: noteText.default(""),
-        skip_existing: z.boolean().default(true),
+        dates: z.array(date).min(1).max(31).describe("The days to log, YYYY-MM-DD (1 to 31 dates)"),
+        minutes: minutesInt.optional().describe("Whole minutes per day (use this or duration)"),
+        duration: durationText.optional().describe('Duration text per day, such as "1h30" (use this or minutes)'),
+        note: noteText.default("").describe("What was done (max 2,000 characters)"),
+        skip_existing: z
+          .boolean()
+          .default(true)
+          .describe("Skip days that already have time for this project (default true)"),
       })
       .refine(needsDuration, { message: "Give minutes or a duration." }),
     run: async (c, a) => {
@@ -589,10 +607,16 @@ export const TOOLS: McpTool[] = [
     input: z.object({
       project: projectRef,
       cells: z
-        .array(z.object({ date, minutes: z.number().int().min(0).max(1440) }))
+        .array(
+          z.object({
+            date: date.describe("The day, YYYY-MM-DD"),
+            minutes: z.number().int().min(0).max(1440).describe("Total minutes for that day; 0 clears it"),
+          }),
+        )
         .min(1)
-        .max(31),
-      note: noteText.optional(),
+        .max(31)
+        .describe("One item per day to set (1 to 31 days)"),
+      note: noteText.optional().describe("Description applied to every day written"),
     }),
     run: async (c, a) => {
       const p = await resolveProject(c, a.project);
@@ -609,12 +633,12 @@ export const TOOLS: McpTool[] = [
     idempotent: true,
     input: z
       .object({
-        id: z.string().min(1),
-        project: projectRef.optional(),
-        date: date.optional(),
-        minutes: minutesInt.optional(),
-        duration: durationText.optional(),
-        note: noteText.optional(),
+        id: z.string().min(1).describe("The entry id (from list_entries)"),
+        project: projectRef.optional().describe('Move the entry to this project: id or "Client / Project"'),
+        date: date.optional().describe("Move the entry to this day, YYYY-MM-DD"),
+        minutes: minutesInt.optional().describe("New whole minutes (use this or duration)"),
+        duration: durationText.optional().describe('New duration text such as "1h30" (use this or minutes)'),
+        note: noteText.optional().describe("New description (max 2,000 characters)"),
       })
       .refine((v) => [v.project, v.date, v.minutes, v.duration, v.note].some((x) => x !== undefined), {
         message: "Pass at least one field to change.",
@@ -639,7 +663,13 @@ export const TOOLS: McpTool[] = [
       "Fold several entries (same project, same day) into the first one: minutes are added and notes joined. The others are removed.",
     access: "write",
     destructive: true,
-    input: z.object({ ids: z.array(z.string().min(1)).min(2).max(20) }),
+    input: z.object({
+      ids: z
+        .array(z.string().min(1))
+        .min(2)
+        .max(20)
+        .describe("Ids of the entries to merge; the first one is kept (2 to 20, same project and day)"),
+    }),
     run: (c, a) => c.entry.merge(a),
   }),
 
@@ -649,7 +679,7 @@ export const TOOLS: McpTool[] = [
     description: "Permanently delete one time entry. Confirm with the user before calling this.",
     access: "write",
     destructive: true,
-    input: z.object({ id: z.string().min(1) }),
+    input: z.object({ id: z.string().min(1).describe("The entry id (from list_entries)") }),
     run: (c, a) => c.entry.delete(a),
   }),
 
@@ -660,7 +690,11 @@ export const TOOLS: McpTool[] = [
     description:
       "Start a timer on a project. A timer that is already running is stopped first, so only one runs at a time.",
     access: "write",
-    input: z.object({ project: projectRef, date, note: noteText.default("") }),
+    input: z.object({
+      project: projectRef,
+      date: date.describe("The day the timer starts on, YYYY-MM-DD"),
+      note: noteText.default("").describe("What is being worked on (max 2,000 characters)"),
+    }),
     run: async (c, a) => {
       const p = await resolveProject(c, a.project);
       const t = (await c.entry.start({ projectId: p.id, date: a.date, note: a.note })) as EntryRow;
@@ -684,7 +718,7 @@ export const TOOLS: McpTool[] = [
     description: "Add a client. Names are unique per account.",
     access: "write",
     input: z.object({
-      name: z.string().trim().min(1).max(80),
+      name: z.string().trim().min(1).max(80).describe("The client's name (unique per account, max 80 characters)"),
       color: z
         .string()
         .regex(/^#[0-9a-fA-F]{6}$/)
@@ -707,7 +741,7 @@ export const TOOLS: McpTool[] = [
     input: z
       .object({
         client: clientRef,
-        name: z.string().trim().min(1).max(80).optional(),
+        name: z.string().trim().min(1).max(80).optional().describe("New display name"),
         legal_name: z.string().trim().max(150).optional().describe("Empty string clears it"),
         address: z.string().trim().max(300).optional().describe("Empty string clears it"),
       })
@@ -749,9 +783,9 @@ export const TOOLS: McpTool[] = [
     access: "write",
     input: z.object({
       client: clientRef,
-      name: z.string().trim().min(1).max(80),
-      hourly_rate: dollars.default(0),
-      billable: z.boolean().default(true),
+      name: z.string().trim().min(1).max(80).describe("The project's name (max 80 characters)"),
+      hourly_rate: dollars.default(0).describe("Dollars per hour, e.g. 85 or 62.5 (default 0)"),
+      billable: z.boolean().default(true).describe("Whether the time goes on invoices (default true)"),
     }),
     run: async (c, a) => {
       const cl = await resolveClient(c, a.client);
@@ -782,10 +816,10 @@ export const TOOLS: McpTool[] = [
     input: z
       .object({
         project: projectRef,
-        name: z.string().trim().min(1).max(80).optional(),
+        name: z.string().trim().min(1).max(80).optional().describe("New project name"),
         client: clientRef.optional().describe("Move the project to this client"),
-        hourly_rate: dollars.optional(),
-        billable: z.boolean().optional(),
+        hourly_rate: dollars.optional().describe("New dollars per hour, e.g. 85 or 62.5"),
+        billable: z.boolean().optional().describe("Whether the time goes on invoices"),
       })
       .refine((v) => [v.name, v.client, v.hourly_rate, v.billable].some((x) => x !== undefined), {
         message: "Pass at least one field to change.",
@@ -863,10 +897,16 @@ export const TOOLS: McpTool[] = [
         client: clientRef,
         from: date.describe("First day of the billed period"),
         to: date.describe("Last day of the billed period"),
-        issue_date: date,
-        due_date: date.nullable().optional(),
-        number: z.string().trim().min(1).max(40).optional(),
-        notes: z.string().trim().max(1000).default(""),
+        issue_date: date.describe("The invoice date, YYYY-MM-DD"),
+        due_date: date.nullable().optional().describe("Payment due date, YYYY-MM-DD, or null for none"),
+        number: z
+          .string()
+          .trim()
+          .min(1)
+          .max(40)
+          .optional()
+          .describe("Invoice number; defaults to the next INV-<year>-NNN"),
+        notes: z.string().trim().max(1000).default("").describe("Notes printed on the invoice (max 1,000 characters)"),
         include_detail: z.boolean().default(true).describe("Print each entry under the lines"),
         compact_notes: z.boolean().default(false).describe("Shorten entry descriptions to about 100 characters"),
       })
