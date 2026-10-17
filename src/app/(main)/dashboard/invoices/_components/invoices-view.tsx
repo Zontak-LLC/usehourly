@@ -57,7 +57,7 @@ function PaidPopover({
           aria-label={paidDate ? `Edit payment of ${number}` : `Mark ${number} paid`}
           title={paidDate ? "Edit payment" : "Mark paid"}
         >
-          <CircleCheck className={paidDate ? "text-emerald-600" : ""} />
+          <CircleCheck className={paidDate ? "text-success" : ""} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 space-y-3" align="end">
@@ -159,7 +159,7 @@ export function InvoicesView() {
   const statusOf = (i: Row) => (
     <>
       {i.paid_date ? (
-        <span className="text-emerald-700 dark:text-emerald-400">Paid {fmt(i.paid_date)}</span>
+        <span className="text-success">Paid {fmt(i.paid_date)}</span>
       ) : today && i.due_date && i.due_date < today ? (
         <span className="text-destructive">Overdue · due {fmt(i.due_date)}</span>
       ) : (

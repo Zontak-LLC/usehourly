@@ -171,7 +171,7 @@ export function AccountView() {
               <Label htmlFor="email">Email</Label>
               <Input id="email" value={me.data.email} disabled />
               {me.data.email_verified_at ? (
-                <p className="text-emerald-700 text-xs dark:text-emerald-400">Email confirmed.</p>
+                <p className="text-success text-xs">Email confirmed.</p>
               ) : emailEnabled.data?.enabled ? (
                 <p className="text-muted-foreground text-xs">
                   Not confirmed yet.{" "}

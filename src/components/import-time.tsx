@@ -227,7 +227,7 @@ export function ImportTime() {
       )}
 
       {outcome && (
-        <p role="status" className="rounded-lg border border-emerald-600/40 bg-emerald-600/10 p-3 text-sm">
+        <p role="status" className="rounded-lg border border-success/40 bg-success-soft p-3 text-sm">
           {outcome}
         </p>
       )}
