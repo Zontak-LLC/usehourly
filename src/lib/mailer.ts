@@ -51,3 +51,26 @@ export function resetPasswordMessage(to: string, link: string): MailMessage {
     text: `Hi,\n\nSomeone asked to reset the password for this UseHourly account. To choose a new one, open:\n\n${link}\n\nThe link works for 1 hour and only once. If this was not you, you can ignore this message and your password stays the same.\n\nUseHourly`,
   };
 }
+
+/** Text that came from a stranger (a client's typed name) made safe for a subject line: no line breaks or control characters. */
+const oneLine = (value: string, max: number) =>
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
+  value
+    .replace(/[\u0000-\u001f\u007f\u2028\u2029]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+
+/** Tells the freelancer a client approved a shared timesheet. Plain text, like every other message. */
+export function timesheetApprovedMessage(
+  to: string,
+  d: { approver: string; title: string; note: string | null; link: string },
+): MailMessage {
+  const approver = oneLine(d.approver, 80) || "Your client";
+  const note = d.note ? `\nThey added a note:\n\n"${d.note.slice(0, 500)}"\n` : "";
+  return {
+    to,
+    subject: `${approver} approved your timesheet`,
+    text: `Hi,\n\n${approver} approved the hours you shared:\n\n${oneLine(d.title, 160)}\n${note}\nYou can see all your shared timesheets here:\n\n${d.link}\n\nUseHourly`,
+  };
+}

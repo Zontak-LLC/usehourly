@@ -5,6 +5,7 @@ import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { hashToken, newToken } from "@/lib/email-token";
 import { describeRange } from "@/lib/export-range";
+import { timesheetApprovedMessage } from "@/lib/mailer";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 import {
   approvalSchema,
@@ -17,7 +18,7 @@ import {
 } from "@/lib/timesheet-share";
 
 import { findShareByToken } from "../timesheet-share";
-import { protectedProcedure, publicProcedure, router } from "../trpc";
+import { type Context, protectedProcedure, publicProcedure, router } from "../trpc";
 
 const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 const nowSeconds = () => Math.floor(Date.now() / 1000);
@@ -34,6 +35,36 @@ const forSheet = {
     },
   },
 } as const;
+
+/**
+ * Lets the freelancer know, once, that their client approved. Best effort: a failed email never undoes or fails the
+ * approval. It goes only to an address the owner confirmed and that has not bounced, so nobody can use a sheet to
+ * send mail to an address they merely registered.
+ */
+async function tellOwner(
+  ctx: Pick<Context, "prisma" | "mailer" | "baseUrl">,
+  share: { id: string; user_id: string; title: string },
+  input: { name: string; note?: string },
+) {
+  if (!ctx.mailer) return;
+  try {
+    const owner = await ctx.prisma.authUser.findUnique({
+      where: { id: share.user_id },
+      select: { email: true, email_verified_at: true, email_bounced_at: true, is_demo: true },
+    });
+    if (!owner || owner.is_demo || owner.email_verified_at === null || owner.email_bounced_at !== null) return;
+    await ctx.mailer.send(
+      timesheetApprovedMessage(owner.email, {
+        approver: input.name,
+        title: share.title,
+        note: input.note || null,
+        link: `${ctx.baseUrl ?? ""}/dashboard/week`,
+      }),
+    );
+  } catch (err) {
+    console.error("approval email failed:", err);
+  }
+}
 
 export const timesheetShareRouter = router({
   /**
@@ -198,6 +229,7 @@ export const timesheetShareRouter = router({
       if (claimed.count === 0) {
         throw new TRPCError({ code: "CONFLICT", message: "This timesheet can no longer be approved." });
       }
+      await tellOwner(ctx, share, input);
       return { approvedAt: now };
     }),
 });

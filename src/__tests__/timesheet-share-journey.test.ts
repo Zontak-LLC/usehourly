@@ -73,10 +73,37 @@ function world() {
     e("u1", "p1", "2026-11-30", 600, "outside the range"),
   ];
   const shares: Share[] = [];
-  const users: Record<string, { name: string; business_name: string | null }> = {
-    u1: { name: "Ada", business_name: "Ada Makes Sites" },
-    u2: { name: "Bob", business_name: null },
+  const users: Record<
+    string,
+    {
+      name: string;
+      business_name: string | null;
+      email: string;
+      email_verified_at: Date | null;
+      email_bounced_at: Date | null;
+      is_demo: boolean;
+    }
+  > = {
+    u1: {
+      name: "Ada",
+      business_name: "Ada Makes Sites",
+      email: "ada@example.com",
+      email_verified_at: new Date("2026-01-01"),
+      email_bounced_at: null,
+      is_demo: false,
+    },
+    u2: {
+      name: "Bob",
+      business_name: null,
+      email: "bob@example.com",
+      email_verified_at: null,
+      email_bounced_at: null,
+      is_demo: false,
+    },
   };
+  const sent: { to: string; subject: string; text: string }[] = [];
+  let mailerOn = true;
+  let mailFails = false;
   const limiter = memoryRateLimit();
   let n = 0;
   const matches = (s: Share, where: Record<string, unknown>) =>
@@ -165,8 +192,33 @@ function world() {
       session: id ? ({ user: { id, ...(opts.demo ? { demo: true } : {}) }, expires: "" } as never) : null,
       prisma: prisma as never,
       ip: opts.ip ?? "203.0.113.5",
+      mailer: mailerOn
+        ? {
+            send: async (m: { to: string; subject: string; text: string }) => {
+              if (mailFails) throw new Error("the email service is down");
+              sent.push(m);
+            },
+          }
+        : null,
+      baseUrl: "https://usehourly.app",
     } as never);
-  return { entries, shares, prisma, as, limiter };
+  return {
+    entries,
+    shares,
+    prisma,
+    as,
+    limiter,
+    users,
+    sent,
+    mailer: {
+      off: () => {
+        mailerOn = false;
+      },
+      failing: () => {
+        mailFails = true;
+      },
+    },
+  };
 }
 
 const range = { from: "2026-10-12", to: "2026-10-18" };
@@ -355,6 +407,68 @@ describe("the client approves", () => {
     await expect(anon("198.51.102.1").timesheetShare.approve({ token, name: "Kirk" })).rejects.toThrow(
       /Too many tries/,
     );
+  });
+});
+
+describe("the owner is told when a client approves", () => {
+  const make = async () => {
+    const w = world();
+    const { token } = await w.as("u1").timesheetShare.create({ ...range });
+    return { w, token, anon: () => w.as(null, { ip: "198.51.100.9" }) };
+  };
+
+  it("emails the owner once, with the name, the sheet and a link to their shared timesheets", async () => {
+    const { w, token, anon } = await make();
+    await anon().timesheetShare.approve({ token, name: "Kirk Smith", note: "All good, thanks" });
+    expect(w.sent).toHaveLength(1);
+    expect(w.sent[0].to).toBe("ada@example.com");
+    expect(w.sent[0].subject).toBe("Kirk Smith approved your timesheet");
+    expect(w.sent[0].text).toContain("All clients");
+    expect(w.sent[0].text).toContain("All good, thanks");
+    expect(w.sent[0].text).toContain("https://usehourly.app/dashboard/week");
+    expect(w.sent[0].text).not.toContain(token); // the private link itself is never in the email
+    // a second attempt is refused and sends nothing more
+    await expect(anon().timesheetShare.approve({ token, name: "Kirk Smith" })).rejects.toThrow();
+    expect(w.sent).toHaveLength(1);
+  });
+
+  it("cleans a stranger's name so it cannot break the subject line", async () => {
+    const { w, token, anon } = await make();
+    await anon().timesheetShare.approve({ token, name: "Kirk\r\nBcc: evil@example.com\u2028 Smith" });
+    expect(w.sent[0].subject).not.toMatch(/[\r\n\u2028]/);
+    expect(w.sent[0].subject).toBe("Kirk Bcc: evil@example.com Smith approved your timesheet");
+  });
+
+  it("does not email an address the owner never confirmed, one that bounced, or a sample account", async () => {
+    const { w, token, anon } = await make();
+    w.users.u1.email_verified_at = null;
+    await anon().timesheetShare.approve({ token, name: "Kirk" });
+    expect(w.sent).toHaveLength(0);
+
+    const b = await make();
+    b.w.users.u1.email_bounced_at = new Date();
+    await b.anon().timesheetShare.approve({ token: b.token, name: "Kirk" });
+    expect(b.w.sent).toHaveLength(0);
+
+    const c = await make();
+    c.w.users.u1.is_demo = true;
+    await c.anon().timesheetShare.approve({ token: c.token, name: "Kirk" });
+    expect(c.w.sent).toHaveLength(0);
+  });
+
+  it("still records the approval when email is not set up or the email service fails", async () => {
+    const a = await make();
+    a.w.mailer.off();
+    await a.anon().timesheetShare.approve({ token: a.token, name: "Kirk" });
+    expect(a.w.shares[0].approved_name).toBe("Kirk");
+
+    const b = await make();
+    b.w.mailer.failing();
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await b.anon().timesheetShare.approve({ token: b.token, name: "Kirk" });
+    expect(b.w.shares[0].approved_name).toBe("Kirk");
+    expect(quiet).toHaveBeenCalledWith(expect.stringContaining("approval email failed"), expect.any(Error));
+    quiet.mockRestore();
   });
 });
 
