@@ -7,6 +7,7 @@
  * - `/auth/*` are the log-in and create-account pages: public, but pointless once signed in.
  * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off` and the app manifest are public for everyone, signed in or not.
  * - `/timesheet/<token>` is a private link a freelancer sends a client for sign-off: public for everyone, protected by the unguessable token.
+ * - `/invoice/<token>` is a private link a freelancer sends a client to view an invoice: public for everyone, protected by the unguessable token.
  * - `/.well-known/*` is public (the MCP registry reads its domain-verification file there).
  * - everything else needs a signed-in user.
  */
@@ -28,7 +29,12 @@ const PUBLIC_FOR_EVERYONE = new Set([
 ]);
 
 export function accessDecision(pathname: string, signedIn: boolean): AccessDecision {
-  if (PUBLIC_FOR_EVERYONE.has(pathname) || pathname.startsWith("/.well-known/") || pathname.startsWith("/timesheet/")) {
+  if (
+    PUBLIC_FOR_EVERYONE.has(pathname) ||
+    pathname.startsWith("/.well-known/") ||
+    pathname.startsWith("/timesheet/") ||
+    pathname.startsWith("/invoice/")
+  ) {
     return "allow";
   }
   const isLanding = pathname === "/";

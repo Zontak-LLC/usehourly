@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { isDemoSession } from "@/lib/demo";
+import { emailField } from "@/lib/email";
 import { assertWithinQuota } from "@/lib/quotas";
 
 import { logoSchema } from "../logo-schema";
@@ -24,7 +25,7 @@ export const clientRouter = router({
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const c = await ctx.prisma.client.findFirst({
       where: { id: input.id, user_id: ctx.userId },
-      select: { id: true, name: true, legal_name: true, address: true, logo: true },
+      select: { id: true, name: true, legal_name: true, address: true, email: true, logo: true },
     });
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
     return c;
@@ -38,6 +39,8 @@ export const clientRouter = router({
         name: z.string().trim().min(1).max(80),
         legalName: z.string().trim().max(150),
         address: z.string().trim().max(300),
+        // Where this client's invoices are sent. Left out = unchanged; empty = removed.
+        email: z.union([z.literal(""), emailField]).optional(),
         logo: logoSchema,
       }),
     )
@@ -54,6 +57,7 @@ export const clientRouter = router({
           name: input.name,
           legal_name: input.legalName || null,
           address: input.address || null,
+          ...(input.email === undefined ? {} : { email: input.email || null }),
           logo: input.logo,
         },
         select: { id: true },

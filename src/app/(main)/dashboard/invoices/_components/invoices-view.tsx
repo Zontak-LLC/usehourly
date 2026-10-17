@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CircleCheck, Download, FileText, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ShareInvoice } from "@/components/share-invoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -188,6 +189,7 @@ export function InvoicesView() {
       >
         <Download />
       </Button>
+      <ShareInvoice invoiceId={i.id} number={i.number} />
       <Button
         size="icon"
         variant="ghost"

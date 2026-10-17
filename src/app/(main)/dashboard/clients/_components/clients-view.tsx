@@ -48,6 +48,7 @@ function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
         name: String(fd.get("name")),
         legalName: String(fd.get("legalName") ?? ""),
         address: String(fd.get("address") ?? ""),
+        email: String(fd.get("email") ?? "").trim(),
         logo,
       });
       await Promise.all([utils.clients.list.invalidate(), utils.clients.get.invalidate({ id })]);
@@ -88,6 +89,19 @@ function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
           maxLength={300}
           placeholder={"500 Market St\nSan Francisco, CA 94105"}
         />
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor={`ce-${id}`}>Email (where you send invoices)</Label>
+        <Input
+          id={`ce-${id}`}
+          name="email"
+          type="email"
+          defaultValue={client.data.email ?? ""}
+          placeholder="accounts@client.com"
+          maxLength={254}
+          autoComplete="off"
+        />
+        <p className="text-muted-foreground text-xs">Kept private. Nothing is sent to it unless you send something.</p>
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`cl-${id}`}>Logo</Label>
