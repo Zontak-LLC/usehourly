@@ -5,10 +5,10 @@ import { useState } from "react";
 import { Check, ChevronDown, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
 
@@ -134,9 +134,9 @@ export function EntryRow({ entry }: { entry: EntryData }) {
                 </optgroup>
               ))}
             </select>
-            <Textarea
+            <NoteTextarea
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={setNote}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
@@ -147,7 +147,6 @@ export function EntryRow({ entry }: { entry: EntryData }) {
               aria-label="Note"
               rows={1}
               className="min-h-8 resize-none py-1"
-              maxLength={500}
             />
           </div>
         ) : (

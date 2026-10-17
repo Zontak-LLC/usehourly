@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { isLongNote } from "@/lib/notes";
 import type { SheetEntry } from "@/lib/timesheet";
 import { paginate, searchWorkItems } from "@/lib/work-items";
 
@@ -28,6 +29,14 @@ export function WorkItems({
   period?: string;
 }) {
   const logos = useProjectLogos();
+  // Long notes fold to two lines; the ids here are the ones the user opened.
+  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
@@ -79,7 +88,11 @@ export function WorkItems({
                     <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
                   </span>
                   {e.note ? (
-                    <span className="mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm">
+                    <span
+                      className={`mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm ${
+                        isLongNote(e.note) && !open.has(e.id) ? "line-clamp-2" : ""
+                      }`}
+                    >
                       {e.note}
                     </span>
                   ) : (
@@ -90,6 +103,16 @@ export function WorkItems({
                   {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
                 </span>
               </button>
+              {isLongNote(e.note) && (
+                <button
+                  type="button"
+                  onClick={() => toggle(e.id)}
+                  aria-expanded={open.has(e.id)}
+                  className="mb-2 pl-[7.75rem] text-primary text-xs hover:underline"
+                >
+                  {open.has(e.id) ? "Show less" : "Show more"}
+                </button>
+              )}
             </li>
           ))}
         </ul>

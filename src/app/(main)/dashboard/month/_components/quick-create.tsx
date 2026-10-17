@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { toast } from "sonner";
 
+import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import type { SheetEntry } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
@@ -168,13 +168,12 @@ export function QuickCreate({
           aria-invalid={invalid}
           className="h-9"
         />
-        <Textarea
+        <NoteTextarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={setNote}
           placeholder="What did you work on? (same note on every day)"
           aria-label="Description of work"
           rows={1}
-          maxLength={500}
           className="min-h-9 resize-none py-1.5"
         />
       </div>

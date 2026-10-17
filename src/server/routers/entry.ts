@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { DATE_RE } from "@/lib/dates";
 import { parseDuration } from "@/lib/duration";
+import { NOTE_MAX } from "@/lib/notes";
 
 import { protectedProcedure, router } from "../trpc";
 
@@ -12,7 +13,7 @@ const minutesSchema = z
   .int()
   .min(1)
   .max(24 * 60);
-const noteSchema = z.string().trim().max(500).default("");
+const noteSchema = z.string().trim().max(NOTE_MAX).default("");
 
 // Logos are large; they travel separately (project.logos / clients.get), never with entries.
 const withProject = {
@@ -62,7 +63,7 @@ export const entryRouter = router({
         projectId: z.string().optional(),
         date: dateSchema.optional(),
         minutes: minutesSchema.optional(),
-        note: z.string().trim().max(500).optional(),
+        note: z.string().trim().max(NOTE_MAX).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -108,7 +109,7 @@ export const entryRouter = router({
           .max(31),
         // Description applied to every day this call writes. Left out (or blank), existing
         // descriptions are never touched.
-        note: z.string().trim().max(500).optional(),
+        note: z.string().trim().max(NOTE_MAX).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

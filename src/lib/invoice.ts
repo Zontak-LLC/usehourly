@@ -97,6 +97,8 @@ export type InvoiceSnapshot = {
   periodTo: string;
   notes: string;
   includeDetail: boolean;
+  /** Line items show only the first line of each description (full text stays in the time detail). */
+  compactNotes?: boolean;
   lines: InvoiceLine[];
   detail: InvoiceDetailRow[];
   totalMinutes: number;
