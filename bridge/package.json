@@ -1,0 +1,12 @@
+{
+  "name": "usehourly-mcp",
+  "version": "1.0.0",
+  "description": "stdio bridge to the UseHourly MCP server (https://usehourly.app/api/mcp) for MCP clients that cannot use remote HTTP",
+  "type": "module",
+  "bin": { "usehourly-mcp": "index.mjs" },
+  "files": ["index.mjs", "catalog.json", "README.md"],
+  "engines": { "node": ">=18" },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/Zontak-LLC/usehourly.git", "directory": "bridge" },
+  "homepage": "https://usehourly.app"
+}

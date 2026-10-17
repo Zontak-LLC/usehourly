@@ -19,7 +19,8 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
-    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote"
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "mcp:catalog": "UPDATE_MCP_CATALOG=1 vitest run src/__tests__/mcp-bridge.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-d1": "^7.4.1",

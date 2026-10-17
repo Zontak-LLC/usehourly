@@ -23,7 +23,7 @@ import {
 export const SERVER_INFO = { name: "usehourly", title: "UseHourly", version: "1.0.0" };
 export const SUPPORTED_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"] as const;
 
-const INSTRUCTIONS = [
+export const INSTRUCTIONS = [
   "UseHourly tracks a freelancer's time. Time is whole minutes; dates are local calendar dates (YYYY-MM-DD).",
   "The server runs in UTC and does not know the user's today: always pass the date you mean.",
   'Name projects as "Client / Project" or by id (list_projects shows both). Money is in dollars.',
@@ -47,6 +47,39 @@ export function toolDefinitions() {
       openWorldHint: false,
     },
   }));
+}
+
+/** The prompt list as clients see it. */
+export function promptDefinitions() {
+  return PROMPTS.map(({ name, title, description, arguments: args }) => ({
+    name,
+    title,
+    description,
+    arguments: args,
+  }));
+}
+
+export const CAPABILITIES = {
+  tools: { listChanged: false },
+  resources: { listChanged: false },
+  prompts: { listChanged: false },
+};
+
+/**
+ * Everything a client can learn without calling a tool. The stdio bridge (bridge/) ships this as
+ * catalog.json so it can answer the handshake and the lists offline; a test keeps the file in step.
+ */
+export function mcpCatalog() {
+  return {
+    protocolVersions: [...SUPPORTED_VERSIONS],
+    serverInfo: SERVER_INFO,
+    instructions: INSTRUCTIONS,
+    capabilities: CAPABILITIES,
+    tools: toolDefinitions(),
+    resources: RESOURCES,
+    resourceTemplates: RESOURCE_TEMPLATES,
+    prompts: promptDefinitions(),
+  };
 }
 
 const ERR = {
@@ -169,11 +202,7 @@ async function dispatch(
       return {
         result: {
           protocolVersion: version,
-          capabilities: {
-            tools: { listChanged: false },
-            resources: { listChanged: false },
-            prompts: { listChanged: false },
-          },
+          capabilities: CAPABILITIES,
           serverInfo: SERVER_INFO,
           instructions: INSTRUCTIONS,
         },
@@ -213,16 +242,7 @@ async function dispatch(
     }
 
     case "prompts/list":
-      return {
-        result: {
-          prompts: PROMPTS.map(({ name, title, description, arguments: args }) => ({
-            name,
-            title,
-            description,
-            arguments: args,
-          })),
-        },
-      };
+      return { result: { prompts: promptDefinitions() } };
     case "prompts/get": {
       const p = z
         .object({ name: z.string(), arguments: z.record(z.string(), z.string()).optional() })
