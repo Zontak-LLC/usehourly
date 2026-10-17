@@ -79,7 +79,7 @@ export function TodayView() {
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : hasProjects ? (
-        <QuickAdd date={date} timerRunning={!!running.data} />
+        <QuickAdd date={date} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} />
       ) : (
         <FirstRun />
       )}
@@ -99,7 +99,7 @@ export function TodayView() {
         <Skeleton className="h-32 w-full" />
       ) : dayEntries.length === 0 ? (
         <p className="py-10 text-center text-muted-foreground text-sm">
-          Nothing logged yet. Tap <span className="font-medium">Start timer</span> or pick a time above.
+          Nothing logged yet. Type a time above, or start a timer.
         </p>
       ) : (
         <>
