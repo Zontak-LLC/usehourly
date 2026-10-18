@@ -7,7 +7,7 @@ import { Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ALL_AS_CHIPS, chipProjects, type PickerProject, pushRecentId, searchGroups } from "@/lib/project-picker";
+import { ALL_AS_CHIPS, chipProjects, type PickerProject, pushRecentId, searchProjects } from "@/lib/project-picker";
 
 const RECENT_KEY = "hourly:recentProjects";
 /** One row from tablet width up when every project is a chip; full class names so Tailwind keeps them. */
@@ -36,7 +36,7 @@ export function rememberRecentProject(id: string) {
 }
 
 /**
- * Pick one project. Up to four projects are all shown as chips. With more, the chips are the selected project and the
+ * Pick one project. Up to three projects are all shown as chips. With more, the chips are the selected project and the
  * most recent ones, and "All projects" opens a searchable list grouped by client, so the screen never fills up.
  */
 export function ProjectPicker({
@@ -56,8 +56,8 @@ export function ProjectPicker({
   const many = projects.length > ALL_AS_CHIPS;
   // Names that appear twice need their client next to them on the narrow chips.
   const sameName = new Set(projects.map((p) => p.name).filter((n, i, all) => all.indexOf(n) !== i));
-  const groups = useMemo(() => searchGroups(projects, recent, query), [projects, recent, query]);
-  const first = groups[0]?.projects[0];
+  const results = useMemo(() => searchProjects(projects, query), [projects, query]);
+  const first = results[0];
 
   function choose(id: string) {
     onChange(id);
@@ -111,7 +111,7 @@ export function ProjectPicker({
             onClick={() => setOpen(true)}
             className="h-auto border-dashed text-muted-foreground max-sm:min-h-10 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
           >
-            <Search /> All projects ({projects.length})
+            <Search /> Another project…
           </Button>
         )}
       </div>
@@ -149,33 +149,24 @@ export function ProjectPicker({
                 className="pl-8"
               />
             </div>
-            <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1">
-              {groups.length === 0 && (
+            <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1">
+              {results.length === 0 && (
                 <p className="py-6 text-center text-muted-foreground text-sm">No project matches that.</p>
               )}
-              {groups.map((g) => (
-                <section key={g.clientName} aria-label={g.clientName} className="flex flex-col gap-1">
-                  <h3 className="px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                    {g.clientName}
-                  </h3>
-                  {g.projects.map((p) => (
-                    <button
-                      key={`${g.clientName}-${p.id}`}
-                      type="button"
-                      onClick={() => choose(p.id)}
-                      aria-current={value === p.id ? "true" : undefined}
-                      className="flex min-h-11 items-center justify-between gap-2 rounded-lg border px-3 text-left text-sm hover:bg-muted aria-[current=true]:border-primary aria-[current=true]:bg-primary/10"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{p.name}</span>
-                        {g.clientName === "Recent" && (
-                          <span className="block truncate text-muted-foreground text-xs">{p.clientName}</span>
-                        )}
-                      </span>
-                      {value === p.id && <Check className="size-4 shrink-0" aria-hidden />}
-                    </button>
-                  ))}
-                </section>
+              {results.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => choose(p.id)}
+                  aria-current={value === p.id ? "true" : undefined}
+                  className="flex min-h-14 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left hover:bg-muted aria-[current=true]:border-primary aria-[current=true]:bg-primary/10"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-sm">{p.name}</span>
+                    <span className="block truncate text-muted-foreground text-xs">{p.clientName}</span>
+                  </span>
+                  {value === p.id && <Check className="size-4 shrink-0" aria-hidden />}
+                </button>
               ))}
             </div>
           </DialogContent>

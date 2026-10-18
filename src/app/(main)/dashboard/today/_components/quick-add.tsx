@@ -10,7 +10,7 @@ import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { fromISODate } from "@/lib/dates";
+import { fromISODate, toISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { trpc } from "@/lib/trpc";
@@ -42,6 +42,9 @@ export function QuickAdd({
   const [duration, setDuration] = useState("");
   const [note, setNote] = useState("");
   const durationRef = useRef<HTMLInputElement>(null);
+  // "Today" is the browser's date (the server runs in UTC), so it is worked out after the page loads.
+  const [isToday, setIsToday] = useState(false);
+  useEffect(() => setIsToday(date === toISODate(new Date())), [date]);
 
   const projects = clients.data?.flatMap((c) => c.projects) ?? [];
   // Restore the last-used project, falling back to the first available one.
@@ -129,7 +132,7 @@ export function QuickAdd({
         ) : (
           <div className="flex flex-col gap-2">
             <p id="quick-project-label" className="font-medium text-sm">
-              Which project? <span className="font-normal text-muted-foreground">Pick one</span>
+              Pick your project
             </p>
             <ProjectPicker
               projects={(clients.data ?? []).flatMap((c) =>
@@ -197,18 +200,31 @@ export function QuickAdd({
           className="min-h-16 resize-none py-2.5 text-base"
         />
 
-        <Button type="submit" size="lg" disabled={create.isPending || parsed === null} className="h-14 w-full text-lg">
-          Add to the day{" "}
-          <Kbd className="ml-1 hidden bg-primary-foreground/20 text-primary-foreground md:inline-flex">↵</Kbd>
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={create.isPending || parsed === null}
+            className="h-14 w-full text-lg sm:flex-1"
+          >
+            Add to the day{" "}
+            <Kbd className="ml-1 hidden bg-primary-foreground/20 text-primary-foreground md:inline-flex">↵</Kbd>
+          </Button>
+          {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
+          {isToday && (
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              onClick={startTimer}
+              disabled={start.isPending}
+              className="h-14 w-full text-base sm:w-auto sm:px-6"
+            >
+              <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
+            </Button>
+          )}
+        </div>
       </form>
-
-      <div className="flex items-center justify-between gap-3 border-t pt-3 text-muted-foreground text-sm">
-        <span>Haven't done it yet?</span>
-        <Button type="button" variant="ghost" onClick={startTimer} disabled={start.isPending}>
-          <Play className="size-4" /> {timerRunning ? "Switch the timer to this" : "Start a timer"}
-        </Button>
-      </div>
     </div>
   );
 }

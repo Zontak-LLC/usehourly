@@ -1,7 +1,6 @@
 /** Rules for the project picker: a few recent projects as chips, everything else behind a search. */
 
 export type PickerProject = { id: string; name: string; clientName: string };
-export type PickerGroup = { clientName: string; projects: PickerProject[] };
 
 /** With this many projects or fewer, every project is a chip and there is no search (a fourth project starts the picker). */
 export const ALL_AS_CHIPS = 3;
@@ -31,26 +30,12 @@ export function chipProjects(projects: PickerProject[], recentIds: string[], sel
 }
 
 /**
- * The search list: matches every word of `query` against project and client name, grouped by client. With no query,
- * the recent projects come first as their own group.
+ * The search list: projects matching every word of `query` against project and client name, in one flat list sorted
+ * by project name (then client), so a project is found by what it is called, not by which client it sits under.
  */
-export function searchGroups(projects: PickerProject[], recentIds: string[], query: string): PickerGroup[] {
+export function searchProjects(projects: PickerProject[], query: string): PickerProject[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  const matches = (p: PickerProject) =>
-    words.every((w) => p.name.toLowerCase().includes(w) || p.clientName.toLowerCase().includes(w));
-  const found = projects.filter(matches);
-  const groups: PickerGroup[] = [];
-  if (words.length === 0) {
-    const recent = recentIds
-      .map((id) => found.find((p) => p.id === id))
-      .filter((p): p is PickerProject => p !== undefined)
-      .slice(0, RECENT_CHIPS + 2);
-    if (recent.length > 0) groups.push({ clientName: "Recent", projects: recent });
-  }
-  for (const p of found) {
-    const g = groups.find((x) => x.clientName === p.clientName && x.clientName !== "Recent");
-    if (g) g.projects.push(p);
-    else groups.push({ clientName: p.clientName, projects: [p] });
-  }
-  return groups;
+  return projects
+    .filter((p) => words.every((w) => p.name.toLowerCase().includes(w) || p.clientName.toLowerCase().includes(w)))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.clientName.localeCompare(b.clientName));
 }
