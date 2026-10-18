@@ -119,114 +119,119 @@ export function QuickAdd({
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:p-4">
-      <h2 className="font-semibold text-base">
-        Add to the day <span className="font-normal text-muted-foreground">· {dayLabel}</span>
-      </h2>
+    <div className="overflow-hidden rounded-xl border bg-card">
+      {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
+      <div className="border-b bg-muted/40 px-3 py-2.5 sm:px-4">
+        <h2 className="font-semibold text-base">
+          Add to the day <span className="font-normal text-muted-foreground">· {dayLabel}</span>
+        </h2>
+      </div>
 
-      <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
-        {onlyProject ? (
-          <p className="text-base">
-            {onlyClient?.name} · {onlyProject.name}
-          </p>
-        ) : (
+      <div className="flex flex-col gap-3 p-3 sm:p-4">
+        <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
+          {onlyProject ? (
+            <p className="text-base">
+              {onlyClient?.name} · {onlyProject.name}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p id="quick-project-label" className="font-medium text-sm">
+                Pick your project
+              </p>
+              <ProjectPicker
+                projects={(clients.data ?? []).flatMap((c) =>
+                  c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name })),
+                )}
+                value={projectId}
+                onChange={remember}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
-            <p id="quick-project-label" className="font-medium text-sm">
-              Pick your project
-            </p>
-            <ProjectPicker
-              projects={(clients.data ?? []).flatMap((c) =>
-                c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name })),
-              )}
-              value={projectId}
-              onChange={remember}
+            <Input
+              id="quick-duration"
+              ref={durationRef}
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="Time: 1.5, 1:30 or 90m"
+              aria-label="Time to add"
+              aria-invalid={invalid}
+              inputMode="decimal"
+              enterKeyHint="next"
+              className="h-11 text-base"
             />
+            <div className="grid grid-cols-5 gap-2">
+              {DURATION_CHIPS.map((c) => (
+                <Button
+                  key={c.minutes}
+                  type="button"
+                  variant={parsed === c.minutes ? "secondary" : "outline"}
+                  aria-pressed={parsed === c.minutes}
+                  className="h-9 px-1 text-sm sm:h-10 sm:text-base"
+                  onClick={() => {
+                    setDuration(`${c.minutes}m`);
+                    durationRef.current?.focus();
+                  }}
+                >
+                  <span className="sm:hidden" aria-hidden="true">
+                    {c.short}
+                  </span>
+                  <span className="max-sm:sr-only">{c.label}</span>
+                </Button>
+              ))}
+            </div>
+            {(invalid || parsed) && (
+              <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
+                {invalid
+                  ? "Try 1.5, 1:30 or 90m"
+                  : `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`}
+              </p>
+            )}
           </div>
-        )}
 
-        <div className="flex flex-col gap-2">
-          <Input
-            id="quick-duration"
-            ref={durationRef}
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            placeholder="Time: 1.5, 1:30 or 90m"
-            aria-label="Time to add"
-            aria-invalid={invalid}
-            inputMode="decimal"
-            enterKeyHint="next"
-            className="h-11 text-base"
+          <NoteTextarea
+            value={note}
+            onChange={setNote}
+            onKeyDown={(e) => {
+              // Enter saves when a time is typed, otherwise goes back to the time field.
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                if (parsed !== null) void submit();
+                else durationRef.current?.focus();
+              }
+            }}
+            placeholder="What did you work on? (optional)"
+            aria-label="Description"
+            rows={1}
+            className="min-h-12 resize-none py-2.5 text-base"
           />
-          <div className="grid grid-cols-5 gap-2">
-            {DURATION_CHIPS.map((c) => (
-              <Button
-                key={c.minutes}
-                type="button"
-                variant={parsed === c.minutes ? "secondary" : "outline"}
-                aria-pressed={parsed === c.minutes}
-                className="h-9 px-1 text-sm sm:h-10 sm:text-base"
-                onClick={() => {
-                  setDuration(`${c.minutes}m`);
-                  durationRef.current?.focus();
-                }}
-              >
-                <span className="sm:hidden" aria-hidden="true">
-                  {c.short}
-                </span>
-                <span className="max-sm:sr-only">{c.label}</span>
-              </Button>
-            ))}
-          </div>
-          {(invalid || parsed) && (
-            <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
-              {invalid
-                ? "Try 1.5, 1:30 or 90m"
-                : `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`}
-            </p>
-          )}
-        </div>
 
-        <NoteTextarea
-          value={note}
-          onChange={setNote}
-          onKeyDown={(e) => {
-            // Enter saves when a time is typed, otherwise goes back to the time field.
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              if (parsed !== null) void submit();
-              else durationRef.current?.focus();
-            }
-          }}
-          placeholder="What did you work on? (optional)"
-          aria-label="Description"
-          rows={1}
-          className="min-h-12 resize-none py-2.5 text-base"
-        />
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            type="submit"
-            size="lg"
-            disabled={create.isPending || parsed === null}
-            className="h-12 w-full text-base sm:flex-1"
-          >
-            Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
-          </Button>
-          {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
-          {isToday && (
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Button
-              type="button"
+              type="submit"
               size="lg"
-              variant="outline"
-              onClick={startTimer}
-              disabled={start.isPending}
-              className="h-12 w-full text-base sm:w-auto sm:px-6"
+              disabled={create.isPending || parsed === null}
+              className="h-12 w-full text-base sm:flex-1"
             >
-              <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
+              Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
             </Button>
-          )}
-        </div>
-      </form>
+            {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
+            {isToday && (
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                onClick={startTimer}
+                disabled={start.isPending}
+                className="h-12 w-full text-base sm:w-auto sm:px-6"
+              >
+                <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
+              </Button>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

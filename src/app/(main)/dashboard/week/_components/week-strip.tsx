@@ -74,8 +74,8 @@ export function WeekTotalCard({
   onProjectId: (id: string) => void;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-baseline justify-between gap-3">
+    <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2.5">
         <h2 className="font-semibold text-base">This week</h2>
         <span className="font-semibold font-mono text-lg tabular-nums">
           {formatDuration(sheet.total)}
@@ -83,7 +83,7 @@ export function WeekTotalCard({
         </span>
       </div>
       {sheet.rows.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-2">
+        <ul className="flex flex-wrap gap-2 p-4">
           {sheet.rows.map((r) => {
             const on = projectId === r.projectId;
             return (
