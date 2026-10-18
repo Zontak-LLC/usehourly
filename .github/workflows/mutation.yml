@@ -1,0 +1,39 @@
+name: Mutation testing
+
+# Stryker changes the code on purpose (flips a > to >=, deletes a line) and checks that a test fails. A change
+# nothing notices means the tests would not have caught that bug. It is slow (minutes per file), so it runs
+# weekly and by hand, not on every push, over the files where a wrong answer costs money or trust: billing
+# rounding, durations, invoices, rate limits, tokens, OAuth, sharing. See stryker.config.json for the list.
+# The score may only go up: `thresholds.break` is the floor; raise it when a run beats it by several points.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "41 5 * * 0"
+  workflow_dispatch:
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The previous run's results: only changed code and changed tests are re-tested.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .stryker-tmp/incremental.json
+          key: stryker-${{ github.sha }}
+          restore-keys: stryker-
+      - run: npx stryker run
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-report
+          path: reports/mutation
