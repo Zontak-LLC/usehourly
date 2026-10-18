@@ -336,8 +336,8 @@ export function ClientsView() {
       </Dialog>
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
-      <header className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <header className="overflow-hidden rounded-xl border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3 sm:px-5">
           <div>
             <h1 className="font-semibold text-xl">Projects & Clients</h1>
             <p className="text-muted-foreground text-sm">
@@ -349,40 +349,44 @@ export function ClientsView() {
           </Button>
         </div>
         {(clients.data?.length ?? 0) > 0 && (
-          <dl className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
-              <dt className="text-muted-foreground text-xs">Clients</dt>
-              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{clients.data?.length}</dd>
-            </div>
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
-              <dt className="text-muted-foreground text-xs">Projects</dt>
-              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
-                {(clients.data ?? []).reduce((a, c) => a + c.projects.length, 0)}
-              </dd>
-            </div>
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
-              <dt className="text-muted-foreground text-xs">Logged this month</dt>
-              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
-                {formatDuration(Object.values(totals.data ?? {}).reduce((a, t) => a + t.range, 0))}
-              </dd>
-            </div>
-          </dl>
-        )}
-        {(clients.data?.length ?? 0) > 0 && (
-          <search aria-label="Find clients and projects" className="relative block">
-            <Search
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clients and projects…"
-              aria-label="Search clients and projects"
-              className="h-11 pl-9 text-base"
-            />
-          </search>
+          <div className="flex flex-col gap-4 p-4 sm:p-5">
+            {(clients.data?.length ?? 0) > 0 && (
+              <dl className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+                  <dt className="text-muted-foreground text-xs">Clients</dt>
+                  <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{clients.data?.length}</dd>
+                </div>
+                <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+                  <dt className="text-muted-foreground text-xs">Projects</dt>
+                  <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
+                    {(clients.data ?? []).reduce((a, c) => a + c.projects.length, 0)}
+                  </dd>
+                </div>
+                <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+                  <dt className="text-muted-foreground text-xs">Logged this month</dt>
+                  <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
+                    {formatDuration(Object.values(totals.data ?? {}).reduce((a, t) => a + t.range, 0))}
+                  </dd>
+                </div>
+              </dl>
+            )}
+            {(clients.data?.length ?? 0) > 0 && (
+              <search aria-label="Find clients and projects" className="relative block">
+                <Search
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search clients and projects…"
+                  aria-label="Search clients and projects"
+                  className="h-11 pl-9 text-base"
+                />
+              </search>
+            )}
+          </div>
         )}
       </header>
 

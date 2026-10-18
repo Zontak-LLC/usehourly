@@ -185,7 +185,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("mark it paid", async () => {
     await page.goto("/dashboard/invoices");
-    await page.getByRole("button", { name: "Mark paid", exact: true }).click(); // the button on the card
+    await page.getByRole("button", { name: /^Mark INV-.* as paid$/ }).click(); // the button on the card
     await page.getByLabel("Date the money arrived").fill(today());
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(
@@ -195,16 +195,16 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
         .first(),
     ).toBeVisible();
     await shot("invoice-paid");
-    // A row offers labelled buttons and one menu, not a cluster of icons (usability pass #38); once paid, just Send and the menu.
+    // A row offers four icon buttons with tooltips (money, send, PDF, delete) and no hidden menu.
     const controls = await page.getByTestId("invoice-actions").first().locator("button, a").count();
-    expect.soft(controls, "controls on an invoice row").toBeLessThanOrEqual(2);
+    expect.soft(controls, "controls on an invoice row").toBeLessThanOrEqual(4);
     await audit("invoices with one invoice");
     await a11y("invoices");
   });
 
   let invoiceUrl = "";
   await test.step("get a private link to the invoice and open it as the client", async () => {
-    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await page.getByRole("button", { name: /^Send INV-/ }).click();
     await page.getByRole("button", { name: "Make a link" }).click();
     invoiceUrl = await page.getByLabel("Invoice link").inputValue();
     expect(invoiceUrl).toMatch(/\/invoice\/\S{40,}/);
@@ -263,7 +263,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(page.getByText("Client updated.")).toBeVisible(); // wait for the save before leaving the page
     await page.goto("/dashboard/invoices");
     await clearMail();
-    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await page.getByRole("button", { name: /^Send INV-/ }).click();
     await expect(page.getByText("Loading…")).toBeHidden();
     await shot("email-panel");
     await page.getByLabel(/A note to include/).fill("Thanks for a great week.");
@@ -285,7 +285,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await anon.close();
     // after opting out, the same button refuses
     await page.reload();
-    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await page.getByRole("button", { name: /^Send INV-/ }).click();
     await page.getByRole("button", { name: "Send the email" }).click();
     await expect(page.getByText(/asked not to get emails/i)).toBeVisible();
   });

@@ -17,6 +17,8 @@ const CHIP_COLUMNS: Record<number, string> = {
   4: "sm:grid sm:grid-cols-4",
 };
 
+const many_ = (projects: PickerProject[]) => projects.length > ALL_AS_CHIPS;
+
 function readRecent(): string[] {
   try {
     const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
@@ -52,7 +54,16 @@ export function ProjectPicker({
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>(() => (typeof window === "undefined" ? [] : readRecent()));
 
-  const chips = chipProjects(projects, recent, value);
+  // Picking a chip that is already showing must not shuffle the row: the chips shown at that moment stay put.
+  const [pinned, setPinned] = useState<string[] | null>(null);
+  const computed = chipProjects(projects, recent, value);
+  const pinnedChips = pinned
+    ? pinned.map((id) => projects.find((p) => p.id === id)).filter((p): p is PickerProject => !!p)
+    : [];
+  const chips =
+    many_(projects) && pinnedChips.length === computed.length && pinnedChips.some((p) => p.id === value)
+      ? pinnedChips
+      : computed;
   const many = projects.length > ALL_AS_CHIPS;
   // Names that appear twice need their client next to them on the narrow chips.
   const sameName = new Set(projects.map((p) => p.name).filter((n, i, all) => all.indexOf(n) !== i));
@@ -60,6 +71,7 @@ export function ProjectPicker({
   const first = results[0];
 
   function choose(id: string) {
+    setPinned(chips.some((p) => p.id === id) ? chips.map((p) => p.id) : null);
     onChange(id);
     setRecent(pushRecentId(recent, id));
     setOpen(false);

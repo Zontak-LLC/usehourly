@@ -57,15 +57,15 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   return (
     // One container around the whole page: the header, the week, the day and the lists sit inside it.
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-2xl border bg-muted/30 p-3 sm:p-5">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3">
-        <div>
-          <h1 className="font-semibold text-xl">Weekly timesheet</h1>
-          <p className="text-muted-foreground text-sm">
-            {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))} · pick a day to see and
-            change its time
-          </p>
-        </div>
+    <div className="mx-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl border bg-muted/30">
+      <header className="border-b bg-muted/60 px-3 py-3 sm:px-5">
+        <h1 className="font-semibold text-xl">Weekly timesheet</h1>
+        <p className="text-muted-foreground text-sm">
+          {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))} · pick a day to see and change
+          its time
+        </p>
+      </header>
+      <div className="flex flex-col gap-4 p-3 sm:p-5">
         <div
           data-testid="timesheet-toolbar"
           className="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap sm:*:min-w-0 sm:*:flex-1"
@@ -109,110 +109,112 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             </Button>
           </div>
         </div>
-      </header>
 
-      {entries.error ? (
-        <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-          Couldn't load the timesheet: {entries.error.message}
-        </p>
-      ) : entries.isLoading ? (
-        <Skeleton className="h-48 w-full" />
-      ) : (
-        <>
-          {/* The week as seven tiles. Pick one and its entries and the add form open below. */}
-          <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1.5 sm:gap-2">
-            {days.map((d) => {
-              const on = d === selected;
-              const total = sheet.dayTotals[d] ?? 0;
-              const date = fromISODate(d);
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  role="tab"
-                  aria-selected={on}
-                  aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}`}
-                  onClick={() => setPicked(d)}
-                  className={`flex min-h-24 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-3 transition-colors ${
-                    on
-                      ? "border-primary bg-primary/15 shadow-sm ring-2 ring-primary/40"
-                      : d === today
-                        ? "border-primary/50 bg-card hover:bg-muted"
-                        : "bg-card hover:bg-muted"
-                  } ${[0, 6].includes(date.getDay()) && !on ? "bg-muted/40" : ""}`}
-                >
-                  <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                    {weekdayShort.format(date)}
-                  </span>
-                  <span className="font-semibold text-xl leading-none">{date.getDate()}</span>
-                  <span
-                    className={`font-mono text-xs tabular-nums sm:text-sm ${total ? "font-medium" : "text-muted-foreground"}`}
+        {entries.error ? (
+          <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
+            Couldn't load the timesheet: {entries.error.message}
+          </p>
+        ) : entries.isLoading ? (
+          <Skeleton className="h-48 w-full" />
+        ) : (
+          <>
+            {/* The week as seven tiles. Pick one and its entries and the add form open below. */}
+            <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              {days.map((d) => {
+                const on = d === selected;
+                const total = sheet.dayTotals[d] ?? 0;
+                const date = fromISODate(d);
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}`}
+                    onClick={() => setPicked(d)}
+                    className={`flex min-h-24 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-3 transition-colors ${
+                      on
+                        ? "border-primary bg-primary/15 shadow-sm ring-2 ring-primary/40"
+                        : d === today
+                          ? "border-primary/50 bg-card hover:bg-muted"
+                          : "bg-card hover:bg-muted"
+                    } ${[0, 6].includes(date.getDay()) && !on ? "bg-muted/40" : ""}`}
                   >
-                    {total ? formatDuration(total) : "–"}
+                    <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                      {weekdayShort.format(date)}
+                    </span>
+                    <span className="font-semibold text-xl leading-none">{date.getDate()}</span>
+                    <span
+                      className={`font-mono text-xs tabular-nums sm:text-sm ${total ? "font-medium" : "text-muted-foreground"}`}
+                    >
+                      {total ? formatDuration(total) : "–"}
+                    </span>
+                    <span className={`text-[10px] text-primary uppercase ${d === today ? "" : "invisible"}`}>
+                      Today
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
+              <div className="rounded-xl border bg-card">
+                <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-3">
+                  <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
+                  <span className="font-medium font-mono tabular-nums">
+                    {sheet.dayTotals[selected] ? formatDuration(sheet.dayTotals[selected]) : "Nothing yet"}
                   </span>
-                  <span className={`text-[10px] text-primary uppercase ${d === today ? "" : "invisible"}`}>Today</span>
-                </button>
-              );
-            })}
-          </div>
+                </div>
+                <div className="p-4">
+                  <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />
+                </div>
+              </div>
+            </section>
 
-          <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
-            <div className="rounded-xl border bg-card">
-              <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-3">
-                <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
-                <span className="font-medium font-mono tabular-nums">
-                  {sheet.dayTotals[selected] ? formatDuration(sheet.dayTotals[selected]) : "Nothing yet"}
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="font-semibold text-base">This week</h2>
+                <span className="font-semibold font-mono text-lg tabular-nums">
+                  {formatDuration(sheet.total)}
+                  <span className="ml-1 font-normal text-muted-foreground text-xs">
+                    ({formatDecimalHours(sheet.total)} h)
+                  </span>
                 </span>
               </div>
-              <div className="p-4">
-                <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />
-              </div>
+              {sheet.rows.length > 0 && (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {sheet.rows.map((r) => {
+                    const on = projectId === r.projectId;
+                    return (
+                      <li key={r.projectId}>
+                        <button
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => setProjectId(toggleProjectFilter(projectId, r.projectId))}
+                          title={on ? "Show all projects" : `Show only ${r.project}`}
+                          className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm hover:bg-muted ${
+                            on ? "border-primary bg-primary/10" : ""
+                          }`}
+                        >
+                          <span className="size-2.5 rounded-full" style={{ backgroundColor: r.color }} />
+                          <span className="font-medium">{r.project}</span>
+                          <span className="text-muted-foreground">· {r.client}</span>
+                          <span className="font-mono tabular-nums">{formatDuration(r.total)}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
-          </section>
 
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-semibold text-base">This week</h2>
-              <span className="font-semibold font-mono text-lg tabular-nums">
-                {formatDuration(sheet.total)}
-                <span className="ml-1 font-normal text-muted-foreground text-xs">
-                  ({formatDecimalHours(sheet.total)} h)
-                </span>
-              </span>
-            </div>
-            {sheet.rows.length > 0 && (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {sheet.rows.map((r) => {
-                  const on = projectId === r.projectId;
-                  return (
-                    <li key={r.projectId}>
-                      <button
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => setProjectId(toggleProjectFilter(projectId, r.projectId))}
-                        title={on ? "Show all projects" : `Show only ${r.project}`}
-                        className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm hover:bg-muted ${
-                          on ? "border-primary bg-primary/10" : ""
-                        }`}
-                      >
-                        <span className="size-2.5 rounded-full" style={{ backgroundColor: r.color }} />
-                        <span className="font-medium">{r.project}</span>
-                        <span className="text-muted-foreground">· {r.client}</span>
-                        <span className="font-mono tabular-nums">{formatDuration(r.total)}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+            <MergeDaysPanel entries={shown} />
 
-          <MergeDaysPanel entries={shown} />
-
-          {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
-          <WorkItems key={`${start}-${projectId}`} entries={shown} onOpenDay={openDay} period="week" />
-        </>
-      )}
+            {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
+            <WorkItems key={`${start}-${projectId}`} entries={shown} onOpenDay={openDay} period="week" />
+          </>
+        )}
+      </div>
     </div>
   );
 }
