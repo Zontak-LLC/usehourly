@@ -27,7 +27,9 @@ jobs:
         run: |
           cp wrangler.example.jsonc wrangler.jsonc
           secret=$(openssl rand -hex 32)
-          printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\n' "$secret" > .dev.vars
+          # Dummy provider ids: the tests wait for the "Continue with Google" button as proof the page's script has
+          # loaded, and that button only renders when a provider is configured. Nothing here ever calls Google or GitHub.
+          printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\nAUTH_GITHUB_ID=e2e\nAUTH_GITHUB_SECRET=e2e\nAUTH_GOOGLE_ID=e2e\nAUTH_GOOGLE_SECRET=e2e\n' "$secret" > .dev.vars
           cp .dev.vars .env.local
       - run: npm run d1:migrate:local
       - run: npm run e2e

@@ -25,7 +25,7 @@ export default function globalTeardown() {
     "DELETE FROM auth_users WHERE email LIKE 'e2e-%@example.test';",
   ].join(" ");
   try {
-    execFileSync("npx", ["wrangler", "d1", "execute", "hourly-db", "--local", "--command", statements], {
+    execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", "--command", statements], {
       stdio: "pipe",
     });
   } catch (err) {
