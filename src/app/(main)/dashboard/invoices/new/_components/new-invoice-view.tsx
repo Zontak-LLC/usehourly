@@ -10,16 +10,31 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { addDays, toISODate } from "@/lib/dates";
-import { formatDecimalHours } from "@/lib/duration";
-import { buildInvoice, formatMoney, type InvoiceEntry } from "@/lib/invoice";
+import { buildInvoice, type InvoiceEntry } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
-import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
+import type { Rounding } from "@/lib/rounding";
 import { trpc } from "@/lib/trpc";
+
+import { InvoiceDetailsCard } from "./invoice-details-card";
+import { InvoiceNotices, InvoicePreviewCard } from "./invoice-preview";
+
+function MissingProfileNotice({ ein, address }: { ein?: string | null; address?: string | null }) {
+  return (
+    <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+      <span>
+        Your {!ein ? "EIN" : ""}
+        {!ein && !address ? " and " : ""}
+        {!address ? "address" : ""} {!ein && !address ? "are" : "is"} missing and won't appear on the invoice.{" "}
+        <Link href="/dashboard/account" className="font-medium underline">
+          Add business details
+        </Link>
+      </span>
+    </p>
+  );
+}
 
 export function NewInvoiceView() {
   const router = useRouter();
@@ -135,20 +150,7 @@ export function NewInvoiceView() {
         }
       />
 
-      {missingProfile && (
-        <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <span>
-            Your {!me.data?.ein ? "EIN" : ""}
-            {!me.data?.ein && !me.data?.address ? " and " : ""}
-            {!me.data?.address ? "address" : ""} {!me.data?.ein && !me.data?.address ? "are" : "is"} missing and won't
-            appear on the invoice.{" "}
-            <Link href="/dashboard/account" className="font-medium underline">
-              Add business details
-            </Link>
-          </span>
-        </p>
-      )}
+      {missingProfile && <MissingProfileNotice ein={me.data?.ein} address={me.data?.address} />}
 
       {!hasClients ? (
         <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
@@ -156,171 +158,31 @@ export function NewInvoiceView() {
         </p>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <h2 className="border-b bg-muted/40 px-4 py-3 font-semibold text-base">Invoice details</h2>
-            <div className="grid gap-3 p-4 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label htmlFor="client">Client</Label>
-                <select
-                  id="client"
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-                >
-                  {clients.data?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="number">Invoice number</Label>
-                <Input
-                  id="number"
-                  value={number}
-                  onChange={(e) => {
-                    setNumber(e.target.value);
-                    setNumberTouched(true);
-                  }}
-                  required
-                  maxLength={40}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="from">From</Label>
-                <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} required />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="to">To</Label>
-                <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} required />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="net">Payment due in (days)</Label>
-                <Input
-                  id="net"
-                  type="number"
-                  min={0}
-                  max={365}
-                  value={netDays}
-                  onChange={(e) => setNetDays(e.target.value)}
-                />
-              </div>
-              <details className="rounded-lg border px-3 py-2 sm:col-span-2">
-                <summary className="cursor-pointer font-medium text-sm">More options</summary>
-                <div className="mt-3 flex flex-col gap-2">
-                  <label className="flex min-h-8 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={includeDetail}
-                      onChange={(e) => setIncludeDetail(e.target.checked)}
-                      className="size-4"
-                    />
-                    Add a day-by-day list of the time
-                  </label>
-                  <label className="flex min-h-8 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={compactNotes}
-                      onChange={(e) => setCompactNotes(e.target.checked)}
-                      className="size-4"
-                    />
-                    Shorten descriptions in the summary (the full text stays in the day-by-day list)
-                  </label>
-                </div>
-              </details>
-              <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="notes">Notes / payment terms</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  maxLength={1000}
-                  placeholder="e.g. Please pay by ACH to … Thank you!"
-                />
-              </div>
-            </div>
-          </div>
+          <InvoiceDetailsCard
+            clients={clients.data ?? []}
+            values={{ clientId, number, from, to, netDays, notes, includeDetail, compactNotes }}
+            onClientId={setClientId}
+            onNumber={(v) => {
+              setNumber(v);
+              setNumberTouched(true);
+            }}
+            onFrom={setFrom}
+            onTo={setTo}
+            onNetDays={setNetDays}
+            onNotes={setNotes}
+            onIncludeDetail={setIncludeDetail}
+            onCompactNotes={setCompactNotes}
+          />
 
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <h2 className="border-b bg-muted/40 px-4 py-3 font-semibold text-base">Preview</h2>
-            {!validRange ? (
-              <p className="px-4 py-8 text-center text-muted-foreground text-sm">
-                The start date must be on or before the end date.
-              </p>
-            ) : entries.isLoading ? (
-              <Skeleton className="m-4 h-24" />
-            ) : entries.error ? (
-              <p className="px-4 py-6 text-destructive text-sm">Couldn't load time: {entries.error.message}</p>
-            ) : totals.lines.length === 0 ? (
-              <p className="px-4 py-8 text-center text-muted-foreground text-sm">
-                No billable time for {client?.name} in this period.
-              </p>
-            ) : (
-              <table className="w-full text-sm">
-                <tbody>
-                  {totals.lines.map((l) => (
-                    <tr key={l.projectId} className="border-b">
-                      <td className="px-4 py-2">{l.project}</td>
-                      <td className="px-4 py-2 text-right font-mono text-muted-foreground tabular-nums">
-                        {formatDecimalHours(l.minutes)} h × {formatMoney(l.rateCents)}
-                      </td>
-                      <td className="px-4 py-2 text-right font-medium font-mono tabular-nums">
-                        {formatMoney(l.amountCents)}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-muted/40 font-semibold">
-                    <td className="px-4 py-2.5">Total</td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-                      {formatDecimalHours(totals.totalMinutes)} h
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums">{formatMoney(totals.totalCents)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            )}
-          </div>
+          <InvoicePreviewCard
+            validRange={validRange}
+            loading={entries.isLoading}
+            error={entries.error?.message ?? null}
+            totals={totals}
+            clientName={client?.name}
+          />
 
-          {isRounding(rounding) && totals.lines.length > 0 && (
-            <p className="text-muted-foreground text-sm">
-              {describeRounding(rounding)} You logged {formatDecimalHours(totals.loggedMinutes)} h and will bill{" "}
-              {formatDecimalHours(totals.totalMinutes)} h. Change it under{" "}
-              <Link href="/dashboard/clients" className="underline">
-                Clients & Projects
-              </Link>
-              .
-            </p>
-          )}
-
-          {(totals.zeroRateProjects.length > 0 || totals.runningTimers > 0 || totals.skippedMinutes > 0) && (
-            <ul className="flex flex-col gap-1 text-muted-foreground text-sm">
-              {totals.zeroRateProjects.length > 0 && (
-                <li>
-                  ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at $0.00. Set it under{" "}
-                  <Link href="/dashboard/clients" className="underline">
-                    Clients & Projects
-                  </Link>
-                  .
-                </li>
-              )}
-              {totals.runningTimers > 0 && <li>⚠ A timer is still running; only time logged so far is included.</li>}
-              {totals.skippedMinutes > 0 && (
-                <li>{formatDecimalHours(totals.skippedMinutes)} h on non-billable projects is left off.</li>
-              )}
-            </ul>
-          )}
-
-          {nothingToBill && (
-            <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-              Every project in this period has a $0.00 rate, so this invoice would be $0.00. Set the hourly rates under{" "}
-              <Link href="/dashboard/clients" className="font-medium underline">
-                Clients & Projects
-              </Link>{" "}
-              first, then come back.
-            </p>
-          )}
+          <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
 
           <div className="flex gap-2">
             <Button
