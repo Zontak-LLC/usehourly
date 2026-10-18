@@ -50,7 +50,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   const savedTheme = readSavedTheme(dbUser ?? {});
   const isAdmin = isAdminUser(dbUser);
   const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  // The top strip carries the main pages on every screen; the side menu is the "More" drawer, closed until asked for.
+  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
   const [variant, collapsible] = await Promise.all([
     getPreference("sidebar_variant"),
     getPreference("sidebar_collapsible"),

@@ -117,6 +117,8 @@ export function QuickAdd({
     day: "numeric",
   });
   const onlyProject = projects.length === 1 ? projects[0] : null;
+  // On a phone the chips show just the project name; the client is added only when two projects share a name.
+  const sameName = new Set(projects.map((p) => p.name).filter((n, i, all) => all.indexOf(n) !== i));
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
   return (
@@ -139,7 +141,7 @@ export function QuickAdd({
             <div
               role="radiogroup"
               aria-labelledby="quick-project-label"
-              className={`grid grid-cols-2 gap-2 ${BUTTON_COLUMNS[projects.length] ?? ""}`}
+              className={`flex flex-wrap gap-2 sm:grid ${BUTTON_COLUMNS[projects.length] ?? ""}`}
             >
               {clients.data?.flatMap((c) =>
                 c.projects.map((p) => {
@@ -152,18 +154,20 @@ export function QuickAdd({
                       aria-checked={on}
                       variant={on ? "default" : "outline"}
                       onClick={() => remember(p.id)}
-                      className="h-auto min-h-12 justify-start gap-2.5 whitespace-normal px-3 py-2 text-left"
+                      className="h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
                     >
                       <span
                         aria-hidden="true"
-                        className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-primary-foreground bg-primary-foreground text-primary" : "border-muted-foreground/50"}`}
+                        className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-primary-foreground bg-primary-foreground text-primary" : "border-muted-foreground/50"}`}
                       >
-                        {on && <Check className="size-3.5" strokeWidth={3} />}
+                        {on && <Check className="size-3.5 max-sm:size-3" strokeWidth={3} />}
                       </span>
                       <span className="flex min-w-0 flex-col items-start">
-                        <span className="max-w-full break-words font-medium text-base">{p.name}</span>
+                        <span className="max-w-full break-words font-medium sm:text-base">{p.name}</span>
                         <span
-                          className={`max-w-full break-words font-normal text-xs ${on ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+                          className={`max-w-full break-words font-normal text-xs ${
+                            sameName.has(p.name) ? "" : "max-sm:hidden"
+                          } ${on ? "text-primary-foreground/80" : "text-muted-foreground"}`}
                         >
                           {c.name}
                         </span>

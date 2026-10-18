@@ -24,27 +24,27 @@ import { NavUser } from "./nav-user";
 type Props = React.ComponentProps<typeof Sidebar> & { user: { name: string; email: string }; isAdmin?: boolean };
 
 export function AppSidebar({ user, isAdmin = false, ...props }: Props) {
-  const { sidebarVariant, sidebarCollapsible, isSynced } = usePreferencesStore(
+  const { sidebarVariant, isSynced } = usePreferencesStore(
     useShallow((s) => ({
       sidebarVariant: s.values.sidebar_variant,
-      sidebarCollapsible: s.values.sidebar_collapsible,
       isSynced: s.isSynced,
     })),
   );
 
-  const { setOpenMobile } = useSidebar();
+  const { setOpen, setOpenMobile } = useSidebar();
+  // The side menu is a drawer on every screen size: close it once a page is chosen.
+  const closeMenu = () => {
+    setOpenMobile(false);
+    setOpen(false);
+  };
 
   return (
-    <Sidebar
-      {...props}
-      variant={isSynced ? sidebarVariant : props.variant}
-      collapsible={isSynced ? sidebarCollapsible : props.collapsible}
-    >
+    <Sidebar {...props} variant={isSynced ? sidebarVariant : props.variant} collapsible="offcanvas">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link prefetch={false} href="/dashboard/today" onClick={() => setOpenMobile(false)}>
+              <Link prefetch={false} href="/dashboard/today" onClick={closeMenu}>
                 <LogoMark className="size-6 shrink-0" aria-hidden />
                 <span className="font-semibold text-base">{APP_CONFIG.name}</span>
               </Link>

@@ -77,10 +77,24 @@ export function WorkItems({
               aria-label={dayFmt.format(fromISODate(g.date))}
               className="overflow-hidden rounded-xl border bg-card"
             >
-              <h3 className="flex items-baseline justify-between gap-2 border-b bg-muted/40 px-4 py-2 font-medium text-sm">
+              <h3 className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-2 pl-4 font-medium text-sm">
                 {dayFmt.format(fromISODate(g.date))}
-                <span className="font-mono text-muted-foreground text-xs tabular-nums">
-                  {formatDuration(g.minutes)}
+                <span className="flex items-center gap-1">
+                  <span className="font-mono tabular-nums">
+                    {formatDuration(g.minutes)}
+                    {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
+                  </span>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-8 text-muted-foreground"
+                    onClick={() => onOpenDay(g.date)}
+                    aria-label={`Edit ${dayFmt.format(fromISODate(g.date))}`}
+                    title="Edit this day"
+                  >
+                    <Pencil />
+                  </Button>
                 </span>
               </h3>
               <ul className="divide-y">
@@ -89,7 +103,7 @@ export function WorkItems({
                     <button
                       type="button"
                       onClick={() => onOpenDay(e.date)}
-                      aria-label={`Edit ${dayFmt.format(fromISODate(e.date))}`}
+                      title="Edit this day"
                       className="group flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
                     >
                       <span className="min-w-0 flex-1">
@@ -110,13 +124,12 @@ export function WorkItems({
                           <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
                         )}
                       </span>
-                      <span className="shrink-0 pt-0.5 font-mono text-sm tabular-nums">
-                        {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
-                      </span>
-                      <Pencil
-                        aria-hidden
-                        className="mt-1 size-3.5 shrink-0 text-muted-foreground md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-visible:opacity-100"
-                      />
+                      {/* A day with one entry already shows its time in the header; times appear per row only when there are several. */}
+                      {!(g.items.length === 1 && g.items[0].minutes === g.minutes) && (
+                        <span className="shrink-0 pt-0.5 font-mono text-sm tabular-nums">
+                          {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
+                        </span>
+                      )}
                     </button>
                     {isLongNote(e.note) && (
                       <button

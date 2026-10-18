@@ -114,7 +114,7 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - Decision: the timesheet export and the sign-off sheet stay on raw logged time (rounding is a billing matter). Test: `billing-rounding-journey.test.ts`. Run `npm run d1:migrate:remote` BEFORE deploy for 0022 (CircleCI does it).
 
 ## Day | Week | Month tabs (2026-10-17)
-- `components/view-tabs.tsx` is the switcher at the top of Today, Week and Month; each tab carries the date being viewed (`/dashboard/week?date=`, `/dashboard/month?month=`, `/dashboard/today?date=`).
+- Navigation (2026-10-18): the top strip (`header/mobile-nav.tsx`: Today, Week, Month, Invoices, More) is the main navigation on EVERY screen size; the side menu is only the "More" drawer (closed by default, offcanvas, opened by `toggleSidebar`). The Day | Week | Month tabs on the three time pages were removed because the strip covers them. Week still accepts `?date=` and Month `?month=`.
 
 ## Landing page and brand
 - `/` is a public landing page (`src/app/(main)/page.tsx`); signed-in users are sent on to `/dashboard/today`. The rule lives in `src/lib/route-access.ts` (tested) and is applied by `src/proxy.ts`; `next.config.mjs` must NOT redirect `/` (it used to, and hid the page).

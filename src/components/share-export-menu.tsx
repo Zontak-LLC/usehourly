@@ -30,6 +30,7 @@ export function ShareExportMenu({
   defaultFrom,
   defaultTo,
   projectId,
+  className,
 }: {
   entries: SheetEntry[] | undefined;
   days: string[];
@@ -39,6 +40,8 @@ export function ShareExportMenu({
   defaultFrom: string;
   defaultTo: string;
   projectId: string;
+  /** Layout classes for the button (the toolbars make it fill the row on a phone). */
+  className?: string;
 }) {
   const [panel, setPanel] = useState<"range" | "share" | null>(null);
 
@@ -55,7 +58,7 @@ export function ShareExportMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">
+          <Button variant="outline" className={className}>
             <Share2 /> Share &amp; export <ChevronDown className="opacity-60" />
           </Button>
         </DropdownMenuTrigger>

@@ -25,15 +25,23 @@ export function useProjectFilter(initial?: string) {
 /** Clicking a row's name filters to that project; clicking the one already filtered clears the filter. */
 export const toggleProjectFilter = (current: string, clicked: string) => (current === clicked ? "" : clicked);
 
-export function ProjectFilter({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+export function ProjectFilter({
+  value,
+  onChange,
+  className = "",
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  className?: string;
+}) {
   const clients = trpc.clients.list.useQuery();
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Filter by project"
-        className="h-9 w-full appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        className="h-9 max-md:h-10 w-full appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
       >
         <option value="">All projects</option>
         {clients.data?.map((c) => (

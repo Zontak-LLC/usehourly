@@ -10,7 +10,6 @@ import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ViewTabs } from "@/components/view-tabs";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -102,7 +101,6 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <ViewTabs current="month" date={today && today >= first && today <= last ? today : first} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="font-semibold text-xl">{monthTitle.format(fromISODate(first))}</h1>
@@ -113,6 +111,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
         <div data-testid="timesheet-toolbar" className="flex flex-wrap items-center gap-1">
           <Button
             variant={selectMode ? "default" : "outline"}
+            className="max-sm:flex-1"
             onClick={() => {
               setSelectMode((on) => !on);
               setPicked(new Set());
@@ -121,8 +120,9 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           >
             <CalendarPlus /> Add to several days
           </Button>
-          <ProjectFilter value={projectId} onChange={setProjectId} />
+          <ProjectFilter className="max-sm:flex-1" value={projectId} onChange={setProjectId} />
           <ShareExportMenu
+            className="max-sm:flex-1"
             entries={entries.data ? shown : undefined}
             days={monthDays}
             filename={`usehourly-${first.slice(0, 7)}.xlsx`}
@@ -131,20 +131,33 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             defaultTo={last}
             projectId={projectId}
           />
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => setFirst(shiftMonth(first, -1))}
-            aria-label="Previous month"
-          >
-            <ChevronLeft />
-          </Button>
-          <Button variant="outline" onClick={() => today && setFirst(`${today.slice(0, 7)}-01`)}>
-            This month
-          </Button>
-          <Button size="icon" variant="outline" onClick={() => setFirst(shiftMonth(first, 1))} aria-label="Next month">
-            <ChevronRight />
-          </Button>
+          <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="rounded-none"
+              onClick={() => setFirst(shiftMonth(first, -1))}
+              aria-label="Previous month"
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="ghost"
+              className="rounded-none border-x max-sm:flex-1"
+              onClick={() => today && setFirst(`${today.slice(0, 7)}-01`)}
+            >
+              This month
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="rounded-none"
+              onClick={() => setFirst(shiftMonth(first, 1))}
+              aria-label="Next month"
+            >
+              <ChevronRight />
+            </Button>
+          </div>
         </div>
       </div>
 

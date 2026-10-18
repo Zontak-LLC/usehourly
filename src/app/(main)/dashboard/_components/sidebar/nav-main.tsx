@@ -15,12 +15,17 @@ import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
 export function NavMain({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { setOpen, setOpenMobile } = useSidebar();
+  // The side menu is a drawer on every screen size: close it once a page is chosen.
+  const closeMenu = () => {
+    setOpenMobile(false);
+    setOpen(false);
+  };
   const render = (items: typeof navLinks) =>
     items.map((item) => (
       <SidebarMenuItem key={item.id}>
         <SidebarMenuButton asChild tooltip={item.title} isActive={pathname.startsWith(item.url)}>
-          <Link prefetch={false} href={item.url} onClick={() => setOpenMobile(false)}>
+          <Link prefetch={false} href={item.url} onClick={closeMenu}>
             <item.icon />
             <span>{item.title}</span>
           </Link>
