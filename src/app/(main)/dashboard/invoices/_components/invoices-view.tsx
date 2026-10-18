@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/page-header";
 import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -266,20 +267,19 @@ export function InvoicesView() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       {/* The page's header card: what this page is, the button to make one, and where the money stands. */}
-      <header className="overflow-hidden rounded-xl border bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3 sm:px-5">
-          <div>
-            <h1 className="font-semibold text-xl">Invoices</h1>
-            <p className="text-muted-foreground text-sm">Every invoice you've issued, saved exactly as sent.</p>
-          </div>
+      <PageHeader
+        title="Invoices"
+        description="Every invoice you've issued, saved exactly as sent."
+        actions={
           <Button asChild size="lg" className="h-10">
             <Link href="/dashboard/invoices/new">
               <Plus /> New invoice
             </Link>
           </Button>
-        </div>
+        }
+      >
         {showFilters && (
-          <div className="flex flex-col gap-4 p-4 sm:p-5">
+          <>
             {(invoices.data?.length ?? 0) > 0 && (
               <dl className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="rounded-lg bg-muted/50 px-3 py-2.5">
@@ -432,9 +432,9 @@ export function InvoicesView() {
                 )}
               </search>
             )}
-          </div>
+          </>
         )}
-      </header>
+      </PageHeader>
 
       {invoices.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">

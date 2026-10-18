@@ -6,6 +6,7 @@ import { Archive, Building2, ChevronDown, FolderKanban, Pencil, Plus, RotateCcw,
 import { toast } from "sonner";
 
 import { LogoPicker } from "@/components/logo-picker";
+import { PageHeader } from "@/components/page-header";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -336,20 +337,17 @@ export function ClientsView() {
       </Dialog>
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
-      <header className="overflow-hidden rounded-xl border bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3 sm:px-5">
-          <div>
-            <h1 className="font-semibold text-xl">Projects & Clients</h1>
-            <p className="text-muted-foreground text-sm">
-              Your clients, and the projects you do for each. Hourly rates live here.
-            </p>
-          </div>
+      <PageHeader
+        title="Projects & Clients"
+        description="Your clients, and the projects you do for each. Hourly rates live here."
+        actions={
           <Button type="button" size="lg" className="h-10" onClick={() => setNewOpen(true)}>
             <Plus /> New client
           </Button>
-        </div>
+        }
+      >
         {(clients.data?.length ?? 0) > 0 && (
-          <div className="flex flex-col gap-4 p-4 sm:p-5">
+          <>
             {(clients.data?.length ?? 0) > 0 && (
               <dl className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="rounded-lg bg-muted/50 px-3 py-2.5">
@@ -386,9 +384,9 @@ export function ClientsView() {
                 />
               </search>
             )}
-          </div>
+          </>
         )}
-      </header>
+      </PageHeader>
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="sm:max-w-sm">

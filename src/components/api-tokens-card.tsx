@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,15 +90,10 @@ export function ApiTokensCard() {
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border bg-card p-4">
-      <div>
-        <h3 className="font-semibold text-base">Access tokens</h3>
-        <p className="text-muted-foreground text-sm">
-          An assistant connects with a personal access token. Choose whether it can only read your data or also make
-          changes, and revoke a token whenever you like.
-        </p>
-      </div>
-
+    <SectionCard
+      title="Access tokens"
+      description="An assistant connects with a personal access token. Choose whether it can only read your data or also make changes, and revoke a token whenever you like."
+    >
       <form method="post" onSubmit={make} className="grid gap-3">
         <div className="grid gap-1.5">
           <Label htmlFor="token-name">Name</Label>
@@ -237,6 +233,6 @@ export function ApiTokensCard() {
         Server address: <span className="font-mono">{endpoint}</span>. An assistant can see and change only your own
         data. It can't change your password or make more tokens.
       </p>
-    </section>
+    </SectionCard>
   );
 }

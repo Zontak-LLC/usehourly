@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
@@ -7,7 +8,7 @@ const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / 
 
 function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+    <div className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3 py-2.5">
       <span className="text-muted-foreground text-sm">{label}</span>
       <span className="font-semibold text-3xl tabular-nums">{value}</span>
       {hint && <span className="text-muted-foreground text-xs">{hint}</span>}
@@ -34,12 +35,12 @@ function BarRow({ label, value, max, suffix }: { label: string; value: number; m
 
 function Card({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-      <div>
+    <section className="overflow-hidden rounded-xl border bg-card">
+      <div className="border-b bg-muted/40 px-4 py-3">
         <h2 className="font-semibold text-base">{title}</h2>
         {note && <p className="text-muted-foreground text-sm">{note}</p>}
       </div>
-      {children}
+      <div className="flex flex-col gap-3 p-4">{children}</div>
     </section>
   );
 }
@@ -58,27 +59,26 @@ export function InsightsView() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 lg:p-6">
-      <div>
-        <h1 className="font-semibold text-2xl">Insights</h1>
-        <p className="text-muted-foreground text-sm">
-          Totals only: no names, emails, clients or entries appear here. Sample accounts are left out.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Tile
-          label="Accounts"
-          value={d.totals.users}
-          hint={`${d.totals.demoAccounts} sample account${d.totals.demoAccounts === 1 ? "" : "s"} now`}
-        />
-        <Tile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`} />
-        <Tile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time" />
-        <Tile
-          label="Active, last 30 days"
-          value={d.active.last30}
-          hint={d.entriesPerActiveUser30 === null ? "" : `${d.entriesPerActiveUser30} entries each`}
-        />
-      </div>
+      {/* One header card: what the page is, then the four headline numbers. */}
+      <PageHeader
+        title="Insights"
+        description="Totals only: no names, emails, clients or entries appear here. Sample accounts are left out."
+      >
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+          <Tile
+            label="Accounts"
+            value={d.totals.users}
+            hint={`${d.totals.demoAccounts} sample account${d.totals.demoAccounts === 1 ? "" : "s"} now`}
+          />
+          <Tile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`} />
+          <Tile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time" />
+          <Tile
+            label="Active, last 30 days"
+            value={d.active.last30}
+            hint={d.entriesPerActiveUser30 === null ? "" : `${d.entriesPerActiveUser30} entries each`}
+          />
+        </div>
+      </PageHeader>
 
       <Card title="Do people get going?" note="Of everyone who signed up, how far they got.">
         <div className="flex flex-col gap-2">

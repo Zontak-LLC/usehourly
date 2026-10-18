@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 
+import { SectionCard } from "@/components/section-card";
 import { DONATE_PLATFORM, donateUrl } from "@/lib/donate";
 
 /** "Support UseHourly": renders nothing until a donation address is set in src/lib/donate.ts. */
@@ -34,14 +35,11 @@ export function SupportHourly({ variant = "card" }: { variant?: "band" | "card" 
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-      <div>
-        <h3 className="font-semibold text-base">Support UseHourly with a donation</h3>
-        <p className="text-muted-foreground text-sm">
-          UseHourly is free, with no paywall and no ads. If it saves you time, you can chip in to keep it running.
-        </p>
-      </div>
+    <SectionCard
+      title="Support UseHourly with a donation"
+      description="UseHourly is free, with no paywall and no ads. If it saves you time, you can chip in to keep it running."
+    >
       <div className="self-start">{button}</div>
-    </section>
+    </SectionCard>
   );
 }

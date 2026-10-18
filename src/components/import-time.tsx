@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
 
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { type DateOrder, IMPORT_CHUNK, type ImportFormat, MAX_IMPORT_BYTES, readTimeCsv } from "@/lib/import-csv";
 import { trpc } from "@/lib/trpc";
@@ -100,15 +101,10 @@ export function ImportTime() {
   const readings = p?.dateOrderAmbiguous && p.dateSample ? bothReadings(p.dateSample) : null;
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-      <div>
-        <h3 className="font-semibold text-base">Import from Toggl or Clockify</h3>
-        <p className="text-muted-foreground text-sm">
-          Bring your history over from a CSV export. Clients and projects are created for you, and importing the same
-          file twice never doubles anything.
-        </p>
-      </div>
-
+    <SectionCard
+      title="Import from Toggl or Clockify"
+      description="Bring your history over from a CSV export. Clients and projects are created for you, and importing the same file twice never doubles anything."
+    >
       <details className="text-sm">
         <summary className="cursor-pointer text-muted-foreground">How to export the file</summary>
         <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted-foreground">
@@ -231,6 +227,6 @@ export function ImportTime() {
           {outcome}
         </p>
       )}
-    </section>
+    </SectionCard>
   );
 }

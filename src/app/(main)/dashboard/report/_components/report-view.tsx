@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimalHours } from "@/lib/duration";
@@ -62,35 +63,33 @@ export function ReportView() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="font-semibold text-xl">Year summary · {year}</h1>
-          <p className="text-muted-foreground text-sm">
-            Your year at a glance, ready for your accountant or tax software.
-          </p>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1">
-          <div className="grid grid-cols-[auto_1fr_auto] gap-2 sm:flex sm:gap-1">
-            <Button size="icon" variant="outline" onClick={() => setYear(year - 1)} aria-label="Previous year">
-              <ChevronLeft />
-            </Button>
-            <Button variant="outline" onClick={() => today && setYear(today)} disabled={year === today}>
-              This year
-            </Button>
-            <Button size="icon" variant="outline" onClick={() => setYear(year + 1)} aria-label="Next year">
-              <ChevronRight />
+      <PageHeader
+        title={<>Year summary · {year}</>}
+        description="Your year at a glance, ready for your accountant or tax software."
+        actions={
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1">
+            <div className="grid grid-cols-[auto_1fr_auto] gap-2 sm:flex sm:gap-1">
+              <Button size="icon" variant="outline" onClick={() => setYear(year - 1)} aria-label="Previous year">
+                <ChevronLeft />
+              </Button>
+              <Button variant="outline" onClick={() => today && setYear(today)} disabled={year === today}>
+                This year
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => setYear(year + 1)} aria-label="Next year">
+                <ChevronRight />
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full sm:order-first sm:w-auto"
+              onClick={exportXlsx}
+              disabled={!data || exporting}
+            >
+              <Download /> {exporting ? "Exporting…" : "Export Excel"}
             </Button>
           </div>
-          <Button
-            variant="outline"
-            className="w-full sm:order-first sm:w-auto"
-            onClick={exportXlsx}
-            disabled={!data || exporting}
-          >
-            <Download /> {exporting ? "Exporting…" : "Export Excel"}
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {report.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -271,10 +270,10 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 
 function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border bg-card">
-      <div className="border-b px-4 py-3">
+    <section className="overflow-hidden rounded-xl border bg-card">
+      <div className="border-b bg-muted/40 px-4 py-3">
         <h2 className="font-semibold text-base">{title}</h2>
-        {note && <p className="text-muted-foreground text-xs">{note}</p>}
+        {note && <p className="text-muted-foreground text-sm">{note}</p>}
       </div>
       {children}
     </section>

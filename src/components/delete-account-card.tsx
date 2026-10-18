@@ -5,6 +5,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,14 +29,11 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-destructive/40 bg-card p-4">
-      <div>
-        <h3 className="font-semibold text-base">Delete my account</h3>
-        <p className="text-muted-foreground text-sm">
-          This removes your clients, projects, time entries, invoices and settings for good, and cannot be undone. Use
-          “Export everything” above first if you want a copy.
-        </p>
-      </div>
+    <SectionCard
+      tone="danger"
+      title="Delete my account"
+      description="This removes your clients, projects, time entries, invoices and settings for good, and cannot be undone. Use “Export everything” above first if you want a copy."
+    >
       {open ? (
         <form method="post" onSubmit={submit} className="flex flex-col gap-3">
           <div className="grid gap-1.5">
@@ -72,6 +70,6 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
           Delete my account…
         </Button>
       )}
-    </div>
+    </SectionCard>
   );
 }

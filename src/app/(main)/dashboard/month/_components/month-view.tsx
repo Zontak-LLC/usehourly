@@ -6,6 +6,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { DayEditorDialog } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
+import { PageHeader } from "@/components/page-header";
 import { ProjectFilter, useProjectFilter } from "@/components/project-filter";
 import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
@@ -101,13 +102,10 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 rounded-xl border bg-card p-4">
-        <div>
-          <h1 className="font-semibold text-xl">{monthTitle.format(fromISODate(first))}</h1>
-          <p className="text-muted-foreground text-sm">
-            {formatDuration(sheet.total)} logged ({formatDecimalHours(sheet.total)} h)
-          </p>
-        </div>
+      <PageHeader
+        title={monthTitle.format(fromISODate(first))}
+        description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}
+      >
         <div
           data-testid="timesheet-toolbar"
           className="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap sm:*:min-w-0 sm:*:flex-1"
@@ -162,7 +160,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </Button>
           </div>
         </div>
-      </header>
+      </PageHeader>
 
       <DayEditorDialog date={editDate} onClose={() => setEditDate(null)} />
 

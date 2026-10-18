@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, DATE_RE, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
@@ -49,23 +50,23 @@ export function TodayView() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <h1 className="font-semibold text-xl">{date === today ? "Today" : longDate.format(fromISODate(date))}</h1>
-          {date === today && <p className="text-muted-foreground text-sm">{longDate.format(fromISODate(date))}</p>}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button size="icon" variant="outline" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
-            <ChevronLeft />
-          </Button>
-          <Button variant="outline" onClick={() => go(today ?? date)} disabled={date === today}>
-            Today
-          </Button>
-          <Button size="icon" variant="outline" onClick={() => go(addDays(date, 1))} aria-label="Next day">
-            <ChevronRight />
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={date === today ? "Today" : longDate.format(fromISODate(date))}
+        description={date === today ? longDate.format(fromISODate(date)) : undefined}
+        actions={
+          <div className="flex items-center gap-1">
+            <Button size="icon" variant="outline" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
+              <ChevronLeft />
+            </Button>
+            <Button variant="outline" onClick={() => go(today ?? date)} disabled={date === today}>
+              Today
+            </Button>
+            <Button size="icon" variant="outline" onClick={() => go(addDays(date, 1))} aria-label="Next day">
+              <ChevronRight />
+            </Button>
+          </div>
+        }
+      />
 
       <TimerBanner />
 

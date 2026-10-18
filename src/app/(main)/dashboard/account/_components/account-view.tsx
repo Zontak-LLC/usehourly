@@ -13,6 +13,8 @@ import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
 import { ImportTime } from "@/components/import-time";
 import { LogoPicker } from "@/components/logo-picker";
+import { PageHeader } from "@/components/page-header";
+import { SectionCard } from "@/components/section-card";
 import { SupportHourly } from "@/components/support-hourly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +46,11 @@ function Section({
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className="flex scroll-mt-20 flex-col gap-3">
-      <div className="border-b pb-2">
+      <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3">
         <h2 id={`${id}-heading`} className="font-semibold text-lg">
           {title}
         </h2>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <p className="text-foreground/70 text-sm">{description}</p>
       </div>
       {children}
     </section>
@@ -148,23 +150,21 @@ export function AccountView() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-8">
-      <div className="flex flex-col gap-3">
-        <h1 className="font-semibold text-xl">Account</h1>
+      <PageHeader title="Account" description="Your details, invoices, data and connections. Jump to a section:">
         <nav aria-label="Account sections" className="flex flex-wrap gap-2 text-sm">
           {SECTIONS.map((x) => (
-            <a key={x.id} href={`#${x.id}`} className="rounded-full border px-3 py-1 hover:bg-muted">
+            <a key={x.id} href={`#${x.id}`} className="rounded-full border bg-card px-3 py-1.5 hover:bg-muted">
               {x.label}
             </a>
           ))}
         </nav>
-      </div>
+      </PageHeader>
 
       <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
         {me.data.is_demo ? (
           <ClaimDemoCard />
         ) : (
-          <form method="post" onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-            <h3 className="font-semibold text-base">Name and email</h3>
+          <SectionCard onSubmit={saveProfile} title="Name and email">
             <div className="grid gap-1.5">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" defaultValue={me.data.name ?? ""} required />
@@ -202,26 +202,26 @@ export function AccountView() {
             <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
               Save
             </Button>
-          </form>
+          </SectionCard>
         )}
 
         {!me.data.is_demo && !me.data.has_password && (
-          <div className="rounded-xl border bg-card p-4">
-            <h3 className="font-semibold text-base">Password</h3>
-            <p className="text-muted-foreground text-sm">
-              You sign in with GitHub or Google, so there is no password to change. If you also want one, use "Forgot
-              password" on the log-in page.
-            </p>
-          </div>
+          <SectionCard
+            title="Password"
+            description={
+              <>
+                You sign in with GitHub or Google, so there is no password to change. If you also want one, use "Forgot
+                password" on the log-in page.
+              </>
+            }
+          />
         )}
         {!me.data.is_demo && me.data.has_password && (
-          <form method="post" onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-            <div>
-              <h3 className="font-semibold text-base">Change password</h3>
-              <p className="text-muted-foreground text-sm">
-                Changing it signs out your other devices and stops any AI assistant access tokens.
-              </p>
-            </div>
+          <SectionCard
+            onSubmit={savePassword}
+            title="Change password"
+            description="Changing it signs out your other devices and stops any AI assistant access tokens."
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="current">Current password</Label>
               <Input id="current" name="current" type="password" autoComplete="current-password" required />
@@ -233,17 +233,13 @@ export function AccountView() {
             <Button type="submit" className="self-start" disabled={changePassword.isPending}>
               Change password
             </Button>
-          </form>
+          </SectionCard>
         )}
 
-        <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div>
-            <h3 className="font-semibold text-base">Sign out</h3>
-            <p className="text-muted-foreground text-sm">
-              Log out here, or on every device at once. Signing out everywhere also stops every AI assistant access
-              token.
-            </p>
-          </div>
+        <SectionCard
+          title="Sign out"
+          description="Log out here, or on every device at once. Signing out everywhere also stops every AI assistant access token."
+        >
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
               Log out
@@ -263,17 +259,13 @@ export function AccountView() {
               Log out on all devices
             </Button>
           </div>
-        </section>
+        </SectionCard>
 
         {!me.data.is_demo && (
-          <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-            <div>
-              <h3 className="font-semibold text-base">Friday reminder</h3>
-              <p className="text-muted-foreground text-sm">
-                One email on Friday afternoon with your week so far, so nothing goes unlogged. Turn it off any time,
-                here or with the link in the email.
-              </p>
-            </div>
+          <SectionCard
+            title="Friday reminder"
+            description="One email on Friday afternoon with your week so far, so nothing goes unlogged. Turn it off any time, here or with the link in the email."
+          >
             <label className="flex min-h-8 items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -305,16 +297,16 @@ export function AccountView() {
             {emailEnabled.data?.enabled && !me.data.email_verified_at && (
               <p className="text-muted-foreground text-xs">Confirm your email address above to turn this on.</p>
             )}
-          </section>
+          </SectionCard>
         )}
       </Section>
 
       <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
-        <form method="post" onSubmit={saveBusiness} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div>
-            <h3 className="font-semibold text-base">Business details</h3>
-            <p className="text-muted-foreground text-sm">Printed on the invoices you send to clients.</p>
-          </div>
+        <SectionCard
+          onSubmit={saveBusiness}
+          title="Business details"
+          description="Printed on the invoices you send to clients."
+        >
           <div className="grid gap-1.5">
             <Label htmlFor="businessName">Business name</Label>
             <Input
@@ -359,16 +351,17 @@ export function AccountView() {
           <Button type="submit" className="self-start" disabled={updateBusiness.isPending}>
             Save business details
           </Button>
-        </form>
+        </SectionCard>
 
-        <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div>
-            <h3 className="font-semibold text-base">Invoice footer</h3>
-            <p className="text-muted-foreground text-sm">
+        <SectionCard
+          title="Invoice footer"
+          description={
+            <>
               A small &ldquo;Made with UseHourly&rdquo; line at the bottom of each page of your invoices. It helps other
               freelancers find a free tool. Turn it off any time; it applies to invoices you issue from now on.
-            </p>
-          </div>
+            </>
+          }
+        >
           <label className="flex min-h-8 items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -391,7 +384,7 @@ export function AccountView() {
             />
             Show &ldquo;Made with UseHourly&rdquo; on my invoices
           </label>
-        </section>
+        </SectionCard>
       </Section>
 
       <Section
@@ -399,16 +392,12 @@ export function AccountView() {
         title="Your data"
         description="Keep a copy of everything you have logged, or bring your history in from another tool."
       >
-        <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div>
-            <h3 className="font-semibold text-base">Download everything</h3>
-            <p className="text-muted-foreground text-sm">
-              Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook,
-              one per client, and plain CSV files.
-            </p>
-          </div>
+        <SectionCard
+          title="Download everything"
+          description="Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook, one per client, and plain CSV files."
+        >
           <ExportEverything className="self-start" />
-        </section>
+        </SectionCard>
 
         <ImportTime />
 
@@ -421,9 +410,10 @@ export function AccountView() {
         description="Let an assistant such as Claude read your time, log new entries and prepare invoices."
       >
         {me.data.is_demo ? (
-          <p className="rounded-xl border bg-card p-4 text-muted-foreground text-sm">
-            Create a free account to connect an AI assistant such as Claude.
-          </p>
+          <SectionCard
+            title="Create a free account first"
+            description="Create a free account to connect an AI assistant such as Claude."
+          />
         ) : (
           <ApiTokensCard />
         )}
