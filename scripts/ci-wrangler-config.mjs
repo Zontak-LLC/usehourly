@@ -34,6 +34,9 @@ const config = {
   ],
   vars: { AUTH_URL: appUrl, NEXT_PUBLIC_APP_URL: appUrl },
   triggers: { crons: ["0 * * * *"] },
+  // Keep the Worker's logs (our structured JSON lines, see src/lib/log.ts) so they can be searched after the fact,
+  // not just watched live with `wrangler tail`.
+  observability: { enabled: true, head_sampling_rate: 1 },
   // The custom domain is the only public address; a second *.workers.dev origin only adds attack surface.
   workers_dev: false,
 };

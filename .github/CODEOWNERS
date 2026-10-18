@@ -1,0 +1,7 @@
+# Every change is requested for review from the maintainer. Add more specific owners here as the team grows.
+*                       @dzontak
+/src/server/            @dzontak
+/migrations/            @dzontak
+/.github/               @dzontak
+/.circleci/             @dzontak
+/scripts/               @dzontak

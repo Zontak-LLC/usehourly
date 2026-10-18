@@ -37,15 +37,11 @@ jobs:
     executor: node
     steps:
       - install
+      # The same single command GitHub Actions runs (package.json "ci": Biome, tsc, tests with the coverage floor),
+      # plus a JUnit file so CircleCI can show the results.
       - run:
-          name: Lint and format
-          command: npx biome check
-      - run:
-          name: Type check
-          command: npx tsc --noEmit
-      - run:
-          name: Scenario tests
-          command: npx vitest run --reporter=junit --outputFile=test-results/junit.xml
+          name: Checks (Biome, types, tests with coverage floor)
+          command: npm run ci -- --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml
       - store_test_results:
           path: test-results
 

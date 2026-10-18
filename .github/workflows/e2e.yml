@@ -1,0 +1,40 @@
+name: Browser tests
+
+# The Playwright suite (desktop and phone) is too slow to gate every push, so it runs every night and on demand.
+# It starts its own copy of the app against a throwaway local database; nothing here touches production.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Local config with throwaway secrets
+        run: |
+          cp wrangler.example.jsonc wrangler.jsonc
+          secret=$(openssl rand -hex 32)
+          printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\n' "$secret" > .dev.vars
+          cp .dev.vars .env.local
+      - run: npm run d1:migrate:local
+      - run: npm run e2e
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report
+          path: e2e/report
+          retention-days: 14
