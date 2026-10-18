@@ -75,119 +75,62 @@ export function EntryRow({ entry }: { entry: EntryData }) {
     }
   }
 
-  return (
-    <li className="group relative flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 sm:flex-nowrap">
-      <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
-      <div className="min-w-0 flex-1">
-        {editing ? (
-          <p className="text-sm">
-            <span className="font-medium">{entry.project.name}</span>
-            <span className="text-muted-foreground"> · {entry.project.client.name}</span>
-          </p>
-        ) : (
-          // Native <select> laid invisibly over the label: click anywhere on the project to reassign it.
-          <div className="relative inline-block max-w-full">
-            <select
-              value={entry.project_id}
-              onChange={(e) => moveTo(e.target.value)}
-              disabled={update.isPending || !clients.data}
-              aria-label="Move to another project"
-              title="Move to another project"
-              className="peer absolute inset-0 size-full cursor-pointer opacity-0"
-            >
-              {clients.data ? (
-                clients.data.map((c) => (
-                  <optgroup key={c.id} label={c.name}>
-                    {c.projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))
-              ) : (
-                <option value={entry.project_id}>{entry.project.name}</option>
-              )}
-            </select>
-            <p className="-mx-1 flex max-w-full flex-wrap items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
-              <span className="break-words font-medium">{entry.project.name}</span>
-              <span className="break-words text-muted-foreground">· {entry.project.client.name}</span>
-              <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
-            </p>
-          </div>
-        )}
-        {editing ? (
-          <div className="mt-1 flex flex-col gap-1.5">
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              aria-label="Project"
-              className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-            >
-              {clients.data?.map((c) => (
-                <optgroup key={c.id} label={c.name}>
-                  {c.projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <NoteTextarea
-              value={note}
-              onChange={setNote}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  save();
-                }
-                if (e.key === "Escape") setEditing(false);
-              }}
-              aria-label="Note"
-              rows={1}
-              className="min-h-8 resize-none py-1"
-            />
-          </div>
-        ) : (
-          entry.note && <p className="whitespace-pre-wrap break-words text-muted-foreground text-xs">{entry.note}</p>
-        )}
-      </div>
+  const projectOptions = clients.data?.map((c) => (
+    <optgroup key={c.id} label={c.name}>
+      {c.projects.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+        </option>
+      ))}
+    </optgroup>
+  ));
 
-      <div className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-end sm:pr-1">
-        {editing ? (
-          <>
-            <Input
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") save();
-                if (e.key === "Escape") setEditing(false);
-              }}
-              className="h-8 w-24 text-right"
-              aria-label="Duration"
-              autoFocus
-            />
-            <Button size="icon" variant="ghost" onClick={save} aria-label="Save" disabled={update.isPending}>
-              <Check />
-            </Button>
-            <Button size="icon" variant="ghost" onClick={() => setEditing(false)} aria-label="Cancel">
-              <X />
-            </Button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              disabled={isRunning}
-              title={isRunning ? "Stop the timer to edit" : "Click to edit"}
-              className="rounded px-1.5 py-0.5 font-mono text-sm tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
-            >
-              {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
-            </button>
-            {/* Floats over the row's top-right corner on hover/focus (no space reserved, so the time stays at the edge); inline on phones. */}
-            <div className="flex rounded-lg border bg-card shadow-sm transition-opacity max-sm:border-0 max-sm:shadow-none sm:pointer-events-none sm:absolute sm:top-0 sm:right-2 sm:-translate-y-1/2 sm:opacity-0 sm:focus-within:pointer-events-auto sm:focus-within:opacity-100 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100">
+  return (
+    <li className="overflow-hidden rounded-xl border bg-card">
+      {/* Header: which project this entry is for, and its controls, always visible. */}
+      <header className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-1 pl-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
+          {editing ? (
+            <p className="truncate text-sm">
+              <span className="font-medium">{entry.project.name}</span>
+              <span className="text-muted-foreground"> · {entry.project.client.name}</span>
+            </p>
+          ) : (
+            // Native <select> laid invisibly over the label: click anywhere on the project to reassign it.
+            <div className="relative min-w-0 flex-1">
+              <select
+                value={entry.project_id}
+                onChange={(e) => moveTo(e.target.value)}
+                disabled={update.isPending || !clients.data}
+                aria-label="Move to another project"
+                title="Move to another project"
+                className="peer absolute inset-0 size-full cursor-pointer opacity-0"
+              >
+                {projectOptions ?? <option value={entry.project_id}>{entry.project.name}</option>}
+              </select>
+              <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
+                <span className="min-w-0 truncate">
+                  <span className="font-medium">{entry.project.name}</span>
+                  <span className="text-muted-foreground"> · {entry.project.client.name}</span>
+                </span>
+                <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="flex shrink-0">
+          {editing ? (
+            <>
+              <Button size="icon" variant="ghost" onClick={save} aria-label="Save" disabled={update.isPending}>
+                <Check />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => setEditing(false)} aria-label="Cancel">
+                <X />
+              </Button>
+            </>
+          ) : (
+            <>
               <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
               <Button
                 size="icon"
@@ -201,8 +144,67 @@ export function EntryRow({ entry }: { entry: EntryData }) {
               <Button size="icon" variant="ghost" onClick={remove} aria-label="Delete" disabled={del.isPending}>
                 <Trash2 />
               </Button>
+            </>
+          )}
+        </div>
+      </header>
+
+      {/* Body: what was done on the left, the hours in the lower right corner. */}
+      <div className="flex items-end justify-between gap-3 px-3 py-3">
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="flex flex-col gap-1.5">
+              <select
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                aria-label="Project"
+                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+              >
+                {projectOptions}
+              </select>
+              <NoteTextarea
+                value={note}
+                onChange={setNote}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    save();
+                  }
+                  if (e.key === "Escape") setEditing(false);
+                }}
+                aria-label="Note"
+                rows={1}
+                className="min-h-8 resize-none py-1"
+              />
             </div>
-          </>
+          ) : entry.note ? (
+            <p className="whitespace-pre-wrap break-words text-sm">{entry.note}</p>
+          ) : (
+            <p className="text-muted-foreground/70 text-sm italic">No description</p>
+          )}
+        </div>
+        {editing ? (
+          <Input
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") setEditing(false);
+            }}
+            className="h-9 w-24 shrink-0 text-right"
+            aria-label="Duration"
+            autoFocus
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            disabled={isRunning}
+            title={isRunning ? "Stop the timer to edit" : "Click to edit"}
+            className="shrink-0 rounded px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
+          >
+            {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
+          </button>
         )}
       </div>
     </li>

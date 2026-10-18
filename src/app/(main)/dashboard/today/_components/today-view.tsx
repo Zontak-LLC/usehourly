@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +15,6 @@ import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
 
 import { BillHint } from "./bill-hint";
-import { EntryRow } from "./entry-row";
 import { FirstRun } from "./first-run";
 import { QuickAdd } from "./quick-add";
 import { TimerBanner } from "./timer-banner";
@@ -99,11 +99,7 @@ export function TodayView() {
         </p>
       ) : (
         <>
-          <ul className="divide-y rounded-xl border bg-card">
-            {dayEntries.map((e) => (
-              <EntryRow key={e.id} entry={e} />
-            ))}
-          </ul>
+          <EntryList entries={dayEntries} title={date === today ? "Today's entries" : "Entries"} />
           <MergeEntriesBar entries={dayEntries} />
         </>
       )}

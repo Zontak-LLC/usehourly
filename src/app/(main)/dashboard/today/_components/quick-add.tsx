@@ -119,12 +119,12 @@ export function QuickAdd({
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+    <div className="flex flex-col gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-3 shadow-sm sm:p-4">
       <h2 className="font-semibold text-base">
         Add to the day <span className="font-normal text-muted-foreground">· {dayLabel}</span>
       </h2>
 
-      <form method="post" onSubmit={submit} className="flex flex-col gap-3">
+      <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
         {onlyProject ? (
           <p className="text-base">
             {onlyClient?.name} · {onlyProject.name}
@@ -155,7 +155,7 @@ export function QuickAdd({
             aria-invalid={invalid}
             inputMode="decimal"
             enterKeyHint="next"
-            className="h-12 text-base"
+            className="h-11 text-base"
           />
           <div className="grid grid-cols-5 gap-2">
             {DURATION_CHIPS.map((c) => (
@@ -164,7 +164,7 @@ export function QuickAdd({
                 type="button"
                 variant={parsed === c.minutes ? "secondary" : "outline"}
                 aria-pressed={parsed === c.minutes}
-                className="h-11 px-1 text-sm sm:text-base"
+                className="h-9 px-1 text-sm sm:h-10 sm:text-base"
                 onClick={() => {
                   setDuration(`${c.minutes}m`);
                   durationRef.current?.focus();
@@ -174,13 +174,13 @@ export function QuickAdd({
               </Button>
             ))}
           </div>
-          <p className={`min-h-4 text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
-            {invalid
-              ? "Try 1.5, 1:30 or 90m"
-              : parsed
-                ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + parsed)} h`
-                : ""}
-          </p>
+          {(invalid || parsed) && (
+            <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
+              {invalid
+                ? "Try 1.5, 1:30 or 90m"
+                : `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`}
+            </p>
+          )}
         </div>
 
         <NoteTextarea
@@ -196,8 +196,8 @@ export function QuickAdd({
           }}
           placeholder="What did you work on? (optional)"
           aria-label="Description"
-          rows={2}
-          className="min-h-16 resize-none py-2.5 text-base"
+          rows={1}
+          className="min-h-12 resize-none py-2.5 text-base"
         />
 
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -205,7 +205,7 @@ export function QuickAdd({
             type="submit"
             size="lg"
             disabled={create.isPending || parsed === null}
-            className="h-14 w-full text-lg sm:flex-1"
+            className="h-12 w-full text-base sm:flex-1"
           >
             Add to the day{" "}
             <Kbd className="ml-1 hidden bg-primary-foreground/20 text-primary-foreground md:inline-flex">↵</Kbd>
@@ -218,7 +218,7 @@ export function QuickAdd({
               variant="outline"
               onClick={startTimer}
               disabled={start.isPending}
-              className="h-14 w-full text-base sm:w-auto sm:px-6"
+              className="h-12 w-full text-base sm:w-auto sm:px-6"
             >
               <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
             </Button>
