@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Check, ChevronDown, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { NoteTextarea } from "@/components/note-textarea";
+import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -15,11 +16,6 @@ import { DURATION_CHIPS } from "@/lib/quick-start";
 import { trpc } from "@/lib/trpc";
 
 const LAST_PROJECT_KEY = "hourly:lastProject";
-/** With this many projects or fewer, the project is picked with buttons instead of a drop-down. */
-const MAX_PROJECT_BUTTONS = 4;
-/** One row from tablet width up (2x2 on a phone); full class names so Tailwind keeps them. */
-const BUTTON_COLUMNS: Record<number, string> = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-4" };
-
 function readLast(): string {
   try {
     return localStorage.getItem(LAST_PROJECT_KEY) ?? "";
@@ -117,8 +113,6 @@ export function QuickAdd({
     day: "numeric",
   });
   const onlyProject = projects.length === 1 ? projects[0] : null;
-  // On a phone the chips show just the project name; the client is added only when two projects share a name.
-  const sameName = new Set(projects.map((p) => p.name).filter((n, i, all) => all.indexOf(n) !== i));
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
   return (
@@ -132,72 +126,18 @@ export function QuickAdd({
           <p className="text-base">
             {onlyClient?.name} · {onlyProject.name}
           </p>
-        ) : projects.length <= MAX_PROJECT_BUTTONS ? (
-          // A few projects: a labelled single-choice group. Each button has a radio dot so it reads as "pick one".
+        ) : (
           <div className="flex flex-col gap-2">
             <p id="quick-project-label" className="font-medium text-sm">
               Which project? <span className="font-normal text-muted-foreground">Pick one</span>
             </p>
-            <div
-              role="radiogroup"
-              aria-labelledby="quick-project-label"
-              className={`flex flex-wrap gap-2 sm:grid ${BUTTON_COLUMNS[projects.length] ?? ""}`}
-            >
-              {clients.data?.flatMap((c) =>
-                c.projects.map((p) => {
-                  const on = projectId === p.id;
-                  return (
-                    <Button
-                      key={p.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      variant={on ? "default" : "outline"}
-                      onClick={() => remember(p.id)}
-                      className="h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-primary-foreground bg-primary-foreground text-primary" : "border-muted-foreground/50"}`}
-                      >
-                        {on && <Check className="size-3.5 max-sm:size-3" strokeWidth={3} />}
-                      </span>
-                      <span className="flex min-w-0 flex-col items-start">
-                        <span className="max-w-full break-words font-medium sm:text-base">{p.name}</span>
-                        <span
-                          className={`max-w-full break-words font-normal text-xs ${
-                            sameName.has(p.name) ? "" : "max-sm:hidden"
-                          } ${on ? "text-primary-foreground/80" : "text-muted-foreground"}`}
-                        >
-                          {c.name}
-                        </span>
-                      </span>
-                    </Button>
-                  );
-                }),
+            <ProjectPicker
+              projects={(clients.data ?? []).flatMap((c) =>
+                c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name })),
               )}
-            </div>
-          </div>
-        ) : (
-          <div className="relative w-full">
-            <select
-              id="quick-project"
               value={projectId}
-              onChange={(e) => remember(e.target.value)}
-              aria-label="Project"
-              className="h-12 w-full appearance-none rounded-lg border border-input bg-transparent pr-10 pl-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              {clients.data?.map((c) => (
-                <optgroup key={c.id} label={c.name}>
-                  {c.projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-muted-foreground" />
+              onChange={remember}
+            />
           </div>
         )}
 

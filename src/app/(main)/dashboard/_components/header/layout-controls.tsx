@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type FontKey, fontOptions } from "@/lib/fonts/registry";
-import type { ContentLayout, NavbarStyle, SidebarCollapsible, SidebarVariant } from "@/lib/preferences/layout";
+import type { ContentLayout, NavbarStyle } from "@/lib/preferences/layout";
 import { THEME_PRESET_OPTIONS, type ThemeMode, type ThemePreset } from "@/lib/preferences/theme";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
@@ -28,8 +28,6 @@ export function LayoutControls() {
     theme_preset: themePreset,
     content_layout: contentLayout,
     navbar_style: navbarStyle,
-    sidebar_variant: variant,
-    sidebar_collapsible: collapsible,
     font,
   } = values;
 
@@ -50,16 +48,6 @@ export function LayoutControls() {
   const onNavbarStyleChange = (style: NavbarStyle | "") => {
     if (!style) return;
     setPreference("navbar_style", style);
-  };
-
-  const onSidebarStyleChange = (value: SidebarVariant | "") => {
-    if (!value) return;
-    setPreference("sidebar_variant", value);
-  };
-
-  const onSidebarCollapseModeChange = (value: SidebarCollapsible | "") => {
-    if (!value) return;
-    setPreference("sidebar_collapsible", value);
   };
 
   const onFontChange = (value: FontKey | "") => {
@@ -179,47 +167,6 @@ export function LayoutControls() {
                 </ToggleGroupItem>
                 <ToggleGroupItem value="scroll" aria-label="Toggle scroll">
                   Scroll
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="font-medium text-xs">Sidebar Style</Label>
-              <ToggleGroup
-                size="sm"
-                spacing={0}
-                variant="outline"
-                type="single"
-                value={variant}
-                onValueChange={onSidebarStyleChange}
-              >
-                <ToggleGroupItem value="inset" aria-label="Toggle inset">
-                  Inset
-                </ToggleGroupItem>
-                <ToggleGroupItem value="sidebar" aria-label="Toggle sidebar">
-                  Sidebar
-                </ToggleGroupItem>
-                <ToggleGroupItem value="floating" aria-label="Toggle floating">
-                  Floating
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="font-medium text-xs">Sidebar Collapse Mode</Label>
-              <ToggleGroup
-                size="sm"
-                spacing={0}
-                variant="outline"
-                type="single"
-                value={collapsible}
-                onValueChange={onSidebarCollapseModeChange}
-              >
-                <ToggleGroupItem value="icon" aria-label="Toggle icon">
-                  Icon
-                </ToggleGroupItem>
-                <ToggleGroupItem value="offcanvas" aria-label="Toggle offcanvas">
-                  OffCanvas
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
