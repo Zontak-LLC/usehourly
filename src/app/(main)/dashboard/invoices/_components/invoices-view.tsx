@@ -235,156 +235,174 @@ export function InvoicesView() {
     </div>
   );
 
-  const summary = (
-    <p className="px-4 py-2 text-right text-muted-foreground text-xs">
-      {invoices.data?.length} invoice{invoices.data?.length === 1 ? "" : "s"} ·{" "}
-      <span className="font-medium font-mono text-foreground">{formatMoney(total)}</span>
-      {unpaid > 0 && (
-        <>
-          {" "}
-          · <span className="font-medium font-mono text-foreground">{formatMoney(unpaid)}</span> unpaid
-        </>
-      )}
-      {filtering ? " (filtered)" : ""}
-    </p>
-  );
-
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="font-semibold text-xl">Invoices</h1>
-          <p className="text-muted-foreground text-sm">Every invoice you've issued, saved exactly as sent.</p>
+      {/* The page's header card: what this page is, the button to make one, and where the money stands. */}
+      <header className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-semibold text-xl">Invoices</h1>
+            <p className="text-muted-foreground text-sm">Every invoice you've issued, saved exactly as sent.</p>
+          </div>
+          <Button asChild size="lg" className="h-10">
+            <Link href="/dashboard/invoices/new">
+              <Plus /> New invoice
+            </Link>
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/invoices/new">
-            <Plus /> New invoice
-          </Link>
-        </Button>
-      </div>
+        {(invoices.data?.length ?? 0) > 0 && (
+          <dl className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+              <dt className="text-muted-foreground text-xs">
+                Invoiced · {invoices.data?.length} invoice{invoices.data?.length === 1 ? "" : "s"}
+                {filtering ? " (filtered)" : ""}
+              </dt>
+              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{formatMoney(total)}</dd>
+            </div>
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+              <dt className="flex items-center gap-1 text-muted-foreground text-xs">
+                {unpaid > 0 && <CircleAlert aria-hidden className="size-3.5 text-destructive" />} Unpaid
+              </dt>
+              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{formatMoney(unpaid)}</dd>
+            </div>
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+              <dt className="flex items-center gap-1 text-muted-foreground text-xs">
+                <CircleCheck aria-hidden className="size-3.5 text-success" /> Paid
+              </dt>
+              <dd className="font-mono font-semibold text-base text-success tabular-nums sm:text-xl">
+                {formatMoney(total - unpaid)}
+              </dd>
+            </div>
+          </dl>
+        )}
+        {showFilters && (
+          <search aria-label="Find invoices" className="flex flex-col gap-3 border-t pt-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Search invoices…"
+                aria-label="Search invoices"
+                className="h-11 pr-10 pl-9 text-base"
+              />
+              {text && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setText("");
+                    setQ("");
+                  }}
+                  aria-label="Clear search"
+                  title="Clear search"
+                  className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
 
-      {showFilters && (
-        <search aria-label="Find invoices" className="flex flex-col gap-3 rounded-xl border bg-card p-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Search invoices…"
-              aria-label="Search invoices"
-              className="pr-10 pl-8"
-            />
-            {text && (
-              <button
-                type="button"
-                onClick={() => {
-                  setText("");
-                  setQ("");
-                }}
-                aria-label="Clear search"
-                title="Clear search"
-                className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <X className="size-3.5" />
-              </button>
+            {/* Labelled controls in a grid: two across on a phone, one row on a wide screen. */}
+            <div className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="grid min-w-0 gap-1">
+                <label htmlFor="inv-client" className="text-muted-foreground text-xs">
+                  Client
+                </label>
+                <select
+                  id="inv-client"
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  className={SELECT}
+                >
+                  <option value="">All clients</option>
+                  {clients.data?.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid min-w-0 gap-1">
+                <label htmlFor="inv-status" className="text-muted-foreground text-xs">
+                  Status
+                </label>
+                <select
+                  id="inv-status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as "all" | "unpaid" | "paid")}
+                  className={SELECT}
+                >
+                  <option value="all">All statuses</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+              <div className="col-span-2 grid min-w-0 gap-1 sm:col-span-1">
+                <label htmlFor="inv-sort" className="text-muted-foreground text-xs">
+                  Sort by
+                </label>
+                <select
+                  id="inv-sort"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as typeof sort)}
+                  className={SELECT}
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="highest">Highest amount</option>
+                  <option value="lowest">Lowest amount</option>
+                </select>
+              </div>
+              <div className="grid min-w-0 gap-1">
+                <label htmlFor="issued-from" className="text-muted-foreground text-xs">
+                  Issued from
+                </label>
+                <Input
+                  id="issued-from"
+                  type="date"
+                  value={from}
+                  max={to || undefined}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="min-w-0 sm:h-9"
+                />
+              </div>
+              <div className="grid min-w-0 gap-1">
+                <label htmlFor="issued-to" className="text-muted-foreground text-xs">
+                  Issued to
+                </label>
+                <Input
+                  id="issued-to"
+                  type="date"
+                  value={to}
+                  min={from || undefined}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="min-w-0 sm:h-9"
+                />
+              </div>
+            </div>
+
+            {(filtering || sort !== "newest") && (
+              <div className="flex justify-end border-t pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setText("");
+                    setQ("");
+                    setClientId("");
+                    setStatus("all");
+                    setFrom("");
+                    setTo("");
+                    setSort("newest");
+                  }}
+                >
+                  Clear all filters
+                </Button>
+              </div>
             )}
-          </div>
-
-          {/* Labelled controls in a grid: two across on a phone, one row on a wide screen. */}
-          <div className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
-            <div className="grid min-w-0 gap-1">
-              <label htmlFor="inv-client" className="text-muted-foreground text-xs">
-                Client
-              </label>
-              <select id="inv-client" value={clientId} onChange={(e) => setClientId(e.target.value)} className={SELECT}>
-                <option value="">All clients</option>
-                {clients.data?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid min-w-0 gap-1">
-              <label htmlFor="inv-status" className="text-muted-foreground text-xs">
-                Status
-              </label>
-              <select
-                id="inv-status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as "all" | "unpaid" | "paid")}
-                className={SELECT}
-              >
-                <option value="all">All statuses</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="paid">Paid</option>
-              </select>
-            </div>
-            <div className="col-span-2 grid min-w-0 gap-1 sm:col-span-1">
-              <label htmlFor="inv-sort" className="text-muted-foreground text-xs">
-                Sort by
-              </label>
-              <select
-                id="inv-sort"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as typeof sort)}
-                className={SELECT}
-              >
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="highest">Highest amount</option>
-                <option value="lowest">Lowest amount</option>
-              </select>
-            </div>
-            <div className="grid min-w-0 gap-1">
-              <label htmlFor="issued-from" className="text-muted-foreground text-xs">
-                Issued from
-              </label>
-              <Input
-                id="issued-from"
-                type="date"
-                value={from}
-                max={to || undefined}
-                onChange={(e) => setFrom(e.target.value)}
-                className="min-w-0 sm:h-9"
-              />
-            </div>
-            <div className="grid min-w-0 gap-1">
-              <label htmlFor="issued-to" className="text-muted-foreground text-xs">
-                Issued to
-              </label>
-              <Input
-                id="issued-to"
-                type="date"
-                value={to}
-                min={from || undefined}
-                onChange={(e) => setTo(e.target.value)}
-                className="min-w-0 sm:h-9"
-              />
-            </div>
-          </div>
-
-          {(filtering || sort !== "newest") && (
-            <div className="flex justify-end border-t pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setText("");
-                  setQ("");
-                  setClientId("");
-                  setStatus("all");
-                  setFrom("");
-                  setTo("");
-                  setSort("newest");
-                }}
-              >
-                Clear all filters
-              </Button>
-            </div>
-          )}
-        </search>
-      )}
+          </search>
+        )}
+      </header>
 
       {invoices.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -423,7 +441,6 @@ export function InvoicesView() {
                 </div>
               </li>
             ))}
-            <li className="rounded-xl border bg-card">{summary}</li>
           </ul>
         </>
       )}

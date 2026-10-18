@@ -101,7 +101,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 rounded-xl border bg-card p-4">
         <div>
           <h1 className="font-semibold text-xl">{monthTitle.format(fromISODate(first))}</h1>
           <p className="text-muted-foreground text-sm">
@@ -162,7 +162,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       <DayEditorDialog date={editDate} onClose={() => setEditDate(null)} />
 

@@ -56,8 +56,9 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    // One container around the whole page: the header, the week, the day and the lists sit inside it.
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-2xl border bg-muted/30 p-3 sm:p-5">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3">
         <div>
           <h1 className="font-semibold text-xl">Weekly timesheet</h1>
           <p className="text-muted-foreground text-sm">
@@ -108,7 +109,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       {entries.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Merge } from "lucide-react";
+import { Info, Merge } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -48,13 +48,22 @@ export function MergeDaysPanel({ entries }: { entries: Entry[] }) {
   }
 
   return (
-    <section className="rounded-xl border bg-card" aria-label="Days with several entries">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
-        <div>
-          <h2 className="font-semibold text-base">Days with several entries</h2>
-          <p className="text-muted-foreground text-xs">
-            Same project, same day. Merging adds the hours and joins the descriptions.
-          </p>
+    // An information card: it tells you something worth a look (duplicates on a day) and offers the fix.
+    <section
+      className="overflow-hidden rounded-xl border border-primary/30 bg-primary/5"
+      aria-label="Days with several entries"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <Info className="size-4" aria-hidden />
+          </span>
+          <div>
+            <h2 className="font-semibold text-base">Days with several entries</h2>
+            <p className="text-muted-foreground text-sm">
+              Same project, same day. Merging adds the hours and joins the descriptions.
+            </p>
+          </div>
         </div>
         {ready.length > 1 && (
           <Button size="sm" onClick={() => run(ready)} disabled={busy}>
@@ -62,7 +71,7 @@ export function MergeDaysPanel({ entries }: { entries: Entry[] }) {
           </Button>
         )}
       </div>
-      <ul className="divide-y">
+      <ul className="divide-y divide-primary/15 border-t border-primary/15 bg-card/60">
         {groups.map((g) => {
           const total = g.entries.reduce((a, e) => a + e.minutes, 0);
           const error = "error" in g.plan ? g.plan.error : null;
