@@ -164,7 +164,7 @@ export function AccountView() {
           <ClaimDemoCard />
         ) : (
           <form method="post" onSubmit={saveProfile} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-            <h3 className="font-medium">Name and email</h3>
+            <h3 className="font-semibold text-base">Name and email</h3>
             <div className="grid gap-1.5">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" defaultValue={me.data.name ?? ""} required />
@@ -207,7 +207,7 @@ export function AccountView() {
 
         {!me.data.is_demo && !me.data.has_password && (
           <div className="rounded-xl border bg-card p-4">
-            <h3 className="font-medium">Password</h3>
+            <h3 className="font-semibold text-base">Password</h3>
             <p className="text-muted-foreground text-sm">
               You sign in with GitHub or Google, so there is no password to change. If you also want one, use "Forgot
               password" on the log-in page.
@@ -217,7 +217,7 @@ export function AccountView() {
         {!me.data.is_demo && me.data.has_password && (
           <form method="post" onSubmit={savePassword} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
             <div>
-              <h3 className="font-medium">Change password</h3>
+              <h3 className="font-semibold text-base">Change password</h3>
               <p className="text-muted-foreground text-sm">
                 Changing it signs out your other devices and stops any AI assistant access tokens.
               </p>
@@ -238,7 +238,7 @@ export function AccountView() {
 
         <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
-            <h3 className="font-medium">Sign out</h3>
+            <h3 className="font-semibold text-base">Sign out</h3>
             <p className="text-muted-foreground text-sm">
               Log out here, or on every device at once. Signing out everywhere also stops every AI assistant access
               token.
@@ -268,7 +268,7 @@ export function AccountView() {
         {!me.data.is_demo && (
           <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
             <div>
-              <h3 className="font-medium">Friday reminder</h3>
+              <h3 className="font-semibold text-base">Friday reminder</h3>
               <p className="text-muted-foreground text-sm">
                 One email on Friday afternoon with your week so far, so nothing goes unlogged. Turn it off any time,
                 here or with the link in the email.
@@ -312,7 +312,7 @@ export function AccountView() {
       <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
         <form method="post" onSubmit={saveBusiness} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
-            <h3 className="font-medium">Business details</h3>
+            <h3 className="font-semibold text-base">Business details</h3>
             <p className="text-muted-foreground text-sm">Printed on the invoices you send to clients.</p>
           </div>
           <div className="grid gap-1.5">
@@ -363,7 +363,7 @@ export function AccountView() {
 
         <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
-            <h3 className="font-medium">Invoice footer</h3>
+            <h3 className="font-semibold text-base">Invoice footer</h3>
             <p className="text-muted-foreground text-sm">
               A small &ldquo;Made with UseHourly&rdquo; line at the bottom of each page of your invoices. It helps other
               freelancers find a free tool. Turn it off any time; it applies to invoices you issue from now on.
@@ -401,7 +401,7 @@ export function AccountView() {
       >
         <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
           <div>
-            <h3 className="font-medium">Download everything</h3>
+            <h3 className="font-semibold text-base">Download everything</h3>
             <p className="text-muted-foreground text-sm">
               Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook,
               one per client, and plain CSV files.

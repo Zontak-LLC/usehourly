@@ -275,7 +275,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="font-medium">By project</h2>
+              <h2 className="font-semibold text-base">By project</h2>
               {projectId && (
                 <Button size="sm" variant="outline" onClick={() => setProjectId("")}>
                   Show all projects

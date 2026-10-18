@@ -51,7 +51,7 @@ export function MergeDaysPanel({ entries }: { entries: Entry[] }) {
     <section className="rounded-xl border bg-card" aria-label="Days with several entries">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
         <div>
-          <h2 className="font-medium text-sm">Days with several entries</h2>
+          <h2 className="font-semibold text-base">Days with several entries</h2>
           <p className="text-muted-foreground text-xs">
             Same project, same day. Merging adds the hours and joins the descriptions.
           </p>

@@ -15,6 +15,7 @@ import {
   Search,
   Send,
   Trash2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,6 +94,9 @@ function PaidDialog({
     </Dialog>
   );
 }
+
+const SELECT =
+  "h-9 w-full min-w-0 rounded-lg border border-input bg-transparent px-2 text-sm max-md:h-10 dark:bg-input/30";
 
 export function InvoicesView() {
   const utils = trpc.useUtils();
@@ -260,74 +264,108 @@ export function InvoicesView() {
       </div>
 
       {showFilters && (
-        <>
-          <div className="flex flex-wrap gap-2">
-            <div className="relative min-w-56 flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Search number, client, project or note…"
-                aria-label="Search invoices"
-                className="h-9 pl-8"
-              />
-            </div>
-            <select
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              aria-label="Filter by client"
-              className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-            >
-              <option value="">All clients</option>
-              {clients.data?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as "all" | "unpaid" | "paid")}
-              aria-label="Filter by payment status"
-              className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-            >
-              <option value="all">All statuses</option>
-              <option value="unpaid">Unpaid</option>
-              <option value="paid">Paid</option>
-            </select>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as typeof sort)}
-              aria-label="Sort invoices"
-              className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
-            >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="highest">Highest amount</option>
-              <option value="lowest">Lowest amount</option>
-            </select>
+        <search aria-label="Find invoices" className="flex flex-col gap-3 rounded-xl border bg-card p-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Search invoices…"
+              aria-label="Search invoices"
+              className="pr-10 pl-8"
+            />
+            {text && (
+              <button
+                type="button"
+                onClick={() => {
+                  setText("");
+                  setQ("");
+                }}
+                aria-label="Clear search"
+                title="Clear search"
+                className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Issued from</span>
-            <Input
-              type="date"
-              value={from}
-              max={to || undefined}
-              onChange={(e) => setFrom(e.target.value)}
-              aria-label="Issued from"
-              className="h-9 w-40"
-            />
-            <span className="text-muted-foreground">to</span>
-            <Input
-              type="date"
-              value={to}
-              min={from || undefined}
-              onChange={(e) => setTo(e.target.value)}
-              aria-label="Issued to"
-              className="h-9 w-40"
-            />
-            {(filtering || sort !== "newest") && (
+          {/* Labelled controls in a grid: two across on a phone, one row on a wide screen. */}
+          <div className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid min-w-0 gap-1">
+              <label htmlFor="inv-client" className="text-muted-foreground text-xs">
+                Client
+              </label>
+              <select id="inv-client" value={clientId} onChange={(e) => setClientId(e.target.value)} className={SELECT}>
+                <option value="">All clients</option>
+                {clients.data?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid min-w-0 gap-1">
+              <label htmlFor="inv-status" className="text-muted-foreground text-xs">
+                Status
+              </label>
+              <select
+                id="inv-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "all" | "unpaid" | "paid")}
+                className={SELECT}
+              >
+                <option value="all">All statuses</option>
+                <option value="unpaid">Unpaid</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            <div className="col-span-2 grid min-w-0 gap-1 sm:col-span-1">
+              <label htmlFor="inv-sort" className="text-muted-foreground text-xs">
+                Sort by
+              </label>
+              <select
+                id="inv-sort"
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+                className={SELECT}
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="highest">Highest amount</option>
+                <option value="lowest">Lowest amount</option>
+              </select>
+            </div>
+            <div className="grid min-w-0 gap-1">
+              <label htmlFor="issued-from" className="text-muted-foreground text-xs">
+                Issued from
+              </label>
+              <Input
+                id="issued-from"
+                type="date"
+                value={from}
+                max={to || undefined}
+                onChange={(e) => setFrom(e.target.value)}
+                className="min-w-0 sm:h-9"
+              />
+            </div>
+            <div className="grid min-w-0 gap-1">
+              <label htmlFor="issued-to" className="text-muted-foreground text-xs">
+                Issued to
+              </label>
+              <Input
+                id="issued-to"
+                type="date"
+                value={to}
+                min={from || undefined}
+                onChange={(e) => setTo(e.target.value)}
+                className="min-w-0 sm:h-9"
+              />
+            </div>
+          </div>
+
+          {(filtering || sort !== "newest") && (
+            <div className="flex justify-end border-t pt-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -341,11 +379,11 @@ export function InvoicesView() {
                   setSort("newest");
                 }}
               >
-                Clear all
+                Clear all filters
               </Button>
-            )}
-          </div>
-        </>
+            </div>
+          )}
+        </search>
       )}
 
       {invoices.error ? (
@@ -376,8 +414,8 @@ export function InvoicesView() {
                 </div>
                 {i.summary && <p className="line-clamp-2 break-words text-sm">{i.summary}</p>}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">
-                  <p className="text-sm">{statusOf(i)}</p>
-                  <p className="min-w-0 flex-1 text-muted-foreground text-xs">
+                  <p className="text-sm max-sm:flex-1">{statusOf(i)}</p>
+                  <p className="min-w-0 flex-1 text-muted-foreground text-xs max-sm:order-first max-sm:basis-full">
                     {fmt(i.period_from)} – {fmt(i.period_to)} · {formatDecimalHours(i.total_minutes)} h · issued{" "}
                     {fmt(i.issue_date)}
                   </p>

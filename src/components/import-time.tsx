@@ -102,7 +102,7 @@ export function ImportTime() {
   return (
     <section className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       <div>
-        <h3 className="font-medium">Import from Toggl or Clockify</h3>
+        <h3 className="font-semibold text-base">Import from Toggl or Clockify</h3>
         <p className="text-muted-foreground text-sm">
           Bring your history over from a CSV export. Clients and projects are created for you, and importing the same
           file twice never doubles anything.

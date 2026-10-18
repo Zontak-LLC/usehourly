@@ -105,7 +105,11 @@ export function ReportView() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            <Stat label="Hours worked" value={h(data.totals.minutes)} hint={`${data.totals.workedDays} days`} />
+            <Stat
+              label="Hours worked"
+              value={h(data.totals.minutes)}
+              hint={`${data.totals.workedDays} ${data.totals.workedDays === 1 ? "day" : "days"}`}
+            />
             <Stat
               label="Billable hours"
               value={h(data.totals.billableMinutes)}
@@ -269,7 +273,7 @@ function Section({ title, note, children }: { title: string; note?: string; chil
   return (
     <section className="rounded-xl border bg-card">
       <div className="border-b px-4 py-3">
-        <h2 className="font-medium">{title}</h2>
+        <h2 className="font-semibold text-base">{title}</h2>
         {note && <p className="text-muted-foreground text-xs">{note}</p>}
       </div>
       {children}

@@ -101,7 +101,7 @@ export function WorkItems({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-medium">
+        <h2 className="font-semibold text-base">
           What you worked on <span className="font-normal text-muted-foreground text-sm">({matches.length})</span>
         </h2>
         <div className="relative w-full sm:w-64">

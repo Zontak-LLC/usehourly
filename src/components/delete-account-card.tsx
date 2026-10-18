@@ -30,7 +30,7 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-destructive/40 bg-card p-4">
       <div>
-        <h3 className="font-medium">Delete my account</h3>
+        <h3 className="font-semibold text-base">Delete my account</h3>
         <p className="text-muted-foreground text-sm">
           This removes your clients, projects, time entries, invoices and settings for good, and cannot be undone. Use
           “Export everything” above first if you want a copy.

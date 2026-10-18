@@ -91,7 +91,7 @@ export function ApiTokensCard() {
   return (
     <section className="flex flex-col gap-4 rounded-xl border bg-card p-4">
       <div>
-        <h3 className="font-medium">Access tokens</h3>
+        <h3 className="font-semibold text-base">Access tokens</h3>
         <p className="text-muted-foreground text-sm">
           An assistant connects with a personal access token. Choose whether it can only read your data or also make
           changes, and revoke a token whenever you like.

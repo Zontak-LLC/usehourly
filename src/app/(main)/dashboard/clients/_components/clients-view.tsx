@@ -364,8 +364,8 @@ export function ClientsView() {
             />
           </div>
         )}
-        <Button type="button" onClick={() => setNewOpen(true)} className="ml-auto shrink-0">
-          <Plus /> New client
+        <Button type="button" onClick={() => setNewOpen(true)} className="ml-auto shrink-0" title="New client">
+          <Plus /> <span className="max-sm:sr-only">New client</span>
         </Button>
       </div>
 
@@ -420,7 +420,7 @@ export function ClientsView() {
                 {c.projects.length} project{c.projects.length === 1 ? "" : "s"}
               </p>
             </div>
-            <span className="flex">
+            <span className="flex max-sm:-ml-2.5">
               <Button
                 size="sm"
                 variant="ghost"
@@ -527,7 +527,7 @@ export function ClientsView() {
                       <span title="This month">{formatDuration(totals.data?.[p.id]?.range ?? 0)} mo</span>
                       <span title="All time">{formatDuration(totals.data?.[p.id]?.total ?? 0)} total</span>
                     </span>
-                    <span className="flex">
+                    <span className="flex max-sm:ml-auto">
                       <Button
                         size="icon"
                         variant="ghost"
