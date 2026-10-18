@@ -108,10 +108,13 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             {formatDuration(sheet.total)} logged ({formatDecimalHours(sheet.total)} h)
           </p>
         </div>
-        <div data-testid="timesheet-toolbar" className="flex flex-wrap items-center gap-1">
+        <div
+          data-testid="timesheet-toolbar"
+          className="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap sm:*:min-w-0 sm:*:flex-1"
+        >
           <Button
             variant={selectMode ? "default" : "outline"}
-            className="max-sm:flex-1"
+            className="h-10 max-sm:flex-1"
             onClick={() => {
               setSelectMode((on) => !on);
               setPicked(new Set());
@@ -120,9 +123,9 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           >
             <CalendarPlus /> Add to several days
           </Button>
-          <ProjectFilter className="max-sm:flex-1" value={projectId} onChange={setProjectId} />
+          <ProjectFilter className="h-10 max-sm:flex-1" value={projectId} onChange={setProjectId} />
           <ShareExportMenu
-            className="max-sm:flex-1"
+            className="h-10 max-sm:flex-1"
             entries={entries.data ? shown : undefined}
             days={monthDays}
             filename={`usehourly-${first.slice(0, 7)}.xlsx`}
@@ -131,11 +134,11 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             defaultTo={last}
             projectId={projectId}
           />
-          <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full">
+          <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full sm:min-w-44">
             <Button
               size="icon"
               variant="ghost"
-              className="rounded-none"
+              className="size-10 rounded-none"
               onClick={() => setFirst(shiftMonth(first, -1))}
               aria-label="Previous month"
             >
@@ -143,7 +146,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </Button>
             <Button
               variant="ghost"
-              className="rounded-none border-x max-sm:flex-1"
+              className="h-10 flex-1 rounded-none border-x"
               onClick={() => today && setFirst(`${today.slice(0, 7)}-01`)}
             >
               This month
@@ -151,7 +154,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             <Button
               size="icon"
               variant="ghost"
-              className="rounded-none"
+              className="size-10 rounded-none"
               onClick={() => setFirst(shiftMonth(first, 1))}
               aria-label="Next month"
             >

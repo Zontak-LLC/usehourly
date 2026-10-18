@@ -114,13 +114,13 @@ export function NewInvoiceView() {
     }
   }
 
-  if (clients.isLoading || me.isLoading || !today) return <Skeleton className="mx-auto h-96 w-full max-w-3xl" />;
+  if (clients.isLoading || me.isLoading || !today) return <Skeleton className="mx-auto h-96 w-full max-w-5xl" />;
 
   const missingProfile = !me.data?.ein || !me.data?.address;
   const hasClients = (clients.data ?? []).length > 0;
 
   return (
-    <form method="post" onSubmit={submit} className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <form method="post" onSubmit={submit} className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <div>
         <h1 className="font-semibold text-xl">New invoice</h1>
         <p className="text-muted-foreground text-sm">

@@ -5,29 +5,7 @@ if (process.env.NODE_ENV === "development") {
   await initOpenNextCloudflareForDev();
 }
 
-const isProd = process.env.NODE_ENV === "production";
-
-// Content-Security-Policy. Inline scripts stay allowed because Next.js and the theme boot script
-// emit them (a nonce-based policy would make every page dynamic); the rest is locked down: no
-// plugins, no <base> hijack, no framing, forms and fetches only to this origin, images only from
-// this origin or data/blob (logos are data URLs, downloads are blobs).
-const csp = [
-  "default-src 'self'",
-  // static.cloudflareinsights.com: Cloudflare Web Analytics, injected at the edge in production.
-  `script-src 'self' 'unsafe-inline'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"} https://challenges.cloudflare.com`,
-  // Turnstile (the sign-up robot check) draws its widget in an iframe from Cloudflare.
-  "frame-src https://challenges.cloudflare.com",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  `connect-src 'self'${isProd ? " https://cloudflareinsights.com" : " ws: wss:"}`,
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  ...(isProd ? ["upgrade-insecure-requests"] : []),
-].join("; ");
+// The Content-Security-Policy is built per request (a fresh nonce for scripts) in src/proxy.ts; see src/lib/csp.ts.
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -50,7 +28,6 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "Content-Security-Policy", value: csp },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

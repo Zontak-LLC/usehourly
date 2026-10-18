@@ -57,7 +57,7 @@ export function InsightsView() {
   const { signedUp, withEntry, withInvoice, firstEntryWithinDay } = d.funnel;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 lg:p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 lg:p-6">
       <div>
         <h1 className="font-semibold text-2xl">Insights</h1>
         <p className="text-muted-foreground text-sm">

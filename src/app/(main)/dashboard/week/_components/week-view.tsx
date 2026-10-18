@@ -121,9 +121,12 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             <span className="md:hidden"> · tap a day to add or change time</span>
           </p>
         </div>
-        <div data-testid="timesheet-toolbar" className="flex flex-wrap items-center gap-1">
+        <div
+          data-testid="timesheet-toolbar"
+          className="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap sm:*:min-w-0 sm:*:flex-1"
+        >
           <ProjectFilter
-            className="max-sm:flex-1"
+            className="h-10 max-sm:flex-1"
             value={projectId}
             onChange={(id) => {
               setProjectId(id);
@@ -131,7 +134,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             }}
           />
           <ShareExportMenu
-            className="max-sm:flex-1"
+            className="h-10 max-sm:flex-1"
             entries={entries.data ? shown : undefined}
             days={days}
             filename={`usehourly-${start}_to_${end}.xlsx`}
@@ -140,11 +143,11 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             defaultTo={end}
             projectId={projectId}
           />
-          <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full">
+          <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full sm:min-w-44">
             <Button
               size="icon"
               variant="ghost"
-              className="rounded-none"
+              className="size-10 rounded-none"
               onClick={() => setStart(addDays(start, -7))}
               aria-label="Previous week"
             >
@@ -152,7 +155,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             </Button>
             <Button
               variant="ghost"
-              className="rounded-none border-x max-sm:flex-1"
+              className="h-10 flex-1 rounded-none border-x"
               onClick={() => today && setStart(startOfWeek(today))}
             >
               This week
@@ -160,7 +163,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             <Button
               size="icon"
               variant="ghost"
-              className="rounded-none"
+              className="size-10 rounded-none"
               onClick={() => setStart(addDays(start, 7))}
               aria-label="Next week"
             >

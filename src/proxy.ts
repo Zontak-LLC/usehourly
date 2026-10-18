@@ -1,6 +1,9 @@
+import { NextResponse } from "next/server";
+
 import NextAuth from "next-auth";
 
 import authConfig from "@/lib/auth.config";
+import { buildCsp, newNonce } from "@/lib/csp";
 import { accessDecision, DASHBOARD_PATH, LOGIN_PATH } from "@/lib/route-access";
 
 const { auth } = NextAuth(authConfig);
@@ -13,6 +16,16 @@ export default auth((req) => {
   if (decision === "to-dashboard") {
     return Response.redirect(new URL(DASHBOARD_PATH, req.nextUrl));
   }
+  // A fresh nonce per request: the policy goes on the response, and on the request too so Next.js puts the nonce on
+  // its own inline scripts. The root layout reads `x-nonce` for the theme boot script.
+  const nonce = newNonce();
+  const csp = buildCsp(nonce, process.env.NODE_ENV === "production");
+  const headers = new Headers(req.headers);
+  headers.set("x-nonce", nonce);
+  headers.set("content-security-policy", csp);
+  const res = NextResponse.next({ request: { headers } });
+  res.headers.set("Content-Security-Policy", csp);
+  return res;
 });
 
 export const config = {

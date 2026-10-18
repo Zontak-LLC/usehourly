@@ -58,7 +58,7 @@ export function ShareExportMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className={className}>
+          <Button variant="outline" className={`h-10 ${className ?? ""}`}>
             <Share2 /> Share &amp; export <ChevronDown className="opacity-60" />
           </Button>
         </DropdownMenuTrigger>

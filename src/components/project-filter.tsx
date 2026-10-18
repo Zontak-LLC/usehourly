@@ -41,7 +41,7 @@ export function ProjectFilter({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Filter by project"
-        className="h-9 max-md:h-10 w-full appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        className="h-10 w-full appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
       >
         <option value="">All projects</option>
         {clients.data?.map((c) => (

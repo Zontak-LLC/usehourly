@@ -41,7 +41,7 @@ export function ReportView() {
   const report = trpc.report.annual.useQuery({ year: year ?? 2000 }, { enabled: year !== null });
   const [exporting, setExporting] = useState(false);
 
-  if (year === null) return <Skeleton className="mx-auto h-96 w-full max-w-4xl" />;
+  if (year === null) return <Skeleton className="mx-auto h-96 w-full max-w-5xl" />;
   const data = report.data;
   const h = (m: number) => `${formatDecimalHours(m)} h`;
 
@@ -61,7 +61,7 @@ export function ReportView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="font-semibold text-xl">Year summary · {year}</h1>

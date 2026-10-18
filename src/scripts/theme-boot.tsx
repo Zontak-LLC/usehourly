@@ -3,11 +3,11 @@
  * based on the configured persistence mode.
  *
  * Runs early in <head> to apply the correct data attributes before hydration,
- * preventing layout or theme flicker and keeping RootLayout fully static.
+ * preventing layout or theme flicker. It carries the request's CSP nonce, which is why every page renders per request.
  */
 import { PREFERENCE_REGISTRY } from "@/lib/preferences/preferences-config";
 
-export function ThemeBootScript() {
+export function ThemeBootScript({ nonce }: { nonce?: string }) {
   const registry = JSON.stringify(PREFERENCE_REGISTRY);
 
   const code = `
@@ -74,5 +74,5 @@ export function ThemeBootScript() {
   `;
 
   /* biome-ignore lint/security/noDangerouslySetInnerHtml: required for pre-hydration boot script */
-  return <script dangerouslySetInnerHTML={{ __html: code }} />;
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: code }} />;
 }

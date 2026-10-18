@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { headers } from "next/headers";
+
 import type { Metadata } from "next";
 
 import { TRPCProvider } from "@/components/trpc-provider";
@@ -23,7 +25,10 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "UseHourly", statusBarStyle: "default" },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  // Reading the request's nonce (set in src/proxy.ts) is what makes pages render per request: the policy only
+  // lets scripts carrying this request's nonce run.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
     PREFERENCE_DEFAULTS;
   return (
@@ -40,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     >
       <head>
         {/* Applies theme and layout preferences on load to avoid flicker and unnecessary server rerenders. */}
-        <ThemeBootScript />
+        <ThemeBootScript nonce={nonce} />
       </head>
       <body className={`${fontVars} min-h-screen antialiased`}>
         <TooltipProvider>

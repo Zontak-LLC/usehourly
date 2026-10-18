@@ -313,7 +313,7 @@ export function ClientsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <Dialog open={!!confirming} onOpenChange={(o) => !o && setConfirming(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
