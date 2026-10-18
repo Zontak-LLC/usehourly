@@ -51,14 +51,7 @@ export function SetupForm({ clientId, onDone }: { clientId?: string; onDone?: (p
           autoFocus
         />
       )}
-      <Input
-        name="project"
-        aria-label="Project name"
-        placeholder="Project (e.g. Website)"
-        required
-        className="w-44"
-        autoFocus={!!clientId}
-      />
+      <Input name="project" aria-label="Project name" placeholder="Project (e.g. Website)" required className="w-44" />
       <Input
         name="rate"
         type="number"
