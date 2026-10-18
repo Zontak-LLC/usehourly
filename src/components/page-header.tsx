@@ -7,11 +7,14 @@ import type { ReactNode } from "react";
 export function PageHeader({
   title,
   description,
+  descriptionOnPhone = false,
   actions,
   children,
 }: {
   title: ReactNode;
   description?: ReactNode;
+  /** The one-line description is hidden on phones to save room; set this when it carries information (the date). */
+  descriptionOnPhone?: boolean;
   actions?: ReactNode;
   children?: ReactNode;
 }) {
@@ -20,7 +23,11 @@ export function PageHeader({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3 border-b bg-muted/40 px-4 py-3 max-sm:py-2.5 sm:px-5">
         <div className="min-w-0">
           <h1 className="font-semibold text-xl">{title}</h1>
-          {description && <p className="text-muted-foreground text-sm max-sm:hidden">{description}</p>}
+          {description && (
+            <p className={`text-muted-foreground text-sm ${descriptionOnPhone ? "" : "max-sm:hidden"}`}>
+              {description}
+            </p>
+          )}
         </div>
         {actions}
       </div>

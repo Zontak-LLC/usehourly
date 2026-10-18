@@ -30,10 +30,13 @@ export function QuickAdd({
   date,
   timerRunning,
   dayMinutes,
+  showDate = true,
 }: {
   date: string;
   timerRunning: boolean;
   dayMinutes: number;
+  /** The Today page already shows the date in its header, so it turns this off; the day dialog keeps it. */
+  showDate?: boolean;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -124,7 +127,8 @@ export function QuickAdd({
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
       <div className="border-b bg-muted/40 px-3 py-2.5 sm:px-4">
         <h2 className="font-semibold text-base">
-          Add to the day <span className="font-normal text-muted-foreground">· {dayLabel}</span>
+          Add to the day
+          {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
         </h2>
       </div>
 
