@@ -150,6 +150,14 @@ These serve as the fallback; there is no separate default.css file. */
   html {
     @apply font-sans;
   }
+
+  /* Phones: the template's compact sizes (14px text, 32px buttons) are small on a 412px-wide screen,
+     so scale every rem-based size up one step. Desktop is untouched. */
+  @media (max-width: 767px) {
+    html {
+      font-size: 112.5%;
+    }
+  }
 }
 
 @layer utilities {
