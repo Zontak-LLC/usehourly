@@ -1,0 +1,6 @@
+#!/bin/sh
+# Fast checks before a commit. The full gate is `npm run ci` (also run on every push by CI).
+set -e
+node scripts/check-rules.mjs
+npx biome check --staged --no-errors-on-unmatched
+npx tsc --noEmit

@@ -35,5 +35,6 @@ export function defineTool<S extends z.ZodType>(t: {
   input: S;
   run: (c: Caller, args: z.infer<S>, x: ToolContext) => Promise<unknown>;
 }): McpTool {
+  // check-rules-ok: erases the per-tool argument type so tools of different shapes fit one list
   return t as unknown as McpTool;
 }

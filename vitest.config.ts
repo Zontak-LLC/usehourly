@@ -14,7 +14,7 @@ export default defineConfig({
       reporter: ["text-summary", "json-summary"],
       // A floor, not a target: set a few points under what was measured on 2026-10-18 (88 / 83 / 91 / 89),
       // so a change that adds code without tests fails CI. Raise it when coverage rises.
-      thresholds: { statements: 85, branches: 80, functions: 88, lines: 86 },
+      thresholds: { statements: 87, branches: 82, functions: 90, lines: 88 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },

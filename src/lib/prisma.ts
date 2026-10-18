@@ -27,6 +27,7 @@ export async function getPrisma(): Promise<PrismaClient> {
     import("@opennextjs/cloudflare"),
   ]);
   const { env } = await getCloudflareContext({ async: true });
+  // check-rules-ok: the Cloudflare env type does not declare the D1 binding name
   const built = new PrismaClient({ adapter: new PrismaD1((env as unknown as { DB: D1Database }).DB) });
   // Prisma sets itself up on the first query and keeps that work in a promise of its own. Do it here, in
   // the request that made the client, so no later request waits on a promise another request started.

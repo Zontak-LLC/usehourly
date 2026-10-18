@@ -1,0 +1,9 @@
+{
+  "path": ["src"],
+  "minLines": 10,
+  "minTokens": 70,
+  "threshold": 1,
+  "ignore": ["**/__tests__/**", "**/components/ui/**"],
+  "reporters": ["console"],
+  "silent": true
+}

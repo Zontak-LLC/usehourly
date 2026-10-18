@@ -56,6 +56,7 @@ wrangler.jsonc
 next-env.d.ts
 /.claude/*
 !/.claude/skills/
+!/.claude/settings.json
 
 # browser tests (Playwright): reports, screenshots, the separate dev build
 /e2e/report/

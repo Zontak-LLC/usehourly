@@ -17,7 +17,7 @@ export async function createContext(req?: Request) {
     });
     if (!sessionStillValid(rawSession.user.tv, row?.token_version)) session = null;
   }
-  // Cloudflare sets cf-connecting-ip; it is the real client address behind the edge.
+  // The edge sets the real client address; clientIpFrom reads it safely.
   const ip = clientIpFrom(req?.headers);
   // Throttle changes per account (or per connection before sign-in); see lib/request-limits.ts.
   if (req) {

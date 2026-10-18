@@ -61,7 +61,11 @@
     "rules": {
       "preset": "recommended",
       "correctness": {
-        "noUndeclaredVariables": "error"
+        "noUndeclaredVariables": "error",
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "error",
+        "useExhaustiveDependencies": "error"
       },
       "nursery": {
         "useSortedClasses": "on"
@@ -77,16 +81,34 @@
         "useSelfClosingElements": "error",
         "noParameterAssign": "error",
         "noInferrableTypes": "error",
-        "noUselessElse": "error"
+        "noUselessElse": "error",
+        "noNonNullAssertion": "error",
+        "useConst": "error",
+        "useImportType": "error"
       },
       "suspicious": {
         "noArrayIndexKey": "warn",
         "noConstantBinaryExpressions": "error",
         "noEmptyBlockStatements": "error",
-        "noUnknownAtRules": "off"
+        "noUnknownAtRules": "off",
+        "noExplicitAny": "error",
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["error"]
+          }
+        },
+        "noTsIgnore": "error",
+        "noDebugger": "error"
       },
       "complexity": {
-        "noImportantStyles": "off"
+        "noImportantStyles": "off",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 30
+          }
+        }
       }
     },
     "domains": {
@@ -117,5 +139,32 @@
       "indentScriptAndStyle": false,
       "selfCloseVoidElements": "always"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["bridge/**", "scripts/**", "e2e/**", "custom-worker.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "e2e/**",
+        "src/app/(main)/dashboard/today/_components/today-view.tsx",
+        "src/lib/invoice-pdf.ts",
+        "src/server/routers/time-import.ts"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
+    }
+  ]
 }

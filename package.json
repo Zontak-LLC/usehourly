@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "ci": "biome check && tsc --noEmit && vitest run --coverage",
+    "ci": "npm run check:rules && biome check && tsc --noEmit && npm run knip:blocking && jscpd && vitest run --coverage",
     "e2e": "playwright test",
     "e2e:phone": "playwright test --project=phone",
     "e2e:desktop": "playwright test --project=desktop",
@@ -30,7 +30,11 @@
     "d1:backup": "mkdir -p backups && wrangler d1 export hourly-db --remote --output=backups/hourly-$(date +%F).sql",
     "mcp:catalog": "UPDATE_MCP_CATALOG=1 vitest run src/__tests__/mcp-bridge.test.ts",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "knip": "knip"
+    "knip": "knip",
+    "check:rules": "node scripts/check-rules.mjs",
+    "dupes": "jscpd",
+    "knip:blocking": "knip --include files,dependencies,unlisted --no-progress",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@prisma/adapter-d1": "^7.4.1",
@@ -70,6 +74,8 @@
     "@types/react-dom": "^19.3.0",
     "@vitest/coverage-v8": "^4.0.18",
     "babel-plugin-react-compiler": "^1.0.0",
+    "jscpd": "^5.4.1",
+    "knip": "^6.42.0",
     "postcss": "^8.5.30",
     "shadcn": "^4.21.5",
     "tailwindcss": "^4.1.5",

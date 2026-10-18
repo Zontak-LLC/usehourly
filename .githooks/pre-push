@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pushing to main ships to production, so run exactly what CI runs first.
+npm run ci
