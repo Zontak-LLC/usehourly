@@ -119,7 +119,7 @@ export function QuickAdd({
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-3 shadow-sm sm:p-4">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:p-4">
       <h2 className="font-semibold text-base">
         Add to the day <span className="font-normal text-muted-foreground">· {dayLabel}</span>
       </h2>
@@ -210,8 +210,7 @@ export function QuickAdd({
             disabled={create.isPending || parsed === null}
             className="h-12 w-full text-base sm:flex-1"
           >
-            Add to the day{" "}
-            <Kbd className="ml-1 hidden bg-primary-foreground/20 text-primary-foreground md:inline-flex">↵</Kbd>
+            Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
           </Button>
           {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
           {isToday && (
