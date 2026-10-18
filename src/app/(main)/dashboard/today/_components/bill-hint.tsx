@@ -35,9 +35,9 @@ export function BillHint() {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border bg-card p-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3">
       <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-      <p className="min-w-0 flex-1 text-sm">
+      <p className="min-w-0 flex-1 basis-40 text-sm">
         <span className="font-medium">Nice work.</span> Ready to get paid? Turn your hours into an invoice.
       </p>
       <Button asChild className="h-11 shrink-0">
