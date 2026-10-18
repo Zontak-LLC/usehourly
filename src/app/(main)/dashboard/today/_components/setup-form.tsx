@@ -9,7 +9,16 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 
 /** Inline "client + project" creator. Shown on first run and reused on the Clients page. */
-export function SetupForm({ clientId, onDone }: { clientId?: string; onDone?: (projectId: string) => void }) {
+export function SetupForm({
+  clientId,
+  onDone,
+  bar = false,
+}: {
+  clientId?: string;
+  onDone?: (projectId: string) => void;
+  /** Fill the row from `sm` up: the project field stretches and the Add button ends at the far right. */
+  bar?: boolean;
+}) {
   const utils = trpc.useUtils();
   const createClient = trpc.clients.create.useMutation();
   const createProject = trpc.project.create.useMutation();
@@ -40,7 +49,11 @@ export function SetupForm({ clientId, onDone }: { clientId?: string; onDone?: (p
   }
 
   return (
-    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+    <form
+      method="post"
+      onSubmit={onSubmit}
+      className={`flex flex-wrap items-end gap-2 ${bar ? "sm:min-w-0 sm:flex-1 sm:flex-nowrap" : ""}`}
+    >
       {!clientId && (
         <Input
           name="client"
@@ -51,7 +64,13 @@ export function SetupForm({ clientId, onDone }: { clientId?: string; onDone?: (p
           autoFocus
         />
       )}
-      <Input name="project" aria-label="Project name" placeholder="Project (e.g. Website)" required className="w-44" />
+      <Input
+        name="project"
+        aria-label="Project name"
+        placeholder="Project (e.g. Website)"
+        required
+        className={`w-44 ${bar ? "sm:w-auto sm:min-w-0 sm:flex-1" : ""}`}
+      />
       <Input
         name="rate"
         type="number"
@@ -59,7 +78,7 @@ export function SetupForm({ clientId, onDone }: { clientId?: string; onDone?: (p
         step="0.01"
         aria-label="Hourly rate in dollars"
         placeholder="Rate $/h"
-        className="w-28"
+        className="w-28 shrink-0"
       />
       <Button type="submit" disabled={pending}>
         {pending ? "Saving…" : "Add"}

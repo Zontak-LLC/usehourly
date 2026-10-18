@@ -10,7 +10,7 @@ export function DemoBanner() {
       <span>
         <strong>You&rsquo;re trying the demo.</strong> This is sample data, and it is deleted after 24 hours.
       </span>
-      <Link href="/dashboard/account#claim" className="font-medium underline underline-offset-2">
+      <Link href="/dashboard/account#claim" className="inline-block py-1 font-medium underline underline-offset-2">
         Keep your work: create a free account
       </Link>
     </div>

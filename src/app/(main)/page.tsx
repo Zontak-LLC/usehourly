@@ -384,7 +384,12 @@ export default function LandingPage() {
         <span>{APP_CONFIG.copyright}</span>
         <span className="flex items-center gap-4">
           {donateUrl() && (
-            <a href={donateUrl() ?? "#"} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+            <a
+              href={donateUrl() ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block py-2 hover:text-foreground"
+            >
               Support UseHourly
             </a>
           )}
@@ -392,7 +397,7 @@ export default function LandingPage() {
             href="https://github.com/Zontak-LLC/usehourly/issues/new"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-foreground"
+            className="inline-block py-2 hover:text-foreground"
           >
             Report a bug
           </a>
@@ -402,7 +407,7 @@ export default function LandingPage() {
           <Link href="/terms" className="inline-block py-2 hover:text-foreground">
             Terms
           </Link>
-          <Link href="/auth/v2/login" className="hover:text-foreground">
+          <Link href="/auth/v2/login" className="inline-block py-2 hover:text-foreground">
             Log in
           </Link>
         </span>

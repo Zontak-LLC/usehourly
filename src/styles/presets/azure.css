@@ -19,7 +19,7 @@ value: azure
   --secondary: oklch(0.967 0.001 286);
   --secondary-foreground: oklch(0.21 0.006 286);
   --muted: oklch(0.967 0.001 286);
-  --muted-foreground: oklch(0.552 0.016 286);
+  --muted-foreground: oklch(0.5 0.016 286);
   --accent: oklch(0.967 0.001 286);
   --accent-foreground: oklch(0.21 0.006 286);
   --border: oklch(0.92 0.004 286);

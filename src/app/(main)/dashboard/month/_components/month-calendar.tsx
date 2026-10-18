@@ -38,7 +38,7 @@ function DayCell({
       aria-pressed={selectMode ? isPicked : undefined}
       aria-label={`${d}: ${formatDuration(mins)}`}
       className={`flex min-h-16 cursor-pointer flex-col justify-between border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
-        inMonth ? "" : "bg-muted/30 text-muted-foreground/50"
+        inMonth ? "" : "bg-muted/30 text-muted-foreground"
       } ${isToday ? "ring-2 ring-primary ring-inset" : ""} ${
         isPicked ? "bg-primary/15 outline-2 outline-primary -outline-offset-2" : ""
       }`}
@@ -51,9 +51,7 @@ function DayCell({
       }
     >
       <span className="text-xs">{Number(d.slice(8))}</span>
-      <span className="text-right font-mono text-[11px] tabular-nums sm:text-sm">
-        {mins ? formatDuration(mins) : ""}
-      </span>
+      <span className="text-right font-mono text-xs tabular-nums sm:text-sm">{mins ? formatDuration(mins) : ""}</span>
     </button>
   );
 }

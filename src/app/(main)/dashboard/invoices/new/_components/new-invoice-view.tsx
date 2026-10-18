@@ -28,7 +28,7 @@ function MissingProfileNotice({ ein, address }: { ein?: string | null; address?:
         Your {!ein ? "EIN" : ""}
         {!ein && !address ? " and " : ""}
         {!address ? "address" : ""} {!ein && !address ? "are" : "is"} missing and won't appear on the invoice.{" "}
-        <Link href="/dashboard/account" className="font-medium underline">
+        <Link href="/dashboard/account" className="inline-block py-1 font-medium underline">
           Add business details
         </Link>
       </span>

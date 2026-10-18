@@ -46,7 +46,9 @@ export function DayTiles({
                   : "bg-card hover:bg-muted"
             } ${[0, 6].includes(date.getDay()) && !on ? "bg-muted/40" : ""}`}
           >
-            <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+            <span
+              className={`font-medium text-xs uppercase tracking-wide ${on ? "text-foreground/75" : "text-muted-foreground"}`}
+            >
               {weekdayShort.format(date)}
             </span>
             <span className="font-semibold text-xl leading-none">{date.getDate()}</span>
@@ -55,7 +57,9 @@ export function DayTiles({
             >
               {total ? formatDuration(total) : "–"}
             </span>
-            <span className={`text-[10px] text-primary uppercase ${d === today ? "" : "invisible"}`}>Today</span>
+            <span className={`font-semibold text-foreground/80 text-xs uppercase ${d === today ? "" : "invisible"}`}>
+              Today
+            </span>
           </button>
         );
       })}

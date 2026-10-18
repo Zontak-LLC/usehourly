@@ -50,7 +50,11 @@ export default function PrivacyPage() {
       </ul>
       <h2>Contact</h2>
       <p>
-        Questions: <a href="mailto:admin@zontakllc.com">admin@zontakllc.com</a>.
+        Questions:{" "}
+        <a href="mailto:admin@zontakllc.com" className="inline-block py-1">
+          admin@zontakllc.com
+        </a>
+        .
       </p>
     </LegalPage>
   );

@@ -1,21 +1,26 @@
 import type { inferRouterOutputs } from "@trpc/server";
+import { Database, FileText, Heart, Sparkles, UserRound } from "lucide-react";
 
+import { SectionGroupProvider } from "@/components/section-card";
 import type { AppRouter } from "@/server/routers/_app";
 
 type Outputs = inferRouterOutputs<AppRouter>;
 
 export const SECTIONS = [
-  { id: "account", label: "Your account" },
-  { id: "invoices", label: "Invoices" },
-  { id: "data", label: "Your data" },
-  { id: "ai", label: "AI assistants" },
-  { id: "support", label: "Support" },
+  { id: "account", label: "Your account", icon: UserRound },
+  { id: "invoices", label: "Invoices", icon: FileText },
+  { id: "data", label: "Your data", icon: Database },
+  { id: "ai", label: "AI assistants", icon: Sparkles },
+  { id: "support", label: "Support", icon: Heart },
 ] as const;
 
 export type AccountMe = Outputs["account"]["me"];
 export type EmailEnabled = Outputs["account"]["emailEnabled"] | undefined;
 
-/** A labelled group of cards, so a long page reads as a few clear topics. */
+/**
+ * One grouped card per topic: the tinted banner is its top band and the cards inside are separated by thin lines
+ * (they flatten themselves through SectionGroupProvider), so a long page reads as a few clear sections.
+ */
 export function Section({
   id,
   title,
@@ -28,14 +33,20 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-heading`} className="flex scroll-mt-20 flex-col gap-3">
-      <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3">
+    <section
+      id={id}
+      aria-labelledby={`${id}-heading`}
+      className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
+    >
+      <div className="border-primary/30 border-b bg-primary/10 px-4 py-3">
         <h2 id={`${id}-heading`} className="font-semibold text-lg">
           {title}
         </h2>
         <p className="text-foreground/70 text-sm">{description}</p>
       </div>
-      {children}
+      <SectionGroupProvider value>
+        <div className="divide-y">{children}</div>
+      </SectionGroupProvider>
     </section>
   );
 }

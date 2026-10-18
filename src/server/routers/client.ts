@@ -31,6 +31,25 @@ export const clientRouter = router({
     }),
   ),
 
+  /** {clientId: dataUrl} for clients that have a logo: one small query shared by every view that shows them. */
+  logos: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.prisma.client.findMany({
+      where: { user_id: ctx.userId, logo: { not: null } },
+      select: { id: true, logo: true },
+    });
+    return Object.fromEntries(rows.flatMap((r) => (r.logo ? [[r.id, r.logo] as const] : [])));
+  }),
+
+  /** Set (or clear, with null) one client's logo without touching its billing details. */
+  setLogo: protectedProcedure.input(z.object({ id: z.string(), logo: logoSchema })).mutation(async ({ ctx, input }) => {
+    const { count } = await ctx.prisma.client.updateMany({
+      where: { id: input.id, user_id: ctx.userId },
+      data: { logo: input.logo },
+    });
+    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
+    return { ok: true };
+  }),
+
   /** One client's billing details, including the logo (not in `list`). */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const c = await ctx.prisma.client.findFirst({

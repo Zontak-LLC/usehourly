@@ -95,7 +95,11 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         },
         logo,
       });
-      await Promise.all([utils.clients.list.invalidate(), utils.clients.get.invalidate({ id })]);
+      await Promise.all([
+        utils.clients.list.invalidate(),
+        utils.clients.get.invalidate({ id }),
+        utils.clients.logos.invalidate(),
+      ]);
       toast.success("Client updated.");
       onDone();
     } catch (err) {

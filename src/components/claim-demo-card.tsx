@@ -4,9 +4,11 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
+import { cn } from "cn";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 
+import { useInSectionGroup } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +16,7 @@ import { trpc } from "@/lib/trpc";
 
 /** Turns the demo account into a real one without losing a thing (or starting fresh, if preferred). */
 export function ClaimDemoCard() {
+  const grouped = useInSectionGroup();
   const router = useRouter();
   const claim = trpc.account.claimDemo.useMutation();
   const [startFresh, setStartFresh] = useState(true);
@@ -38,7 +41,10 @@ export function ClaimDemoCard() {
   return (
     <section
       id="claim"
-      className="flex scroll-mt-20 flex-col gap-3 rounded-xl border-2 border-amber-500/70 bg-amber-500/10 p-4"
+      className={cn(
+        "flex scroll-mt-20 flex-col gap-3 bg-amber-500/10 p-4",
+        !grouped && "rounded-xl border-2 border-amber-500/70",
+      )}
     >
       <div>
         <h3 className="font-semibold">Keep your work: create a free account</h3>
@@ -70,13 +76,13 @@ export function ClaimDemoCard() {
         </div>
         <fieldset className="grid gap-1 text-sm">
           <legend className="mb-1 font-medium">What about the sample data?</legend>
-          <label className="flex items-start gap-2">
+          <label className="flex items-start gap-2 py-1.5">
             <input type="radio" className="mt-1" checked={startFresh} onChange={() => setStartFresh(true)} />
             <span>
               <strong>Start fresh</strong> (recommended): remove the sample clients, projects, entries and invoices.
             </span>
           </label>
-          <label className="flex items-start gap-2">
+          <label className="flex items-start gap-2 py-1.5">
             <input type="radio" className="mt-1" checked={!startFresh} onChange={() => setStartFresh(false)} />
             <span>
               <strong>Keep everything</strong> in the demo, including anything you added.

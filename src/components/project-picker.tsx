@@ -99,7 +99,7 @@ export function ProjectPicker({
             >
               <span
                 aria-hidden="true"
-                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-primary-foreground bg-primary-foreground text-primary" : "border-muted-foreground/50"}`}
+                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50"}`}
               >
                 {on && <Check className="size-3.5 max-sm:size-3" strokeWidth={3} />}
               </span>
@@ -107,7 +107,7 @@ export function ProjectPicker({
                 <span className="max-w-full break-words font-medium sm:text-base">{p.name}</span>
                 <span
                   className={`max-w-full break-words font-normal text-xs ${sameName.has(p.name) ? "" : "max-sm:hidden"} ${
-                    on ? "text-primary-foreground/80" : "text-muted-foreground"
+                    on ? "text-foreground/75" : "text-muted-foreground"
                   }`}
                 >
                   {p.clientName}

@@ -37,7 +37,11 @@ export default function TermsPage() {
       <p>To the extent the law allows, Zontak LLC is not liable for losses that come from using the app.</p>
       <h2>Contact</h2>
       <p>
-        Questions: <a href="mailto:admin@zontakllc.com">admin@zontakllc.com</a>.
+        Questions:{" "}
+        <a href="mailto:admin@zontakllc.com" className="inline-block py-1">
+          admin@zontakllc.com
+        </a>
+        .
       </p>
     </LegalPage>
   );
