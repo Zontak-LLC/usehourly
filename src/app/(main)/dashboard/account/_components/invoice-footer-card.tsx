@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import type { AccountMe } from "./account-section";
@@ -39,7 +40,7 @@ export function InvoiceFooterCard({ me }: { me: AccountMe }) {
               await utils.account.me.invalidate();
               toast.success(enabled ? "The footer line is on." : "The footer line is off.");
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't save that.");
+              toastError(err, "Couldn't save that.");
             } finally {
               setBrandingChoice(null);
             }

@@ -10,10 +10,12 @@ import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { fromISODate, toISODate } from "@/lib/dates";
+import { fromISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { DURATION_CHIPS } from "@/lib/quick-start";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
 
 const LAST_PROJECT_KEY = "hourly:lastProject";
 function readLast(): string {
@@ -43,8 +45,7 @@ export function QuickAdd({
   const [note, setNote] = useState("");
   const durationRef = useRef<HTMLInputElement>(null);
   // "Today" is the browser's date (the server runs in UTC), so it is worked out after the page loads.
-  const [isToday, setIsToday] = useState(false);
-  useEffect(() => setIsToday(date === toISODate(new Date())), [date]);
+  const isToday = useToday() === date;
 
   const projects = clients.data?.flatMap((c) => c.projects) ?? [];
   // Restore the last-used project, falling back to the first available one.
@@ -95,7 +96,7 @@ export function QuickAdd({
       setNote("");
       durationRef.current?.focus();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save that entry.");
+      toastError(err, "Couldn't save that entry.");
     }
   }
 
@@ -106,7 +107,7 @@ export function QuickAdd({
       await Promise.all([utils.entry.running.invalidate(), utils.entry.list.invalidate()]);
       setNote("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't start the timer.");
+      toastError(err, "Couldn't start the timer.");
     }
   }
 

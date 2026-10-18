@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { ArchiveConfirmDialog, type ArchiveTarget } from "./archive-confirm-dialog";
@@ -119,13 +120,13 @@ export function ClientsView() {
               await (kind === "client" ? unarchiveClient : unarchiveProject).mutateAsync({ id });
               await Promise.all([utils.clients.list.invalidate(), utils.project.listArchived.invalidate()]);
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't undo that.");
+              toastError(err, "Couldn't undo that.");
             }
           },
         },
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't archive that.");
+      toastError(err, "Couldn't archive that.");
     }
   }
 

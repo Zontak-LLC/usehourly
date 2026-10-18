@@ -113,7 +113,7 @@ describe("daily time entry journey", () => {
     const call = prisma.timeEntry.update.mock.calls.at(-1);
     if (!call) throw new Error("update was not called");
     const arg = call[0] as { where: { id: string }; data: Record<string, unknown> };
-    expect(arg.where).toEqual({ id: "e1" });
+    expect(arg.where).toEqual({ id: "e1", user_id: "u1" });
     expect(arg.data).toEqual({ date: "2026-12-24" }); // only the date is written
     expect(prisma.timeEntry.findFirst).toHaveBeenCalledWith({ where: { id: "e1", user_id: "u1" } });
 
@@ -136,7 +136,7 @@ describe("daily time entry journey", () => {
     };
     prisma.timeEntry.findFirst.mockResolvedValue({ id: "e1", user_id: "u1", project_id: "p1", minutes: 90 });
     await asCaller(prisma, "u1").entry.update({ id: "e1", note: "  homepage hero polish  " });
-    expect(lastUpdate().where).toEqual({ id: "e1" });
+    expect(lastUpdate().where).toEqual({ id: "e1", user_id: "u1" });
     expect(lastUpdate().data).toEqual({ note: "homepage hero polish" }); // trimmed, nothing else changed
 
     // Clearing a description is allowed and stores an empty note.
@@ -220,7 +220,7 @@ describe("daily time entry journey", () => {
     await asCaller(prisma, "u1").entry.update({ id: "e1", projectId: "p2" });
     expect(prisma.project.findFirst).toHaveBeenCalledWith({ where: { id: "p2", user_id: "u1" } });
     expect(prisma.timeEntry.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "e1" }, data: { project_id: "p2" } }),
+      expect.objectContaining({ where: { id: "e1", user_id: "u1" }, data: { project_id: "p2" } }),
     );
   });
 
@@ -231,6 +231,26 @@ describe("daily time entry journey", () => {
       code: "NOT_FOUND",
     });
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+  });
+
+  it("timer: two starts at the same moment leave one running timer and give the loser a plain message", async () => {
+    prisma.project.findFirst.mockResolvedValue({ id: "p1" });
+    prisma.timeEntry.findFirst.mockResolvedValue(null); // both calls saw "nothing running"
+    // The database allows one running timer per account (migration 0024), so the second create is refused.
+    prisma.timeEntry.create
+      .mockResolvedValueOnce({ id: "first", started_at: new Date() } as never)
+      .mockRejectedValueOnce(Object.assign(new Error("Unique constraint failed on user_id"), { code: "P2002" }));
+    const owner = asCaller(prisma, "u1");
+    const results = await Promise.allSettled([
+      owner.entry.start({ projectId: "p1", date: "2026-10-09" }),
+      owner.entry.start({ projectId: "p1", date: "2026-10-09" }),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual(["fulfilled", "rejected"]);
+    const lost = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+    expect(lost.reason).toMatchObject({ code: "CONFLICT", message: "A timer is already running. Stop it first." });
+    // other failures are not disguised as that message
+    prisma.timeEntry.create.mockRejectedValueOnce(new Error("database is down"));
+    await expect(owner.entry.start({ projectId: "p1", date: "2026-10-09" })).rejects.toThrow("database is down");
   });
 
   it("timer: starting a second timer stops the first and banks its elapsed minutes", async () => {
@@ -245,7 +265,7 @@ describe("daily time entry journey", () => {
     await asCaller(prisma, "u1").entry.start({ projectId: "p2", date: "2026-10-09" });
     // 10 banked + 45 elapsed
     expect(prisma.timeEntry.update).toHaveBeenCalledWith({
-      where: { id: "run1" },
+      where: { id: "run1", user_id: "u1" },
       data: { minutes: 55, started_at: null },
     });
     expect(prisma.timeEntry.create).toHaveBeenCalledWith(
@@ -358,7 +378,7 @@ describe("managing multiple projects", () => {
     });
     expect(prisma.client.findFirst).toHaveBeenCalledWith({ where: { id: "c2", user_id: "u1" } });
     expect(prisma.project.update).toHaveBeenCalledWith({
-      where: { id: "p1" },
+      where: { id: "p1", user_id: "u1" },
       data: { name: "Redesign", client_id: "c2", hourly_rate: 12000 },
       omit: { logo: true },
     });
@@ -372,7 +392,7 @@ describe("managing multiple projects", () => {
 
     await c.project.update({ id: "p1", logo: png });
     expect(prisma.project.update).toHaveBeenLastCalledWith(
-      expect.objectContaining({ where: { id: "p1" }, data: expect.objectContaining({ logo: png }) }),
+      expect.objectContaining({ where: { id: "p1", user_id: "u1" }, data: expect.objectContaining({ logo: png }) }),
     );
 
     // An ordinary edit (no logo field) must not touch the stored logo.
@@ -427,7 +447,10 @@ describe("managing multiple projects", () => {
     const prisma = projectPrisma();
     prisma.project.findFirst.mockResolvedValue({ id: "p1", client_id: "c1" });
     await asCaller(prisma as never, "u1").project.unarchive({ id: "p1" });
-    expect(prisma.project.update).toHaveBeenCalledWith({ where: { id: "p1" }, data: { archived: false } });
+    expect(prisma.project.update).toHaveBeenCalledWith({
+      where: { id: "p1", user_id: "u1" },
+      data: { archived: false },
+    });
     expect(prisma.client.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", user_id: "u1" },
       data: { archived: false },

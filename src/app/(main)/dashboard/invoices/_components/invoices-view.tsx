@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Link from "next/link";
 
@@ -11,9 +11,10 @@ import { PageHeader } from "@/components/page-header";
 import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toISODate } from "@/lib/dates";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
 
 import { DeleteInvoiceDialog } from "./delete-invoice-dialog";
 import { InvoiceCard } from "./invoice-card";
@@ -26,8 +27,7 @@ export function InvoicesView() {
   const utils = trpc.useUtils();
   const filters = useInvoiceFilters();
   // "Today" is the browser's date (the Worker runs in UTC); used to flag overdue invoices.
-  const [today, setToday] = useState<string | null>(null);
-  useEffect(() => setToday(toISODate(new Date())), []);
+  const today = useToday();
 
   const clients = trpc.clients.list.useQuery();
   const invoices = trpc.invoice.list.useQuery(filters.listInput);
@@ -55,7 +55,7 @@ export function InvoicesView() {
       await Promise.all([utils.invoice.list.invalidate(), utils.report.annual.invalidate()]);
       toast.success(paidDate ? `Invoice ${number} marked paid.` : `Invoice ${number} marked unpaid.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't update that invoice.");
+      toastError(err, "Couldn't update that invoice.");
     }
   }
 

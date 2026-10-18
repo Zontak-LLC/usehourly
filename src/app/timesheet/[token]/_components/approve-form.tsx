@@ -4,12 +4,11 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** The client's approval: a name and an optional note. No account, nothing is billed here. */
@@ -25,7 +24,7 @@ export function ApproveForm({ token }: { token: string }) {
       await approve.mutateAsync({ token, name, note });
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't record your approval. Please try again.");
+      toastError(err, "Couldn't record your approval. Please try again.");
     }
   }
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import type { SheetEntry } from "@/lib/timesheet";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 const LAST_PROJECT_KEY = "hourly:lastProject"; // shared with the Today page's quick-add
@@ -101,7 +102,7 @@ export function QuickCreate({
       }
       onDone();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create those entries.");
+      toastError(err, "Couldn't create those entries.");
     }
   }
 

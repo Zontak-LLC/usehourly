@@ -79,7 +79,7 @@ export const projectRouter = router({
         if (dup) throw new TRPCError({ code: "CONFLICT", message: `That client already has a project "${name}".` });
       }
       return ctx.prisma.project.update({
-        where: { id: project.id },
+        where: { id: project.id, user_id: ctx.userId },
         data: {
           name,
           client_id: clientId,
@@ -103,7 +103,7 @@ export const projectRouter = router({
   unarchive: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
     const project = await ctx.prisma.project.findFirst({ where: { id: input.id, user_id: ctx.userId } });
     if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
-    await ctx.prisma.project.update({ where: { id: project.id }, data: { archived: false } });
+    await ctx.prisma.project.update({ where: { id: project.id, user_id: ctx.userId }, data: { archived: false } });
     // A restored project under an archived client would stay invisible — restore the client too.
     await ctx.prisma.client.updateMany({
       where: { id: project.client_id, user_id: ctx.userId },

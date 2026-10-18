@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -11,9 +9,10 @@ import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { addDays, DATE_RE, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
+import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
 
 import { BillHint } from "./bill-hint";
 import { FirstRun } from "./first-run";
@@ -28,8 +27,7 @@ export function TodayView() {
   const paramDate = params.get("date");
 
   // "Today" is the browser's local date — the Worker runs in UTC and can't know it.
-  const [today, setToday] = useState<string | null>(null);
-  useEffect(() => setToday(toISODate(new Date())), []);
+  const today = useToday();
 
   const date = paramDate && DATE_RE.test(paramDate) ? paramDate : today;
   const weekStart = date ? startOfWeek(date) : null;

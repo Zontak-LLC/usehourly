@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 import { Square } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 function clock(totalSeconds: number) {
@@ -39,14 +39,14 @@ export function TimerBanner() {
 
   if (!running.data?.started_at) return null;
   const entry = running.data;
-  const elapsed = Math.max(0, Math.floor((now - new Date(entry.started_at as unknown as string).getTime()) / 1000));
+  const elapsed = Math.max(0, Math.floor((now - new Date(running.data.started_at).getTime()) / 1000));
 
   async function onStop() {
     try {
       await stop.mutateAsync();
       await Promise.all([utils.entry.running.invalidate(), utils.entry.list.invalidate()]);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't stop the timer.");
+      toastError(err, "Couldn't stop the timer.");
     }
   }
 

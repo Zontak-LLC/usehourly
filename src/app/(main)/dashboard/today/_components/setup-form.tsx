@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** Inline "client + project" creator. Shown on first run and reused on the Clients page. */
@@ -42,7 +43,7 @@ export function SetupForm({
       toast.success("Project added.");
       onDone?.(project.id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save that. Please try again.");
+      toastError(err, "Couldn't save that. Please try again.");
     } finally {
       setPending(false);
     }

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { fileToLogo } from "@/lib/logo";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import type { AccountMe } from "./account-section";
@@ -28,7 +29,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
     try {
       setLogo(await fileToLogo(file));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't use that image.");
+      toastError(err, "Couldn't use that image.");
     }
   }
 
@@ -46,7 +47,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
       await utils.account.me.invalidate();
       toast.success("Business details saved.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save business details.");
+      toastError(err, "Couldn't save business details.");
     }
   }
 

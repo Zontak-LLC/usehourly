@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6", "#ec4899", "#84cc16"];
@@ -41,7 +42,7 @@ export function NewClientDialog({
       onOpenChange(false);
       toast.success("Client added. Add its projects below.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't add that client.");
+      toastError(err, "Couldn't add that client.");
     }
   }
 

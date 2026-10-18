@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
-import { buildSheet, dateRange, type SheetEntry } from "@/lib/timesheet";
+import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
 import { MonthCalendar } from "./month-calendar";
@@ -44,12 +44,12 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   const last = first ? monthEnd(first) : "";
   const entries = trpc.entry.list.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
   const shown = useMemo(
-    () => ((entries.data ?? []) as unknown as SheetEntry[]).filter((e) => !projectId || e.project_id === projectId),
+    () => (entries.data ?? []).filter((e) => !projectId || e.project_id === projectId),
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
   // The project list always shows every project, so picking one never hides the others.
-  const allRows = useMemo(() => buildSheet((entries.data ?? []) as unknown as SheetEntry[]).rows, [entries.data]);
+  const allRows = useMemo(() => buildSheet(entries.data ?? []).rows, [entries.data]);
 
   if (!first) return <Skeleton className="h-96 w-full" />;
 

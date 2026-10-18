@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 type TurnstileApi = {
@@ -17,13 +18,19 @@ type TurnstileApi = {
   reset: (id?: string) => void;
 };
 
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
+
 /** Cloudflare's robot check. It draws nothing unless the site has a key, and reports its token through `onToken`. */
 function RobotCheck({ siteKey, onToken }: { siteKey: string; onToken: (token: string) => void }) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let widget: string | undefined;
     function draw() {
-      const api = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+      const api = window.turnstile;
       if (!api || !box.current || widget !== undefined) return;
       widget = api.render(box.current, {
         sitekey: siteKey,
@@ -34,7 +41,7 @@ function RobotCheck({ siteKey, onToken }: { siteKey: string; onToken: (token: st
     }
     const existing = document.querySelector<HTMLScriptElement>("script[data-turnstile]");
     if (existing) {
-      if ((window as unknown as { turnstile?: TurnstileApi }).turnstile) draw();
+      if (window.turnstile) draw();
       else existing.addEventListener("load", draw);
     } else {
       const script = document.createElement("script");
@@ -79,9 +86,9 @@ export function RegisterForm() {
       router.replace("/dashboard/today");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create your account.");
+      toastError(err, "Couldn't create your account.");
       // A robot-check token works once; get a fresh one for the next try.
-      (window as unknown as { turnstile?: TurnstileApi }).turnstile?.reset();
+      window.turnstile?.reset();
       setCaptcha("");
     } finally {
       setPending(false);

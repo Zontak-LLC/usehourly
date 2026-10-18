@@ -120,6 +120,8 @@ model TimeEntry {
 
   @@index([user_id, date])
   @@index([user_id, started_at])
+  // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
+  // account. Prisma cannot express a partial index, so it lives only in the SQL.
   @@map("time_entries")
 }
 

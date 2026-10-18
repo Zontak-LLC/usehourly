@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { fileToLogo } from "@/lib/logo";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** Which project is being edited (one at a time across all clients), its logo draft, and the save. */
@@ -37,7 +38,7 @@ export function useProjectEditing() {
       setLogoDraft(undefined);
       toast.success("Project updated.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't update that project.");
+      toastError(err, "Couldn't update that project.");
     }
   }
 
@@ -48,7 +49,7 @@ export function useProjectEditing() {
     try {
       setLogoDraft(await fileToLogo(file, { maxW: 160, maxH: 160 }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't use that image.");
+      toastError(err, "Couldn't use that image.");
     }
   }
 

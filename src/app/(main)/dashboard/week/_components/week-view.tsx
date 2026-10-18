@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
-import { buildSheet, type SheetEntry } from "@/lib/timesheet";
+import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
 import { DayTiles, longDayLabel, WeekTotalCard } from "./week-strip";
@@ -34,7 +34,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   // Filtering is client-side: the week's entries are already loaded and small.
   const shown = useMemo(
-    () => ((entries.data ?? []) as unknown as SheetEntry[]).filter((e) => !projectId || e.project_id === projectId),
+    () => (entries.data ?? []).filter((e) => !projectId || e.project_id === projectId),
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);

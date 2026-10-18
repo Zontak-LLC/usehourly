@@ -107,7 +107,7 @@ const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
 });
 
-export const fontRegistry = {
+const fontRegistry = {
   geist: {
     label: "Geist",
     font: geist,

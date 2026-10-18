@@ -12,9 +12,10 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, toISODate } from "@/lib/dates";
-import { buildInvoice, type InvoiceEntry } from "@/lib/invoice";
+import { buildInvoice } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import type { Rounding } from "@/lib/rounding";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
@@ -90,7 +91,7 @@ export function NewInvoiceView() {
       // Match by the project's client (not the active-project list) so archived projects count,
       // exactly as the server does.
       buildInvoice(
-        ((entries.data ?? []) as unknown as InvoiceEntry[]).filter((e) => e.project.client_id === clientId),
+        (entries.data ?? []).filter((e) => e.project.client_id === clientId),
         rounding,
       ),
     [entries.data, clientId, rounding],
@@ -126,7 +127,7 @@ export function NewInvoiceView() {
       toast.success(`Invoice ${snapshot.number} saved.`);
       router.push("/dashboard/invoices");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create the invoice.");
+      toastError(err, "Couldn't create the invoice.");
     }
   }
 

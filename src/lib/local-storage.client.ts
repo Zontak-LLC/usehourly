@@ -9,11 +9,3 @@ export function setLocalStorageValue(key: string, value: string) {
     }
   }
 }
-
-export function getLocalStorageValue(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}

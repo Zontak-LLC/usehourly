@@ -50,7 +50,10 @@ describe("week grid: filling several days at once", () => {
     expect(prisma.timeEntry.create).toHaveBeenCalledWith({
       data: { user_id: "u1", project_id: "p1", date: "2026-10-05", minutes: 480 },
     });
-    expect(prisma.timeEntry.update).toHaveBeenCalledWith({ where: { id: "e-tue" }, data: { minutes: 480 } });
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith({
+      where: { id: "e-tue", user_id: "u1" },
+      data: { minutes: 480 },
+    });
     expect(prisma.timeEntry.update).toHaveBeenCalledTimes(1); // Wednesday already 480 → untouched
   });
 
@@ -87,7 +90,7 @@ describe("week grid: filling several days at once", () => {
       note: "ISSUE-42 checkout bug",
     });
     expect(prisma.timeEntry.update).toHaveBeenLastCalledWith({
-      where: { id: "e-wed" },
+      where: { id: "e-wed", user_id: "u1" },
       data: { minutes: 180, note: "ISSUE-42 checkout bug" },
     });
 
@@ -98,14 +101,17 @@ describe("week grid: filling several days at once", () => {
       note: "different words",
     });
     expect(prisma.timeEntry.update).toHaveBeenLastCalledWith({
-      where: { id: "e-wed" },
+      where: { id: "e-wed", user_id: "u1" },
       data: { minutes: 60, note: "different words" },
     });
 
     // No note supplied (or blank): hours change, the stored description is never sent.
     prisma.timeEntry.update.mockClear();
     await caller.entry.bulkSet({ projectId: "p1", cells: [{ date: "2026-10-07", minutes: 240 }], note: "   " });
-    expect(prisma.timeEntry.update).toHaveBeenCalledWith({ where: { id: "e-wed" }, data: { minutes: 240 } });
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith({
+      where: { id: "e-wed", user_id: "u1" },
+      data: { minutes: 240 },
+    });
   });
 
   it("clearing a cell (0) deletes that day's entry, scoped to the owner", async () => {

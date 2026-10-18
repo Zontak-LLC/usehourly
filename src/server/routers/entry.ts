@@ -124,7 +124,7 @@ export const entryRouter = router({
         if (!p) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
       }
       return ctx.prisma.timeEntry.update({
-        where: { id: input.id },
+        where: { id: input.id, user_id: ctx.userId },
         data: {
           ...(input.projectId && { project_id: input.projectId }),
           ...(input.date && { date: input.date }),
@@ -192,7 +192,7 @@ export const entryRouter = router({
           result.deleted++;
         } else if (rows[0].minutes !== minutes || (note !== undefined && rows[0].note !== note)) {
           await ctx.prisma.timeEntry.update({
-            where: { id: rows[0].id },
+            where: { id: rows[0].id, user_id: ctx.userId },
             data: { minutes, ...(note && { note }) },
           });
           result.updated++;
@@ -255,12 +255,13 @@ export const entryRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ids = [...new Set(input.ids)];
       const rows = await ctx.prisma.timeEntry.findMany({ where: { id: { in: ids }, user_id: ctx.userId } });
-      if (rows.length !== ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
-      const ordered = ids.map((id) => rows.find((r) => r.id === id)!);
+      const byId = new Map(rows.map((r) => [r.id, r]));
+      const ordered = ids.flatMap((id) => byId.get(id) ?? []);
+      if (ordered.length !== ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
       const plan = planMerge(ordered);
       if ("error" in plan) throw new TRPCError({ code: "BAD_REQUEST", message: plan.error });
       await ctx.prisma.timeEntry.update({
-        where: { id: plan.keepId },
+        where: { id: plan.keepId, user_id: ctx.userId },
         data: { minutes: plan.minutes, note: plan.note },
       });
       await ctx.prisma.timeEntry.deleteMany({ where: { id: { in: plan.deleteIds }, user_id: ctx.userId } });
@@ -294,14 +295,22 @@ export const entryRouter = router({
       });
       if (running?.started_at) {
         await ctx.prisma.timeEntry.update({
-          where: { id: running.id },
+          where: { id: running.id, user_id: ctx.userId },
           data: { minutes: running.minutes + elapsedMinutes(running.started_at, now), started_at: null },
         });
       }
-      return ctx.prisma.timeEntry.create({
-        data: { user_id: ctx.userId, project_id: project.id, date: input.date, note: input.note, started_at: now },
-        include: withProject,
-      });
+      try {
+        return await ctx.prisma.timeEntry.create({
+          data: { user_id: ctx.userId, project_id: project.id, date: input.date, note: input.note, started_at: now },
+          include: withProject,
+        });
+      } catch (e) {
+        // A parallel "start" got there first: the database allows one running timer per account (migration 0024).
+        if ((e as { code?: string } | null)?.code === "P2002") {
+          throw new TRPCError({ code: "CONFLICT", message: "A timer is already running. Stop it first." });
+        }
+        throw e;
+      }
     }),
 
   /** Stop the running timer; elapsed time is rounded up to the next minute (min 1). */
@@ -311,7 +320,7 @@ export const entryRouter = router({
     });
     if (!running?.started_at) throw new TRPCError({ code: "NOT_FOUND", message: "No timer is running." });
     return ctx.prisma.timeEntry.update({
-      where: { id: running.id },
+      where: { id: running.id, user_id: ctx.userId },
       data: { minutes: running.minutes + elapsedMinutes(running.started_at, new Date()), started_at: null },
       include: withProject,
     });

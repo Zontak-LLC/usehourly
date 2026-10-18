@@ -93,7 +93,7 @@ export const clientRouter = router({
         if (dup) throw new TRPCError({ code: "CONFLICT", message: `You already have a client named "${input.name}".` });
       }
       return ctx.prisma.client.update({
-        where: { id: input.id },
+        where: { id: input.id, user_id: ctx.userId },
         data: {
           name: input.name,
           legal_name: input.legalName || null,

@@ -10,6 +10,7 @@ import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDuration, parseDuration } from "@/lib/duration";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { MovePopover } from "./move-popover";
@@ -48,7 +49,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
       await refresh();
       setEditing(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save changes.");
+      toastError(err, "Couldn't save changes.");
     }
   }
 
@@ -62,7 +63,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
       await refresh();
       toast.success(name ? `Moved to ${name}.` : "Entry moved.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't move that entry.");
+      toastError(err, "Couldn't move that entry.");
     }
   }
 
@@ -72,7 +73,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
       await Promise.all([refresh(), utils.entry.running.invalidate()]);
       toast.success("Entry deleted.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete that entry.");
+      toastError(err, "Couldn't delete that entry.");
     }
   }
 

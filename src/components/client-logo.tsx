@@ -6,6 +6,7 @@ import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { fileToLogo } from "@/lib/logo";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** {clientId: logo data URL}. One shared, cached query, like the project logos: logos never ride along with lists. */
@@ -34,7 +35,7 @@ export function ClientLogoSlot({ clientId, name }: { clientId: string; name: str
       await Promise.all([utils.clients.logos.invalidate(), utils.clients.get.invalidate({ id: clientId })]);
       toast.success(`Logo saved for ${name}.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save that logo.");
+      toastError(err, "Couldn't save that logo.");
     }
   }
 

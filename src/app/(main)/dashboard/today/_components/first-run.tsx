@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { firstRunNames } from "@/lib/quick-start";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /**
@@ -30,7 +31,7 @@ export function FirstRun() {
       await createProject.mutateAsync({ clientId: client.id, name: names.project, hourlyRate: 0 });
       await utils.clients.list.invalidate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save that. Please try again.");
+      toastError(err, "Couldn't save that. Please try again.");
     } finally {
       setPending(false);
     }

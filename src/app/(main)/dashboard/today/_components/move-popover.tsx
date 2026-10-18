@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 const longDate = new Intl.DateTimeFormat(undefined, {
@@ -56,7 +57,7 @@ export function MovePopover({
       toast.success(`Moved to ${longDate.format(fromISODate(to))}.`);
       setOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't move that entry.");
+      toastError(err, "Couldn't move that entry.");
     }
   }
 

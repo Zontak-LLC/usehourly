@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
 import { type MergeInput, planMerge } from "@/lib/merge-entries";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 type Entry = MergeInput & { project: { name: string } };
@@ -32,7 +33,7 @@ export function MergeEntriesBar({ entries }: { entries: Entry[] }) {
       await Promise.all([utils.entry.list.invalidate(), utils.entry.running.invalidate()]);
       toast.success(`Merged ${r.merged} entries into one (${formatDuration(r.minutes)}).`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't merge those entries.");
+      toastError(err, "Couldn't merge those entries.");
     } finally {
       setConfirming(null);
     }

@@ -6,6 +6,7 @@ import { ChevronDown, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** The collapsed "Archived clients and projects" list; it only fetches once opened. */
@@ -23,7 +24,7 @@ export function ArchivedSection() {
       await Promise.all([utils.clients.list.invalidate(), utils.project.listArchived.invalidate()]);
       toast.success("Project restored.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't restore that project.");
+      toastError(err, "Couldn't restore that project.");
     }
   }
 
@@ -33,7 +34,7 @@ export function ArchivedSection() {
       await Promise.all([utils.clients.list.invalidate(), utils.clients.listArchived.invalidate()]);
       toast.success("Client restored.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't restore that client.");
+      toastError(err, "Couldn't restore that client.");
     }
   }
 

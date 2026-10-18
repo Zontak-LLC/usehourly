@@ -7,6 +7,7 @@ import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import type { AccountMe } from "./account-section";
@@ -49,7 +50,7 @@ export function ChangePasswordCard({ me }: { me: AccountMe }) {
       );
       if (res?.error) await signOut({ callbackUrl: "/auth/v2/login" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't change your password.");
+      toastError(err, "Couldn't change your password.");
     }
   }
 
@@ -94,7 +95,7 @@ export function SignOutCard() {
               await signOutEverywhere.mutateAsync();
               await signOut({ callbackUrl: "/auth/v2/login" });
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't sign out your other devices.");
+              toastError(err, "Couldn't sign out your other devices.");
             }
           }}
         >

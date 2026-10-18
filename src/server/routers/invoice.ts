@@ -90,7 +90,8 @@ export const invoiceRouter = router({
           });
           if (!row) return r;
           const text = summarizeInvoice(JSON.parse(row.snapshot) as InvoiceSnapshot);
-          if (text) await ctx.prisma.invoice.update({ where: { id: r.id }, data: { summary: text } });
+          if (text)
+            await ctx.prisma.invoice.update({ where: { id: r.id, user_id: ctx.userId }, data: { summary: text } });
           return { ...r, summary: text };
         }),
       );
@@ -116,7 +117,7 @@ export const invoiceRouter = router({
           logo: client.logo,
         };
         await ctx.prisma.invoice.update({
-          where: { id: inv.id },
+          where: { id: inv.id, user_id: ctx.userId },
           data: { snapshot: JSON.stringify(snapshot), search_text: buildSearchText(snapshot) },
         });
       }
@@ -130,7 +131,10 @@ export const invoiceRouter = router({
         select: { payment_instructions: true },
       });
       snapshot.seller = { ...snapshot.seller, paymentInstructions: user?.payment_instructions ?? null };
-      await ctx.prisma.invoice.update({ where: { id: inv.id }, data: { snapshot: JSON.stringify(snapshot) } });
+      await ctx.prisma.invoice.update({
+        where: { id: inv.id, user_id: ctx.userId },
+        data: { snapshot: JSON.stringify(snapshot) },
+      });
     }
     return { id: inv.id, snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot) };
   }),

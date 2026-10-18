@@ -10,6 +10,7 @@ import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import type { AccountMe, EmailEnabled } from "./account-section";
@@ -28,7 +29,7 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
       router.refresh(); // refresh the sidebar's server-rendered name
       toast.success("Profile updated.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't update your profile.");
+      toastError(err, "Couldn't update your profile.");
     }
   }
 
@@ -73,7 +74,7 @@ function ConfirmEmailHint() {
               await sendVerification.mutateAsync();
               setVerificationSent(true);
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
+              toastError(err, "Couldn't send the email.");
             }
           }}
         >

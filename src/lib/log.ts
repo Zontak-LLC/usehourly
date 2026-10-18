@@ -34,7 +34,7 @@ function redact(fields: Fields): Fields {
   return out;
 }
 
-export function log(level: LogLevel, event: string, fields: Fields = {}): void {
+function log(level: LogLevel, event: string, fields: Fields = {}): void {
   const line = safeString({ level, event, time: new Date().toISOString(), ...redact(fields) });
   console.error(line);
 }

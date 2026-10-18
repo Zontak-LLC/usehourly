@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 
-import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 export function ForgotPasswordForm() {
@@ -21,7 +20,7 @@ export function ForgotPasswordForm() {
       await request.mutateAsync({ email: String(fd.get("email")) });
       setSent(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't send the email. Please try again.");
+      toastError(err, "Couldn't send the email. Please try again.");
     }
   }
 

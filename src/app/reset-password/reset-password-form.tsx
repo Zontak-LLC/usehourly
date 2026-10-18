@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 export function ResetPasswordForm({ token }: { token: string }) {
@@ -52,7 +53,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       await reset.mutateAsync({ token, newPassword });
       setDone(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't change your password.");
+      toastError(err, "Couldn't change your password.");
     }
   }
 

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 export function DeleteInvoiceDialog({
@@ -24,7 +25,7 @@ export function DeleteInvoiceDialog({
       toast.success(`Invoice ${number} deleted.`);
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete that invoice.");
+      toastError(err, "Couldn't delete that invoice.");
     }
   }
 

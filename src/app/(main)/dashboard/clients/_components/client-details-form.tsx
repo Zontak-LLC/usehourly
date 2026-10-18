@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { fileToLogo } from "@/lib/logo";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** Uncontrolled selects: their values are read from the form's FormData on save. */
@@ -74,7 +75,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
     try {
       setLogo(await fileToLogo(file));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't use that image.");
+      toastError(err, "Couldn't use that image.");
     }
   }
 
@@ -103,7 +104,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
       toast.success("Client updated.");
       onDone();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't update that client.");
+      toastError(err, "Couldn't update that client.");
     }
   }
 

@@ -181,7 +181,9 @@ describe("client invoice journey", () => {
       legalName: "Acme Holdings, Inc.",
       address: "500 Market St\nSan Francisco, CA",
     });
-    expect(prisma.invoice.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "inv0" } }));
+    expect(prisma.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "inv0", user_id: "u1" } }),
+    );
 
     // An invoice that already carries (even empty) details is never rewritten.
     prisma.invoice.update.mockClear();
@@ -316,7 +318,7 @@ describe("client invoice journey", () => {
     expect(prisma.client.findFirst).toHaveBeenCalledWith({ where: { id: "c1", user_id: "u1" } });
     expect(prisma.client.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "c1" },
+        where: { id: "c1", user_id: "u1" },
         data: {
           name: "Acme",
           legal_name: "Acme Holdings, Inc.",

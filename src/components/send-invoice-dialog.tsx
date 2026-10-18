@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_LINK_EXPIRY_DAYS, LINK_EXPIRY_DAYS, type LinkStatus } from "@/lib/invoice-link";
 import { MAX_INVOICE_NOTE } from "@/lib/invoice-mail";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 const when = (d: Date | string) =>
@@ -41,7 +42,7 @@ function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean })
       setNote("");
       await utils.invoiceMail.recipient.invalidate({ invoiceId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't send the email.");
+      toastError(err, "Couldn't send the email.");
     }
   }
 
@@ -50,7 +51,7 @@ function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean })
       await setReminders.mutateAsync({ invoiceId, enabled });
       await utils.invoiceMail.recipient.invalidate({ invoiceId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't change that.");
+      toastError(err, "Couldn't change that.");
     }
   }
 
@@ -171,7 +172,7 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
       setCopied(false);
       await utils.invoiceLink.list.invalidate({ invoiceId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't make the link.");
+      toastError(err, "Couldn't make the link.");
     }
   }
 
@@ -191,7 +192,7 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
       await utils.invoiceLink.list.invalidate({ invoiceId });
       toast.success("That link is turned off.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't turn it off.");
+      toastError(err, "Couldn't turn it off.");
     }
   }
 

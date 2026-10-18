@@ -12,6 +12,7 @@ import { useInSectionGroup } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** Turns the demo account into a real one without losing a thing (or starting fresh, if preferred). */
@@ -34,7 +35,7 @@ export function ClaimDemoCard() {
       router.replace(res?.error ? "/auth/v2/login" : "/dashboard/today");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create your account.");
+      toastError(err, "Couldn't create your account.");
     }
   }
 

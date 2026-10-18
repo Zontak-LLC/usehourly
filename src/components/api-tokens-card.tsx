@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EXPIRY_CHOICES, type ExpiryKey, type TokenAccess } from "@/lib/api-token";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 const selectClass =
@@ -74,7 +75,7 @@ export function ApiTokensCard() {
       setName("");
       await utils.account.listApiTokens.invalidate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't make the token.");
+      toastError(err, "Couldn't make the token.");
     }
   }
 
@@ -85,7 +86,7 @@ export function ApiTokensCard() {
       await utils.account.listApiTokens.invalidate();
       toast.success("Token revoked. It stops working right away.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't revoke the token.");
+      toastError(err, "Couldn't revoke the token.");
     }
   }
 

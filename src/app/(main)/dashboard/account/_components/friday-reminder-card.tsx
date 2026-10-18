@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import type { AccountMe, EmailEnabled } from "./account-section";
@@ -35,7 +36,7 @@ export function FridayReminderCard({ me, emailEnabled }: { me: AccountMe; emailE
               await utils.account.me.invalidate();
               toast.success(e.target.checked ? "You'll get a reminder on Friday afternoons." : "The reminder is off.");
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Couldn't save that.");
+              toastError(err, "Couldn't save that.");
             }
           }}
         />

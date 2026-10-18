@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["src/proxy.ts", "custom-worker.ts", "e2e/*.ts", "scripts/*.mjs", "bridge/index.mjs", "open-next.config.ts"],
+  "ignore": ["src/components/ui/**"],
+  "ignoreDependencies": ["postcss-load-config"]
+}

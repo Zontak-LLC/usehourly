@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { checkRange, describeRange } from "@/lib/export-range";
 import { DEFAULT_SHARE_EXPIRY_DAYS, SHARE_EXPIRY_DAYS, type ShareStatus } from "@/lib/timesheet-share";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 const STATUS_LABEL: Record<ShareStatus, string> = {
@@ -78,7 +79,7 @@ export function ShareTimesheet({
       setCopied(false);
       await utils.timesheetShare.list.invalidate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't make the link.");
+      toastError(err, "Couldn't make the link.");
     }
   }
 
@@ -98,7 +99,7 @@ export function ShareTimesheet({
       await utils.timesheetShare.list.invalidate();
       toast.success("That link is turned off.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't turn it off.");
+      toastError(err, "Couldn't turn it off.");
     }
   }
 

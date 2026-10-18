@@ -66,7 +66,7 @@ describe("merge several entries from one day into one", () => {
     const r = await asUser(prisma).entry.merge({ ids: ["a", "b", "c", "d"] });
     expect(r).toEqual({ id: "a", minutes: 185, merged: 4 });
     expect(prisma.timeEntry.update).toHaveBeenCalledWith({
-      where: { id: "a" },
+      where: { id: "a", user_id: "u1" },
       data: { minutes: 185, note: "Store features\nBird follow-up" }, // blank and repeat skipped
     });
     expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({

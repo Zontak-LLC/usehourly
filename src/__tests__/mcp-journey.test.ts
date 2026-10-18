@@ -656,7 +656,7 @@ describe("an assistant tracks a day of work", () => {
     await s.call("update_entry", { id: "e1", duration: "2h", note: "revised" });
     expect(s.prisma.timeEntry.findFirst).toHaveBeenCalledWith({ where: { id: "e1", user_id: "u1" } });
     expect(s.prisma.timeEntry.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "e1" }, data: { minutes: 120, note: "revised" } }),
+      expect.objectContaining({ where: { id: "e1", user_id: "u1" }, data: { minutes: 120, note: "revised" } }),
     );
     expect((await s.call("update_entry", { id: "e1" })).isError).toBe(true);
 
@@ -940,7 +940,10 @@ describe("an assistant tracks a day of work", () => {
     const edited = await s.call("update_client", { client: "Acme", address: "1 New Rd" });
     expect(edited.data).toEqual({ ok: true, client: "Acme" });
     expect(s.prisma.client.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "c1" }, data: expect.objectContaining({ address: "1 New Rd" }) }),
+      expect.objectContaining({
+        where: { id: "c1", user_id: "u1" },
+        data: expect.objectContaining({ address: "1 New Rd" }),
+      }),
     );
     expect((await s.call("archive_client", { client: "Globex" })).data).toEqual({ ok: true, archived: "Globex" });
     expect(s.prisma.client.updateMany).toHaveBeenCalledWith(

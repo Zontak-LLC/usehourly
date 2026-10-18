@@ -9,6 +9,7 @@ import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** Deleting the account is permanent, so it hides behind one extra click and asks for the password (or the email, for GitHub/Google accounts). */
@@ -24,7 +25,7 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
       toast.success("Your account and data were deleted.");
       await signOut({ callbackUrl: "/" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete the account.");
+      toastError(err, "Couldn't delete the account.");
     }
   }
 
