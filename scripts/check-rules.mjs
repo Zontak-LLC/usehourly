@@ -42,7 +42,7 @@ for (const file of files) {
     for (const r of rules) {
       if (exempt) continue;
       if (r.only && !r.only.test(file)) continue;
-      if (r.skip && r.skip.test(file)) continue;
+      if (r.skip?.test(file)) continue;
       if (r.re.test(line)) failures.push(`${file}:${i + 1}  ${r.name}`);
     }
   });
