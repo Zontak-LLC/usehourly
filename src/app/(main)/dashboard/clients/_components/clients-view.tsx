@@ -431,13 +431,13 @@ export function ClientsView() {
           className="overflow-hidden rounded-xl border border-l-4 bg-card"
           style={{ borderLeftColor: c.color }}
         >
-          <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 py-3">
+          <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b bg-muted/40 px-4 py-3">
             <div className="min-w-0">
-              <p className="flex items-center gap-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+              <p className="flex items-center gap-1 font-semibold text-foreground/70 text-xs uppercase tracking-wider">
                 <Building2 className="size-3.5" aria-hidden /> Client
               </p>
               <h2 className="truncate font-semibold text-lg">{c.name}</h2>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-foreground/70 text-sm">
                 {c.projects.length} project{c.projects.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -460,14 +460,14 @@ export function ClientsView() {
             </span>
           </header>
           {editingClientId === c.id && <ClientDetailsForm id={c.id} onDone={() => setEditingClientId(null)} />}
-          <div className="border-t bg-muted/20 px-4 pt-3 pb-4">
+          <div className={`bg-muted/20 px-4 pt-3 pb-4 ${editingClientId === c.id ? "border-t" : ""}`}>
             <p className="mb-2 flex items-center gap-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
               <FolderKanban className="size-3.5" aria-hidden /> Projects
             </p>
             <ul className="flex flex-col gap-2">
               {c.projects.map((p) =>
                 editingId === p.id ? (
-                  <li key={p.id} className="rounded-lg border bg-card px-3 py-3">
+                  <li key={p.id} className="rounded-lg border border-foreground/15 bg-card px-3 py-3">
                     <form
                       method="post"
                       onSubmit={(e) => saveProject(e, p.id)}
@@ -528,13 +528,13 @@ export function ClientsView() {
                 ) : (
                   <li
                     key={p.id}
-                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border bg-card px-3 py-2 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-foreground/15 bg-card px-3 py-2 text-sm"
                   >
                     <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
                       <ProjectMark projectId={p.id} color={c.color} logos={logos} />
-                      {p.name}
+                      <span className="font-medium">{p.name}</span>
                       {p.hourly_rate > 0 ? (
-                        <span className="text-muted-foreground">${(p.hourly_rate / 100).toFixed(2)}/h</span>
+                        <span className="text-foreground/70">${(p.hourly_rate / 100).toFixed(2)}/h</span>
                       ) : (
                         p.billable && (
                           <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
@@ -542,9 +542,9 @@ export function ClientsView() {
                           </span>
                         )
                       )}
-                      {!p.billable && <span className="text-muted-foreground text-xs">non-billable</span>}
+                      {!p.billable && <span className="text-foreground/70 text-xs">non-billable</span>}
                     </span>
-                    <span className="flex items-center gap-3 font-mono text-muted-foreground text-xs tabular-nums sm:ml-auto">
+                    <span className="flex items-center gap-3 font-mono text-[13px] text-foreground/75 tabular-nums sm:ml-auto">
                       <span title="This month">{formatDuration(totals.data?.[p.id]?.range ?? 0)} mo</span>
                       <span title="All time">{formatDuration(totals.data?.[p.id]?.total ?? 0)} total</span>
                     </span>
@@ -573,8 +573,10 @@ export function ClientsView() {
                 ),
               )}
             </ul>
-            <div className="mt-3 rounded-lg border border-dashed p-3">
-              <p className="mb-2 text-muted-foreground text-xs">Add a project for {c.name}</p>
+            <div className="mt-3 rounded-lg border border-foreground/15 bg-card p-3">
+              <p className="mb-2 flex items-center gap-1.5 font-semibold text-sm">
+                <Plus className="size-4 text-primary" aria-hidden /> Add a project for {c.name}
+              </p>
               <SetupForm clientId={c.id} />
             </div>
           </div>
