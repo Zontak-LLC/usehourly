@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Archive, Building2, ChevronDown, FolderKanban, Pencil, RotateCcw, Search } from "lucide-react";
+import { Archive, Building2, ChevronDown, FolderKanban, Pencil, Plus, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { LogoPicker } from "@/components/logo-picker";
@@ -180,6 +180,7 @@ export function ClientsView() {
   const archiveClient = trpc.clients.archive.useMutation();
   const archiveProject = trpc.project.archive.useMutation();
   const [name, setName] = useState("");
+  const [newOpen, setNewOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const logos = useProjectLogos();
@@ -253,6 +254,8 @@ export function ClientsView() {
       await createClient.mutateAsync({ name, color });
       await utils.clients.list.invalidate();
       setName("");
+      setNewOpen(false);
+      toast.success("Client added. Add its projects below.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't add that client.");
     }
@@ -339,39 +342,64 @@ export function ClientsView() {
         </p>
       </div>
 
-      <form method="post" onSubmit={addClient} className="flex gap-2">
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          aria-label="New client name"
-          placeholder="New client name"
-          required
-          className="min-w-0 flex-1 sm:max-w-xs sm:flex-none"
-        />
-        <Button type="submit" disabled={createClient.isPending}>
-          Add client
+      {/* One toolbar: search on the left (it is what you do often), a button to add a client on the right (rarely). */}
+      <div
+        role="toolbar"
+        aria-label="Find or add clients"
+        className="flex items-center gap-2 rounded-xl border bg-card p-2"
+      >
+        {(clients.data?.length ?? 0) > 0 && (
+          <div className="relative min-w-0 flex-1">
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search clients and projects…"
+              aria-label="Search clients and projects"
+              className="border-0 bg-transparent pl-8 shadow-none focus-visible:ring-0 dark:bg-transparent"
+            />
+          </div>
+        )}
+        <Button type="button" onClick={() => setNewOpen(true)} className="ml-auto shrink-0">
+          <Plus /> New client
         </Button>
-      </form>
+      </div>
+
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New client</DialogTitle>
+            <DialogDescription>The company or person you do the work for. Add projects to it next.</DialogDescription>
+          </DialogHeader>
+          <form method="post" onSubmit={addClient} className="flex flex-col gap-3">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-label="New client name"
+              placeholder="Client name"
+              required
+              maxLength={80}
+              autoFocus
+            />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNewOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createClient.isPending}>
+                Add client
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {clients.isLoading && <Skeleton className="h-32 w-full" />}
       {clients.error && <p className="text-destructive text-sm">Couldn't load clients: {clients.error.message}</p>}
 
-      {(clients.data?.length ?? 0) > 0 && (
-        <div className="relative max-w-sm">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search clients and projects…"
-            aria-label="Search clients and projects"
-            className="pl-8"
-          />
-        </div>
-      )}
       {words.length > 0 && visibleClients.length === 0 && (
         <p className="py-6 text-center text-muted-foreground text-sm">No client or project matches that.</p>
       )}
@@ -533,7 +561,7 @@ export function ClientsView() {
       ))}
 
       {clients.data?.length === 0 && (
-        <p className="py-10 text-center text-muted-foreground text-sm">No clients yet. Add one above.</p>
+        <p className="py-10 text-center text-muted-foreground text-sm">No clients yet. Use New client above.</p>
       )}
       <div>
         <Button variant="ghost" size="sm" onClick={() => setShowArchived((v) => !v)}>
