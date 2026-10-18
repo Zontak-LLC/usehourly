@@ -18,7 +18,7 @@ export const today = () => new Date().toISOString().slice(0, 10);
 
 /** Run SQL against the local database (only for setup a user cannot do, like making an account a few days old). */
 export function sql(statement: string) {
-  execFileSync("npx", ["wrangler", "d1", "execute", "hourly-db", "--local", "--command", statement], {
+  execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", "--command", statement], {
     cwd: process.cwd(),
     stdio: "pipe",
   });
