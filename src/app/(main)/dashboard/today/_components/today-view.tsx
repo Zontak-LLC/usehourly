@@ -51,6 +51,7 @@ export function TodayView() {
       <PageHeader
         title={date === today ? "Today" : longDate.format(fromISODate(date))}
         description={date === today ? longDate.format(fromISODate(date)) : undefined}
+        descriptionOnPhone
         actions={
           hasProjects && (
             <div className="flex items-center gap-1">
@@ -78,7 +79,7 @@ export function TodayView() {
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : hasProjects ? (
-        <QuickAdd date={date} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} />
+        <QuickAdd date={date} showDate={false} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} />
       ) : (
         <FirstRun />
       )}

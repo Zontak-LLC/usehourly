@@ -54,7 +54,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   return (
     // One container around the whole page: the header, the week, the day and the lists sit inside it.
-    <div className="mx-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl border bg-muted/30">
+    <div className="mx-auto flex w-full max-w-5xl flex-col overflow-hidden max-sm:-m-2 max-sm:w-[calc(100%+1rem)] border bg-muted/30 max-sm:border-x-0 sm:rounded-2xl">
       <header className="border-b bg-muted/60 px-3 py-3 sm:px-5">
         <h1 className="font-semibold text-xl">Weekly timesheet</h1>
         <p className="text-muted-foreground text-sm">
@@ -62,7 +62,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
           <span className="max-sm:hidden"> · pick a day to see and change its time</span>
         </p>
       </header>
-      <div className="flex flex-col gap-4 p-3 sm:p-5">
+      <div className="flex flex-col gap-4 p-2 sm:p-5">
         <WeekToolbar
           start={start}
           end={end}
