@@ -338,7 +338,7 @@ export function ClientsView() {
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
       <PageHeader
-        title="Projects & Clients"
+        title="Clients & Projects"
         description="Your clients, and the projects you do for each. Hourly rates live here."
         actions={
           <Button type="button" size="lg" className="h-10" onClick={() => setNewOpen(true)}>

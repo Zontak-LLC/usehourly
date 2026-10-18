@@ -61,8 +61,8 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       <header className="border-b bg-muted/60 px-3 py-3 sm:px-5">
         <h1 className="font-semibold text-xl">Weekly timesheet</h1>
         <p className="text-muted-foreground text-sm">
-          {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))} · pick a day to see and change
-          its time
+          {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))}
+          <span className="max-sm:hidden"> · pick a day to see and change its time</span>
         </p>
       </header>
       <div className="flex flex-col gap-4 p-3 sm:p-5">
@@ -208,7 +208,8 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
               )}
             </div>
 
-            <MergeDaysPanel entries={shown} />
+            {/* The picked day has its own Merge button in the editor above, so this card covers the other days. */}
+            <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
 
             {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
             <WorkItems key={`${start}-${projectId}`} entries={shown} onOpenDay={openDay} period="week" />

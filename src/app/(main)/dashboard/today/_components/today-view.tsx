@@ -54,17 +54,24 @@ export function TodayView() {
         title={date === today ? "Today" : longDate.format(fromISODate(date))}
         description={date === today ? longDate.format(fromISODate(date)) : undefined}
         actions={
-          <div className="flex items-center gap-1">
-            <Button size="icon" variant="outline" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
-              <ChevronLeft />
-            </Button>
-            <Button variant="outline" onClick={() => go(today ?? date)} disabled={date === today}>
-              Today
-            </Button>
-            <Button size="icon" variant="outline" onClick={() => go(addDays(date, 1))} aria-label="Next day">
-              <ChevronRight />
-            </Button>
-          </div>
+          hasProjects && (
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="outline" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
+                <ChevronLeft />
+              </Button>
+              <Button
+                variant="outline"
+                className="disabled:bg-muted disabled:text-foreground/70 disabled:opacity-100"
+                onClick={() => go(today ?? date)}
+                disabled={date === today}
+              >
+                Today
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => go(addDays(date, 1))} aria-label="Next day">
+                <ChevronRight />
+              </Button>
+            </div>
+          )
         }
       />
 

@@ -27,7 +27,7 @@ export const navLinks: NavLink[] = [
   { id: "month", title: "Month", url: "/dashboard/month", icon: CalendarRange },
   { id: "report", title: "Year summary (taxes)", url: "/dashboard/report", icon: BarChart3, secondary: true },
   { id: "invoices", title: "Invoices", url: "/dashboard/invoices", icon: FileText },
-  { id: "clients", title: "Projects & Clients", short: "Projects", url: "/dashboard/clients", icon: Users },
+  { id: "clients", title: "Clients & Projects", short: "Clients", url: "/dashboard/clients", icon: Users },
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
 ];
 

@@ -110,9 +110,13 @@ export function EntryRow({ entry }: { entry: EntryData }) {
                 {projectOptions ?? <option value={entry.project_id}>{entry.project.name}</option>}
               </select>
               <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
-                <span className="min-w-0 truncate">
-                  <span className="font-medium">{entry.project.name}</span>
-                  <span className="text-muted-foreground"> · {entry.project.client.name}</span>
+                {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
+                <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
+                  <span className="font-medium max-sm:truncate">{entry.project.name}</span>
+                  <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
+                    <span className="max-sm:hidden"> · </span>
+                    {entry.project.client.name}
+                  </span>
                 </span>
                 <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
               </p>

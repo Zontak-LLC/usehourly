@@ -17,10 +17,10 @@ export function PageHeader({
 }) {
   return (
     <header className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3 border-b bg-muted/40 px-4 py-3 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3 border-b bg-muted/40 px-4 py-3 max-sm:py-2.5 sm:px-5">
         <div className="min-w-0">
           <h1 className="font-semibold text-xl">{title}</h1>
-          {description && <p className="text-muted-foreground text-sm">{description}</p>}
+          {description && <p className="text-muted-foreground text-sm max-sm:hidden">{description}</p>}
         </div>
         {actions}
       </div>

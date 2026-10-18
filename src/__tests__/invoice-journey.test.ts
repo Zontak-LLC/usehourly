@@ -508,7 +508,7 @@ describe("client invoice journey", () => {
       },
     ] as never);
     await expect(asCaller(prisma, "u1").invoice.create(input)).rejects.toThrow(
-      /\$0\.00.*Set the rates under Projects & Clients/,
+      /\$0\.00.*Set the rates under Clients & Projects/,
     );
     expect(prisma.invoice.create).not.toHaveBeenCalled();
     // one project with a rate is enough: the invoice is real, the unpaid-rate project is simply listed at $0

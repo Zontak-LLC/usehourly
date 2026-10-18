@@ -21,7 +21,7 @@ export const USAGE_PAGE_LABELS: Record<UsagePage, string> = {
   report: "Year summary",
   invoices: "Invoices",
   "new-invoice": "New invoice",
-  clients: "Projects & Clients",
+  clients: "Clients & Projects",
   account: "Account",
 };
 

@@ -59,7 +59,7 @@ export function DayEditorPanel({ date, projectFilter = "" }: { date: string; pro
           <p className="text-muted-foreground text-sm">
             Add a client and project under{" "}
             <Link href="/dashboard/clients" className="underline">
-              Projects & Clients
+              Clients & Projects
             </Link>{" "}
             to log time.
           </p>

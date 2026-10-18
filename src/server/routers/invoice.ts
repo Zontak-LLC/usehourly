@@ -202,7 +202,7 @@ export const invoiceRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "Every project in that period has an hourly rate of $0, so the invoice would be $0.00. Set the rates under Projects & Clients first.",
+            "Every project in that period has an hourly rate of $0, so the invoice would be $0.00. Set the rates under Clients & Projects first.",
         });
       }
 

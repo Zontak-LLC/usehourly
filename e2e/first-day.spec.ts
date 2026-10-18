@@ -102,13 +102,13 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.goto("/dashboard/invoices/new");
     await expect(page.getByText(/would be \$0\.00/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Create invoice/ })).toBeDisabled();
-    await expect(page.getByRole("link", { name: "Projects & Clients" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Clients & Projects" }).first()).toBeVisible();
     await shot("invoice-blocked-at-zero");
   });
 
-  await test.step("set the project's hourly rate under Projects & Clients", async () => {
+  await test.step("set the project's hourly rate under Clients & Projects", async () => {
     await page.goto("/dashboard/clients");
-    await expect(page.getByRole("heading", { name: "Projects & Clients", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clients & Projects", level: 1 })).toBeVisible();
     await expect(page.getByText("No hourly rate yet")).toBeVisible(); // a missing rate is visible, not silent
     await shot("my-work-before");
     await page.getByRole("button", { name: "Edit General" }).click();
@@ -139,13 +139,13 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.goto("/dashboard/today");
     const pages: [menu: string, heading: RegExp, title: RegExp][] = [
       ["Invoices", /^Invoices$/, /^Invoices/],
-      ["Projects & Clients", /^Projects & Clients$/, /^Projects & Clients/],
+      ["Clients & Projects", /^Clients & Projects$/, /^Clients & Projects/],
       ["Year summary (taxes)", /^Year summary/, /^Year summary/],
       ["Account", /^Account$/, /^Account/],
     ];
     for (const [menu, heading, title] of pages) {
-      if (["Invoices", "Projects & Clients"].includes(menu)) {
-        const label = menu === "Invoices" ? menu : "Projects"; // the top strip says "Projects"
+      if (["Invoices", "Clients & Projects"].includes(menu)) {
+        const label = menu === "Invoices" ? menu : "Clients"; // the top strip says "Clients"
         await page
           .getByRole("navigation", { name: "Main pages" })
           .getByRole("link", { name: label, exact: true })

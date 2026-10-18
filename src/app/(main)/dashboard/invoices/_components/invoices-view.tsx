@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
+import { cn } from "cn";
 import {
   CircleAlert,
   CircleCheck,
@@ -13,6 +14,7 @@ import {
   Plus,
   Search,
   Send,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -28,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fromISODate, toISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
+import { PRESETS, presetRange } from "@/lib/export-range";
 import { formatMoney } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import { trpc } from "@/lib/trpc";
@@ -43,6 +46,7 @@ function IconAction({
   className,
   disabled,
   onClick,
+  text,
   children,
 }: {
   label: string;
@@ -50,22 +54,27 @@ function IconAction({
   className?: string;
   disabled?: boolean;
   onClick: () => void;
+  /** Visible words under the icon (the phone's action row); without it the button is icon-only with a tooltip. */
+  text?: string;
   children: React.ReactNode;
 }) {
+  const button = (
+    <Button
+      size={text ? "default" : "icon"}
+      variant="outline"
+      aria-label={label}
+      className={cn(text && "h-auto min-h-12 flex-1 flex-col gap-0.5 px-1 py-1.5 text-xs", className)}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+      {text}
+    </Button>
+  );
+  if (text) return button;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          size="icon"
-          variant="outline"
-          aria-label={label}
-          className={className}
-          disabled={disabled}
-          onClick={onClick}
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent>{tip}</TooltipContent>
     </Tooltip>
   );
@@ -130,6 +139,7 @@ const SELECT =
 export function InvoicesView() {
   const utils = trpc.useUtils();
   const [text, setText] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false); // phones only: the filters start folded away
   const [q, setQ] = useState("");
   const [clientId, setClientId] = useState("");
   const [status, setStatus] = useState<"all" | "unpaid" | "paid">("all");
@@ -182,17 +192,19 @@ export function InvoicesView() {
     }
   }
 
+  const [deleteFor, setDeleteFor] = useState<{ id: string; number: string } | null>(null);
   async function remove(id: string, number: string) {
-    if (!window.confirm(`Delete invoice ${number}? This can't be undone.`)) return;
     try {
       await del.mutateAsync({ id });
       await utils.invoice.list.invalidate();
       toast.success(`Invoice ${number} deleted.`);
+      setDeleteFor(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't delete that invoice.");
     }
   }
 
+  const activeFilters = [clientId, status !== "all", sort !== "newest", from, to].filter(Boolean).length;
   const filtering = !!q || !!clientId || status !== "all" || !!from || !!to;
   // Nothing to search or filter until the first invoice exists.
   const showFilters = invoices.isLoading || filtering || sort !== "newest" || (invoices.data?.length ?? 0) > 0;
@@ -227,12 +239,16 @@ export function InvoicesView() {
     </>
   );
   // Four icon buttons with tooltips: money (mark paid / edit payment), send, download, delete.
-  const actionsOf = (i: Row) => (
-    <div data-testid="invoice-actions" className="flex items-center gap-1">
+  const actionsOf = (i: Row, words = false) => (
+    <div
+      data-testid="invoice-actions"
+      className={words ? "flex w-full items-stretch gap-1.5" : "flex items-center gap-1"}
+    >
       {/* One slot for the money: mark it paid, or (once paid) change when it was paid. */}
       <IconAction
         label={i.paid_date ? `Edit payment for ${i.number}` : `Mark ${i.number} as paid`}
         tip={i.paid_date ? "Edit payment" : "Mark as paid"}
+        text={words ? (i.paid_date ? "Payment" : "Mark paid") : undefined}
         className="border-success/40 text-success hover:bg-success-soft hover:text-success"
         onClick={() => setPaidFor({ id: i.id, number: i.number, paid_date: i.paid_date })}
       >
@@ -241,6 +257,7 @@ export function InvoicesView() {
       <IconAction
         label={`Send ${i.number}`}
         tip="Send to client"
+        text={words ? "Send" : undefined}
         onClick={() => setSendFor({ id: i.id, number: i.number })}
       >
         <Send />
@@ -248,6 +265,7 @@ export function InvoicesView() {
       <IconAction
         label={`Download PDF for ${i.number}`}
         tip="Download PDF"
+        text={words ? "PDF" : undefined}
         disabled={busyId === i.id}
         onClick={() => void download(i.id)}
       >
@@ -256,8 +274,9 @@ export function InvoicesView() {
       <IconAction
         label={`Delete ${i.number}`}
         tip="Delete invoice"
+        text={words ? "Delete" : undefined}
         className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={() => void remove(i.id, i.number)}
+        onClick={() => setDeleteFor({ id: i.id, number: i.number })}
       >
         <Trash2 />
       </IconAction>
@@ -307,33 +326,53 @@ export function InvoicesView() {
             )}
             {showFilters && (
               <search aria-label="Find invoices" className="flex flex-col gap-3 border-t pt-4">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Search invoices…"
-                    aria-label="Search invoices"
-                    className="h-11 pr-10 pl-9 text-base"
-                  />
-                  {text && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setText("");
-                        setQ("");
-                      }}
-                      aria-label="Clear search"
-                      title="Clear search"
-                      className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  )}
+                <div className="flex items-center gap-2">
+                  <div className="relative min-w-0 flex-1">
+                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="Search invoices…"
+                      aria-label="Search invoices"
+                      className="h-11 pr-10 pl-9 text-base"
+                    />
+                    {text && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setText("");
+                          setQ("");
+                        }}
+                        aria-label="Clear search"
+                        title="Clear search"
+                        className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 shrink-0 sm:hidden"
+                    aria-expanded={filtersOpen}
+                    aria-controls="invoice-filters"
+                    onClick={() => setFiltersOpen((o) => !o)}
+                  >
+                    <SlidersHorizontal /> Filters
+                    {activeFilters > 0 && (
+                      <span className="rounded-full bg-primary px-1.5 font-medium text-primary-foreground text-xs">
+                        {activeFilters}
+                      </span>
+                    )}
+                  </Button>
                 </div>
 
-                {/* Labelled controls in a grid: two across on a phone, one row on a wide screen. */}
-                <div className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
+                {/* Labelled controls in a grid: two across on a phone (behind the Filters button), one row on a wide screen. */}
+                <div
+                  id="invoice-filters"
+                  className={`grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5 ${filtersOpen ? "" : "max-sm:hidden"}`}
+                >
                   <div className="grid min-w-0 gap-1">
                     <label htmlFor="inv-client" className="text-muted-foreground text-xs">
                       Client
@@ -409,6 +448,29 @@ export function InvoicesView() {
                       className="min-w-0 sm:h-9"
                     />
                   </div>
+                  {today && (
+                    <div className="col-span-2 flex flex-wrap items-center gap-1.5 sm:col-span-3 lg:col-span-5">
+                      <span className="text-muted-foreground text-xs">Issued:</span>
+                      {(["this-month", "last-month", "year-to-date"] as const).map((k) => {
+                        const r = presetRange(k, today);
+                        const on = from === r.from && to === r.to;
+                        return (
+                          <button
+                            key={k}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => {
+                              setFrom(on ? "" : r.from);
+                              setTo(on ? "" : r.to);
+                            }}
+                            className={`rounded-full border px-3 py-1 text-xs hover:bg-muted ${on ? "border-primary bg-primary/10" : ""}`}
+                          >
+                            {PRESETS.find((x) => x.key === k)?.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {(filtering || sort !== "newest") && (
@@ -461,7 +523,7 @@ export function InvoicesView() {
                     <span className="font-semibold">{i.number}</span>
                     <span className="text-muted-foreground"> · {i.client_name}</span>
                   </p>
-                  <div className="flex shrink-0">{actionsOf(i)}</div>
+                  <div className="flex shrink-0 max-sm:hidden">{actionsOf(i)}</div>
                 </div>
                 <div className="flex flex-col gap-2 px-4 py-3">
                   {i.summary && <p className="line-clamp-2 break-words text-sm">{i.summary}</p>}
@@ -478,12 +540,37 @@ export function InvoicesView() {
                     </p>
                   </div>
                 </div>
+                {/* On a phone the actions get words and a full-width row; tooltips do not exist on touch. */}
+                <div className="border-t bg-muted/20 p-2 sm:hidden">{actionsOf(i, true)}</div>
               </li>
             ))}
           </ul>
         </>
       )}
 
+      <Dialog open={deleteFor !== null} onOpenChange={(o) => !o && setDeleteFor(null)}>
+        <DialogContent className="flex flex-col gap-4 sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete invoice {deleteFor?.number}?</DialogTitle>
+            <DialogDescription>
+              This can't be undone. The invoice and any private links to it are removed. Your time entries are not
+              touched.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteFor(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={del.isPending}
+              onClick={() => deleteFor && void remove(deleteFor.id, deleteFor.number)}
+            >
+              <Trash2 /> {del.isPending ? "Deleting…" : "Delete invoice"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <SendInvoiceDialog invoice={sendFor} onClose={() => setSendFor(null)} />
       <PaidDialog
         invoice={paidFor}

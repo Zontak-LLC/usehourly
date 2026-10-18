@@ -1,10 +1,10 @@
-/** Quick picks under "How long?" on Today: tapping one fills the time field. */
+/** Quick picks under "How long?" on Today: tapping one fills the time field. `short` is the phone's shorter wording. */
 export const DURATION_CHIPS = [
-  { label: "15 min", minutes: 15 },
-  { label: "30 min", minutes: 30 },
-  { label: "1 hour", minutes: 60 },
-  { label: "2 hours", minutes: 120 },
-  { label: "4 hours", minutes: 240 },
+  { label: "15 min", short: "15m", minutes: 15 },
+  { label: "30 min", short: "30m", minutes: 30 },
+  { label: "1 hour", short: "1h", minutes: 60 },
+  { label: "2 hours", short: "2h", minutes: 120 },
+  { label: "4 hours", short: "4h", minutes: 240 },
 ] as const;
 
 /** Name given to the project that is created behind the scenes on first run. */

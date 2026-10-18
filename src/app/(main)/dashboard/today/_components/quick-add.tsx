@@ -170,7 +170,10 @@ export function QuickAdd({
                   durationRef.current?.focus();
                 }}
               >
-                {c.label}
+                <span className="sm:hidden" aria-hidden="true">
+                  {c.short}
+                </span>
+                <span className="max-sm:sr-only">{c.label}</span>
               </Button>
             ))}
           </div>
