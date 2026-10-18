@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { DayEditorDialog } from "@/components/day-editor";
@@ -13,7 +13,6 @@ import { ShareExportMenu } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ViewTabs } from "@/components/view-tabs";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration, parseDuration } from "@/lib/duration";
@@ -109,7 +108,6 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <ViewTabs current="week" date={today && today >= start && today <= end ? today : start} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="font-semibold text-xl">Weekly timesheet</h1>
@@ -125,6 +123,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
         </div>
         <div data-testid="timesheet-toolbar" className="flex flex-wrap items-center gap-1">
           <ProjectFilter
+            className="max-sm:flex-1"
             value={projectId}
             onChange={(id) => {
               setProjectId(id);
@@ -132,6 +131,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             }}
           />
           <ShareExportMenu
+            className="max-sm:flex-1"
             entries={entries.data ? shown : undefined}
             days={days}
             filename={`usehourly-${start}_to_${end}.xlsx`}
@@ -140,15 +140,33 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             defaultTo={end}
             projectId={projectId}
           />
-          <Button size="icon" variant="outline" onClick={() => setStart(addDays(start, -7))} aria-label="Previous week">
-            <ChevronLeft />
-          </Button>
-          <Button variant="outline" onClick={() => today && setStart(startOfWeek(today))}>
-            This week
-          </Button>
-          <Button size="icon" variant="outline" onClick={() => setStart(addDays(start, 7))} aria-label="Next week">
-            <ChevronRight />
-          </Button>
+          <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="rounded-none"
+              onClick={() => setStart(addDays(start, -7))}
+              aria-label="Previous week"
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="ghost"
+              className="rounded-none border-x max-sm:flex-1"
+              onClick={() => today && setStart(startOfWeek(today))}
+            >
+              This week
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="rounded-none"
+              onClick={() => setStart(addDays(start, 7))}
+              aria-label="Next week"
+            >
+              <ChevronRight />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -163,7 +181,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       ) : (
         <>
           {/* Phones: one card per day. Tap a day to open it and add or change time. */}
-          <ul className="flex flex-col gap-2 md:hidden">
+          <ul className="flex flex-col gap-1.5 md:hidden">
             {days.map((d) => {
               const lines = sheet.rows.filter((r) => (r.cells[d]?.minutes ?? 0) > 0);
               return (
@@ -171,29 +189,32 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
                   <button
                     type="button"
                     onClick={() => setEditDate(d)}
-                    className={`w-full rounded-xl border bg-card p-4 text-left ${d === today ? "ring-2 ring-primary" : ""}`}
+                    className={`w-full rounded-xl border bg-card px-3 py-2 text-left ${d === today ? "ring-2 ring-primary" : ""}`}
                   >
                     <span className="flex items-baseline justify-between gap-3">
                       <span className="font-medium">{longDayLabel.format(fromISODate(d))}</span>
-                      <span className="font-medium font-mono tabular-nums">
-                        {sheet.dayTotals[d] ? formatDuration(sheet.dayTotals[d]) : "–"}
-                      </span>
+                      {lines.length === 0 ? (
+                        <span className="flex items-center gap-1 text-primary text-sm">
+                          <Plus className="size-4" aria-hidden /> Add time
+                        </span>
+                      ) : (
+                        <span className="font-medium font-mono tabular-nums">{formatDuration(sheet.dayTotals[d])}</span>
+                      )}
                     </span>
-                    {lines.length === 0 ? (
-                      <span className="mt-1 block text-muted-foreground text-sm">Nothing logged. Tap to add time.</span>
-                    ) : (
-                      <span className="mt-1 block space-y-0.5 text-sm">
+                    {lines.length > 0 && (
+                      <span className="mt-0.5 block space-y-0.5 text-sm">
                         {lines.map((r) => (
                           <span key={r.projectId} className="flex items-baseline justify-between gap-3">
                             <span className="min-w-0 flex-1 truncate text-muted-foreground">
                               {r.project} · {r.client}
                             </span>
-                            <span className="font-mono tabular-nums">{formatDuration(r.cells[d]?.minutes ?? 0)}</span>
+                            {lines.length > 1 && (
+                              <span className="font-mono tabular-nums">{formatDuration(r.cells[d]?.minutes ?? 0)}</span>
+                            )}
                           </span>
                         ))}
                       </span>
                     )}
-                    <span className="mt-2 block text-primary text-sm">Open day</span>
                   </button>
                 </li>
               );
@@ -321,13 +342,13 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       )}
 
       {!projectId && addable.length > 0 && (
-        <div className="hidden items-center gap-2 md:flex">
-          <Plus className="size-4 text-muted-foreground" />
+        <div className="relative hidden md:block md:max-w-xs">
+          <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <select
             aria-label="Add a project row"
             value=""
             onChange={(e) => e.target.value && setExtraIds((ids) => [...ids, e.target.value])}
-            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-dashed border-input bg-transparent pr-9 pl-9 text-muted-foreground text-sm outline-none transition-colors hover:border-solid hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
           >
             <option value="">Add a project row…</option>
             {addable.map((p) => (
@@ -336,6 +357,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
               </option>
             ))}
           </select>
+          <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
       )}
 

@@ -144,7 +144,16 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
       ["Account", /^Account$/, /^Account/],
     ];
     for (const [menu, heading, title] of pages) {
-      await page.getByRole("link", { name: menu, exact: true }).click();
+      if (menu === "Invoices") {
+        await page
+          .getByRole("navigation", { name: "Main pages" })
+          .getByRole("link", { name: menu, exact: true })
+          .click();
+      } else {
+        // The rest of the pages live in the side menu, opened by "More" in the top strip.
+        await page.getByRole("button", { name: "More", exact: true }).click();
+        await page.getByRole("link", { name: menu, exact: true }).click();
+      }
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
       await expect(page).toHaveTitle(title);
     }

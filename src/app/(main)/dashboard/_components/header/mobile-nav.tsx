@@ -11,41 +11,42 @@ import { navLinks } from "@/navigation/sidebar/sidebar-items";
 const MAIN = ["today", "week", "month", "invoices"];
 
 /**
- * Phone-only strip of the four pages used most, under the top bar. Every tab has an icon and a
- * word, and "More" opens the full menu (report, clients, account). Hidden from tablet width up,
- * where the sidebar is always there.
+ * The four pages used most as a strip under the top bar, on every screen size. Every tab has an icon
+ * and a word, and "More" opens the full menu (my work, report, account).
  */
 export function MobileNav() {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { toggleSidebar } = useSidebar();
   const items = MAIN.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
 
   return (
-    <nav aria-label="Main pages" className="sticky top-12 z-40 grid grid-cols-5 border-b bg-background md:hidden">
-      {items.map((item) => {
-        const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
-        return (
-          <Link
-            key={item.id}
-            href={item.url}
-            aria-current={active ? "page" : undefined}
-            className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 text-xs font-medium ${
-              active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"
-            }`}
-          >
-            <item.icon className="size-5" aria-hidden />
-            {item.title}
-          </Link>
-        );
-      })}
-      <button
-        type="button"
-        onClick={() => setOpenMobile(true)}
-        className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground"
-      >
-        <Menu className="size-5" aria-hidden />
-        More
-      </button>
+    <nav aria-label="Main pages" className="sticky top-12 z-40 border-b bg-background">
+      <div className="mx-auto grid max-w-5xl grid-cols-5">
+        {items.map((item) => {
+          const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
+          return (
+            <Link
+              key={item.id}
+              href={item.url}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 text-xs font-medium ${
+                active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"
+              }`}
+            >
+              <item.icon className="size-5" aria-hidden />
+              {item.title}
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground"
+        >
+          <Menu className="size-5" aria-hidden />
+          More
+        </button>
+      </div>
     </nav>
   );
 }
