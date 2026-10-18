@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { LINK_KEEP_AFTER_EXPIRY_DAYS } from "@/lib/invoice-link";
+import { logError } from "@/lib/log";
 import { SHARE_KEEP_AFTER_EXPIRY_DAYS } from "@/lib/timesheet-share";
 
 export type Housekeeping = {
@@ -28,7 +29,7 @@ export async function runHousekeeping(
     try {
       return (await sweep()).count;
     } catch (err) {
-      console.error("housekeeping sweep failed:", err);
+      logError("housekeeping_sweep_failed", err);
       return 0;
     }
   };

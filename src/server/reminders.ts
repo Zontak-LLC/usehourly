@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { logError } from "@/lib/log";
 import type { Mailer } from "@/lib/mailer";
 import { buildWeeklyReminder, isDue, mondayOf } from "@/lib/reminder";
 import { unsubscribeToken } from "@/lib/reminder-token";
@@ -94,7 +95,7 @@ export async function runWeeklyReminders(opts: {
         run.sent++;
       } catch (err) {
         run.failed++;
-        console.error("weekly reminder failed:", err);
+        logError("weekly_reminder_failed", err);
         // Undo the claim so the next hourly run can try again.
         await prisma.authUser.updateMany({
           where: { id: person.id, reminder_sent_week: status.week },

@@ -467,7 +467,11 @@ describe("the owner is told when a client approves", () => {
     const quiet = vi.spyOn(console, "error").mockImplementation(() => undefined);
     await b.anon().timesheetShare.approve({ token: b.token, name: "Kirk" });
     expect(b.w.shares[0].approved_name).toBe("Kirk");
-    expect(quiet).toHaveBeenCalledWith(expect.stringContaining("approval email failed"), expect.any(Error));
+    expect(JSON.parse(String(quiet.mock.calls[0][0]))).toMatchObject({
+      level: "error",
+      event: "approval_email_failed",
+      error: { message: "the email service is down" },
+    });
     quiet.mockRestore();
   });
 });

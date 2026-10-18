@@ -7,6 +7,7 @@ import {
   INVOICE_EMAILS_PER_RECIPIENT_PER_DAY,
   senderBlocker,
 } from "@/lib/invoice-mail";
+import { logError } from "@/lib/log";
 import { invoiceEmailMessage, type Mailer } from "@/lib/mailer";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 import { stopEmailToken } from "@/lib/reminder-token";
@@ -170,7 +171,7 @@ export async function deliverInvoiceEmail(i: DeliverInput): Promise<{ to: string
   try {
     await mailer.send(message);
   } catch (err) {
-    console.error("invoice email failed:", err);
+    logError("invoice_email_failed", err);
     await prisma.invoiceLink.updateMany({
       where: { id: link.id },
       data: { revoked_at: Math.floor(now.getTime() / 1000) },

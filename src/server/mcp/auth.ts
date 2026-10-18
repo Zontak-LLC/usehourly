@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { bearerToken, hashApiToken, type TokenAccess, tokenState } from "@/lib/api-token";
+import { logError } from "@/lib/log";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { sessionStillValid } from "@/lib/session-version";
 
@@ -69,7 +70,7 @@ export async function authenticateMcp(
       await prisma.apiToken.update({ where: { id: row.id }, data: { last_used_at: nowSeconds } });
     } catch (err) {
       // Cosmetic ("last used" in the token list); the request itself is fine.
-      console.error("MCP last_used_at update failed:", err);
+      logError("mcp_last_used_update_failed", err);
     }
   }
   return {

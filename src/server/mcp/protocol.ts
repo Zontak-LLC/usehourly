@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
+import { logError } from "@/lib/log";
 import { MAX_BATCH } from "@/lib/trpc-limits";
 
 import type { McpAuth } from "./auth";
@@ -286,7 +287,7 @@ async function handleOne(raw: unknown, deps: McpDeps): Promise<RpcResponse | nul
     const out = await dispatch(method, params, deps);
     return out.error ? fail(id, out.error[0], out.error[1]) : ok(id, out.result ?? {});
   } catch (e) {
-    console.error("MCP internal error:", e);
+    logError("mcp_internal_error", e);
     return fail(id, ERR.internal, "Something went wrong. Please try again.");
   }
 }

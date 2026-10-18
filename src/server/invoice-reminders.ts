@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { dueReminder, REMINDER_LINK_DAYS } from "@/lib/invoice-mail";
+import { logError } from "@/lib/log";
 import type { Mailer } from "@/lib/mailer";
 
 import { deliverInvoiceEmail, InvoiceMailError } from "./invoice-mail";
@@ -67,7 +68,7 @@ export async function runInvoiceReminders(opts: {
     } catch (err) {
       const mayPass =
         !(err instanceof InvoiceMailError) || err.code === "TOO_MANY_REQUESTS" || err.code === "INTERNAL_SERVER_ERROR";
-      if (!(err instanceof InvoiceMailError)) console.error("invoice reminder failed:", err);
+      if (!(err instanceof InvoiceMailError)) logError("invoice_reminder_failed", err);
       if (mayPass) {
         await giveBack();
         run.retry++;

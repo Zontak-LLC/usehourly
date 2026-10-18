@@ -129,7 +129,11 @@ describe("the lazy database client", () => {
       },
     });
     expect(await getPrisma()).toBeDefined();
-    expect(quiet).toHaveBeenCalledWith(expect.stringContaining("warm-up failed"), expect.any(Error));
+    expect(JSON.parse(String(quiet.mock.calls[0][0]))).toMatchObject({
+      level: "error",
+      event: "prisma_warmup_failed",
+      error: { message: "connect failed" },
+    });
     quiet.mockRestore();
   });
 });

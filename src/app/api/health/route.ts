@@ -1,3 +1,4 @@
+import { logError } from "@/lib/log";
 import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ async function check() {
     await (await getPrisma()).$queryRaw`SELECT 1`;
     ok = true;
   } catch (err) {
-    console.error("health check failed:", err);
+    logError("health_check_failed", err);
   }
   return Response.json({ ok }, { status: ok ? 200 : 503, headers: { "Cache-Control": "no-store" } });
 }

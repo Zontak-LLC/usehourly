@@ -14,6 +14,7 @@ import {
 import { isDemoEmail, isDemoSession } from "@/lib/demo";
 import { emailField, normalizeEmail } from "@/lib/email";
 import { hashToken, newToken, RESET_TTL_SECONDS, VERIFY_TTL_SECONDS } from "@/lib/email-token";
+import { logError } from "@/lib/log";
 import { resetPasswordMessage, verifyEmailMessage } from "@/lib/mailer";
 import {
   CHANGE_PASSWORD_ATTEMPTS,
@@ -128,7 +129,7 @@ export const accountRouter = router({
       try {
         await issueEmailToken(ctx, { id: user.id, email }, "verify");
       } catch (err) {
-        console.error("verification email failed:", err);
+        logError("verification_email_failed", err);
       }
       return { id: user.id };
     }),
@@ -252,7 +253,7 @@ export const accountRouter = router({
       try {
         await issueEmailToken(ctx, { id: ctx.userId, email }, "verify");
       } catch (err) {
-        console.error("verification email failed:", err);
+        logError("verification_email_failed", err);
       }
       return { ok: true };
     }),
@@ -422,7 +423,7 @@ export const accountRouter = router({
       try {
         await issueEmailToken(ctx, { id: user.id, email: user.email }, "reset");
       } catch (err) {
-        console.error("password reset email failed:", err);
+        logError("password_reset_email_failed", err);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Couldn't send the email. Please try again." });
       }
     }
@@ -480,7 +481,7 @@ export const accountRouter = router({
     try {
       await issueEmailToken(ctx, { id: user.id, email: user.email }, "verify");
     } catch (err) {
-      console.error("verification email failed:", err);
+      logError("verification_email_failed", err);
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Couldn't send the email. Please try again." });
     }
     return { ok: true, alreadyVerified: false };

@@ -4,6 +4,7 @@ import { ZodError, z } from "zod";
 
 import { DATE_RE } from "@/lib/dates";
 import { parseDuration } from "@/lib/duration";
+import { logError } from "@/lib/log";
 
 import { appRouter } from "../routers/_app";
 import { createCallerFactory } from "../trpc";
@@ -973,13 +974,13 @@ export const TOOLS_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 export function describeError(e: unknown): string {
   if (e instanceof TRPCError) {
     if (e.code === "INTERNAL_SERVER_ERROR") {
-      console.error("MCP tool error:", e);
+      logError("mcp_tool_error", e);
       return "Something went wrong. Please try again.";
     }
     if (e.cause instanceof ZodError) return e.cause.issues[0]?.message ?? "That input isn't valid.";
     return e.message;
   }
-  console.error("MCP tool error:", e);
+  logError("mcp_tool_error", e);
   return "Something went wrong. Please try again.";
 }
 

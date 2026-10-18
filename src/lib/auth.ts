@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { clientIpFrom } from "@/lib/client-ip";
 import { emailField, normalizeEmail } from "@/lib/email";
+import { logError } from "@/lib/log";
 import { loginAllowed, loginSucceeded } from "@/lib/login-throttle";
 import { passwordMatches } from "@/lib/password";
 import { getPrisma } from "@/lib/prisma";
@@ -76,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         user.tv = result.user.token_version;
         return true;
       } catch (err) {
-        console.error(`${provider} sign-in failed:`, err);
+        logError("social_sign_in_failed", err, { provider });
         return "/auth/v2/login?error=social";
       }
     },
@@ -96,7 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const { id, name, email, token_version } = made.user;
           return { id, name, email, tv: token_version, demo: true };
         } catch (err) {
-          console.error("demo sign-in failed:", err);
+          logError("demo_sign_in_failed", err);
           return null;
         }
       },

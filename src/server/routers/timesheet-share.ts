@@ -5,6 +5,7 @@ import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { hashToken, newToken } from "@/lib/email-token";
 import { describeRange } from "@/lib/export-range";
+import { logError } from "@/lib/log";
 import { timesheetApprovedMessage } from "@/lib/mailer";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 import {
@@ -62,7 +63,7 @@ async function tellOwner(
       }),
     );
   } catch (err) {
-    console.error("approval email failed:", err);
+    logError("approval_email_failed", err);
   }
 }
 

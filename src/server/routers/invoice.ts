@@ -5,6 +5,7 @@ import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { summarizeInvoice } from "@/lib/invoice-summary";
+import { logError } from "@/lib/log";
 import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
 
@@ -311,7 +312,7 @@ export const invoiceRouter = router({
           logoHashesOf(JSON.parse(row.snapshot) as InvoiceSnapshot),
         );
       } catch (e) {
-        console.error("invoice logo cleanup failed:", e); // the invoice is gone; a leftover logo is harmless
+        logError("invoice_logo_cleanup_failed", e); // the invoice is gone; a leftover logo is harmless
       }
     }
     return { ok: true };

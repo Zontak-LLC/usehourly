@@ -15,8 +15,9 @@
     "postinstall": "prisma generate",
     "supporters": "node scripts/update-supporters.mjs",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "ci": "biome check && tsc --noEmit && vitest run",
+    "ci": "biome check && tsc --noEmit && vitest run --coverage",
     "e2e": "playwright test",
     "e2e:phone": "playwright test --project=phone",
     "e2e:desktop": "playwright test --project=desktop",
@@ -27,7 +28,8 @@
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "d1:backup": "mkdir -p backups && wrangler d1 export hourly-db --remote --output=backups/hourly-$(date +%F).sql",
-    "mcp:catalog": "UPDATE_MCP_CATALOG=1 vitest run src/__tests__/mcp-bridge.test.ts"
+    "mcp:catalog": "UPDATE_MCP_CATALOG=1 vitest run src/__tests__/mcp-bridge.test.ts",
+    "audit:prod": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
     "@prisma/adapter-d1": "^7.4.1",

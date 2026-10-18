@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { logError } from "@/lib/log";
+
 let client: PrismaClient | undefined;
 
 /**
@@ -31,7 +33,7 @@ export async function getPrisma(): Promise<PrismaClient> {
   try {
     await built.$connect();
   } catch (err) {
-    console.error("prisma warm-up failed (it will connect on the first query):", err);
+    logError("prisma_warmup_failed", err); // it will connect on the first query
   }
   client ??= built;
   return client;
