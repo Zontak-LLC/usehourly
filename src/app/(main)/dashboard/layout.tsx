@@ -1,22 +1,20 @@
 import type { ReactNode } from "react";
 
-import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { cn } from "cn";
 
-import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { DemoBanner } from "@/components/demo-banner";
+import { LogoMark } from "@/components/logo";
 import { ThemeSync } from "@/components/theme-sync";
-import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
-import { getPreference } from "@/server/server-actions";
 
 import { LayoutControls } from "./_components/header/layout-controls";
 import { MobileNav } from "./_components/header/mobile-nav";
@@ -49,24 +47,14 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   const user = { name: dbUser?.name ?? "You", email: dbUser?.email ?? "" };
   const savedTheme = readSavedTheme(dbUser ?? {});
   const isAdmin = isAdminUser(dbUser);
-  const cookieStore = await cookies();
-  // The top strip carries the main pages on every screen; the side menu is the "More" drawer, closed until asked for.
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
-  const [variant, collapsible] = await Promise.all([
-    getPreference("sidebar_variant"),
-    getPreference("sidebar_collapsible"),
-  ]);
-
   return (
     <SidebarProvider
-      defaultOpen={defaultOpen}
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 68)",
         } as React.CSSProperties
       }
     >
-      <AppSidebar user={user} isAdmin={isAdmin} variant={variant} collapsible={collapsible} />
       <SidebarInset
         className={cn(
           "[html[data-content-layout=centered]_&>*]:mx-auto",
@@ -89,11 +77,10 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         >
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-1 lg:gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mx-2 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
-              />
+              <Link href="/dashboard/today" className="flex items-center gap-2 font-semibold text-base">
+                <LogoMark className="size-6 shrink-0" aria-hidden />
+                UseHourly
+              </Link>
             </div>
             <div className="flex items-center gap-2">
               <LayoutControls />
@@ -101,7 +88,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
-        <MobileNav />
+        <MobileNav user={user} isAdmin={isAdmin} />
         {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
         <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 has-data-[content-padding=false]:p-0 md:p-6 md:has-data-[content-padding=false]:p-0">
           {children}

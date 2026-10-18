@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
@@ -9,11 +9,55 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
-import { isLongNote } from "@/lib/notes";
+import { NOTE_PREVIEW_LINES } from "@/lib/notes";
 import type { SheetEntry } from "@/lib/timesheet";
 import { groupByDay, paginate, searchWorkItems } from "@/lib/work-items";
 
 const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+
+/**
+ * A description folded to two lines. It reports whether the text really is cut off at the current width, so the
+ * "Show more" link appears only when there is something more to show (a long note on a wide screen may fit).
+ */
+function NoteText({
+  note,
+  expanded,
+  onClipped,
+}: {
+  note: string;
+  expanded: boolean;
+  onClipped: (clipped: boolean) => void;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: measured again whenever the text or the fold changes
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || expanded) return;
+    const measure = () => onClipped(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [note, expanded]);
+  return (
+    <span
+      ref={ref}
+      className="mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm"
+      style={
+        expanded
+          ? undefined
+          : {
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: NOTE_PREVIEW_LINES,
+              overflow: "hidden",
+            }
+      }
+    >
+      {note}
+    </span>
+  );
+}
 
 /**
  * What you worked on in a period: searchable, grouped by day (with the day's total), 7 entries per page. Click a row to edit that day.
@@ -35,6 +79,16 @@ export function WorkItems({
     setOpen((prev) => {
       const next = new Set(prev);
       if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  // Entries whose note is cut off right now (measured, not guessed from its length).
+  const [clipped, setClipped] = useState<ReadonlySet<string>>(new Set());
+  const markClipped = (id: string, is: boolean) =>
+    setClipped((prev) => {
+      if (prev.has(id) === is) return prev;
+      const next = new Set(prev);
+      if (is) next.add(id);
+      else next.delete(id);
       return next;
     });
   const [query, setQuery] = useState("");
@@ -111,27 +165,21 @@ export function WorkItems({
                           <ProjectMark projectId={e.project_id} color={e.project.client.color} logos={logos} />
                           <span className="truncate font-medium">{e.project.name}</span>
                           <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
+                          {/* A day with one entry shows its time in the header; with several, each row says its own, beside the name. */}
+                          {!(g.items.length === 1 && g.items[0].minutes === g.minutes) && (
+                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-xs tabular-nums">
+                              {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
+                            </span>
+                          )}
                         </span>
                         {e.note ? (
-                          <span
-                            className={`mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm ${
-                              isLongNote(e.note) && !open.has(e.id) ? "line-clamp-2" : ""
-                            }`}
-                          >
-                            {e.note}
-                          </span>
+                          <NoteText note={e.note} expanded={open.has(e.id)} onClipped={(is) => markClipped(e.id, is)} />
                         ) : (
                           <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
                         )}
                       </span>
-                      {/* A day with one entry already shows its time in the header; times appear per row only when there are several. */}
-                      {!(g.items.length === 1 && g.items[0].minutes === g.minutes) && (
-                        <span className="shrink-0 pt-0.5 font-mono text-sm tabular-nums">
-                          {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
-                        </span>
-                      )}
                     </button>
-                    {isLongNote(e.note) && (
+                    {(clipped.has(e.id) || open.has(e.id)) && (
                       <button
                         type="button"
                         onClick={() => toggle(e.id)}

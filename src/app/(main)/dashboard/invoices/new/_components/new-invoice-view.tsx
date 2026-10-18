@@ -282,7 +282,7 @@ export function NewInvoiceView() {
               {describeRounding(rounding)} You logged {formatDecimalHours(totals.loggedMinutes)} h and will bill{" "}
               {formatDecimalHours(totals.totalMinutes)} h. Change it under{" "}
               <Link href="/dashboard/clients" className="underline">
-                My work
+                Projects & Clients
               </Link>
               .
             </p>
@@ -294,7 +294,7 @@ export function NewInvoiceView() {
                 <li>
                   ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at $0.00. Set it under{" "}
                   <Link href="/dashboard/clients" className="underline">
-                    My work
+                    Projects & Clients
                   </Link>
                   .
                 </li>
@@ -310,7 +310,7 @@ export function NewInvoiceView() {
             <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
               Every project in this period has a $0.00 rate, so this invoice would be $0.00. Set the hourly rates under{" "}
               <Link href="/dashboard/clients" className="font-medium underline">
-                My work
+                Projects & Clients
               </Link>{" "}
               first, then come back.
             </p>

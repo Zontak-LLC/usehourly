@@ -3,25 +3,33 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
+import { signOut } from "next-auth/react";
 
-import { useSidebar } from "@/components/ui/sidebar";
-import { navLinks } from "@/navigation/sidebar/sidebar-items";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
-const MAIN = ["today", "week", "month", "invoices"];
+const MAIN = ["today", "week", "month", "invoices", "clients"];
 
 /**
- * The four pages used most as a strip under the top bar, on every screen size. Every tab has an icon
- * and a word, and "More" opens the full menu (my work, report, account).
+ * The pages used most as a strip under the top bar, on every screen size. Every tab has an icon and a word, and
+ * "More" is a real menu: the rarely used pages, the signed-in address and Log out.
  */
-export function MobileNav() {
+export function MobileNav({ user, isAdmin = false }: { user: { name: string; email: string }; isAdmin?: boolean }) {
   const pathname = usePathname();
-  const { toggleSidebar } = useSidebar();
   const items = MAIN.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
+  const more = [...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])];
 
   return (
     <nav aria-label="Main pages" className="sticky top-12 z-40 border-b bg-background">
-      <div className="mx-auto grid max-w-5xl grid-cols-5">
+      <div className="mx-auto grid max-w-5xl grid-cols-6">
         {items.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
           return (
@@ -34,18 +42,39 @@ export function MobileNav() {
               }`}
             >
               <item.icon className="size-5" aria-hidden />
-              {item.title}
+              {item.short ?? item.title}
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground"
-        >
-          <Menu className="size-5" aria-hidden />
-          More
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground aria-expanded:text-foreground"
+            >
+              <Menu className="size-5" aria-hidden />
+              More
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-56">
+            <DropdownMenuLabel className="font-normal">
+              <span className="block truncate font-medium text-foreground text-sm">{user.name}</span>
+              <span className="block truncate text-muted-foreground text-xs">{user.email}</span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {more.map((item) => (
+              <DropdownMenuItem key={item.id} asChild>
+                <Link href={item.url} prefetch={false}>
+                  <item.icon /> {item.title}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/auth/v2/login" })}>
+              <LogOut /> Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </nav>
   );

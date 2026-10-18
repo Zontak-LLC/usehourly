@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Archive, ChevronDown, Pencil, RotateCcw } from "lucide-react";
+import { Archive, Building2, ChevronDown, FolderKanban, Pencil, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { LogoPicker } from "@/components/logo-picker";
@@ -259,6 +259,17 @@ export function ClientsView() {
   }
 
   const unarchiveClient = trpc.clients.unarchive.useMutation();
+  // Search: a client matches by its name (then all its projects show) or by any of its projects' names.
+  const [search, setSearch] = useState("");
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  const visibleClients = (clients.data ?? []).flatMap((c) => {
+    if (words.length === 0) return [c];
+    const clientHit = words.every((w) => c.name.toLowerCase().includes(w));
+    const projects = clientHit
+      ? c.projects
+      : c.projects.filter((p) => words.every((w) => `${p.name} ${c.name}`.toLowerCase().includes(w)));
+    return clientHit || projects.length > 0 ? [{ ...c, projects }] : [];
+  });
   const archivedClients = trpc.clients.listArchived.useQuery(undefined, { enabled: showArchived });
   async function restoreClient(id: string) {
     try {
@@ -322,7 +333,7 @@ export function ClientsView() {
       </Dialog>
 
       <div>
-        <h1 className="font-semibold text-xl">My work</h1>
+        <h1 className="font-semibold text-xl">Projects & Clients</h1>
         <p className="text-muted-foreground text-sm">
           Your clients, and the projects you do for each. Hourly rates live here.
         </p>
@@ -345,13 +356,42 @@ export function ClientsView() {
       {clients.isLoading && <Skeleton className="h-32 w-full" />}
       {clients.error && <p className="text-destructive text-sm">Couldn't load clients: {clients.error.message}</p>}
 
-      {clients.data?.map((c) => (
-        <section key={c.id} className="rounded-xl border bg-card">
-          <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-4 py-3">
-            <h2 className="flex min-w-0 items-center gap-2 font-medium">
-              <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
-              {c.name}
-            </h2>
+      {(clients.data?.length ?? 0) > 0 && (
+        <div className="relative max-w-sm">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search clients and projects…"
+            aria-label="Search clients and projects"
+            className="pl-8"
+          />
+        </div>
+      )}
+      {words.length > 0 && visibleClients.length === 0 && (
+        <p className="py-6 text-center text-muted-foreground text-sm">No client or project matches that.</p>
+      )}
+
+      {visibleClients.map((c) => (
+        <section
+          key={c.id}
+          className="overflow-hidden rounded-xl border border-l-4 bg-card"
+          style={{ borderLeftColor: c.color }}
+        >
+          <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 py-3">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+                <Building2 className="size-3.5" aria-hidden /> Client
+              </p>
+              <h2 className="truncate font-semibold text-lg">{c.name}</h2>
+              <p className="text-muted-foreground text-xs">
+                {c.projects.length} project{c.projects.length === 1 ? "" : "s"}
+              </p>
+            </div>
             <span className="flex">
               <Button
                 size="sm"
@@ -371,117 +411,123 @@ export function ClientsView() {
             </span>
           </header>
           {editingClientId === c.id && <ClientDetailsForm id={c.id} onDone={() => setEditingClientId(null)} />}
-          <ul className="divide-y">
-            {c.projects.map((p) =>
-              editingId === p.id ? (
-                <li key={p.id} className="px-4 py-3">
-                  <form
-                    method="post"
-                    onSubmit={(e) => saveProject(e, p.id)}
-                    className="flex flex-wrap items-center gap-2"
-                  >
-                    <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
-                    <select
-                      name="clientId"
-                      defaultValue={p.client_id}
-                      aria-label="Client"
-                      className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+          <div className="border-t bg-muted/20 px-4 pt-3 pb-4">
+            <p className="mb-2 flex items-center gap-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+              <FolderKanban className="size-3.5" aria-hidden /> Projects
+            </p>
+            <ul className="flex flex-col gap-2">
+              {c.projects.map((p) =>
+                editingId === p.id ? (
+                  <li key={p.id} className="rounded-lg border bg-card px-3 py-3">
+                    <form
+                      method="post"
+                      onSubmit={(e) => saveProject(e, p.id)}
+                      className="flex flex-wrap items-center gap-2"
                     >
-                      {clients.data?.map((cl) => (
-                        <option key={cl.id} value={cl.id}>
-                          {cl.name}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
-                      $
-                      <Input
-                        name="rate"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        defaultValue={(p.hourly_rate / 100).toFixed(2)}
-                        className="w-24"
-                        aria-label="Rate per hour"
+                      <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
+                      <select
+                        name="clientId"
+                        defaultValue={p.client_id}
+                        aria-label="Client"
+                        className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+                      >
+                        {clients.data?.map((cl) => (
+                          <option key={cl.id} value={cl.id}>
+                            {cl.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                        $
+                        <Input
+                          name="rate"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          defaultValue={(p.hourly_rate / 100).toFixed(2)}
+                          className="w-24"
+                          aria-label="Rate per hour"
+                        />
+                        /h
+                      </span>
+                      <label className="flex items-center gap-1.5 text-sm">
+                        <input type="checkbox" name="billable" defaultChecked={p.billable} /> Billable
+                      </label>
+                      <LogoPicker
+                        compact
+                        value={logoDraft === undefined ? logos[p.id] : logoDraft}
+                        onPick={pickProjectLogo}
+                        onRemove={() => setLogoDraft(null)}
+                        name="project logo"
                       />
-                      /h
+                      <Button type="submit" size="sm" disabled={updateProject.isPending}>
+                        Save
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingId(null);
+                          setLogoDraft(undefined);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </form>
+                  </li>
+                ) : (
+                  <li
+                    key={p.id}
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border bg-card px-3 py-2 text-sm"
+                  >
+                    <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
+                      <ProjectMark projectId={p.id} color={c.color} logos={logos} />
+                      {p.name}
+                      {p.hourly_rate > 0 ? (
+                        <span className="text-muted-foreground">${(p.hourly_rate / 100).toFixed(2)}/h</span>
+                      ) : (
+                        p.billable && (
+                          <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
+                            No hourly rate yet
+                          </span>
+                        )
+                      )}
+                      {!p.billable && <span className="text-muted-foreground text-xs">non-billable</span>}
                     </span>
-                    <label className="flex items-center gap-1.5 text-sm">
-                      <input type="checkbox" name="billable" defaultChecked={p.billable} /> Billable
-                    </label>
-                    <LogoPicker
-                      compact
-                      value={logoDraft === undefined ? logos[p.id] : logoDraft}
-                      onPick={pickProjectLogo}
-                      onRemove={() => setLogoDraft(null)}
-                      name="project logo"
-                    />
-                    <Button type="submit" size="sm" disabled={updateProject.isPending}>
-                      Save
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingId(null);
-                        setLogoDraft(undefined);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </form>
-                </li>
-              ) : (
-                <li
-                  key={p.id}
-                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 text-sm"
-                >
-                  <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
-                    <ProjectMark projectId={p.id} color={c.color} logos={logos} />
-                    {p.name}
-                    {p.hourly_rate > 0 ? (
-                      <span className="text-muted-foreground">${(p.hourly_rate / 100).toFixed(2)}/h</span>
-                    ) : (
-                      p.billable && (
-                        <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
-                          No hourly rate yet
-                        </span>
-                      )
-                    )}
-                    {!p.billable && <span className="text-muted-foreground text-xs">non-billable</span>}
-                  </span>
-                  <span className="flex items-center gap-3 font-mono text-muted-foreground text-xs tabular-nums sm:ml-auto">
-                    <span title="This month">{formatDuration(totals.data?.[p.id]?.range ?? 0)} mo</span>
-                    <span title="All time">{formatDuration(totals.data?.[p.id]?.total ?? 0)} total</span>
-                  </span>
-                  <span className="flex">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setLogoDraft(undefined);
-                        setEditingId(p.id);
-                      }}
-                      aria-label={`Edit ${p.name}`}
-                    >
-                      <Pencil />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setConfirming({ kind: "project", id: p.id, name: p.name })}
-                      aria-label={`Archive ${p.name}`}
-                    >
-                      <Archive />
-                    </Button>
-                  </span>
-                </li>
-              ),
-            )}
-          </ul>
-          <div className="border-t p-3">
-            <SetupForm clientId={c.id} />
+                    <span className="flex items-center gap-3 font-mono text-muted-foreground text-xs tabular-nums sm:ml-auto">
+                      <span title="This month">{formatDuration(totals.data?.[p.id]?.range ?? 0)} mo</span>
+                      <span title="All time">{formatDuration(totals.data?.[p.id]?.total ?? 0)} total</span>
+                    </span>
+                    <span className="flex">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setLogoDraft(undefined);
+                          setEditingId(p.id);
+                        }}
+                        aria-label={`Edit ${p.name}`}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setConfirming({ kind: "project", id: p.id, name: p.name })}
+                        aria-label={`Archive ${p.name}`}
+                      >
+                        <Archive />
+                      </Button>
+                    </span>
+                  </li>
+                ),
+              )}
+            </ul>
+            <div className="mt-3 rounded-lg border border-dashed p-3">
+              <p className="mb-2 text-muted-foreground text-xs">Add a project for {c.name}</p>
+              <SetupForm clientId={c.id} />
+            </div>
           </div>
         </section>
       ))}
