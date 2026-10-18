@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { chipProjects, type PickerProject, pushRecentId, searchGroups } from "@/lib/project-picker";
+import { chipProjects, type PickerProject, pushRecentId, searchProjects } from "@/lib/project-picker";
 
 const P = (id: string, name: string, clientName: string): PickerProject => ({ id, name, clientName });
 const many = [
@@ -31,16 +31,10 @@ describe("project picker rules", () => {
     expect(long[0]).toBe("9");
   });
 
-  it("searches project and client names by every word, grouped by client, with recent projects on top when not searching", () => {
-    const idle = searchGroups(many, ["d", "a"], "");
-    expect(idle[0]).toMatchObject({ clientName: "Recent" });
-    expect(idle[0].projects.map((p) => p.id)).toEqual(["d", "a"]);
-    expect(idle.slice(1).map((g) => g.clientName)).toEqual(["Acme", "Beta", "Cobalt"]);
-
-    expect(searchGroups(many, ["d"], "beta").map((g) => [g.clientName, g.projects.map((p) => p.id)])).toEqual([
-      ["Beta", ["c", "d"]],
-    ]);
-    expect(searchGroups(many, [], "acme app").flatMap((g) => g.projects.map((p) => p.id))).toEqual(["b"]);
-    expect(searchGroups(many, [], "nothing like it")).toEqual([]);
+  it("searches project and client names by every word, in one flat list sorted by project name", () => {
+    expect(searchProjects(many, "").map((p) => p.id)).toEqual(["e", "d", "b", "f", "c", "a"]);
+    expect(searchProjects(many, "beta").map((p) => p.id)).toEqual(["d", "c"]);
+    expect(searchProjects(many, "acme app").map((p) => p.id)).toEqual(["b"]);
+    expect(searchProjects(many, "nothing like it")).toEqual([]);
   });
 });
