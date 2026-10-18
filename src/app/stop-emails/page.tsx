@@ -22,7 +22,10 @@ export default async function StopEmailsPage({ searchParams }: Props) {
           </p>
           <form method="post" action={`/api/stop-emails?e=${encodeURIComponent(e)}&t=${encodeURIComponent(t)}`}>
             <input type="hidden" name="page" value="1" />
-            <button type="submit" className="h-11 rounded-lg bg-primary px-6 font-medium text-primary-foreground">
+            <button
+              type="submit"
+              className="h-11 rounded-lg border border-primary/35 bg-primary/20 px-6 font-medium text-foreground hover:bg-primary/30"
+            >
               Yes, stop them
             </button>
           </form>

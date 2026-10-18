@@ -10,6 +10,7 @@
 @import "../styles/presets/ink.css";
 @import "../styles/presets/mono.css";
 @import "../styles/presets/cream.css";
+@import "../styles/presets/azure.css";
 
 @custom-variant dark (&:is(.dark *));
 

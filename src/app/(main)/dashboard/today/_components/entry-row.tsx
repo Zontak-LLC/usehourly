@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
-import { Check, ChevronDown, Pencil, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { NoteTextarea } from "@/components/note-textarea";
@@ -25,6 +25,7 @@ export type EntryData = {
 };
 
 export function EntryRow({ entry }: { entry: EntryData }) {
+  const uid = useId();
   const utils = trpc.useUtils();
   const logos = useProjectLogos();
   const update = trpc.entry.update.useMutation();
@@ -123,83 +124,94 @@ export function EntryRow({ entry }: { entry: EntryData }) {
             </div>
           )}
         </div>
-        <div className="flex shrink-0">
-          {editing ? (
-            <>
-              <Button size="icon" variant="ghost" onClick={save} aria-label="Save" disabled={update.isPending}>
-                <Check />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => setEditing(false)} aria-label="Cancel">
-                <X />
-              </Button>
-            </>
-          ) : (
-            <>
-              <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setEditing(true)}
-                aria-label="Edit"
-                disabled={isRunning}
-              >
-                <Pencil />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={remove} aria-label="Delete" disabled={del.isPending}>
-                <Trash2 />
-              </Button>
-            </>
-          )}
-        </div>
+        {!editing && (
+          <div className="flex shrink-0">
+            <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
+            <Button size="icon" variant="ghost" onClick={() => setEditing(true)} aria-label="Edit" disabled={isRunning}>
+              <Pencil />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={remove} aria-label="Delete" disabled={del.isPending}>
+              <Trash2 />
+            </Button>
+          </div>
+        )}
       </header>
 
-      {/* Body: what was done on the left, the hours in the lower right corner. */}
-      <div className="flex items-end justify-between gap-3 px-3 py-3">
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <div className="flex flex-col gap-1.5">
+      {editing ? (
+        // Edit form: labelled fields stacked full width (project and time side by side from sm up), so
+        // nothing is squeezed next to the time box; Save and Cancel are real buttons at the bottom.
+        <div className="flex flex-col gap-3 px-3 py-3">
+          <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
+            <div className="flex flex-col gap-1">
+              <label htmlFor={`${uid}-project`} className="font-medium text-muted-foreground text-xs">
+                Project
+              </label>
               <select
+                id={`${uid}-project`}
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                aria-label="Project"
-                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+                className="h-10 rounded-lg border border-input bg-transparent px-2 font-normal text-foreground text-sm dark:bg-input/30"
               >
                 {projectOptions}
               </select>
-              <NoteTextarea
-                value={note}
-                onChange={setNote}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor={`${uid}-time`} className="font-medium text-muted-foreground text-xs">
+                Time
+              </label>
+              <Input
+                id={`${uid}-time`}
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    save();
-                  }
+                  if (e.key === "Enter") save();
                   if (e.key === "Escape") setEditing(false);
                 }}
-                aria-label="Note"
-                rows={1}
-                className="min-h-8 resize-none py-1"
+                className="h-10 font-mono font-semibold text-base tabular-nums"
+                placeholder="1:30"
+                autoFocus
               />
             </div>
-          ) : entry.note ? (
-            <p className="whitespace-pre-wrap break-words text-sm">{entry.note}</p>
-          ) : (
-            <p className="text-muted-foreground/70 text-sm italic">No description</p>
-          )}
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`${uid}-note`} className="font-medium text-muted-foreground text-xs">
+              Description
+            </label>
+            <NoteTextarea
+              id={`${uid}-note`}
+              value={note}
+              onChange={setNote}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  save();
+                }
+                if (e.key === "Escape") setEditing(false);
+              }}
+              rows={2}
+              placeholder="What did you work on?"
+              className="min-h-16 resize-none py-2 font-normal text-foreground text-sm"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditing(false)} className="max-sm:flex-1">
+              Cancel
+            </Button>
+            <Button onClick={save} disabled={update.isPending} className="max-sm:flex-1">
+              <Check /> Save
+            </Button>
+          </div>
         </div>
-        {editing ? (
-          <Input
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") save();
-              if (e.key === "Escape") setEditing(false);
-            }}
-            className="h-9 w-24 shrink-0 text-right"
-            aria-label="Duration"
-            autoFocus
-          />
-        ) : (
+      ) : (
+        // Body: what was done on the left, the hours in the lower right corner.
+        <div className="flex items-end justify-between gap-3 px-3 py-3">
+          <div className="min-w-0 flex-1">
+            {entry.note ? (
+              <p className="whitespace-pre-wrap break-words text-sm">{entry.note}</p>
+            ) : (
+              <p className="text-muted-foreground/70 text-sm italic">No description</p>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -209,8 +221,8 @@ export function EntryRow({ entry }: { entry: EntryData }) {
           >
             {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </li>
   );
 }

@@ -20,7 +20,10 @@ export default async function ReminderOffPage({ searchParams }: Props) {
           <p>Stop the weekly &ldquo;log your hours&rdquo; email?</p>
           <form method="post" action={`/api/reminders/off?u=${encodeURIComponent(u)}&t=${encodeURIComponent(t)}`}>
             <input type="hidden" name="page" value="1" />
-            <button type="submit" className="h-11 rounded-lg bg-primary px-6 font-medium text-primary-foreground">
+            <button
+              type="submit"
+              className="h-11 rounded-lg border border-primary/35 bg-primary/20 px-6 font-medium text-foreground hover:bg-primary/30"
+            >
               Yes, turn it off
             </button>
           </form>

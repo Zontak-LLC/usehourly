@@ -52,6 +52,14 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
+    label: "Azure",
+    value: "azure",
+    primary: {
+      light: "oklch(0.57 0.21 262)",
+      dark: "oklch(0.72 0.14 254)",
+    },
+  },
+  {
     label: "Cream",
     value: "cream",
     primary: {
