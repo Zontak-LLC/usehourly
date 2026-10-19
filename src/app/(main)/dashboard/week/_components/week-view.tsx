@@ -100,15 +100,15 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
           <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
             {/* The picked day is a heading on the page card, not a card of its own: the entry cards and the add form are the cards. */}
             <div className="mb-2 flex items-center justify-between gap-3 px-1">
-              <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
-              <span className="flex items-center gap-3">
+              <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
                 {sheet.dayTotals[selected] ? (
                   <HoursChip>{formatDuration(sheet.dayTotals[selected])}</HoursChip>
                 ) : (
                   <span className="text-muted-foreground text-sm">Nothing yet</span>
                 )}
-                <NonBillableToggle date={selected} compact />
               </span>
+              <NonBillableToggle date={selected} compact />
             </div>
             <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />
           </section>

@@ -96,8 +96,8 @@ export function WeekTotalCard({
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2.5">
-        <h2 className="font-semibold text-base">This week</h2>
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2 className="font-semibold text-base">This week</h2>
           <HoursChip>{formatDuration(sheet.total)}</HoursChip>
           <span className="text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
         </span>
