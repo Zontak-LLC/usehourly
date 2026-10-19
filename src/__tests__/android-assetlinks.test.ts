@@ -20,6 +20,9 @@ describe("Android digital asset links", () => {
   it("points the app at this site and keeps the key out of the repo", () => {
     expect(twa.host).toBe("usehourly.app");
     expect(twa.startUrl).toBe("/dashboard/today");
+    // Without the site-settings activity declared, the app crashes on launch (found on a Pixel).
+    expect(twa.enableSiteSettingsShortcut).toBe(true);
+    expect(twa.minSdkVersion).toBeGreaterThanOrEqual(24);
     expect(JSON.stringify(twa)).not.toMatch(/password/i);
   });
 });

@@ -14,3 +14,8 @@ Build (needs JDK 17 and the Android SDK with build-tools 36.1.0; see `~/.bubblew
     npx @bubblewrap/cli build --skipPwaValidation
 
 It writes `app-release-bundle.aab` (upload this to Play) and `app-release-signed.apk` (sideload for testing). Raise `appVersionCode` for every upload.
+
+## Gotchas (found on a real phone)
+- `enableSiteSettingsShortcut` must stay `true`: the browser-helper library always switches its `ManageDataLauncherActivity` on or off at start-up, and the manifest only declares it when this is true. With `false` the app crashes on launch with "Component class ...ManageDataLauncherActivity does not exist" (the test in `android-assetlinks.test.ts` guards it).
+- Bubblewrap needs `minSdkVersion` 24 or higher (the browser-helper library requires it).
+- Until `assetlinks.json` is live and lists the signing key in use, the app shows a browser bar at the top. Play re-signs the app, so add Play's app-signing fingerprint too.
