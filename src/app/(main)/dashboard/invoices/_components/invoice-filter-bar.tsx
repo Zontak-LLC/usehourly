@@ -199,7 +199,7 @@ export function InvoiceFilterBar({
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false); // phones only: the filters start folded away
   return (
-    <search aria-label="Find invoices" className="flex flex-col gap-3 border-t pt-4">
+    <search aria-label="Find invoices" className="flex flex-col gap-3">
       <SearchRow filters={filters} filtersOpen={filtersOpen} onToggleFilters={() => setFiltersOpen((o) => !o)} />
       <FilterFields filters={filters} clients={clients} today={today} filtersOpen={filtersOpen} />
       {(filters.filtering || filters.sort !== "newest") && (

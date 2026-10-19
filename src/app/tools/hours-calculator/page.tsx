@@ -35,7 +35,7 @@ export default function HoursCalculatorPage() {
             your hourly rate for the amount: 1.33 hours at $85 is about $113.
           </p>
         </section>
-        <section className="rounded-xl border bg-muted/40 p-5">
+        <section className="rounded-xl border bg-card p-5">
           <p className="font-medium">Tired of adding up hours by hand?</p>
           <p className="mt-1 text-muted-foreground text-sm">
             UseHourly is a free timesheet for freelancers: log your day in seconds, then turn it into a PDF invoice.

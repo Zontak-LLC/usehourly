@@ -42,8 +42,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // Reading the request's nonce (set in src/proxy.ts) is what makes pages render per request: the policy only
   // lets scripts carrying this request's nonce run.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
-    PREFERENCE_DEFAULTS;
+  const {
+    theme_mode,
+    theme_preset,
+    content_layout,
+    navbar_style,
+    nav_position,
+    nav_collapsed,
+    sidebar_variant,
+    sidebar_collapsible,
+    font,
+  } = PREFERENCE_DEFAULTS;
   return (
     <html
       lang="en"
@@ -51,6 +60,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       data-theme-preset={theme_preset}
       data-content-layout={content_layout}
       data-navbar-style={navbar_style}
+      data-nav-position={nav_position}
+      data-nav-collapsed={nav_collapsed}
       data-sidebar-variant={sidebar_variant}
       data-sidebar-collapsible={sidebar_collapsible}
       data-font={font}

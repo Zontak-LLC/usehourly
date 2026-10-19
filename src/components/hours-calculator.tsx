@@ -24,7 +24,7 @@ export function HoursCalculator() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={8}
-          className="w-full rounded-md border bg-background p-3 font-mono text-base"
+          className="w-full rounded-md border bg-card p-3 font-mono text-base"
           placeholder={"1:30\n2h\n45m\n1.5"}
         />
         <label htmlFor="hc-rate" className="block font-medium text-sm">
@@ -35,7 +35,7 @@ export function HoursCalculator() {
           inputMode="decimal"
           value={rate}
           onChange={(e) => setRate(e.target.value)}
-          className="h-11 w-full rounded-md border bg-background px-3 text-base"
+          className="h-11 w-full rounded-md border bg-card px-3 text-base"
           placeholder="85"
         />
       </div>

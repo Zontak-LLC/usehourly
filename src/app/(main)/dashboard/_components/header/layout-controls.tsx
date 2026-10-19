@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type FontKey, fontOptions } from "@/lib/fonts/registry";
-import type { ContentLayout, NavbarStyle } from "@/lib/preferences/layout";
+import type { ContentLayout, NavbarStyle, NavPosition } from "@/lib/preferences/layout";
 import { THEME_PRESET_OPTIONS, type ThemeMode, type ThemePreset } from "@/lib/preferences/theme";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
@@ -28,6 +28,7 @@ export function LayoutControls() {
     theme_preset: themePreset,
     content_layout: contentLayout,
     navbar_style: navbarStyle,
+    nav_position: navPosition,
     font,
   } = values;
 
@@ -48,6 +49,11 @@ export function LayoutControls() {
   const onNavbarStyleChange = (style: NavbarStyle | "") => {
     if (!style) return;
     setPreference("navbar_style", style);
+  };
+
+  const onNavPositionChange = (position: NavPosition | "") => {
+    if (!position) return;
+    setPreference("nav_position", position);
   };
 
   const onFontChange = (value: FontKey | "") => {
@@ -148,6 +154,25 @@ export function LayoutControls() {
                 </ToggleGroupItem>
                 <ToggleGroupItem value="full-width" aria-label="Toggle full-width">
                   Full Width
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className="hidden space-y-1 lg:block">
+              <Label className="font-medium text-xs">Navigation</Label>
+              <ToggleGroup
+                size="sm"
+                spacing={0}
+                variant="outline"
+                type="single"
+                value={navPosition}
+                onValueChange={onNavPositionChange}
+              >
+                <ToggleGroupItem value="top" aria-label="Navigation along the top">
+                  Top
+                </ToggleGroupItem>
+                <ToggleGroupItem value="left" aria-label="Navigation down the left">
+                  Left
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>

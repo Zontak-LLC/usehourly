@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 
+import { Notice } from "@/components/notice";
 import { trpc } from "@/lib/trpc";
 
 /** Confirms the address as soon as the page opens, then says so (or says why not). */
@@ -27,11 +28,11 @@ export function VerifyEmail({ token }: { token: string }) {
 
   return (
     <div className="space-y-4">
-      <p className="rounded-lg border bg-muted/40 p-4 text-sm">
+      <Notice className="p-4">
         {state === "working" && "Confirming your email…"}
         {state === "done" && "Thank you. Your email address is confirmed."}
         {state === "failed" && message}
-      </p>
+      </Notice>
       <Link className="block text-center text-sm underline" href="/dashboard/account">
         Go to your account
       </Link>

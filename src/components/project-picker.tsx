@@ -95,15 +95,15 @@ export function ProjectPicker({
               type="button"
               role="radio"
               aria-checked={on}
-              variant={on ? "default" : "outline"}
+              variant="outline"
               onClick={() => choose(p.id)}
-              className="h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
+              className={`h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12 ${on ? "border-foreground/60 bg-card ring-1 ring-foreground/30" : ""}`}
             >
               <span
                 aria-hidden="true"
-                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50"}`}
+                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-foreground bg-foreground text-background" : "border-muted-foreground/50"}`}
               >
-                {on && <Check className="size-3.5 max-sm:size-3" strokeWidth={3} />}
+                {on && <Check className="size-3.5 text-background max-sm:size-3" strokeWidth={3} />}
               </span>
               <span className="flex min-w-0 flex-col items-start max-sm:items-center">
                 <span className="max-w-full break-words font-medium max-sm:truncate sm:text-base" title={p.name}>
@@ -176,7 +176,7 @@ export function ProjectPicker({
                   type="button"
                   onClick={() => choose(p.id)}
                   aria-current={value === p.id ? "true" : undefined}
-                  className="flex min-h-14 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left hover:bg-muted aria-[current=true]:border-primary aria-[current=true]:bg-primary/10"
+                  className="flex min-h-14 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left hover:bg-muted aria-[current=true]:border-foreground/60 aria-[current=true]:bg-card aria-[current=true]:ring-1 aria-[current=true]:ring-foreground/30"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-sm">{p.name}</span>

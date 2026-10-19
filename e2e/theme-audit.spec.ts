@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
  * Not part of a normal run. Looks for text that is hard to read in any colour preset, light or dark, on the main
  * screens (the "stiling" bugs that appear when a colour or a shared component changes):
  *   THEME_AUDIT=1 npx playwright test e2e/theme-audit.spec.ts --project=desktop
+ * (add THEME_AUDIT_NAV=left to audit the side menu layout)
  * It signs in with the sample-data demo, loads each page, switches the preset and the mode on the page itself, and
  * runs axe's colour-contrast rule. Findings are written to e2e/report/theme-audit.json and summarised in the output.
  */
@@ -45,6 +46,10 @@ test("text stays readable in every preset and mode", async ({ page }) => {
     .first()
     .click();
   await expect(page).toHaveURL(/dashboard/);
+  // THEME_AUDIT_NAV=left audits the layout with the navigation down the left (the side menu is a new surface).
+  if (process.env.THEME_AUDIT_NAV === "left") {
+    await page.context().addCookies([{ name: "nav_position", value: "left", url: page.url() }]);
+  }
 
   const findings: Finding[] = [];
   for (const url of PAGES) {

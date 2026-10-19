@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Check, Copy, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -115,7 +116,7 @@ export function ShareTimesheet({
         </DialogHeader>
 
         {link ? (
-          <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-3">
+          <Notice className="flex flex-col gap-2">
             <p className="font-medium text-sm">Your link is ready. Copy it now: it is shown only once.</p>
             <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Timesheet link" />
             <div className="flex gap-2">
@@ -126,7 +127,7 @@ export function ShareTimesheet({
                 Make another
               </Button>
             </div>
-          </div>
+          </Notice>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3">

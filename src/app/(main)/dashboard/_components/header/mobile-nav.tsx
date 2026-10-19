@@ -37,7 +37,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
   return (
     <nav
       aria-label="Main pages"
-      className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 z-40 border-b bg-background max-sm:border-t max-sm:border-b-0 max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12"
+      className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 z-40 bg-background max-sm:border-t max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12 lg:[html[data-nav-position=left]_&]:hidden"
     >
       <div className="mx-auto grid max-w-5xl grid-cols-6 min-[480px]:grid-cols-7">
         {items.map((item) => {
