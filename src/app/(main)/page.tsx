@@ -198,6 +198,9 @@ export default function LandingPage() {
           {APP_CONFIG.name}
         </Link>
         <nav className="flex items-center gap-2">
+          <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
+            Guide
+          </Link>
           <Link href="/auth/v2/login" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted">
             Log in
           </Link>

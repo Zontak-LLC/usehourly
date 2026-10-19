@@ -44,14 +44,14 @@ export function ArchivedSection() {
         <ChevronDown className={showArchived ? "rotate-180" : ""} /> Archived clients and projects
       </Button>
       {showArchived && (
-        <ul className="mt-2 divide-y rounded-xl border bg-card">
-          {archived.isLoading && <li className="p-3 text-muted-foreground text-sm">Loading…</li>}
-          {archived.error && <li className="p-3 text-destructive text-sm">Couldn't load: {archived.error.message}</li>}
+        <ul className="mt-2 flex flex-col gap-2">
+          {archived.isLoading && <li className="text-muted-foreground text-sm">Loading…</li>}
+          {archived.error && <li className="text-destructive text-sm">Couldn't load: {archived.error.message}</li>}
           {archived.data?.length === 0 && archivedClients.data?.length === 0 && (
-            <li className="p-3 text-muted-foreground text-sm">Nothing archived.</li>
+            <li className="text-muted-foreground text-sm">Nothing archived.</li>
           )}
           {archivedClients.data?.map((c) => (
-            <li key={c.id} className="flex items-center justify-between px-4 py-2 text-sm">
+            <li key={c.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-2 text-sm">
               <span>
                 {c.name} <span className="text-muted-foreground">· client</span>
               </span>
@@ -61,7 +61,7 @@ export function ArchivedSection() {
             </li>
           ))}
           {archived.data?.map((p) => (
-            <li key={p.id} className="flex items-center justify-between px-4 py-2 text-sm">
+            <li key={p.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-2 text-sm">
               <span>
                 {p.name} <span className="text-muted-foreground">· {p.client.name}</span>
               </span>

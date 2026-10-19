@@ -6,12 +6,16 @@ import { defineConfig, devices } from "@playwright/test";
  *  - the sign-up robot check is off (a CAPTCHA cannot be clicked by a script);
  *  - email goes to a local stand-in for Resend (e2e/mock-resend.mjs), so tests can read the messages and click their links;
  *  - the database is the local D1 file, and every user a test makes is deleted afterwards (e2e/global-teardown.ts).
+ * - the test copy of the app has its OWN local database folder (.wrangler/state-e2e), so a normal dev server running at
+ *   the same time never shares files with it (sharing them breaks both).
  * Set E2E_BASE_URL to test an already-running site instead (then no server is started and nothing is deleted).
  */
 const PORT = 3029;
 const MAIL_PORT = 8899;
 const external = process.env.E2E_BASE_URL;
 const BASE = external ?? `http://localhost:${PORT}`;
+// Where the test copy keeps its database. Helpers and teardown read the same variable (workers inherit it).
+if (!external) process.env.E2E_PERSIST ??= ".wrangler/state-e2e";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -48,6 +52,7 @@ export default defineConfig({
           timeout: 240_000,
           env: {
             NEXT_DIST_DIR: ".next-e2e",
+            E2E_PERSIST: process.env.E2E_PERSIST ?? "",
             NEXT_PUBLIC_ENABLE_SW: "1", // the offline worker is off in development unless a test asks for it
             AUTH_URL: BASE,
             NEXT_PUBLIC_APP_URL: BASE,

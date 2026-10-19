@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { SectionCard } from "@/components/section-card";
+import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,9 +87,15 @@ function TeamLog({ team }: { team: Team }) {
   }
 
   return (
-    <SectionCard
-      title={`Log time for ${team.ownerName}`}
-      description="You can add and delete your own entries here. You can't see their rates, invoices or other people's time."
+    <HeaderCard
+      header={
+        <div>
+          <h2 className="font-semibold text-base">Log time for {team.ownerName}</h2>
+          <p className="text-muted-foreground text-sm">
+            You can add and delete your own entries here. You can't see their rates, invoices or other people's time.
+          </p>
+        </div>
+      }
       onSubmit={submit}
     >
       <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
@@ -132,9 +138,9 @@ function TeamLog({ team }: { team: Team }) {
         </Button>
       </div>
       {(mine.data?.length ?? 0) > 0 && (
-        <ul className="divide-y border-t">
+        <ul className="flex flex-col gap-2">
           {mine.data?.map((e) => (
-            <li key={e.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+            <li key={e.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/60 px-3 py-2 text-sm">
               <span className="min-w-0">
                 <span className="font-medium">{formatDuration(e.minutes)}</span> · {e.client} · {e.project} · {e.date}
                 {e.note && <span className="block truncate text-muted-foreground">{e.note}</span>}
@@ -152,6 +158,6 @@ function TeamLog({ team }: { team: Team }) {
           ))}
         </ul>
       )}
-    </SectionCard>
+    </HeaderCard>
   );
 }

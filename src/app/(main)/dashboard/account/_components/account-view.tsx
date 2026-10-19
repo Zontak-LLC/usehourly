@@ -5,6 +5,7 @@ import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
 import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
+import { GuideLink } from "@/components/guide-link";
 import { ImportTime } from "@/components/import-time";
 import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
@@ -72,7 +73,11 @@ export function AccountView() {
           </SectionCard>
 
           <SectionCard
-            title="Send invoices to your accounting app"
+            title={
+              <span className="inline-flex items-center gap-1">
+                Send invoices to your accounting app <GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />
+              </span>
+            }
             description="Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you marked non-billable are already left off every invoice."
           >
             <AccountingExport />

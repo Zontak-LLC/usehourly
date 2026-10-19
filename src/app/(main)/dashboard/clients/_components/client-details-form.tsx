@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 
+import { GuideLink } from "@/components/guide-link";
 import { LogoPicker } from "@/components/logo-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,9 @@ import { trpc } from "@/lib/trpc";
 function RoundingFields({ step, mode, min }: { step: number; mode: string; min: number }) {
   return (
     <fieldset className="grid gap-1.5">
-      <legend className="font-medium text-sm">Round the time on invoices</legend>
+      <legend className="flex items-center gap-1 font-medium text-sm">
+        Round the time on invoices <GuideLink topic="rounding" label="rounding time on invoices" />
+      </legend>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <select
           name="roundStep"

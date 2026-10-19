@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  BookOpen,
   CalendarDays,
   CalendarRange,
   Clock,
@@ -37,6 +38,7 @@ export const navLinks: NavLink[] = [
   { id: "clients", title: "Clients & Projects", short: "Clients", url: "/dashboard/clients", icon: Users },
   { id: "team", title: "Team", url: "/dashboard/team", icon: UsersRound, secondary: true },
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
+  { id: "guide", title: "Guide", url: "/help", icon: BookOpen, secondary: true },
 ];
 
 /** Shown only to the site owner (see lib/admin.ts). */

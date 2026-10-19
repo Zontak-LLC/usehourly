@@ -2,7 +2,11 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 // Expose Cloudflare bindings (D1) to `next dev`.
 if (process.env.NODE_ENV === "development") {
-  await initOpenNextCloudflareForDev();
+  // Browser tests give their copy of the app its own database folder (E2E_PERSIST), so it never shares files with the
+  // normal dev server: two servers on the same local D1 files corrupt each other ("Failed to get session commit token").
+  await initOpenNextCloudflareForDev(
+    process.env.E2E_PERSIST ? { persist: { path: `${process.env.E2E_PERSIST}/v3` } } : undefined,
+  );
 }
 
 // The Content-Security-Policy is built per request (a fresh nonce for scripts) in src/proxy.ts; see src/lib/csp.ts.

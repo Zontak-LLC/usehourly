@@ -21,7 +21,7 @@ const GROUPS = [
   { title: "Track", ids: ["today", "week", "month"] },
   { title: "Bill", ids: ["invoices", "report"] },
   { title: "Manage", ids: ["clients", "team"] },
-  { title: "Settings", ids: ["account", "insights"] },
+  { title: "Settings", ids: ["account", "guide", "insights"] },
 ] as const;
 const DIVIDE =
   "[html[data-nav-collapsed=collapsed]_&]:border-t [html[data-nav-collapsed=collapsed]_&]:pt-2 [html[data-nav-collapsed=collapsed]_&]:first:border-t-0";

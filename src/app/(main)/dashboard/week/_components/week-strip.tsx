@@ -2,7 +2,6 @@
 
 import { Ban, Clock } from "lucide-react";
 
-import { HoursChip } from "@/components/hours-chip";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -22,6 +21,7 @@ export function DayTiles({
   selected,
   today,
   dayTotals,
+  dots,
   nonBillable,
   onPick,
 }: {
@@ -29,6 +29,8 @@ export function DayTiles({
   selected: string;
   today: string | null;
   dayTotals: Sheet["dayTotals"];
+  /** Client colours per day (see lib/week-dots.ts): a dot for each client with time that day, none for an empty day. */
+  dots: Record<string, string[]>;
   /** Dates marked non-billable: the tile carries a small mark and says so to screen readers. */
   nonBillable: ReadonlySet<string>;
   onPick: (d: string) => void;
@@ -67,6 +69,17 @@ export function DayTiles({
             >
               {total ? formatDuration(total) : "–"}
             </span>
+            <span aria-hidden="true" className="flex h-1.5 items-center gap-0.5">
+              {(dots[d] ?? []).map((color, i) => (
+                <span
+                  // biome-ignore lint/suspicious/noArrayIndexKey: at most three dots that never reorder
+                  key={i}
+                  data-dot=""
+                  className="size-1.5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </span>
             <span
               className={`font-semibold text-foreground/80 text-xs uppercase ${d === today ? "" : "invisible"} max-sm:hidden`}
             >
@@ -94,16 +107,15 @@ export function WeekTotalCard({
   onProjectId: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-3">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <h2 className="font-semibold text-base">This week</h2>
-          <HoursChip>{formatDuration(sheet.total)}</HoursChip>
-          <span className="text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
-        </span>
+    <section aria-label="This week" className="flex flex-col gap-3 rounded-xl bg-foreground/[0.06] p-4">
+      {/* A summary, not another card: no frame and no header, a big figure first, then the projects that made it up. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="font-medium text-foreground/75 text-sm">Total hours this week</h2>
+        <p className="font-mono font-semibold text-3xl tabular-nums leading-none">{formatDuration(sheet.total)}</p>
+        <p className="text-foreground/75 text-sm">({formatDecimalHours(sheet.total)} h)</p>
       </div>
       {sheet.rows.length > 0 && (
-        <ul className="flex flex-wrap gap-2 p-4">
+        <ul className="flex flex-wrap gap-2">
           {sheet.rows.map((r) => {
             const on = projectId === r.projectId;
             return (
@@ -113,8 +125,8 @@ export function WeekTotalCard({
                   aria-pressed={on}
                   onClick={() => onProjectId(toggleProjectFilter(projectId, r.projectId))}
                   title={on ? "Show all projects" : `Show only ${r.project}`}
-                  className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm hover:bg-muted ${
-                    on ? "border-primary bg-primary/10" : ""
+                  className={`flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm hover:bg-muted ${
+                    on ? "border-foreground/60 ring-1 ring-foreground/30" : ""
                   }`}
                 >
                   <span className="size-2.5 rounded-full" style={{ backgroundColor: r.color }} />
@@ -130,6 +142,6 @@ export function WeekTotalCard({
           })}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

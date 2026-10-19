@@ -43,7 +43,7 @@ export function InvoiceDetailsCard({
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
-      <h2 className="border-b bg-muted/40 px-4 py-3 font-semibold text-base">Invoice details</h2>
+      <h2 className="border-b bg-band-2 px-4 py-3 font-semibold text-base">Invoice details</h2>
       <div className="grid gap-3 p-4 sm:grid-cols-2">
         <div className="grid gap-1.5">
           <Label htmlFor="client">Client</Label>

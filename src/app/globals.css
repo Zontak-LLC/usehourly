@@ -47,6 +47,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-band-1: var(--band-1);
+  --color-band-2: var(--band-2);
+  --color-band-3: var(--band-3);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -97,6 +100,12 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-accent-foreground: oklch(0.24 0.02 75);
   --sidebar-border: oklch(0.915 0.004 90);
   --sidebar-ring: oklch(0.79 0.17 75);
+
+  /* Header shades, darkest outermost: the page card's header, then a card inside it, then a tile inside that. They are
+     mixed from the theme's own text and page colours, so every colour preset and dark mode follows. */
+  --band-1: color-mix(in oklch, var(--foreground) 12%, var(--background));
+  --band-2: color-mix(in oklch, var(--foreground) 8%, var(--background));
+  --band-3: color-mix(in oklch, var(--foreground) 5%, var(--background));
 
   /* fonts */
   --font-sans: var(--font-geist);

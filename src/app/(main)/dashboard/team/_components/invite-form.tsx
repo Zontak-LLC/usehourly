@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 
-import { Copy } from "lucide-react";
+import { Copy, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { SectionCard } from "@/components/section-card";
+import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-/** Pick a name and the clients, get a private link to send. The link is shown once: only its hash is stored. */
-export function InviteForm() {
+/**
+ * The invitation form as a card: pick a name and the clients, get a private link to send (shown once: only its hash is
+ * stored). It opens in place of the "Invite someone" card and closes back into it.
+ */
+export function InviteCard({ onClose }: { onClose: () => void }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
   const invite = trpc.team.invite.useMutation();
@@ -51,9 +54,28 @@ export function InviteForm() {
 
   const list = clients.data ?? [];
   return (
-    <SectionCard
-      title="Invite someone"
-      description="We email them a link. They sign in with their own UseHourly account and can log time only on the clients you choose."
+    <HeaderCard
+      header={
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="font-semibold text-base">Invite someone</h2>
+            <p className="text-foreground/75 text-sm">
+              We email them a link. They sign in with their own UseHourly account and can log time only on the clients
+              you choose.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-8 shrink-0"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X />
+          </Button>
+        </div>
+      }
       onSubmit={submit}
     >
       <div className="grid gap-3 sm:grid-cols-2">
@@ -101,7 +123,7 @@ export function InviteForm() {
         </Button>
       </div>
       {sent && (
-        <div className="flex flex-col gap-2 border-t pt-3">
+        <div className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
           <p className="text-sm">
             {sent.note} You can also send this link yourself. It works once and for 7 days, and you can't see it again.
           </p>
@@ -111,8 +133,13 @@ export function InviteForm() {
               <Copy /> Copy
             </Button>
           </div>
+          <div>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Done
+            </Button>
+          </div>
         </div>
       )}
-    </SectionCard>
+    </HeaderCard>
   );
 }

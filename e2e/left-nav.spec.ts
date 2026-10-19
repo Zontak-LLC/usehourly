@@ -40,6 +40,7 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
       "Year summary (taxes)",
       "Team",
       "Account",
+      "Guide",
     ]) {
       await expect(side.getByRole("link", { name })).toBeVisible();
     }
@@ -64,11 +65,25 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
   });
 
   await test.step("double-clicking empty space in the menu unfolds it, and again folds it (links and buttons are not affected)", async () => {
+    // empty space: between the last link and the Log out button
+    const lastLink = (await side.getByRole("link", { name: "Guide" }).boundingBox()) ?? {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    };
+    const logOut = (await side.getByRole("button", { name: "Log out" }).boundingBox()) ?? {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    };
     const box = (await side.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
-    const empty = { x: box.x + box.width / 2, y: box.y + box.height * 0.6 }; // the gap between the links and the foot
+    const gapY = (lastLink.y + lastLink.height + logOut.y) / 2;
+    const empty = { x: box.x + box.width / 2, y: gapY };
     await page.mouse.dblclick(empty.x, empty.y);
     await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "open");
-    await page.mouse.dblclick(box.x + 120, box.y + box.height * 0.6);
+    await page.mouse.dblclick(box.x + 120, gapY);
     await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
     await side.getByRole("link", { name: "Month" }).dblclick(); // goes to Month, does not toggle
     await expect(page).toHaveURL(/dashboard\/month/);

@@ -14,6 +14,7 @@ import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
+import { dayDots } from "@/lib/week-dots";
 
 import { DayTiles, longDayLabel, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
@@ -30,6 +31,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     const t = toISODate(new Date());
     setToday(t);
     setStart(startOfWeek(initialDate ?? t));
+    setPicked(initialDate ?? null); // an address with ?date= opens on that day, not just that week
   }, [initialDate]);
 
   const end = start ? addDays(start, 6) : "";
@@ -44,18 +46,31 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
+  const dots = useMemo(() => dayDots(shown), [shown]);
 
   if (!start) return <Skeleton className="h-64 w-full" />;
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   // The chosen day, else today when it is in this week, else Monday.
   const selected = picked && days.includes(picked) ? picked : today && days.includes(today) ? today : days[0];
-  const openDay = (d: string) => {
+  // The address always says which day (or week) is showing, so a refresh or a shared link comes back to it.
+  const writeDate = (d: string | null) => {
+    const url = new URL(window.location.href);
+    if (d) url.searchParams.set("date", d);
+    else url.searchParams.delete("date");
+    window.history.replaceState(null, "", url);
+  };
+  const pickDay = (d: string) => {
     setPicked(d);
+    writeDate(d === today ? null : d);
+  };
+  const openDay = (d: string) => {
+    pickDay(d);
     panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const goWeek = (s: string) => {
     setStart(s);
     setPicked(null);
+    writeDate(today && startOfWeek(today) === s ? null : s);
   };
 
   return (
@@ -93,8 +108,9 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             selected={selected}
             today={today}
             dayTotals={sheet.dayTotals}
+            dots={dots}
             nonBillable={nonBillable}
-            onPick={setPicked}
+            onPick={pickDay}
           />
 
           <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
@@ -103,7 +119,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
               <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
                 {sheet.dayTotals[selected] ? (
-                  <HoursChip>{formatDuration(sheet.dayTotals[selected])}</HoursChip>
+                  <HoursChip label="Total">{formatDuration(sheet.dayTotals[selected])}</HoursChip>
                 ) : (
                   <span className="text-muted-foreground text-sm">Nothing yet</span>
                 )}

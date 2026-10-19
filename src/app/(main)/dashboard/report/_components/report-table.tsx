@@ -11,7 +11,7 @@ export function Stat({ label, value, hint }: { label: string; value: string; hin
 export function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
-      <div className="border-b bg-muted/40 px-4 py-3">
+      <div className="border-b bg-band-2 px-4 py-3">
         <h2 className="font-semibold text-base">{title}</h2>
         {note && <p className="text-muted-foreground text-sm">{note}</p>}
       </div>

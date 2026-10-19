@@ -3,6 +3,7 @@
 import { Archive, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
+import { GuideLink } from "@/components/guide-link";
 import { IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
 import { ProjectMark } from "@/components/project-logo";
@@ -14,7 +15,7 @@ import { formatDuration } from "@/lib/duration";
 import type { ClientRow, ProjectRow as ProjectData, ProjectTotals } from "./client-types";
 import type { ProjectEditing } from "./use-project-editing";
 
-/** One project as a card: a header band with its name and buttons, then the rate, this month and all time, and its budget. */
+/** One project as a tile: a header with its name and buttons, then the rate, this month and all time, and its budget. */
 export function ProjectCard({
   project: p,
   clientColor,
@@ -33,8 +34,8 @@ export function ProjectCard({
   onArchive: () => void;
 }) {
   return (
-    <li className="flex flex-col overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/40 py-2 pr-2 pl-3">
+    <li className="flex flex-col overflow-hidden rounded-lg bg-foreground/[0.03]">
+      <div className="flex items-center justify-between gap-2 bg-band-3 py-2 pr-2 pl-3">
         <span className="flex min-w-0 items-center gap-2">
           <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
           <h3 className="truncate font-semibold text-sm">{p.name}</h3>
@@ -101,7 +102,7 @@ export function ProjectEditCard({
   editing: ProjectEditing;
 }) {
   return (
-    <li className="overflow-hidden rounded-xl border bg-card px-4 py-3 sm:col-span-2">
+    <li className="overflow-hidden rounded-lg bg-foreground/[0.03] px-4 py-3 sm:col-span-2">
       <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
         <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
         <select
@@ -136,6 +137,7 @@ export function ProjectEditCard({
         <fieldset className="flex basis-full flex-wrap items-center gap-2 text-sm">
           <legend className="sr-only">Budget</legend>
           <span className="text-muted-foreground">Budget</span>
+          <GuideLink topic="budgets" label="project budgets" />
           <Input
             name="budgetAmount"
             inputMode="decimal"
