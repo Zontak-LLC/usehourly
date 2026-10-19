@@ -254,8 +254,9 @@ These serve as the fallback; there is no separate default.css file. */
   }
 }
 
+/* Sideways overscroll is off (no accidental back-swipe); vertical stays normal so pulling down refreshes the page. */
 html {
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
 }
 
 html:has([data-landing-page]) {
