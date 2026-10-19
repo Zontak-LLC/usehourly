@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Ban, Clock } from "lucide-react";
 
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
@@ -21,12 +21,15 @@ export function DayTiles({
   selected,
   today,
   dayTotals,
+  nonBillable,
   onPick,
 }: {
   days: string[];
   selected: string;
   today: string | null;
   dayTotals: Sheet["dayTotals"];
+  /** Dates marked non-billable: the tile carries a small mark and says so to screen readers. */
+  nonBillable: ReadonlySet<string>;
   onPick: (d: string) => void;
 }) {
   return (
@@ -41,9 +44,9 @@ export function DayTiles({
             type="button"
             role="tab"
             aria-selected={on}
-            aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}`}
+            aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}${nonBillable.has(d) ? ", non-billable" : ""}`}
             onClick={() => onPick(d)}
-            className={`flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-2.5 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
+            className={`relative flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-2.5 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
               on
                 ? "border-primary bg-primary/15 shadow-sm ring-2 ring-primary/40"
                 : d === today
@@ -51,6 +54,7 @@ export function DayTiles({
                   : "bg-card hover:bg-muted"
             } ${[0, 6].includes(date.getDay()) && !on ? "bg-muted/40" : ""}`}
           >
+            {nonBillable.has(d) && <Ban className="absolute top-1 right-1 size-3" aria-hidden />}
             <span
               className={`font-medium text-xs uppercase tracking-normal max-sm:text-[0.7rem] sm:tracking-wide ${on ? "text-foreground/75" : "text-muted-foreground"}`}
             >

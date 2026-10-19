@@ -143,7 +143,9 @@ export async function planExport(opts: {
   invoices: InvoiceRow[];
   today: string;
 }): Promise<ExportPlan> {
-  const entries = opts.entries.filter((e) => e.minutes > 0);
+  // Entries on days marked non-billable are left out of every file, and the README says how many.
+  const entries = opts.entries.filter((e) => e.minutes > 0 && !e.non_billable);
+  const leftOut = opts.entries.filter((e) => e.minutes > 0 && e.non_billable).length;
   const files: ExportFile[] = [];
 
   const byClient = new Map<string, SheetEntry[]>();
@@ -185,6 +187,11 @@ export async function planExport(opts: {
     ...(clients.length ? ["  by-client/         One workbook per client, with the same two sheets."] : []),
     "",
     "Hours are decimal (1.5 = one hour thirty). Amounts use each project's hourly rate.",
+    ...(leftOut
+      ? [
+          `${leftOut} ${leftOut === 1 ? "entry" : "entries"} on days marked non-billable ${leftOut === 1 ? "was" : "were"} left out.`,
+        ]
+      : []),
   ];
   files.unshift({ path: "README.txt", content: `${lines.join("\r\n")}\r\n` });
 

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { buildAnnualReport } from "@/lib/annual-report";
 
+import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
 
 export const reportRouter = router({
@@ -11,11 +12,12 @@ export const reportRouter = router({
     .query(async ({ ctx, input }) => {
       const from = `${input.year}-01-01`;
       const to = `${input.year}-12-31`;
-      const [entries, projects, invoices] = await Promise.all([
+      const [allEntries, skipDays, projects, invoices] = await Promise.all([
         ctx.prisma.timeEntry.findMany({
           where: { user_id: ctx.userId, date: { gte: from, lte: to } },
           select: { date: true, minutes: true, project_id: true },
         }),
+        nonBillableDates(ctx.prisma, ctx.userId, { from, to }),
         // Archived projects included: their past time still belongs in the year.
         ctx.prisma.project.findMany({
           where: { user_id: ctx.userId },
@@ -38,6 +40,9 @@ export const reportRouter = router({
           },
         }),
       ]);
+
+      // Days marked non-billable are left out of the year summary entirely.
+      const entries = allEntries.filter((e) => !skipDays.has(e.date));
 
       return buildAnnualReport({
         year: input.year,

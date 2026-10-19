@@ -91,7 +91,8 @@ export function NewInvoiceView() {
       // Match by the project's client (not the active-project list) so archived projects count,
       // exactly as the server does.
       buildInvoice(
-        (entries.data ?? []).filter((e) => e.project.client_id === clientId),
+        // Days marked non-billable are never invoiced (the server skips them too).
+        (entries.data ?? []).filter((e) => e.project.client_id === clientId && !e.non_billable),
         rounding,
       ),
     [entries.data, clientId, rounding],

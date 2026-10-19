@@ -6,6 +6,8 @@ import { buildAnnualWorkbook } from "@/lib/export-annual-xlsx";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+
 const createCaller = createCallerFactory(appRouter);
 
 const projects: ReportProject[] = [
@@ -146,6 +148,7 @@ describe("annual report numbers", () => {
 describe("annual report procedure", () => {
   function setup() {
     const prisma = {
+      ...memoryNonBillableDays(),
       timeEntry: { findMany: vi.fn(async () => entries.filter((e) => e.date.startsWith("2026"))) },
       project: {
         findMany: vi.fn(async () =>

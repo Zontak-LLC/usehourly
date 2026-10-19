@@ -43,6 +43,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
   const last = first ? monthEnd(first) : "";
   const entries = trpc.entry.list.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
+  const nonBillableDays = trpc.entry.nonBillableDays.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
+  const nonBillable = useMemo(() => new Set(nonBillableDays.data ?? []), [nonBillableDays.data]);
   const shown = useMemo(
     () => (entries.data ?? []).filter((e) => !projectId || e.project_id === projectId),
     [entries.data, projectId],
@@ -117,6 +119,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             selectMode={selectMode}
             selection={selection}
             shownPicked={shownPicked}
+            nonBillable={nonBillable}
             onOpenDay={setEditDate}
           />
 
@@ -125,7 +128,14 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           <MergeDaysPanel entries={shown} />
 
           {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
-          <WorkItems key={`${first}-${projectId}`} entries={shown} onOpenDay={setEditDate} period="month" editInPlace />
+          <WorkItems
+            key={`${first}-${projectId}`}
+            entries={shown}
+            onOpenDay={setEditDate}
+            period="month"
+            editInPlace
+            nonBillable={nonBillable}
+          />
         </>
       )}
     </PageShell>

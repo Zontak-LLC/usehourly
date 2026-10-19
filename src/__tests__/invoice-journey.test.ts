@@ -6,6 +6,7 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -23,6 +24,7 @@ const user = {
 function mockPrisma() {
   return {
     ...memoryInvoiceLogos(),
+    ...memoryNonBillableDays(),
     client: {
       count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({

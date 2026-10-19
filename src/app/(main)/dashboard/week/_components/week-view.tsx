@@ -6,6 +6,7 @@ import { Clock } from "lucide-react";
 
 import { DayEditorPanel } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
+import { NonBillableToggle } from "@/components/non-billable-toggle";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +35,9 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   const end = start ? addDays(start, 6) : "";
   const entries = trpc.entry.list.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
+
+  const nonBillableDays = trpc.entry.nonBillableDays.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
+  const nonBillable = useMemo(() => new Set(nonBillableDays.data ?? []), [nonBillableDays.data]);
 
   // Filtering is client-side: the week's entries are already loaded and small.
   const shown = useMemo(
@@ -85,21 +89,31 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
         <Skeleton className="h-48 w-full" />
       ) : (
         <>
-          <DayTiles days={days} selected={selected} today={today} dayTotals={sheet.dayTotals} onPick={setPicked} />
+          <DayTiles
+            days={days}
+            selected={selected}
+            today={today}
+            dayTotals={sheet.dayTotals}
+            nonBillable={nonBillable}
+            onPick={setPicked}
+          />
 
           <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
             {/* The picked day is a heading on the page card, not a card of its own: the entry cards and the add form are the cards. */}
-            <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+            <div className="mb-2 flex items-center justify-between gap-3 px-1">
               <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
-              <span className="flex items-center gap-1.5 font-medium font-mono tabular-nums">
-                {sheet.dayTotals[selected] ? (
-                  <>
-                    <Clock className="size-4" aria-hidden />
-                    {formatDuration(sheet.dayTotals[selected])}
-                  </>
-                ) : (
-                  "Nothing yet"
-                )}
+              <span className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 font-medium font-mono tabular-nums">
+                  {sheet.dayTotals[selected] ? (
+                    <>
+                      <Clock className="size-4" aria-hidden />
+                      {formatDuration(sheet.dayTotals[selected])}
+                    </>
+                  ) : (
+                    "Nothing yet"
+                  )}
+                </span>
+                <NonBillableToggle date={selected} bare />
               </span>
             </div>
             <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />
@@ -111,7 +125,14 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
           <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
 
           {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
-          <WorkItems key={`${start}-${projectId}`} entries={shown} onOpenDay={openDay} period="week" editInPlace />
+          <WorkItems
+            key={`${start}-${projectId}`}
+            entries={shown}
+            onOpenDay={openDay}
+            period="week"
+            editInPlace
+            nonBillable={nonBillable}
+          />
         </>
       )}
     </PageShell>

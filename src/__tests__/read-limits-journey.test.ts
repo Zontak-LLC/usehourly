@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+
 const createCaller = createCallerFactory(appRouter);
 
 type Row = { id: string; user_id: string; date: string; minutes: number };
@@ -14,7 +16,7 @@ function fakeEntries(rows: Row[]) {
     const start = args.cursor ? mine.findIndex((r) => r.id === args.cursor?.id) : 0;
     return mine.slice(Math.max(start, 0), Math.max(start, 0) + (args.take ?? mine.length));
   });
-  return { timeEntry: { findMany } };
+  return { timeEntry: { findMany }, ...memoryNonBillableDays() };
 }
 const asUser = (prisma: object, id = "u1") =>
   createCaller({ session: { user: { id }, expires: "" }, prisma: prisma as never });

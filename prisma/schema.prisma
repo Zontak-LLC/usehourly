@@ -44,6 +44,7 @@ model AuthUser {
   projects Project[]
   entries  TimeEntry[]
   invoices Invoice[]
+  non_billable_days NonBillableDay[]
   invoice_logos InvoiceLogo[]
   email_tokens EmailToken[]
   api_tokens ApiToken[]
@@ -123,6 +124,19 @@ model TimeEntry {
   // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
   // account. Prisma cannot express a partial index, so it lives only in the SQL.
   @@map("time_entries")
+}
+
+// A day the account has marked non-billable: its time stays on screen but is left out of invoices, exports and the
+// year summary. A row per (account, date); entries added to that date later are covered without touching them.
+model NonBillableDay {
+  user_id    String
+  date       String
+  created_at DateTime @default(now())
+
+  user AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, date])
+  @@map("non_billable_days")
 }
 
 // An issued invoice. `snapshot` is a frozen JSON copy of everything printed on the PDF

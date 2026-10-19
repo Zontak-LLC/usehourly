@@ -5,10 +5,13 @@ import { buildInvoicePdf } from "@/lib/invoice-pdf";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+
 const createCaller = createCallerFactory(appRouter);
 
 function setup(invoiceBranding: boolean) {
   const prisma = {
+    ...memoryNonBillableDays(),
     client: {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
     },
