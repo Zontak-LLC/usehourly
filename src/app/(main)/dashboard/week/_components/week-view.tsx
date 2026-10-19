@@ -94,7 +94,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
               <span className="flex items-center gap-1.5 font-medium font-mono tabular-nums">
                 {sheet.dayTotals[selected] ? (
                   <>
-                    <Clock className="size-4 text-muted-foreground" aria-hidden />
+                    <Clock className="size-4" aria-hidden />
                     {formatDuration(sheet.dayTotals[selected])}
                   </>
                 ) : (

@@ -19,11 +19,11 @@ import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 const MAIN = ["today", "week", "month", "invoices", "clients"];
 /** One colour per tab, on the icon only (the label and the active marker stay neutral). */
 const TAB_COLOR: Record<string, string> = {
-  today: "text-amber-600 dark:text-amber-400",
+  today: "text-yellow-600 dark:text-yellow-400",
   week: "text-sky-600 dark:text-sky-400",
   month: "text-violet-600 dark:text-violet-400",
   invoices: "text-emerald-600 dark:text-emerald-400",
-  clients: "text-rose-600 dark:text-rose-400",
+  clients: "text-orange-600 dark:text-orange-400",
 };
 
 /**

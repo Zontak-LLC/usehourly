@@ -152,6 +152,98 @@ These serve as the fallback; there is no separate default.css file. */
     @apply font-sans;
   }
 
+  /* Icon colours, one place for the whole site (lucide puts `lucide-<name>` on every icon). Colour = what the icon
+     means: blue to edit and send, teal for files, amber for archive, time and warnings, green to add and confirm,
+     rose to remove and stop, violet for merge and calendars, indigo for movement and settings. These sit in the
+     base layer, so a utility class on an icon (text-success, ICON_TONE...) still wins. Icons on a solid primary
+     surface (the landing band, the picked-project check) keep the surface's own text colour. */
+  :is(
+    .lucide-pencil,
+    .lucide-send,
+    .lucide-share-2,
+    .lucide-link-2,
+    .lucide-copy,
+    .lucide-printer,
+    .lucide-mail,
+    .lucide-message-square,
+    .lucide-info,
+    .lucide-user-round,
+    .lucide-monitor
+  ) {
+    @apply text-sky-600 dark:text-sky-400;
+  }
+  :is(
+    .lucide-download,
+    .lucide-file-text,
+    .lucide-file-spreadsheet,
+    .lucide-file-up,
+    .lucide-database,
+    .lucide-server
+  ) {
+    @apply text-teal-600 dark:text-teal-400;
+  }
+  :is(
+    .lucide-archive,
+    .lucide-clock,
+    .lucide-sun,
+    .lucide-key-round,
+    .lucide-sparkles,
+    .lucide-rotate-ccw,
+    .lucide-triangle-alert
+  ) {
+    @apply text-yellow-600 dark:text-yellow-400;
+  }
+  :is(
+    .lucide-plus,
+    .lucide-check,
+    .lucide-circle-check,
+    .lucide-circle-dollar-sign,
+    .lucide-shield-check,
+    .lucide-play
+  ) {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+  :is(
+    .lucide-trash-2,
+    .lucide-x,
+    .lucide-log-out,
+    .lucide-heart,
+    .lucide-square,
+    .lucide-octagon-x,
+    .lucide-circle-alert
+  ) {
+    @apply text-rose-600 dark:text-rose-400;
+  }
+  :is(
+    .lucide-merge,
+    .lucide-image-plus,
+    .lucide-bot,
+    .lucide-calendar-plus,
+    .lucide-calendar-arrow-up,
+    .lucide-folder-kanban,
+    .lucide-sliders-horizontal
+  ) {
+    @apply text-violet-600 dark:text-violet-400;
+  }
+  :is(
+    .lucide-chevron-left,
+    .lucide-chevron-right,
+    .lucide-chevron-down,
+    .lucide-chevron-up,
+    .lucide-arrow-right,
+    .lucide-search,
+    .lucide-settings,
+    .lucide-moon,
+    .lucide-menu,
+    .lucide-panel-left
+  ) {
+    @apply text-indigo-600 dark:text-indigo-400;
+  }
+  .bg-primary .lucide,
+  .bg-primary.lucide {
+    color: inherit;
+  }
+
   /* Phones: the template's compact sizes (14px text, 32px buttons) are small on a 412px-wide screen,
      so scale every rem-based size up one step. Desktop is untouched. */
   @media (max-width: 767px) {

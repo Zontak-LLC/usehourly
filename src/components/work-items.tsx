@@ -104,7 +104,7 @@ export function WorkItems({
                 {dayFmt.format(fromISODate(g.date))}
                 <span className="flex items-center gap-1">
                   <span className="flex items-center gap-1.5 font-mono tabular-nums">
-                    <Clock className="size-3.5 text-muted-foreground" aria-hidden />
+                    <Clock className="size-3.5" aria-hidden />
                     {formatDuration(g.minutes)}
                     {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
                   </span>
