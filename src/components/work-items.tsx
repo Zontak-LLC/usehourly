@@ -118,7 +118,9 @@ export function WorkItems({
                 <ul className="flex flex-col gap-2">
                   {g.items.map((e) => (
                     <EntryRow
-                      key={e.id}
+                      // The card reads "start in edit mode" only when it is first shown, so a change of that flag (the
+                      // day's Edit day button) must show a fresh card, or the button would do nothing.
+                      key={`${e.id}-${editInPlace && editing.has(e.id) ? "edit" : "view"}`}
                       entry={e}
                       bare
                       initialEditing={editInPlace && editing.has(e.id)}
