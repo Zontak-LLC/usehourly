@@ -11,6 +11,9 @@ import { formatDuration } from "@/lib/duration";
 import type { ClientRow, ProjectRow as ProjectData, ProjectTotals } from "./client-types";
 import type { ProjectEditing } from "./use-project-editing";
 
+/** The columns of a project row from `sm` up: name, rate, this month, all time, buttons. The column heads use it too. */
+export const PROJECT_GRID = "sm:grid-cols-[minmax(0,1fr)_6rem_6rem_6.5rem_5rem]";
+
 /** One project in its read-only form: name, rate, this month / all-time totals, edit and archive. */
 export function ProjectRow({
   project: p,
@@ -28,26 +31,13 @@ export function ProjectRow({
   onArchive: () => void;
 }) {
   return (
-    <li className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 py-2.5 text-sm">
-      <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
+    <li className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-1 py-2.5 text-sm ${PROJECT_GRID}`}>
+      <span className="flex min-w-0 items-center gap-2 sm:col-start-1 sm:row-start-1">
         <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
-        <span className="font-medium">{p.name}</span>
-        {p.hourly_rate > 0 ? (
-          <span className="text-foreground/70">${(p.hourly_rate / 100).toFixed(2)}/h</span>
-        ) : (
-          p.billable && (
-            <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
-              No hourly rate yet
-            </span>
-          )
-        )}
-        {!p.billable && <span className="text-foreground/70 text-xs">non-billable</span>}
+        <span className="truncate font-medium">{p.name}</span>
+        {!p.billable && <span className="shrink-0 text-foreground/70 text-xs">non-billable</span>}
       </span>
-      <span className="flex items-center gap-3 font-mono text-[13px] text-foreground/75 tabular-nums sm:ml-auto">
-        <span title="This month">{formatDuration(totals?.[p.id]?.range ?? 0)} mo</span>
-        <span title="All time">{formatDuration(totals?.[p.id]?.total ?? 0)} total</span>
-      </span>
-      <span className="flex max-sm:ml-auto">
+      <span className="col-start-2 row-start-1 flex justify-end sm:col-start-5">
         <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Edit ${p.name}`}>
           <Pencil />
         </Button>
@@ -55,6 +45,28 @@ export function ProjectRow({
           <Archive />
         </Button>
       </span>
+      {/* Second line on a phone (labelled); on sm and up the three cells join the columns above. */}
+      <div className="col-span-2 row-start-2 flex flex-wrap justify-between gap-x-4 pl-7 text-foreground/75 sm:contents">
+        <span className="sm:col-start-2 sm:row-start-1">
+          {p.hourly_rate > 0 ? (
+            `$${(p.hourly_rate / 100).toFixed(2)}/h`
+          ) : p.billable ? (
+            <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
+              No hourly rate yet
+            </span>
+          ) : (
+            "–"
+          )}
+        </span>
+        <span className="font-mono tabular-nums sm:col-start-3 sm:row-start-1 sm:text-right">
+          <span className="font-sans text-xs sm:hidden">This month </span>
+          {formatDuration(totals?.[p.id]?.range ?? 0)}
+        </span>
+        <span className="font-mono tabular-nums sm:col-start-4 sm:row-start-1 sm:text-right">
+          <span className="font-sans text-xs sm:hidden">All time </span>
+          {formatDuration(totals?.[p.id]?.total ?? 0)}
+        </span>
+      </div>
     </li>
   );
 }

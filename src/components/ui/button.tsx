@@ -52,6 +52,9 @@ function Button({
     asChild?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
+  // An icon-only button shows its name on hover (a native tooltip) unless the caller set its own title.
+  const iconOnly = typeof size === "string" && size.startsWith("icon")
+  const title = props.title ?? (iconOnly ? props["aria-label"] : undefined)
 
   return (
     <Comp
@@ -60,6 +63,7 @@ function Button({
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
+      title={title}
     />
   )
 }
