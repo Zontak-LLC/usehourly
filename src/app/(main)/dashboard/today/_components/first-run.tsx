@@ -41,7 +41,7 @@ export function FirstRun() {
     <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:p-6">
       <div>
         <h2 className="font-semibold text-xl">Welcome! Let's get your first hours logged.</h2>
-        <p className="mt-1 text-muted-foreground text-base">
+        <p className="mt-1 text-base text-muted-foreground">
           First, tell us who you do the work for. You can add more later.
         </p>
       </div>

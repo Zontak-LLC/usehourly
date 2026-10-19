@@ -1,5 +1,6 @@
 import type { inferRouterOutputs } from "@trpc/server";
 
+import { CardTitle } from "@/components/card-title";
 import { SectionGroupProvider } from "@/components/section-card";
 import type { AppRouter } from "@/server/routers/_app";
 
@@ -38,10 +39,7 @@ export function Section({
       className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
     >
       <div className="border-b bg-band-2 px-4 py-3">
-        <h2 id={`${id}-heading`} className="font-semibold text-lg">
-          {title}
-        </h2>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <CardTitle as="h2" id={`${id}-heading`} title={title} note={description} className="text-lg" />
       </div>
       <SectionGroupProvider value>
         {/* The page is as wide as the others, but a text box stays a comfortable length: fields stop at 28rem. */}

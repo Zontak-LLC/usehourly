@@ -48,6 +48,7 @@ export function ReportView() {
 
   return (
     <PageShell
+      nav="report"
       title={<>Year summary · {year}</>}
       description="Your year at a glance, ready for your accountant or tax software."
       actions={

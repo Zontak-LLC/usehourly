@@ -133,6 +133,7 @@ export function ClientsView() {
 
   return (
     <PageShell
+      nav="clients"
       title="Clients & Projects"
       description="Your clients, and the projects you do for each. Hourly rates live here."
       actions={

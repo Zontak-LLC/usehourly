@@ -4,6 +4,8 @@ import { createContext, type FormEventHandler, type ReactNode, useContext } from
 
 import { cn } from "cn";
 
+import { CardTitle } from "@/components/card-title";
+
 const SectionGroupContext = createContext(false);
 /** Wraps cards that sit inside one grouped card (see Account's sections): they drop their own border and corners. */
 export const SectionGroupProvider = SectionGroupContext.Provider;
@@ -43,8 +45,14 @@ export function SectionCard({
           tone === "danger" && "border-destructive/30 bg-destructive/5",
         )}
       >
-        <h3 className="font-semibold text-base">{title}</h3>
-        {description && <p className="text-muted-foreground text-sm">{description}</p>}
+        {typeof title === "string" ? (
+          <CardTitle as="h3" title={title} note={typeof description === "string" ? description : undefined} />
+        ) : (
+          <>
+            <h3 className="font-semibold text-base">{title}</h3>
+            {description && <p className="text-foreground/75 text-sm">{description}</p>}
+          </>
+        )}
       </div>
       {children &&
         (onSubmit ? (

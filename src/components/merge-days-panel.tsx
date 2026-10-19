@@ -75,7 +75,7 @@ export function MergeDaysPanel({ entries }: { entries: Entry[] }) {
           </Button>
         )}
       </div>
-      <ul className="divide-y divide-primary/15 border-t border-primary/15 bg-card/60">
+      <ul className="divide-y divide-primary/15 border-primary/15 border-t bg-card/60">
         {groups.map((g) => {
           const total = g.entries.reduce((a, e) => a + e.minutes, 0);
           const error = "error" in g.plan ? g.plan.error : null;

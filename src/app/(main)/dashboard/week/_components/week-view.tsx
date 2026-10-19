@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DayEditorPanel } from "@/components/day-editor";
-import { HoursChip } from "@/components/hours-chip";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
-import { NonBillableToggle } from "@/components/non-billable-toggle";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
-import { formatDuration } from "@/lib/duration";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 import { dayDots } from "@/lib/week-dots";
@@ -75,6 +72,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   return (
     <PageShell
+      nav="week"
       title="Weekly timesheet"
       description={
         <>
@@ -114,19 +112,8 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
           />
 
           <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
-            {/* The picked day is a heading on the page card, not a card of its own: the entry cards and the add form are the cards. */}
-            <div className="mb-2 flex items-center justify-between gap-3 px-1">
-              <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
-                {sheet.dayTotals[selected] ? (
-                  <HoursChip label="Total">{formatDuration(sheet.dayTotals[selected])}</HoursChip>
-                ) : (
-                  <span className="text-muted-foreground text-sm">Nothing yet</span>
-                )}
-              </span>
-              <NonBillableToggle date={selected} compact />
-            </div>
-            <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />
+            {/* The day strip above already says which day this is, so the date is not repeated here. */}
+            <DayEditorPanel key={selected} date={selected} projectFilter={projectId} inPage />
           </section>
 
           <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />

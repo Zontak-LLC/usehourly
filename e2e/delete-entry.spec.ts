@@ -70,11 +70,10 @@ test("the Week page shows a colour dot on a day with time, and none on an empty 
 test("the Week page keeps the day you picked in the address, so a refresh comes back to it", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/week?date=2026-09-09");
-  await expect(page.getByRole("heading", { name: "Wednesday, September 9" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Wednesday, September 9/ })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: /Friday, September 11/ }).click();
   await expect(page).toHaveURL(/date=2026-09-11/);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Friday, September 11" })).toBeVisible(); // the same day after a refresh
   await expect(page.getByRole("tab", { name: /Friday, September 11/ })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "Next week" }).click();
   await expect(page).toHaveURL(/date=2026-09-14/); // the Monday of the week now showing

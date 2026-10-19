@@ -1,3 +1,5 @@
+import { CardTitle } from "@/components/card-title";
+
 export function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-xl border bg-card px-4 py-3">
@@ -12,8 +14,7 @@ export function Section({ title, note, children }: { title: string; note?: strin
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
       <div className="border-b bg-band-2 px-4 py-3">
-        <h2 className="font-semibold text-base">{title}</h2>
-        {note && <p className="text-muted-foreground text-sm">{note}</p>}
+        <CardTitle title={title} note={note} />
       </div>
       {children}
     </section>

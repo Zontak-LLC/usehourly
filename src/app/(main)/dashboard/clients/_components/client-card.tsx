@@ -62,10 +62,20 @@ export function ClientCard({
         </div>
         {/* Same pattern as Invoices and the project cards: icons with a tooltip on wide screens, icon over word on a phone. */}
         <span className="flex gap-1 max-sm:hidden">
-          <IconAction label={`Add a project for ${c.name}`} tip="Add a project" onClick={() => setAdding(true)}>
+          <IconAction
+            label={`Add a project for ${c.name}`}
+            tip="Add a project"
+            expanded={adding}
+            onClick={() => setAdding((open) => !open)}
+          >
             <Plus />
           </IconAction>
-          <IconAction label={`Edit ${c.name} billing details`} tip="Billing details" onClick={onToggleBilling}>
+          <IconAction
+            label={`Edit ${c.name} billing details`}
+            tip="Billing details"
+            expanded={billingOpen}
+            onClick={onToggleBilling}
+          >
             <Pencil />
           </IconAction>
           <IconAction label={`Archive ${c.name}`} tip="Archive client" onClick={onArchiveClient}>
@@ -77,7 +87,8 @@ export function ClientCard({
             label={`Add a project for ${c.name}`}
             tip="Add a project"
             text="Add project"
-            onClick={() => setAdding(true)}
+            expanded={adding}
+            onClick={() => setAdding((open) => !open)}
           >
             <Plus />
           </IconAction>
@@ -85,6 +96,7 @@ export function ClientCard({
             label={`Edit ${c.name} billing details`}
             tip="Billing details"
             text="Billing details"
+            expanded={billingOpen}
             onClick={onToggleBilling}
           >
             <Pencil />
@@ -143,12 +155,12 @@ export function ClientCard({
               <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
             </li>
           ) : (
-            <li>
+            <li className={c.projects.length % 2 === 0 ? "sm:col-span-2" : undefined}>
               <button
                 type="button"
                 onClick={() => setAdding(true)}
                 aria-label={`Add a project for ${c.name}`}
-                className="flex h-full min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-foreground/30 p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
+                className="flex h-full min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-foreground/30 border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
               >
                 <span className="flex size-8 items-center justify-center rounded-full bg-muted">
                   <Plus className="size-4" aria-hidden />

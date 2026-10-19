@@ -74,7 +74,7 @@ export function SideNav({ user, isAdmin = false }: { user: { name: string; email
     <nav
       onDoubleClick={onDoubleClick}
       aria-label="Side menu"
-      className={`${SHOW} select-none sticky top-0 h-dvh shrink-0 flex-col gap-1 bg-background p-3 w-60 [html[data-nav-collapsed=collapsed]_&]:w-16`}
+      className={`${SHOW} sticky top-0 h-dvh w-60 shrink-0 select-none flex-col gap-1 bg-background p-3 [html[data-nav-collapsed=collapsed]_&]:w-16`}
     >
       <Link
         href="/dashboard/today"

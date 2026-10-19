@@ -12,6 +12,7 @@ export function IconAction({
   className,
   disabled,
   onClick,
+  expanded,
   text,
   children,
 }: {
@@ -20,6 +21,8 @@ export function IconAction({
   className?: string;
   disabled?: boolean;
   onClick: () => void;
+  /** For a button that opens something (a form) and closes it on the next click: whether it is open now. */
+  expanded?: boolean;
   /** Visible words under the icon (the phone's action row); without it the button is icon-only with a tooltip. */
   text?: string;
   children: React.ReactNode;
@@ -29,6 +32,7 @@ export function IconAction({
       size={text ? "default" : "icon"}
       variant="outline"
       aria-label={label}
+      aria-expanded={expanded}
       className={cn(text && "h-auto min-h-12 flex-1 flex-col gap-0.5 px-1 py-2 text-xs", className)}
       disabled={disabled}
       onClick={onClick}

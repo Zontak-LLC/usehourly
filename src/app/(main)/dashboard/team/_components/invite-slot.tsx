@@ -24,7 +24,7 @@ export function InviteSlot({ empty }: { empty: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-foreground/30 p-4 text-center text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-card hover:text-foreground ${
+        className={`flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-foreground/30 border-dashed p-4 text-center text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-card hover:text-foreground ${
           empty ? "min-h-52" : "min-h-40"
         }`}
       >

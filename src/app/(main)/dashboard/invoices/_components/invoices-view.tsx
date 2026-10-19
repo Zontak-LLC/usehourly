@@ -78,6 +78,7 @@ export function InvoicesView() {
 
   return (
     <PageShell
+      nav="invoices"
       title="Invoices"
       description="Every invoice you've issued, saved exactly as sent."
       actions={
