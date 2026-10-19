@@ -137,7 +137,13 @@ export function ClientsView() {
       title="Clients & Projects"
       description="Your clients, and the projects you do for each. Hourly rates live here."
       actions={
-        <Button type="button" size="lg" variant="primary" className="h-10" onClick={() => setNewOpen(true)}>
+        <Button
+          type="button"
+          size="lg"
+          variant="primary"
+          className="h-10 max-sm:w-full"
+          onClick={() => setNewOpen(true)}
+        >
           <Plus /> New client
         </Button>
       }
