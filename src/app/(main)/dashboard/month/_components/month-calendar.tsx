@@ -44,12 +44,12 @@ function DayCell({
       className={`flex min-h-16 cursor-pointer flex-col justify-between border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
         inMonth ? "" : "bg-muted/30 text-muted-foreground"
       } ${isToday ? "ring-2 ring-primary ring-inset" : ""} ${
-        isPicked ? "bg-primary/15 outline-2 outline-primary -outline-offset-2" : ""
+        isPicked ? "bg-tint outline-2 outline-primary -outline-offset-2" : ""
       }`}
       style={
         mins
           ? {
-              backgroundColor: `color-mix(in oklab, var(--primary) ${Math.round((mins / max) * 28) + 6}%, transparent)`,
+              backgroundColor: `color-mix(in oklab, var(--primary) calc(var(--heat-range) * ${(mins / max).toFixed(3)} + var(--heat-base)), transparent)`,
             }
           : undefined
       }

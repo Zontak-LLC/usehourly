@@ -50,6 +50,9 @@
   --color-band-1: var(--band-1);
   --color-band-2: var(--band-2);
   --color-band-3: var(--band-3);
+  --color-tint: var(--tint);
+  --color-tint-hover: var(--tint-hover);
+  --color-tint-edge: var(--tint-edge);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -104,13 +107,34 @@ These serve as the fallback; there is no separate default.css file. */
   /* Header shades: the page card's header and the header of a card inside it share ONE light shade (just enough to
      stand out from the white body), and a tile inside a card is a notch lighter still. They are mixed from the theme's
      own text and page colours, so every colour preset and dark mode follows. */
-  --band-1: color-mix(in oklch, var(--foreground) 3.5%, var(--background));
+  --band-1: color-mix(in oklch, var(--foreground) 2%, var(--background));
   --band-2: var(--band-1);
-  --band-3: color-mix(in oklch, var(--foreground) 2.5%, var(--background));
+  --band-3: color-mix(in oklch, var(--foreground) 1.5%, var(--background));
+
+  /* A soft tint of the accent (default buttons, a selected day or chip). A coloured accent can carry a strong tint; a
+     near-black or black one turns it heavy grey, so the neutral palettes use a much weaker mix (set just below). */
+  --tint-strength: 18%;
+  --tint-hover-strength: 28%;
+  --tint-edge-strength: 35%;
+  --heat-base: 6%;
+  --heat-range: 28%;
+  --tint: color-mix(in oklch, var(--primary) var(--tint-strength), var(--background));
+  --tint-hover: color-mix(in oklch, var(--primary) var(--tint-hover-strength), var(--background));
+  --tint-edge: color-mix(in oklch, var(--primary) var(--tint-edge-strength), var(--background));
 
   /* fonts */
   --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
+}
+
+:root:not([data-theme-preset]),
+:root[data-theme-preset="default"],
+:root[data-theme-preset="mono"] {
+  --tint-strength: 5%;
+  --tint-hover-strength: 9%;
+  --tint-edge-strength: 22%;
+  --heat-base: 3%;
+  --heat-range: 11%;
 }
 
 .dark {

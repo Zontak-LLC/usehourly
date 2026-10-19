@@ -11,7 +11,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 4. **Works for everyone:** keyboard, screen reader, phone, offline, dark mode.
 
 ## Colour
-- **Accent (amber "Sunshine"):** only for **the one main button** (`variant="primary"`), **the current page** (tab underline, side-menu bar) and focus. Other presets (Mint, Coral, Sky, Lilac, Azure, Cream, Ink) change the accent only; Azure also sets cool-grey surfaces.
+- **Accent (near-black "Neutral"; amber "Sunshine" is an optional preset):** only for **the one main button** (`variant="primary"`), **the current page** (tab underline, side-menu bar) and focus. Other presets (Sunshine, Mint, Coral, Sky, Lilac, Azure, Cream, Mono) change the accent only; Azure also sets cool-grey surfaces.
 - **One solid button per screen** **[checked: `auditPage`]**. Everything else is the soft tint (`default`) or an outline.
 - **Status colours carry meaning only:** green = done, paid, confirmed; red = remove, stop, problem; yellow = warning. Icons are neutral grey otherwise; the status colours are applied to icons by class in `globals.css`. A check icon on a dark or accent surface sets its own colour.
 - **Mint** is only for good news (`text-success`, `bg-success-soft`).
@@ -21,9 +21,9 @@ Look at the real thing first: the pages are the reference, this file is the expl
 | Level | What | Header shade |
 |---|---|---|
 | Page | the page background: a quiet neutral off-white | none |
-| 1. Page card | `PageShell`: one main card per dashboard page | `bg-band-1` (one light shade, 3.5%) |
+| 1. Page card | `PageShell`: one main card per dashboard page | `bg-band-1` (one light shade, 2%) |
 | 2. Card | cards directly inside it (`HeaderCard`, `SectionCard`, entry cards, client cards, invoice cards) | `bg-band-2` (the same shade as band-1) |
-| 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (2.5%, a notch lighter), body `bg-foreground/[0.03]` |
+| 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (1.5%, a notch lighter), body `bg-foreground/[0.03]` |
 
 - `--band-1/2/3` are mixed from the theme's own text and page colours (`globals.css`), so presets and dark mode follow. **Never use `bg-muted/40` for a header band** **[checked: `check-rules`]**.
 - **Cards go one level deep** **[checked: `auditPage` fails a bordered, rounded box nested 3 deep]**. A card never holds another framed card: inside a card use plain sections, borderless tiles, spacing or a heading.
@@ -40,7 +40,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - `Notice` (`components/notice.tsx`): a short message set apart; `tone="danger"` for failures **[checked]**.
 - Stat cards: a `dl` of small white cards (label above, figure below), three across on Clients, Invoices and Year summary, four on Insights.
 - **Controls look pressable, labels do not.** A control (button, chip you can click, field) is white with a border. Information is flat: the hours (`HoursChip`) are plain text with a small clock, and status pills are a light tint with no outline, so nobody taps them expecting something to happen.
-- Chips and pills: `rounded-full`, no shadow; a selected project is a white card with a dark outline and a tick (not amber).
+- Chips and pills: `rounded-full`, no shadow; a selected project is a white card with a dark outline and a tick.
 - **A summary is not a card:** the Week page's "This week" is a frameless darker strip with a big figure, then the projects that made it up. Day tiles carry a dot per client that has time that day, none when empty.
 - Icon buttons: 40px in headers (`h-10`), 32px inside a card header, tooltip on wide screens, a labelled row on phones (`IconAction`).
 - `GuideLink` (`?`): beside any setting that is easy to misunderstand; it opens the matching guide topic **[checked: the topic must exist]**.

@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 const primary =
-  "inline-flex h-12 items-center justify-center rounded-lg border border-primary/35 bg-primary/20 px-6 font-medium text-base text-foreground transition-colors hover:bg-primary/30";
+  "inline-flex h-12 items-center justify-center rounded-lg border border-tint-edge bg-tint px-6 font-medium text-base text-foreground transition-colors hover:bg-tint-hover";
 const secondary =
   "inline-flex h-12 items-center justify-center rounded-lg border bg-background px-6 font-medium text-base transition-colors hover:bg-muted";
 
@@ -206,7 +206,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/auth/v2/register"
-            className="rounded-lg border border-primary/35 bg-primary/20 px-4 py-2 font-medium text-foreground text-sm hover:bg-primary/30"
+            className="rounded-lg border border-tint-edge bg-tint px-4 py-2 font-medium text-foreground text-sm hover:bg-tint-hover"
           >
             Create an account
           </Link>

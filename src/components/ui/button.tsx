@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border border-primary/35 bg-primary/20 text-foreground hover:bg-primary/30 focus-visible:ring-primary/30",
+          "border border-tint-edge bg-tint text-foreground hover:bg-tint-hover focus-visible:ring-primary/30",
         // The one main action on a screen: a solid fill in the accent colour (the soft tint above is for the rest).
         primary:
           "border border-transparent bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/30",
