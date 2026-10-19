@@ -1,63 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
+import { NoteText } from "@/components/folded-note";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
-import { NOTE_PREVIEW_LINES } from "@/lib/notes";
 import type { SheetEntry } from "@/lib/timesheet";
 import { groupByDay, paginate, searchWorkItems } from "@/lib/work-items";
 
 const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
-
-/**
- * A description folded to two lines. It reports whether the text really is cut off at the current width, so the
- * "Show more" link appears only when there is something more to show (a long note on a wide screen may fit).
- */
-function NoteText({
-  note,
-  expanded,
-  onClipped,
-}: {
-  note: string;
-  expanded: boolean;
-  onClipped: (clipped: boolean) => void;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: measured again whenever the text or the fold changes
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || expanded) return;
-    const measure = () => onClipped(el.scrollHeight > el.clientHeight + 1);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [note, expanded]);
-  return (
-    <span
-      ref={ref}
-      className="mt-0.5 block whitespace-pre-wrap break-words text-muted-foreground text-sm"
-      style={
-        expanded
-          ? undefined
-          : {
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: NOTE_PREVIEW_LINES,
-              overflow: "hidden",
-            }
-      }
-    >
-      {note}
-    </span>
-  );
-}
 
 /**
  * What you worked on in a period: searchable, grouped by day (with the day's total), 7 entries per page. Click a row to edit that day.
