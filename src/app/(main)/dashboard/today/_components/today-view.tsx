@@ -57,7 +57,7 @@ export function TodayView() {
       descriptionOnPhone
       actions={
         hasProjects && (
-          <div className="flex items-center gap-1">
+          <div className="grid w-full grid-cols-[auto_auto_1fr_auto] items-center gap-2 sm:flex sm:w-auto sm:gap-1">
             <NonBillableToggle date={date} />
             <Button
               size="icon"

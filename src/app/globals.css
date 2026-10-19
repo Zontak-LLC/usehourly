@@ -101,11 +101,12 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-border: oklch(0.915 0.004 90);
   --sidebar-ring: oklch(0.79 0.17 75);
 
-  /* Header shades, darkest outermost: the page card's header, then a card inside it, then a tile inside that. They are
-     mixed from the theme's own text and page colours, so every colour preset and dark mode follows. */
-  --band-1: color-mix(in oklch, var(--foreground) 12%, var(--background));
-  --band-2: color-mix(in oklch, var(--foreground) 8%, var(--background));
-  --band-3: color-mix(in oklch, var(--foreground) 5%, var(--background));
+  /* Header shades: the page card's header and the header of a card inside it share ONE light shade (just enough to
+     stand out from the white body), and a tile inside a card is a notch lighter still. They are mixed from the theme's
+     own text and page colours, so every colour preset and dark mode follows. */
+  --band-1: color-mix(in oklch, var(--foreground) 5%, var(--background));
+  --band-2: var(--band-1);
+  --band-3: color-mix(in oklch, var(--foreground) 3%, var(--background));
 
   /* fonts */
   --font-sans: var(--font-geist);
