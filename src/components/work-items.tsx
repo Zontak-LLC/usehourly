@@ -105,8 +105,12 @@ export function WorkItems({
               className="overflow-hidden rounded-xl border bg-card"
             >
               <h3 className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-2 pl-4 font-medium text-sm">
-                <span className="flex min-w-0 items-center gap-2">
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   {dayFmt.format(fromISODate(g.date))}
+                  <HoursChip>
+                    {formatDuration(g.minutes)}
+                    {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
+                  </HoursChip>
                   {nonBillable?.has(g.date) && (
                     <span className="flex shrink-0 items-center gap-1 rounded-full border border-rose-600/40 px-2 py-0.5 font-medium text-foreground/80 text-xs dark:border-rose-400/40">
                       <Ban className="size-3" aria-hidden /> Non-billable
@@ -114,10 +118,6 @@ export function WorkItems({
                   )}
                 </span>
                 <span className="flex items-center gap-1">
-                  <HoursChip>
-                    {formatDuration(g.minutes)}
-                    {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
-                  </HoursChip>
                   <Button
                     type="button"
                     size="icon"
