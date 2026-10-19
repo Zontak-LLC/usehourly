@@ -19,6 +19,8 @@ if (!external) process.env.E2E_PERSIST ??= ".wrangler/state-e2e";
 
 export default defineConfig({
   testDir: "./e2e",
+  // The "every control does something" sweep is slow (minutes), so the normal run skips it; `npm run e2e:sweep` runs it.
+  testIgnore: process.env.SWEEP ? undefined : /every-control/,
   outputDir: "./e2e/report/artifacts",
   reporter: [
     ["list"],

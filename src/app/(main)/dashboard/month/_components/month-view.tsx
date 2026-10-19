@@ -66,6 +66,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
   return (
     <PageShell
+      nav="month"
       title={monthTitle.format(fromISODate(first))}
       description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}
     >

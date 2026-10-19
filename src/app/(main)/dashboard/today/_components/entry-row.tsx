@@ -148,23 +148,26 @@ export function EntryRow({
             </span>
           )}
         </div>
-        {!editing && (
-          <div className="flex shrink-0 gap-1">
-            <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setEditing(true)}
-              aria-label="Edit"
-              disabled={isRunning}
-            >
-              <Pencil />
-            </Button>
+        <div className="flex shrink-0 gap-1">
+          {!editing && <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />}
+          {/* The pencil opens the edit form and, while it is open, closes it again (and says so to a screen reader). */}
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setEditing(!editing)}
+            aria-label="Edit"
+            aria-expanded={editing}
+            title={editing ? "Close the edit form" : "Edit"}
+            disabled={isRunning}
+          >
+            <Pencil />
+          </Button>
+          {!editing && (
             <Button size="icon" variant="outline" onClick={() => setConfirmingDelete(true)} aria-label="Delete">
               <Trash2 />
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </header>
 
       {editing ? (

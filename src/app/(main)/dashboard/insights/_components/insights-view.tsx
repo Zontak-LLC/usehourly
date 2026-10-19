@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@/components/card-title";
 import { PageShell } from "@/components/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
@@ -37,8 +38,7 @@ function Card({ title, note, children }: { title: string; note?: string; childre
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
       <div className="border-b bg-band-2 px-4 py-3">
-        <h2 className="font-semibold text-base">{title}</h2>
-        {note && <p className="text-muted-foreground text-sm">{note}</p>}
+        <CardTitle title={title} note={note} />
       </div>
       <div className="flex flex-col gap-3 p-4">{children}</div>
     </section>
@@ -59,6 +59,7 @@ export function InsightsView() {
 
   return (
     <PageShell
+      nav="insights"
       title="Insights"
       description="Totals only: no names, emails, clients or entries appear here. Sample accounts are left out."
     >

@@ -141,6 +141,7 @@ export function NewInvoiceView() {
   return (
     <form method="post" onSubmit={submit}>
       <PageShell
+        nav="invoices"
         title="New invoice"
         description={
           <>

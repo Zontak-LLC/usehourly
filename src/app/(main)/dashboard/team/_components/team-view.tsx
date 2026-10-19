@@ -16,6 +16,7 @@ export function TeamView() {
   const active = shown.filter((p) => p.status === "active").length;
   return (
     <PageShell
+      nav="team"
       title="Team"
       description="Let someone log time on your clients, without giving them your invoices or rates."
       descriptionOnPhone

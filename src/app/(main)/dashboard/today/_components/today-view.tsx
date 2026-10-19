@@ -51,6 +51,7 @@ export function TodayView() {
 
   return (
     <PageShell
+      nav="today"
       title={date === today ? "Today" : longDate.format(fromISODate(date))}
       description={date === today ? longDate.format(fromISODate(date)) : undefined}
       descriptionOnPhone
@@ -116,7 +117,7 @@ export function TodayView() {
         <EmptyState className="py-10">Nothing logged yet. Type a time above, or start a timer.</EmptyState>
       ) : (
         <>
-          <EntryList entries={dayEntries} title={date === today ? "Today's entries" : "Entries"} />
+          <EntryList entries={dayEntries} date={date} today={today} />
           <MergeEntriesBar entries={dayEntries} />
         </>
       )}

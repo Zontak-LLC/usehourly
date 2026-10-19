@@ -37,7 +37,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
   return (
     <nav
       aria-label="Main pages"
-      className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 z-40 bg-background max-sm:border-t max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12 lg:[html[data-nav-position=left]_&]:hidden"
+      className="z-40 bg-background max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:border-t max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12 lg:[html[data-nav-position=left]_&]:hidden"
     >
       <div className="mx-auto grid max-w-5xl grid-cols-6 min-[480px]:grid-cols-7">
         {items.map((item) => {
@@ -47,7 +47,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
               key={item.id}
               href={item.url}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 text-xs font-medium max-sm:border-t-2 max-sm:border-b-0 ${
+              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 font-medium text-xs max-sm:border-t-2 max-sm:border-b-0 ${
                 ROOMY[item.id] ? `${ROOMY[item.id].tab} ` : ""
               }${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"}`}
             >
@@ -60,7 +60,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground max-sm:border-t-2 max-sm:border-b-0 aria-expanded:text-foreground"
+              className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-transparent border-b-2 px-1 font-medium text-muted-foreground text-xs aria-expanded:text-foreground max-sm:border-t-2 max-sm:border-b-0"
             >
               <Menu className="size-5" aria-hidden />
               More

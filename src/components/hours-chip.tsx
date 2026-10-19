@@ -20,7 +20,7 @@ export function HoursChip({
   return (
     <span className={cn("inline-flex items-center gap-1.5 font-mono font-semibold tabular-nums", className)}>
       <Clock className="size-3.5 text-foreground/60" aria-hidden />
-      {label && <span className="font-sans font-normal text-foreground/75">{label}</span>}
+      {label && <span className="font-normal font-sans text-foreground/75">{label}</span>}
       {children}
     </span>
   );

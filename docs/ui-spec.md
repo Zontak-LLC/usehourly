@@ -29,7 +29,8 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - **Cards go one level deep** **[checked: `auditPage` fails a bordered, rounded box nested 3 deep]**. A card never holds another framed card: inside a card use plain sections, borderless tiles, spacing or a heading.
 - **No lines for separating things** on card pages: tint and spacing do it (`border-t`, `divide-y` are for tables and a card's own header only). The page card's header has one line under it.
 - Cards: `rounded-xl border bg-card` (white). Tiles: `rounded-lg`, no border. Buttons, fields, tabs and pills are not cards.
-- Header text: title `font-semibold`, one line of explanation in `text-foreground/75 text-sm` (hidden on phones unless it carries information).
+- **Header text:** the page card's header has the title, one line of explanation in `text-foreground/75 text-sm` (hidden on phones unless it carries information), and **an icon tile before the title** (`PageShell nav="..."`: the same icon as the page's menu entry, in a white rounded tile).
+- **Icons are for the page card only.** Cards inside it have no icon (an icon on every inner card is too much of a good thing). Their header is **one line: the title and its note side by side** (`CardTitle`: "By quarter · Handy for quarterly estimated tax payments."), the note wrapping under the title on a phone.
 
 ## Components (use these, do not re-draw them)
 - `PageShell` (`components/page-shell.tsx`): the page card; title, one line, the page's main controls.

@@ -55,7 +55,7 @@ export function TimerBanner() {
   }
 
   return (
-    <div className="sticky top-28 z-30 max-sm:top-14 flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-background px-4 py-3 shadow-sm md:top-2">
+    <div className="sticky top-28 z-30 flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-background px-4 py-3 shadow-sm max-sm:top-14 md:top-2">
       <div className="min-w-0">
         <p className="truncate font-medium text-sm">
           {entry.project.client.name} · {entry.project.name}

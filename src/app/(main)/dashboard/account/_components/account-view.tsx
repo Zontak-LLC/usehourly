@@ -31,7 +31,7 @@ export function AccountView() {
   const account = me.data;
 
   return (
-    <PageShell title="Account" description="Your details, invoices, data and connections.">
+    <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
       {/* Plain text chips, not icons over words: this row must not look like the main navigation above it. */}
       <nav aria-label="Account sections" className="flex flex-wrap items-center gap-2 px-1">
         <span className="text-muted-foreground text-sm">Jump to</span>

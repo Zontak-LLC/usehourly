@@ -22,7 +22,7 @@ export function HeaderCard({
   return (
     <section className={cn("overflow-hidden rounded-xl border bg-card", className)}>
       <header className="bg-band-2 px-3 py-3 sm:px-4">{header}</header>
-      {onSubmit ? (
+      {!children ? null : onSubmit ? (
         <form method="post" onSubmit={onSubmit} className={body}>
           {children}
         </form>

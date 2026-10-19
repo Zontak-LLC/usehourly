@@ -37,6 +37,17 @@ export function WorkItems({
   // Entries open for editing in place (only used with `editInPlace`).
   const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
   const startEditing = (ids: string[]) => setEditing((prev) => new Set([...prev, ...ids]));
+  // Every editable entry of the day is open: the day's button then shows "Done editing" and closes them.
+  const dayEditing = (items: SheetEntry[]) => {
+    const editable = items.filter((e) => !e.started_at);
+    return editable.length > 0 && editable.every((e) => editing.has(e.id));
+  };
+  const stopEditingMany = (ids: string[]) =>
+    setEditing((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.delete(id);
+      return next;
+    });
   const stopEditing = (id: string) =>
     setEditing((prev) => {
       const next = new Set(prev);
@@ -97,21 +108,27 @@ export function WorkItems({
                       </span>
                     )}
                   </h3>
-                  {/* Words, not just an icon: the entry cards below each have their own pencil, and this one edits the whole day. */}
+                  {/* Words, not just an icon: the entry cards below each have their own pencil, and this one edits the whole day.
+                    A second click closes what the first opened. */}
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     className="h-8 shrink-0"
-                    onClick={() =>
-                      editInPlace
-                        ? startEditing(g.items.filter((e) => !e.started_at).map((e) => e.id))
-                        : onOpenDay(g.date)
+                    aria-expanded={editInPlace ? dayEditing(g.items) : undefined}
+                    onClick={() => {
+                      if (!editInPlace) return onOpenDay(g.date);
+                      const ids = g.items.filter((e) => !e.started_at).map((e) => e.id);
+                      return dayEditing(g.items) ? stopEditingMany(ids) : startEditing(ids);
+                    }}
+                    aria-label={`${editInPlace && dayEditing(g.items) ? "Stop editing" : "Edit"} ${dayFmt.format(fromISODate(g.date))}`}
+                    title={
+                      editInPlace && dayEditing(g.items)
+                        ? "Close the edit forms of this day"
+                        : "Edit every entry of this day"
                     }
-                    aria-label={`Edit ${dayFmt.format(fromISODate(g.date))}`}
-                    title="Edit every entry of this day"
                   >
-                    <Pencil /> Edit day
+                    <Pencil /> {editInPlace && dayEditing(g.items) ? "Done editing" : "Edit day"}
                   </Button>
                 </div>
                 {/* One card per entry, the same card as on Today: its header carries Move, Edit and Delete (which asks first). */}
