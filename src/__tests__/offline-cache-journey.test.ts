@@ -1,5 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
-import { describe, expect, it } from "vitest";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   clearOfflineData,
@@ -65,6 +65,29 @@ describe("the copy of your last data kept for offline", () => {
     expect(text).not.toContain("me@example.com");
     expect(text).not.toContain("private invoice");
     expect(text).not.toContain("data:image");
+  });
+
+  it("a restored copy is only a placeholder: a page that opens after it still loads fresh data, even if the copy is seconds old", async () => {
+    const week = key("entry.list", { from: "2026-10-19", to: "2026-10-25" });
+    const from = new QueryClient();
+    from.setQueryData(week, [{ id: "e1", note: "saved copy" }]); // fetched a moment ago: inside the 15 s freshness window
+    const storage = memoryStorage();
+    saveQueries(from, storage);
+
+    // The app's client: data counts as fresh for 15 seconds, and the page (inside a Suspense boundary) mounts after the
+    // layout has already restored the copy.
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 15_000 } } });
+    expect(restoreQueries(client, storage)).toBe(1);
+    const fetchFresh = vi.fn(async () => [
+      { id: "e1", note: "saved copy" },
+      { id: "e2", note: "logged by a teammate" },
+    ]);
+    const page = new QueryObserver(client, { queryKey: week, queryFn: fetchFresh });
+    const stop = page.subscribe(() => undefined);
+    expect(page.getCurrentResult().data).toEqual([{ id: "e1", note: "saved copy" }]); // shown at once, nothing blank
+    await vi.waitFor(() => expect(page.getCurrentResult().data).toHaveLength(2));
+    expect(fetchFresh).toHaveBeenCalledTimes(1);
+    stop();
   });
 
   it("puts the copy back so a reopened app shows what it last showed, with no connection needed", () => {

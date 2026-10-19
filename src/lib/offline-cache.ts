@@ -81,6 +81,10 @@ export function restoreQueries(client: QueryClient, storage: StorageLike, now = 
     if (saved.v !== VERSION || typeof saved.savedAt !== "number" || now - saved.savedAt > MAX_AGE_MS) return 0;
     const queries = (saved.state?.queries ?? []).filter((q) => persistable(q.queryKey));
     hydrate(client, { mutations: [], queries });
+    // The copy is a placeholder to show at once (and to keep showing with no connection), never the truth: mark it stale
+    // so every page that mounts, now or after the layout, loads fresh data when it can (a query fetched a few seconds
+    // before the reload would otherwise count as fresh and hide changes made elsewhere, like a teammate's entry).
+    void client.invalidateQueries();
     return queries.length;
   } catch {
     return 0;

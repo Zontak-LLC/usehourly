@@ -20,7 +20,10 @@ export default function globalTeardown() {
     "api_tokens",
     "oauth_codes",
   ];
+  const team = `(SELECT id FROM team_members WHERE owner_id IN ${mine} OR member_id IN ${mine})`;
   const statements = [
+    `DELETE FROM team_member_clients WHERE team_member_id IN ${team};`,
+    `DELETE FROM team_members WHERE owner_id IN ${mine} OR member_id IN ${mine};`,
     ...tables.map((t) => `DELETE FROM ${t} WHERE user_id IN ${mine};`),
     "DELETE FROM email_suppressions WHERE email LIKE 'e2e-%@example.test';",
     "DELETE FROM auth_users WHERE email LIKE 'e2e-%@example.test';",
