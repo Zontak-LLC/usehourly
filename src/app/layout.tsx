@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { headers } from "next/headers";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { TRPCProvider } from "@/components/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -23,6 +23,18 @@ export const metadata: Metadata = {
     card: "summary_large_image",
   },
   appleWebApp: { capable: true, title: "UseHourly", statusBarStyle: "default" },
+};
+
+// viewport-fit=cover lets the page use the whole screen, so env(safe-area-inset-*) is real (the home bar under the
+// bottom tab bar); the theme colour tints the browser bar to match the page.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fffdf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1712" },
+  ],
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -47,7 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {/* Applies theme and layout preferences on load to avoid flicker and unnecessary server rerenders. */}
         <ThemeBootScript nonce={nonce} />
       </head>
-      <body className={`${fontVars} min-h-screen antialiased`}>
+      <body className={`${fontVars} min-h-dvh antialiased`}>
         <TooltipProvider>
           <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
             <TRPCProvider>{children}</TRPCProvider>
