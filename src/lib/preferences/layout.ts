@@ -30,3 +30,12 @@ const NAVBAR_STYLE_OPTIONS = [
 ] as const;
 export const NAVBAR_STYLE_VALUES = NAVBAR_STYLE_OPTIONS.map((v) => v.value);
 export type NavbarStyle = (typeof NAVBAR_STYLE_VALUES)[number];
+
+// Where the main navigation sits on a wide screen: the strip under the top bar, or a menu down the left.
+// Phones always get the bottom bar, whatever this says.
+export const NAV_POSITION_VALUES = ["top", "left"] as const;
+export type NavPosition = (typeof NAV_POSITION_VALUES)[number];
+
+// The left menu either shows words next to its icons, or icons only.
+export const NAV_COLLAPSED_VALUES = ["open", "collapsed"] as const;
+export type NavCollapsed = (typeof NAV_COLLAPSED_VALUES)[number];

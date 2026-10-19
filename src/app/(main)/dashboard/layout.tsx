@@ -20,6 +20,7 @@ import { readSavedTheme } from "@/lib/theme-sync";
 
 import { LayoutControls } from "./_components/header/layout-controls";
 import { MobileNav } from "./_components/header/mobile-nav";
+import { SideNav } from "./_components/header/side-nav";
 import { ThemeSwitcher } from "./_components/header/theme-switcher";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
@@ -58,6 +59,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           } as React.CSSProperties
         }
       >
+        <SideNav user={user} isAdmin={isAdmin} />
         <SidebarInset
           className={cn(
             "[html[data-content-layout=centered]_&>*]:mx-auto",
@@ -80,7 +82,10 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           >
             <div className="flex w-full items-center justify-between px-4 lg:px-6">
               <div className="flex items-center gap-1 lg:gap-2">
-                <Link href="/dashboard/today" className="flex items-center gap-2 font-semibold text-base">
+                <Link
+                  href="/dashboard/today"
+                  className="flex items-center gap-2 font-semibold text-base lg:[html[data-nav-position=left]_&]:hidden"
+                >
                   <LogoMark className="size-6 shrink-0" aria-hidden />
                   UseHourly
                 </Link>
