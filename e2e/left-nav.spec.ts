@@ -43,6 +43,8 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
     ]) {
       await expect(side.getByRole("link", { name })).toBeVisible();
     }
+    for (const heading of ["Track", "Bill", "Manage", "Settings"])
+      await expect(side.getByText(heading, { exact: true })).toBeVisible();
     await expect(side.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
   });
 
@@ -59,6 +61,18 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
     await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
     await expect.poll(async () => (await side.boundingBox())?.width ?? 999).toBeLessThan(before / 2);
     await expect(side.getByRole("link", { name: "Month" })).toBeVisible(); // still has its name for a screen reader
+  });
+
+  await test.step("double-clicking empty space in the menu unfolds it, and again folds it (links and buttons are not affected)", async () => {
+    const box = (await side.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+    const empty = { x: box.x + box.width / 2, y: box.y + box.height * 0.6 }; // the gap between the links and the foot
+    await page.mouse.dblclick(empty.x, empty.y);
+    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "open");
+    await page.mouse.dblclick(box.x + 120, box.y + box.height * 0.6);
+    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
+    await side.getByRole("link", { name: "Month" }).dblclick(); // goes to Month, does not toggle
+    await expect(page).toHaveURL(/dashboard\/month/);
+    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
   });
 
   await test.step("the page card still fits beside the menu without sideways scrolling", async () => {
