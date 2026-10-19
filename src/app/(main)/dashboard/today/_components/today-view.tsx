@@ -55,6 +55,7 @@ export function TodayView() {
       title={date === today ? "Today" : longDate.format(fromISODate(date))}
       description={date === today ? longDate.format(fromISODate(date)) : undefined}
       descriptionOnPhone
+      prominent
       actions={
         hasProjects && (
           <div className="grid w-full grid-cols-[auto_auto_1fr_auto] items-center gap-2 sm:flex sm:w-auto sm:gap-1">

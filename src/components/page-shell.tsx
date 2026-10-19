@@ -14,6 +14,7 @@ export function PageShell({
   title,
   description,
   descriptionOnPhone = false,
+  prominent = false,
   actions,
   children,
 }: {
@@ -23,21 +24,27 @@ export function PageShell({
   description?: ReactNode;
   /** The one-line description is hidden on phones to save room; set this when it carries information (the date). */
   descriptionOnPhone?: boolean;
+  /** A bigger title (twice the size) on a plain white header: the Today page, where the day is the whole point. */
+  prominent?: boolean;
   actions?: ReactNode;
   children?: ReactNode;
 }) {
   const Icon = nav ? [...navLinks, ...adminLinks].find((l) => l.id === nav)?.icon : undefined;
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col overflow-hidden border bg-muted/60 [--border:color-mix(in_oklch,var(--foreground)_16%,var(--background))] max-sm:-m-2 max-sm:w-[calc(100%+1rem)] max-sm:border-x-0 sm:rounded-2xl">
-      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b bg-band-1 px-3 py-3 sm:px-4">
+      <header
+        className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b ${prominent ? "bg-card" : "bg-band-1"} px-3 py-3 sm:px-4`}
+      >
         <div className="flex min-w-0 items-center gap-3">
           {Icon && (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-foreground/80">
+            <span
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-foreground/80 ${prominent ? "border" : ""}`}
+            >
               <Icon className="size-5" aria-hidden />
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="font-semibold text-xl">{title}</h1>
+            <h1 className={`font-semibold ${prominent ? "text-[2.5rem] leading-tight" : "text-xl"}`}>{title}</h1>
             {description && (
               <p className={`text-foreground/75 text-sm ${descriptionOnPhone ? "" : "max-sm:hidden"}`}>{description}</p>
             )}
