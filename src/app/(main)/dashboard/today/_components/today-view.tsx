@@ -4,9 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { NonBillableToggle } from "@/components/non-billable-toggle";
+import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,15 +109,11 @@ export function TodayView() {
       {hasProjects && sum(week.data ?? []) > 0 && <BillHint />}
 
       {week.error ? (
-        <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-          Couldn't load entries: {week.error.message}
-        </p>
+        <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
       ) : week.isLoading ? (
         <Skeleton className="h-32 w-full" />
       ) : !hasProjects ? null : dayEntries.length === 0 ? (
-        <p className="py-10 text-center text-muted-foreground text-sm">
-          Nothing logged yet. Type a time above, or start a timer.
-        </p>
+        <EmptyState className="py-10">Nothing logged yet. Type a time above, or start a timer.</EmptyState>
       ) : (
         <>
           <EntryList entries={dayEntries} title={date === today ? "Today's entries" : "Entries"} />

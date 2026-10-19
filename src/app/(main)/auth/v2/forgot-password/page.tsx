@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Forgot password · UseHourly" };
 export default function ForgotPasswordPage() {
   return (
     <>
-      <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 rounded-2xl border bg-card p-6 sm:w-[400px] sm:p-8">
         <div className="space-y-2 text-center">
           <h1 className="font-medium text-3xl">Forgot your password?</h1>
           <p className="text-muted-foreground text-sm">Enter your email and we will send you a link.</p>

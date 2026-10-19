@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Check, Copy, Link2, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -206,7 +207,7 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
       </div>
 
       {link ? (
-        <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-3">
+        <Notice className="flex flex-col gap-2">
           <p className="font-medium text-sm">Copy it now: it is shown only once.</p>
           <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Invoice link" />
           <div className="flex gap-2">
@@ -217,7 +218,7 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
               Make another
             </Button>
           </div>
-        </div>
+        </Notice>
       ) : (
         <div className="flex flex-wrap items-end gap-2">
           <div className="grid gap-1.5">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,19 +27,19 @@ export function ForgotPasswordForm() {
 
   if (enabled.data && !enabled.data.enabled) {
     return (
-      <p className="rounded-lg border bg-muted/40 p-4 text-sm">
+      <Notice className="p-4">
         Resetting a password by email isn't set up on this site yet. Please write to the site owner and they can help
         you.
-      </p>
+      </Notice>
     );
   }
 
   if (sent) {
     return (
-      <p className="rounded-lg border bg-muted/40 p-4 text-sm">
+      <Notice className="p-4">
         If that address has an account, we have sent a link to choose a new password. It works for 1 hour. Check your
         spam folder if it does not arrive.
-      </p>
+      </Notice>
     );
   }
 

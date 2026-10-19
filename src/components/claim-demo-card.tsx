@@ -40,13 +40,7 @@ export function ClaimDemoCard() {
   }
 
   return (
-    <section
-      id="claim"
-      className={cn(
-        "flex scroll-mt-20 flex-col gap-3 bg-amber-500/10 p-4",
-        !grouped && "rounded-xl border-2 border-amber-500/70",
-      )}
-    >
+    <section id="claim" className={cn("flex scroll-mt-20 flex-col gap-3 p-4", !grouped && "rounded-xl border bg-card")}>
       <div>
         <h3 className="font-semibold">Keep your work: create a free account</h3>
         <p className="text-muted-foreground text-sm">
@@ -90,7 +84,7 @@ export function ClaimDemoCard() {
             </span>
           </label>
         </fieldset>
-        <Button type="submit" className="self-start" disabled={claim.isPending}>
+        <Button type="submit" variant="primary" className="self-start" disabled={claim.isPending}>
           Create my account
         </Button>
       </form>

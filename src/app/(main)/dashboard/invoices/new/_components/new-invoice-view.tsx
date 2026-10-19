@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -154,9 +155,7 @@ export function NewInvoiceView() {
         {missingProfile && <MissingProfileNotice ein={me.data?.ein} address={me.data?.address} />}
 
         {!hasClients ? (
-          <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
-            Add a client and project first, then log some time to invoice.
-          </p>
+          <EmptyState>Add a client and project first, then log some time to invoice.</EmptyState>
         ) : (
           <>
             <InvoiceDetailsCard

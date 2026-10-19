@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export default function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <main>
-      <div className="relative flex h-dvh justify-center p-2">{children}</div>
+      <div className="relative flex min-h-dvh items-center justify-center p-2 py-20">{children}</div>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Merge } from "lucide-react";
 import { toast } from "sonner";
 
+import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
 import { type MergeInput, planMerge } from "@/lib/merge-entries";
@@ -51,7 +52,7 @@ export function MergeEntriesBar({ entries }: { entries: Entry[] }) {
         const total = group.reduce((a, e) => a + e.minutes, 0);
         const name = group[0].project.name;
         return confirming === key ? (
-          <div key={key} className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+          <Notice key={key} className="flex flex-wrap items-center gap-2 px-3 py-2">
             <span className="min-w-0 flex-1">
               {"error" in plan
                 ? plan.error
@@ -65,7 +66,7 @@ export function MergeEntriesBar({ entries }: { entries: Entry[] }) {
             <Button size="sm" variant="ghost" onClick={() => setConfirming(null)}>
               {"error" in plan ? "OK" : "Cancel"}
             </Button>
-          </div>
+          </Notice>
         ) : (
           <Button key={key} variant="outline" size="sm" onClick={() => setConfirming(key)}>
             <Merge className="size-4" /> Merge {group.length} {name} entries into one

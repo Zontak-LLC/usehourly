@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { QuickAdd } from "@/app/(main)/dashboard/today/_components/quick-add";
+import { EmptyState } from "@/components/empty-state";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { NonBillableToggle } from "@/components/non-billable-toggle";
@@ -48,9 +49,7 @@ export function DayEditorPanel({ date, projectFilter = "" }: { date: string; pro
           <MergeEntriesBar entries={rows} />
         </>
       ) : (
-        <p className="rounded-xl border border-dashed py-6 text-center text-muted-foreground text-sm">
-          Nothing logged this day yet.
-        </p>
+        <EmptyState className="py-6">Nothing logged this day yet.</EmptyState>
       )}
 
       {hasProjects ? (

@@ -7,6 +7,8 @@ import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/empty-state";
+import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
@@ -91,25 +93,24 @@ export function InvoicesView() {
           {(invoices.data?.length ?? 0) > 0 && (
             <InvoiceTotals count={invoices.data?.length ?? 0} total={total} unpaid={unpaid} filtering={filtering} />
           )}
-          <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
+          <div className="rounded-xl border bg-card p-3 sm:p-4">
+            <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
+          </div>
         </>
       )}
-      {/* The page's header card: what this page is, the button to make one, and where the money stands. */}
 
       {invoices.error ? (
-        <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-          Couldn't load invoices: {invoices.error.message}
-        </p>
+        <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
       ) : invoices.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : invoices.data?.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-14 text-center">
+        <EmptyState className="flex flex-col items-center gap-2 py-14">
           <FileText className="size-8 text-muted-foreground" />
           <p className="font-medium">{filtering ? "No invoices match that search." : "No invoices yet."}</p>
           {!filtering && (
             <p className="text-muted-foreground text-sm">Create one from the time you've already logged.</p>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <ul className="flex flex-col gap-3">
           {invoices.data?.map((i) => (

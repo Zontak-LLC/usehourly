@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -97,9 +98,7 @@ export function ReportView() {
       ) : report.isLoading || !data ? (
         <Skeleton className="h-96 w-full" />
       ) : data.totals.entryCount === 0 && data.invoices.count === 0 ? (
-        <p className="rounded-xl border border-dashed py-14 text-center text-muted-foreground text-sm">
-          No time logged or invoices issued in {year}.
-        </p>
+        <EmptyState className="py-14">No time logged or invoices issued in {year}.</EmptyState>
       ) : (
         <ReportBody data={data} year={year} />
       )}
