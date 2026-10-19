@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Archive, FolderKanban, Pencil, Plus, X } from "lucide-react";
 
 import { ClientLogoSlot } from "@/components/client-logo";
+import { ICON_TONE, IconAction } from "@/components/icon-action";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
 
@@ -53,14 +54,28 @@ export function ClientCard({
             </p>
           </div>
         </div>
-        <span className="flex max-sm:w-full max-sm:*:flex-1">
-          <Button size="sm" variant="ghost" onClick={onToggleBilling} aria-label={`Edit ${c.name} billing details`}>
-            <Pencil /> Billing details
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onArchiveClient}>
-            <Archive /> Archive
-          </Button>
+        {/* Same pattern as Invoices and the project rows: icons with a tooltip on wide screens, icon over word on a phone. */}
+        <span className="flex gap-1 max-sm:hidden">
+          <IconAction label={`Edit ${c.name} billing details`} tip="Billing details" onClick={onToggleBilling}>
+            <Pencil className={ICON_TONE.edit} />
+          </IconAction>
+          <IconAction label={`Archive ${c.name}`} tip="Archive client" onClick={onArchiveClient}>
+            <Archive className={ICON_TONE.archive} />
+          </IconAction>
         </span>
+        <div className="flex w-full gap-1.5 sm:hidden">
+          <IconAction
+            label={`Edit ${c.name} billing details`}
+            tip="Billing details"
+            text="Billing details"
+            onClick={onToggleBilling}
+          >
+            <Pencil className={ICON_TONE.edit} />
+          </IconAction>
+          <IconAction label={`Archive ${c.name}`} tip="Archive client" text="Archive" onClick={onArchiveClient}>
+            <Archive className={ICON_TONE.archive} />
+          </IconAction>
+        </div>
       </header>
       {billingOpen && <ClientDetailsForm id={c.id} onDone={onCloseBilling} />}
       <div className={`bg-muted/20 px-4 pt-3 pb-4 ${billingOpen ? "border-t" : ""}`}>

@@ -17,6 +17,14 @@ import {
 import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
 const MAIN = ["today", "week", "month", "invoices", "clients"];
+/** One colour per tab, on the icon only (the label and the active marker stay neutral). */
+const TAB_COLOR: Record<string, string> = {
+  today: "text-amber-600 dark:text-amber-400",
+  week: "text-sky-600 dark:text-sky-400",
+  month: "text-violet-600 dark:text-violet-400",
+  invoices: "text-emerald-600 dark:text-emerald-400",
+  clients: "text-rose-600 dark:text-rose-400",
+};
 
 /**
  * The pages used most: a tab bar at the bottom of a phone (where a thumb reaches) and a strip under the top bar from `sm` up. Every tab has an icon and a word, and
@@ -44,7 +52,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
                 active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"
               }`}
             >
-              <item.icon className="size-5" aria-hidden />
+              <item.icon className={`size-5 ${TAB_COLOR[item.id] ?? ""}`} aria-hidden />
               {item.short ?? item.title}
             </Link>
           );

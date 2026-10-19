@@ -1,5 +1,7 @@
 "use client";
 
+import { Clock } from "lucide-react";
+
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -90,9 +92,10 @@ export function WeekTotalCard({
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2.5">
         <h2 className="font-semibold text-base">This week</h2>
-        <span className="font-semibold font-mono text-lg tabular-nums">
+        <span className="flex items-center gap-1.5 font-semibold font-mono text-lg tabular-nums">
+          <Clock className="size-4 text-muted-foreground" aria-hidden />
           {formatDuration(sheet.total)}
-          <span className="ml-1 font-normal text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
+          <span className="font-normal text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
         </span>
       </div>
       {sheet.rows.length > 0 && (
@@ -113,7 +116,10 @@ export function WeekTotalCard({
                   <span className="size-2.5 rounded-full" style={{ backgroundColor: r.color }} />
                   <span className="font-medium">{r.project}</span>
                   <span className="text-muted-foreground">· {r.client}</span>
-                  <span className="font-mono tabular-nums">{formatDuration(r.total)}</span>
+                  <span className="flex items-center gap-1 font-mono tabular-nums">
+                    <Clock className="size-3.5 text-muted-foreground" aria-hidden />
+                    {formatDuration(r.total)}
+                  </span>
                 </button>
               </li>
             );

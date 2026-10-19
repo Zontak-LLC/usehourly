@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { Clock } from "lucide-react";
+
 import { DayEditorPanel } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
@@ -89,8 +91,15 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             {/* The picked day is a heading on the page card, not a card of its own: the entry cards and the add form are the cards. */}
             <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
               <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
-              <span className="font-medium font-mono tabular-nums">
-                {sheet.dayTotals[selected] ? formatDuration(sheet.dayTotals[selected]) : "Nothing yet"}
+              <span className="flex items-center gap-1.5 font-medium font-mono tabular-nums">
+                {sheet.dayTotals[selected] ? (
+                  <>
+                    <Clock className="size-4 text-muted-foreground" aria-hidden />
+                    {formatDuration(sheet.dayTotals[selected])}
+                  </>
+                ) : (
+                  "Nothing yet"
+                )}
               </span>
             </div>
             <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />
