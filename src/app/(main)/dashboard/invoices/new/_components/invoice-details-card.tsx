@@ -74,7 +74,15 @@ export function InvoiceDetailsCard({
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="net">Payment due in (days)</Label>
-          <Input id="net" type="number" min={0} max={365} value={netDays} onChange={(e) => onNetDays(e.target.value)} />
+          <Input
+            id="net"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={365}
+            value={netDays}
+            onChange={(e) => onNetDays(e.target.value)}
+          />
         </div>
         <details className="rounded-lg border px-3 py-2 sm:col-span-2">
           <summary className="cursor-pointer font-medium text-sm">More options</summary>

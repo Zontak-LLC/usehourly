@@ -319,3 +319,23 @@ html:has([data-landing-page]) {
     -webkit-print-color-adjust: exact;
   }
 }
+
+/* Phones: iOS Safari zooms the page when a field under 16px gets focus. Inputs are already text-base; native selects
+   used text-sm, so give them the same size (unlayered so it wins over the utility). */
+@media (max-width: 767px) {
+  select:not([multiple]) {
+    font-size: 1rem;
+  }
+}
+
+/* Taps act at once: no double-tap-to-zoom delay on controls. */
+a,
+button,
+select,
+summary,
+label,
+input,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+}

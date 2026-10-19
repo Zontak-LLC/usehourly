@@ -19,7 +19,7 @@ import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 const MAIN = ["today", "week", "month", "invoices", "clients"];
 
 /**
- * The pages used most as a strip under the top bar, on every screen size. Every tab has an icon and a word, and
+ * The pages used most: a tab bar at the bottom of a phone (where a thumb reaches) and a strip under the top bar from `sm` up. Every tab has an icon and a word, and
  * "More" is a real menu: the rarely used pages, the signed-in address and Log out.
  */
 export function MobileNav({ user, isAdmin = false }: { user: { name: string; email: string }; isAdmin?: boolean }) {
@@ -28,7 +28,10 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
   const more = [...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])];
 
   return (
-    <nav aria-label="Main pages" className="sticky top-12 z-40 border-b bg-background">
+    <nav
+      aria-label="Main pages"
+      className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 z-40 border-b bg-background max-sm:border-t max-sm:border-b-0 max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12"
+    >
       <div className="mx-auto grid max-w-5xl grid-cols-6">
         {items.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
@@ -37,7 +40,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
               key={item.id}
               href={item.url}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 text-xs font-medium ${
+              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 text-xs font-medium max-sm:border-t-2 max-sm:border-b-0 ${
                 active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"
               }`}
             >
@@ -50,7 +53,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground aria-expanded:text-foreground"
+              className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 border-transparent px-1 text-xs font-medium text-muted-foreground max-sm:border-t-2 max-sm:border-b-0 aria-expanded:text-foreground"
             >
               <Menu className="size-5" aria-hidden />
               More

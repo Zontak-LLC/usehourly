@@ -92,6 +92,7 @@ export function ProjectEditRow({
           <Input
             name="rate"
             type="number"
+            inputMode="decimal"
             min="0"
             step="0.01"
             defaultValue={(p.hourly_rate / 100).toFixed(2)}
