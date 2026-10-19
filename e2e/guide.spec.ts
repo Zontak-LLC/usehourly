@@ -36,6 +36,31 @@ test("a visitor can search the guide, read a topic and the FAQ, with no account"
     await expect(page.getByText(/no paid plans/i)).toBeVisible();
   });
 
+  await test.step("the Guide and FAQ buttons stay pressed on the page you are on", async () => {
+    const nav = page.getByRole("navigation", { name: "Guide", exact: true });
+    await expect(nav.getByRole("link", { name: "FAQ" })).toHaveAttribute("aria-current", "page");
+    await expect(nav.getByRole("link", { name: "Guide" })).not.toHaveAttribute("aria-current", "page");
+    await page.goto("/help");
+    await expect(nav.getByRole("link", { name: "Guide" })).toHaveAttribute("aria-current", "page");
+    await expect(nav.getByRole("link", { name: "FAQ" })).not.toHaveAttribute("aria-current", "page");
+    await page.goto("/help/rounding"); // a topic is part of the guide
+    await expect(nav.getByRole("link", { name: "Guide" })).toHaveAttribute("aria-current", "page");
+  });
+
+  await test.step("every topic is listed in the guide's own contents, with the page you are on marked", async () => {
+    await page.goto("/help/rounding");
+    const phone = (page.viewportSize()?.width ?? 1280) < 1024;
+    if (phone) await page.getByText("Browse all topics").click();
+    const toc = page.getByRole("navigation", { name: phone ? "Guide topics (phone)" : "Guide topics" });
+    await expect(toc.getByRole("link", { name: "Rounding time on invoices" })).toHaveAttribute("aria-current", "page");
+    await expect(toc.getByRole("link", { name: "Making an invoice" })).not.toHaveAttribute("aria-current", "page");
+    await expect(toc.getByText("Invoices and money", { exact: true })).toBeVisible(); // grouped under headings
+    await expect(toc.getByRole("link", { name: "FAQ" })).toBeVisible();
+    await toc.getByRole("link", { name: "Project budgets" }).click();
+    await expect(page).toHaveURL(/\/help\/budgets$/);
+    await expect(page.getByRole("heading", { name: "Project budgets", level: 1 })).toBeVisible();
+  });
+
   await test.step("a made-up topic is a normal not-found page", async () => {
     expect((await request.get("/help/not-a-topic")).status()).toBe(404);
   });
@@ -46,6 +71,16 @@ test("the app links to the guide: the menu, and a ? beside the settings that are
   context,
 }) => {
   await startFreshAccount(page);
+  await test.step("the top bar has a Guide link at the top right, beside the settings", async () => {
+    const link = page.getByRole("link", { name: "Guide and FAQ" });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", "/help");
+    const gear = await page.getByRole("button", { name: "Appearance and layout settings" }).boundingBox();
+    const guide = await link.boundingBox();
+    expect(guide?.x ?? 0).toBeLessThan(gear?.x ?? 0); // just left of the gear, in the same top bar
+    expect(Math.abs((guide?.y ?? 0) - (gear?.y ?? 99))).toBeLessThan(4);
+  });
+
   await test.step("the menu has a Guide entry", async () => {
     await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("menuitem", { name: "Guide" }).click();

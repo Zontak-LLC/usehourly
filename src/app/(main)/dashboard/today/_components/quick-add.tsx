@@ -156,7 +156,7 @@ export function QuickAdd({
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
-      <div className="border-b bg-muted/40 px-3 py-3 sm:px-4">
+      <div className="border-b bg-band-2 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">
           Add to the day
           {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}

@@ -151,7 +151,7 @@ export function MonthCalendar({
                   }}
                 />
               ))}
-              <div className="hidden items-end justify-end border-b bg-muted/40 p-2 font-medium font-mono tabular-nums sm:flex">
+              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-medium font-mono tabular-nums sm:flex">
                 {weekTotal ? formatDuration(weekTotal) : ""}
               </div>
             </div>

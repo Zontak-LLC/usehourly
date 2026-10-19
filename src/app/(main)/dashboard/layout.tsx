@@ -20,6 +20,7 @@ import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
 
+import { GuideButton } from "./_components/header/guide-button";
 import { LayoutControls } from "./_components/header/layout-controls";
 import { MobileNav } from "./_components/header/mobile-nav";
 import { SideNav } from "./_components/header/side-nav";
@@ -94,6 +95,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                 </Link>
               </div>
               <div className="flex items-center gap-2">
+                <GuideButton />
                 <LayoutControls />
                 <ThemeSwitcher />
               </div>

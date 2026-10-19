@@ -7,6 +7,9 @@ export type SheetEntry = {
   started_at: Date | string | null;
   /** True when the entry's day is marked non-billable: exports and invoices leave it out (the server sets this). */
   non_billable?: boolean;
+  /** The team member who logged it (null or absent for the account's own entries). */
+  author_id?: string | null;
+  author?: { name: string | null } | null;
   project: { name: string; hourly_rate: number; billable: boolean; client: { name: string; color: string } };
 };
 

@@ -119,7 +119,7 @@ export function InvoiceCard({
   return (
     <li className="overflow-hidden rounded-xl border bg-card">
       {/* Header: which invoice, and the actions pinned on the right (same shape as the entry cards). */}
-      <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-2">
+      <div className="flex items-center justify-between gap-3 border-b bg-band-2 px-4 py-2">
         <p className="min-w-0 truncate">
           <span className="font-semibold">{i.number}</span>
           <span className="text-muted-foreground"> · {i.client_name}</span>

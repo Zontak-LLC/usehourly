@@ -20,6 +20,11 @@ test("an owner invites someone by email, they join and log time, and the owner r
   });
 
   let joinPath = "";
+  await test.step("the short address /team leads to the Team page", async () => {
+    await page.goto("/team");
+    await expect(page).toHaveURL(/\/dashboard\/team$/);
+  });
+
   await test.step("the owner invites Pat on the Team page and the email goes out", async () => {
     await page.goto("/dashboard/team");
     await expect(page.getByRole("heading", { name: "Team", level: 1 })).toBeVisible();

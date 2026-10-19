@@ -23,13 +23,11 @@ export function PageShell({
 }) {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col overflow-hidden border bg-muted/60 [--border:color-mix(in_oklch,var(--foreground)_16%,var(--background))] max-sm:-m-2 max-sm:w-[calc(100%+1rem)] max-sm:border-x-0 sm:rounded-2xl">
-      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b bg-muted px-3 py-3 sm:px-4">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b bg-band-1 px-3 py-3 sm:px-4">
         <div className="min-w-0">
           <h1 className="font-semibold text-xl">{title}</h1>
           {description && (
-            <p className={`text-muted-foreground text-sm ${descriptionOnPhone ? "" : "max-sm:hidden"}`}>
-              {description}
-            </p>
+            <p className={`text-foreground/75 text-sm ${descriptionOnPhone ? "" : "max-sm:hidden"}`}>{description}</p>
           )}
         </div>
         {actions}

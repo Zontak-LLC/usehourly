@@ -37,7 +37,7 @@ export function Section({
       aria-labelledby={`${id}-heading`}
       className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
     >
-      <div className="border-b bg-muted/40 px-4 py-3">
+      <div className="border-b bg-band-2 px-4 py-3">
         <h2 id={`${id}-heading`} className="font-semibold text-lg">
           {title}
         </h2>

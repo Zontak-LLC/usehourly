@@ -24,7 +24,7 @@ export function InvoicePreviewCard({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
-      <h2 className="border-b bg-muted/40 px-4 py-3 font-semibold text-base">Preview</h2>
+      <h2 className="border-b bg-band-2 px-4 py-3 font-semibold text-base">Preview</h2>
       {!validRange ? (
         <p className="px-4 py-8 text-center text-muted-foreground text-sm">
           The start date must be on or before the end date.

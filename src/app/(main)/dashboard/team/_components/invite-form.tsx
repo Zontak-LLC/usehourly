@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
-import { SectionCard } from "@/components/section-card";
+import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,9 +51,16 @@ export function InviteForm() {
 
   const list = clients.data ?? [];
   return (
-    <SectionCard
-      title="Invite someone"
-      description="We email them a link. They sign in with their own UseHourly account and can log time only on the clients you choose."
+    <HeaderCard
+      header={
+        <div>
+          <h2 className="font-semibold text-base">Invite someone</h2>
+          <p className="text-muted-foreground text-sm">
+            We email them a link. They sign in with their own UseHourly account and can log time only on the clients you
+            choose.
+          </p>
+        </div>
+      }
       onSubmit={submit}
     >
       <div className="grid gap-3 sm:grid-cols-2">
@@ -101,7 +108,7 @@ export function InviteForm() {
         </Button>
       </div>
       {sent && (
-        <div className="flex flex-col gap-2 border-t pt-3">
+        <div className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
           <p className="text-sm">
             {sent.note} You can also send this link yourself. It works once and for 7 days, and you can't see it again.
           </p>
@@ -113,6 +120,6 @@ export function InviteForm() {
           </div>
         </div>
       )}
-    </SectionCard>
+    </HeaderCard>
   );
 }

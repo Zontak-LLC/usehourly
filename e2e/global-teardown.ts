@@ -29,7 +29,8 @@ export default function globalTeardown() {
     "DELETE FROM auth_users WHERE email LIKE 'e2e-%@example.test';",
   ].join(" ");
   try {
-    execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", "--command", statements], {
+    const persist = process.env.E2E_PERSIST ? ["--persist-to", process.env.E2E_PERSIST] : [];
+    execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", ...persist, "--command", statements], {
       stdio: "pipe",
     });
   } catch (err) {

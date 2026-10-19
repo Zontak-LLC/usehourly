@@ -17,7 +17,9 @@ test("an entry is deleted only after confirming, from the list and from Today", 
   await test.step("from What you worked on: cancelling keeps it, confirming removes it", async () => {
     await page.goto("/dashboard/week");
     await expect(page.getByText("delete me from the list").first()).toBeVisible();
-    await page.getByRole("button", { name: /Delete General, 2:00/ }).click();
+    const list = page.getByRole("region", { name: "What you worked on" });
+    const card = list.getByRole("listitem").filter({ hasText: "delete me from the list" });
+    await card.getByRole("button", { name: "Delete" }).click(); // in the entry card's header, like on Today
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: "Delete this entry?" })).toBeVisible();
     await expect(dialog).toContainText("delete me from the list"); // it says which entry
@@ -26,7 +28,7 @@ test("an entry is deleted only after confirming, from the list and from Today", 
     await expect(dialog).toBeHidden();
     await expect(page.getByText("delete me from the list").first()).toBeVisible();
 
-    await page.getByRole("button", { name: /Delete General, 2:00/ }).click();
+    await card.getByRole("button", { name: "Delete" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Delete entry" }).click();
     await expect(page.getByText("delete me from the list")).toHaveCount(0);
     await expect(page.getByText("keep me").first()).toBeVisible();

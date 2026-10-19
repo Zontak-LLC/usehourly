@@ -26,6 +26,13 @@ test.describe("public pages", () => {
     });
   }
 
+  test("the landing page links to the guide at the top", async ({ page, isMobile }) => {
+    test.skip(isMobile, "the header link is hidden on a phone to save room");
+    await page.goto("/");
+    await page.getByRole("link", { name: "Guide", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/help$/);
+  });
+
   test("the health check answers and a signed-out visitor is sent to log in", async ({ page, request }) => {
     const health = await request.get("/api/health");
     expect(health.status()).toBe(200);

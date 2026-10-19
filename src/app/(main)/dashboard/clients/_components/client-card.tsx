@@ -15,7 +15,11 @@ import type { ClientRow, ProjectBudgets, ProjectTotals } from "./client-types";
 import { ProjectCard, ProjectEditCard } from "./project-row";
 import type { ProjectEditing } from "./use-project-editing";
 
-/** One client: a plain heading with its buttons, the billing-details form when open, and its projects as cards. */
+/**
+ * One client as a card: a tinted header (logo, name, summary, buttons), then its projects as tiles with a header of
+ * their own. No lines anywhere: the tint and the spacing do the separating. The tiles have no border, so a card never
+ * holds another framed card.
+ */
 export function ClientCard({
   client: c,
   allClients,
@@ -44,8 +48,8 @@ export function ClientCard({
   const [adding, setAdding] = useState(false);
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
   return (
-    <section aria-label={c.name} className="flex flex-col gap-3 border-t pt-4 first:border-t-0 first:pt-0">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+    <section aria-label={c.name} className="overflow-hidden rounded-xl border bg-card">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-band-2 px-3 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <ClientLogoSlot clientId={c.id} name={c.name} />
           <div className="min-w-0">
@@ -90,56 +94,71 @@ export function ClientCard({
           </IconAction>
         </div>
       </header>
-      {billingOpen && (
-        <div className="overflow-hidden rounded-xl border bg-card">
-          <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
-        </div>
-      )}
-      {/* The projects are the cards (one level under the page card); the + in the heading opens a dashed card to add another. */}
-      {c.projects.length === 0 && !adding && (
-        <p className="text-muted-foreground text-sm">No projects yet. Use the + above to add one.</p>
-      )}
-      <ul className="grid gap-3 sm:grid-cols-2">
-        {c.projects.map((p) =>
-          editing.editingId === p.id ? (
-            <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
-          ) : (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              clientColor={c.color}
-              logos={logos}
-              totals={totals}
-              budget={budgets?.[p.id]}
-              onEdit={() => editing.startEditing(p.id)}
-              onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
-            />
-          ),
+      <div className="flex flex-col gap-3 p-3">
+        {billingOpen && (
+          <div className="overflow-hidden rounded-lg bg-foreground/[0.03]">
+            <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
+          </div>
         )}
-        {adding ? (
-          <li className="flex flex-col gap-2 rounded-xl border border-foreground/30 border-dashed p-3 sm:col-span-2">
-            <div className="flex items-center justify-between gap-2">
-              <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-foreground">
-                  <Plus className="size-3.5" aria-hidden />
-                </span>
-                <span className="truncate">Add a project for {c.name}</span>
-              </p>
-              <Button
+        {c.projects.length === 0 && !adding && (
+          <p className="text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
+        )}
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {c.projects.map((p) =>
+            editing.editingId === p.id ? (
+              <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
+            ) : (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                clientColor={c.color}
+                logos={logos}
+                totals={totals}
+                budget={budgets?.[p.id]}
+                onEdit={() => editing.startEditing(p.id)}
+                onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
+              />
+            ),
+          )}
+          {adding ? (
+            <li className="flex flex-col gap-2 rounded-lg bg-foreground/[0.03] p-3 sm:col-span-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-foreground">
+                    <Plus className="size-3.5" aria-hidden />
+                  </span>
+                  <span className="truncate">Add a project for {c.name}</span>
+                </p>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="size-10 shrink-0"
+                  onClick={() => setAdding(false)}
+                  aria-label="Cancel"
+                >
+                  <X />
+                </Button>
+              </div>
+              <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
+            </li>
+          ) : (
+            <li>
+              <button
                 type="button"
-                size="icon"
-                variant="ghost"
-                className="size-10 shrink-0"
-                onClick={() => setAdding(false)}
-                aria-label="Cancel"
+                onClick={() => setAdding(true)}
+                aria-label={`Add a project for ${c.name}`}
+                className="flex h-full min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-foreground/30 p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
               >
-                <X />
-              </Button>
-            </div>
-            <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
-          </li>
-        ) : null}
-      </ul>
+                <span className="flex size-8 items-center justify-center rounded-full bg-muted">
+                  <Plus className="size-4" aria-hidden />
+                </span>
+                Add a project
+              </button>
+            </li>
+          )}
+        </ul>
+      </div>
     </section>
   );
 }

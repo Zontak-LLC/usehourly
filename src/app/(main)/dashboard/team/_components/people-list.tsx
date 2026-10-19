@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
+import { Mail, UserRound, UserX } from "lucide-react";
 import { toast } from "sonner";
 
-import { SectionCard } from "@/components/section-card";
+import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -25,25 +26,28 @@ const STATUS_WORDS = {
   removed: "Removed",
 } as const;
 
-/** Everyone invited: who they are, which clients they may use (editable), and a way to remove them. */
+/** Everyone invited, one card each: who they are, their status, which clients they may use (editable), and the buttons. */
 export function PeopleList({ people }: { people: Person[] }) {
   const shown = people.filter((p) => p.status !== "removed");
   if (shown.length === 0) return null;
   return (
-    <SectionCard
-      title="Your team"
-      description="Their time shows up on your Today, Week and Month pages, marked with their name."
-    >
-      <ul className="divide-y">
+    <section aria-label="Your team" className="flex flex-col gap-3">
+      <div>
+        <h2 className="font-semibold text-base">Your team</h2>
+        <p className="text-muted-foreground text-sm">
+          Their time shows up on your Today, Week and Month pages, marked with their name.
+        </p>
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-2">
         {shown.map((p) => (
-          <PersonRow key={p.id} person={p} />
+          <PersonCard key={p.id} person={p} />
         ))}
       </ul>
-    </SectionCard>
+    </section>
   );
 }
 
-function PersonRow({ person }: { person: Person }) {
+function PersonCard({ person }: { person: Person }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
   const setClients = trpc.team.setClients.useMutation();
@@ -84,22 +88,52 @@ function PersonRow({ person }: { person: Person }) {
   }
 
   return (
-    <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="font-medium">
-            {person.label}
-            {person.memberName && person.memberName !== person.label && (
-              <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
-            )}
-          </p>
-          <p className="text-muted-foreground text-sm">
-            {person.email} · {STATUS_WORDS[person.status]}
-          </p>
-        </div>
+    <li>
+      <HeaderCard
+        className="h-full"
+        header={
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <UserRound className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate font-semibold text-base">
+                {person.label}
+                {person.memberName && person.memberName !== person.label && (
+                  <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
+                )}
+              </h3>
+              <p className="truncate text-muted-foreground text-sm">{person.email}</p>
+              <p
+                className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${
+                  person.status === "active" ? "bg-success-soft text-success" : "bg-muted text-foreground/80"
+                }`}
+              >
+                {STATUS_WORDS[person.status]}
+              </p>
+            </div>
+          </div>
+        }
+      >
+        {live && (
+          <fieldset className="flex flex-col gap-1">
+            <legend className="mb-1 text-muted-foreground text-xs">Can log time on</legend>
+            {(clients.data ?? []).map((c) => (
+              <label key={c.id} className="flex min-h-8 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="size-4"
+                  checked={person.clientIds.includes(c.id)}
+                  onChange={(e) => toggle(c.id, e.target.checked)}
+                />
+                {c.name}
+              </label>
+            ))}
+          </fieldset>
+        )}
         {live &&
           (confirming ? (
-            <span className="flex items-center gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 p-3 text-sm">
               Remove {person.label}?
               <Button type="button" onClick={takeOut} disabled={remove.isPending}>
                 Yes, remove
@@ -107,36 +141,20 @@ function PersonRow({ person }: { person: Person }) {
               <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
                 Keep
               </Button>
-            </span>
+            </div>
           ) : (
-            <span className="flex items-center gap-2">
+            <div className="flex flex-wrap gap-2">
               {person.status !== "active" && (
                 <Button type="button" variant="outline" onClick={sendAgain} disabled={resend.isPending}>
-                  Send again
+                  <Mail /> Send again
                 </Button>
               )}
               <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
-                Remove
+                <UserX /> Remove
               </Button>
-            </span>
+            </div>
           ))}
-      </div>
-      {live && (
-        <fieldset className="flex flex-wrap gap-x-4">
-          <legend className="sr-only">Clients {person.label} can log time on</legend>
-          {(clients.data ?? []).map((c) => (
-            <label key={c.id} className="flex min-h-8 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-4"
-                checked={person.clientIds.includes(c.id)}
-                onChange={(e) => toggle(c.id, e.target.checked)}
-              />
-              {c.name}
-            </label>
-          ))}
-        </fieldset>
-      )}
+      </HeaderCard>
     </li>
   );
 }

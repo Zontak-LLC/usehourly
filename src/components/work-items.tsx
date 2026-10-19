@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 
-import { Ban, ChevronLeft, ChevronRight, Pencil, Search, Trash2 } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
-import { DeleteEntryDialog } from "@/components/delete-entry-dialog";
-import { NoteText } from "@/components/folded-note";
 import { HoursChip } from "@/components/hours-chip";
-import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fromISODate } from "@/lib/dates";
@@ -37,25 +34,6 @@ export function WorkItems({
   /** Dates marked non-billable: their header carries a badge. */
   nonBillable?: ReadonlySet<string>;
 }) {
-  const logos = useProjectLogos();
-  // Long notes fold to two lines; the ids here are the ones the user opened.
-  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-  const toggle = (id: string) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
-  // Entries whose note is cut off right now (measured, not guessed from its length).
-  const [clipped, setClipped] = useState<ReadonlySet<string>>(new Set());
-  const markClipped = (id: string, is: boolean) =>
-    setClipped((prev) => {
-      if (prev.has(id) === is) return prev;
-      const next = new Set(prev);
-      if (is) next.add(id);
-      else next.delete(id);
-      return next;
-    });
   // Entries open for editing in place (only used with `editInPlace`).
   const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
   const startEditing = (ids: string[]) => setEditing((prev) => new Set([...prev, ...ids]));
@@ -66,7 +44,6 @@ export function WorkItems({
       return next;
     });
   const [query, setQuery] = useState("");
-  const [deleting, setDeleting] = useState<SheetEntry | null>(null);
   const [page, setPage] = useState(1);
 
   const matches = searchWorkItems(entries, query);
@@ -74,7 +51,7 @@ export function WorkItems({
   const days = groupByDay(view.items, matches);
 
   return (
-    <div className="flex flex-col gap-3">
+    <section aria-label="What you worked on" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold text-base">
           What you worked on <span className="font-normal text-muted-foreground text-sm">({matches.length})</span>
@@ -101,12 +78,8 @@ export function WorkItems({
       ) : (
         <div className="flex flex-col gap-3">
           {days.map((g) => (
-            <section
-              key={g.date}
-              aria-label={dayFmt.format(fromISODate(g.date))}
-              className="overflow-hidden rounded-xl border bg-card"
-            >
-              <h3 className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-2 pl-4 font-medium text-sm">
+            <section key={g.date} aria-label={dayFmt.format(fromISODate(g.date))} className="flex flex-col gap-2">
+              <h3 className="flex items-center justify-between gap-2 px-1 font-medium text-sm">
                 <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   {dayFmt.format(fromISODate(g.date))}
                   <HoursChip>
@@ -119,86 +92,31 @@ export function WorkItems({
                     </span>
                   )}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    className="size-8"
-                    onClick={() =>
-                      editInPlace
-                        ? startEditing(g.items.filter((e) => !e.started_at).map((e) => e.id))
-                        : onOpenDay(g.date)
-                    }
-                    aria-label={`Edit ${dayFmt.format(fromISODate(g.date))}`}
-                    title="Edit this day"
-                  >
-                    <Pencil />
-                  </Button>
-                </span>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="size-8"
+                  onClick={() =>
+                    editInPlace
+                      ? startEditing(g.items.filter((e) => !e.started_at).map((e) => e.id))
+                      : onOpenDay(g.date)
+                  }
+                  aria-label={`Edit ${dayFmt.format(fromISODate(g.date))}`}
+                  title="Edit this day"
+                >
+                  <Pencil />
+                </Button>
               </h3>
-              <ul className="divide-y">
+              {/* One card per entry, the same card as on Today: its header carries Move, Edit and Delete (which asks first). */}
+              <ul className="flex flex-col gap-2">
                 {g.items.map((e) => (
-                  <li key={e.id} className="relative">
-                    {editInPlace && editing.has(e.id) ? (
-                      <ul>
-                        <EntryRow entry={e} initialEditing bare onEditDone={() => stopEditing(e.id)} />
-                      </ul>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => (editInPlace && !e.started_at ? startEditing([e.id]) : onOpenDay(e.date))}
-                        title="Edit this day"
-                        className="group flex w-full items-start gap-3 py-3 pr-14 pl-4 text-left transition-colors hover:bg-muted"
-                      >
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2 text-sm">
-                            <ProjectMark projectId={e.project_id} color={e.project.client.color} logos={logos} />
-                            <span className="truncate font-medium">{e.project.name}</span>
-                            <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
-                            {/* A day with one entry shows its time in the header; with several, each row says its own, beside the name. */}
-                            {!(g.items.length === 1 && g.items[0].minutes === g.minutes) && (
-                              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-xs tabular-nums">
-                                {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
-                              </span>
-                            )}
-                          </span>
-                          {e.note ? (
-                            <NoteText
-                              note={e.note}
-                              expanded={open.has(e.id)}
-                              onClipped={(is) => markClipped(e.id, is)}
-                            />
-                          ) : (
-                            <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
-                          )}
-                        </span>
-                      </button>
-                    )}
-                    {!(editInPlace && editing.has(e.id)) && (
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="absolute top-2 right-2 size-8"
-                        onClick={() => setDeleting(e)}
-                        aria-label={`Delete ${e.project.name}, ${formatDuration(e.minutes)}, ${dayFmt.format(fromISODate(e.date))}`}
-                        title="Delete this entry"
-                      >
-                        <Trash2 />
-                      </Button>
-                    )}
-                    {!(editInPlace && editing.has(e.id)) && (clipped.has(e.id) || open.has(e.id)) && (
-                      <button
-                        type="button"
-                        onClick={() => toggle(e.id)}
-                        aria-expanded={open.has(e.id)}
-                        className="mb-2 min-h-6 pl-4 text-primary text-xs hover:underline"
-                      >
-                        {open.has(e.id) ? "Show less" : "Show more"}
-                      </button>
-                    )}
-                  </li>
+                  <EntryRow
+                    key={e.id}
+                    entry={e}
+                    initialEditing={editInPlace && editing.has(e.id)}
+                    onEditDone={() => stopEditing(e.id)}
+                  />
                 ))}
               </ul>
             </section>
@@ -236,7 +154,6 @@ export function WorkItems({
           </div>
         </div>
       )}
-      <DeleteEntryDialog entry={deleting} onClose={() => setDeleting(null)} />
-    </div>
+    </section>
   );
 }
