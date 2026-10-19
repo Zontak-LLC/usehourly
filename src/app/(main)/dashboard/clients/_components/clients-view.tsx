@@ -139,14 +139,13 @@ export function ClientsView() {
       actions={
         <Button
           type="button"
-          size="icon"
+          size="lg"
           variant="primary"
-          className="size-10 rounded-xl"
-          aria-label="New client"
+          className="h-10 max-sm:w-10 max-sm:rounded-xl max-sm:px-0"
           title="New client"
           onClick={() => setNewOpen(true)}
         >
-          <Plus className="size-5" />
+          <Plus className="max-sm:size-5" /> <span className="max-sm:sr-only">New client</span>
         </Button>
       }
     >
