@@ -93,7 +93,7 @@ export function WeekTotalCard({
       <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2.5">
         <h2 className="font-semibold text-base">This week</h2>
         <span className="flex items-center gap-1.5 font-semibold font-mono text-lg tabular-nums">
-          <Clock className="size-4 text-muted-foreground" aria-hidden />
+          <Clock className="size-4" aria-hidden />
           {formatDuration(sheet.total)}
           <span className="font-normal text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
         </span>
@@ -117,7 +117,7 @@ export function WeekTotalCard({
                   <span className="font-medium">{r.project}</span>
                   <span className="text-muted-foreground">· {r.client}</span>
                   <span className="flex items-center gap-1 font-mono tabular-nums">
-                    <Clock className="size-3.5 text-muted-foreground" aria-hidden />
+                    <Clock className="size-3.5" aria-hidden />
                     {formatDuration(r.total)}
                   </span>
                 </button>

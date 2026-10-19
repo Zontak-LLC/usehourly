@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export const ICON_TONE = {
   edit: "text-sky-600 dark:text-sky-400",
   send: "text-sky-600 dark:text-sky-400",
-  archive: "text-amber-600 dark:text-amber-400",
+  archive: "text-yellow-600 dark:text-yellow-400",
 } as const;
 
 /** An icon button with a real tooltip (the native title attribute is slow and never shows on touch). */
