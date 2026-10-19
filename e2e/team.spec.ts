@@ -28,6 +28,9 @@ test("an owner invites someone by email, they join and log time, and the owner r
   await test.step("the owner invites Pat on the Team page and the email goes out", async () => {
     await page.goto("/dashboard/team");
     await expect(page.getByRole("heading", { name: "Team", level: 1 })).toBeVisible();
+    await expect(page.getByText("Nobody on your team yet")).toBeVisible();
+    await page.getByRole("button", { name: /Invite someone/ }).click(); // the card turns into the form, in place
+    await expect(page.getByText("Nobody on your team yet")).toBeHidden();
     await page.getByLabel("Their email address").fill(member.email);
     await page.getByLabel("Their name (optional)").fill("Pat");
     await page.getByLabel("Acme Studio").check();

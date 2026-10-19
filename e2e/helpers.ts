@@ -187,6 +187,12 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
       for (let p = card.parentElement; p; p = p.parentElement) if (cardSet.has(p)) depth++;
       if (depth > 2) out.push(`card nested ${depth} deep (max 2): ${snippet(card)}`);
     }
+    // One solid (primary) button per screen: it is the one main action. Dialogs are closed when a page is checked.
+    const solid = [...document.querySelectorAll('[data-variant="primary"]')].filter(
+      (b) => (b as HTMLElement).offsetParent,
+    );
+    if (solid.length > 1)
+      out.push(`${solid.length} solid buttons (expected at most 1): ${solid.map(snippet).join(" | ")}`);
     if (!document.title.trim()) out.push("page has no title");
     const h1s = document.querySelectorAll("h1").length;
     if (h1s !== 1) out.push(`${h1s} top-level headings (expected exactly 1)`);

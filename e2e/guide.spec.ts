@@ -36,6 +36,19 @@ test("a visitor can search the guide, read a topic and the FAQ, with no account"
     await expect(page.getByText(/no paid plans/i)).toBeVisible();
   });
 
+  await test.step("the FAQ has its own search, which also offers matching guide topics", async () => {
+    await page.goto("/help/faq");
+    await expect(page.getByRole("heading", { name: "Is UseHourly really free?" })).toBeVisible();
+    await page.getByRole("searchbox", { name: "Search the FAQ" }).fill("export");
+    await expect(page.getByRole("heading", { name: "Can I get my data out?" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Is UseHourly really free?" })).toBeHidden();
+    await expect(page.getByRole("region", { name: "Also in the guide" })).toContainText("Share & export");
+    await page.getByRole("searchbox", { name: "Search the FAQ" }).fill("zzzzqqq");
+    await expect(page.getByText("No question matches that.")).toBeVisible();
+    await page.getByRole("searchbox", { name: "Search the FAQ" }).fill("");
+    await expect(page.getByRole("heading", { name: "Is UseHourly really free?" })).toBeVisible();
+  });
+
   await test.step("the Guide and FAQ buttons stay pressed on the page you are on", async () => {
     const nav = page.getByRole("navigation", { name: "Guide", exact: true });
     await expect(nav.getByRole("link", { name: "FAQ" })).toHaveAttribute("aria-current", "page");

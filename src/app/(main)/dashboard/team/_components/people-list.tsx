@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Mail, UserRound, UserX } from "lucide-react";
 import { toast } from "sonner";
@@ -27,21 +27,23 @@ const STATUS_WORDS = {
 } as const;
 
 /** Everyone invited, one card each: who they are, their status, which clients they may use (editable), and the buttons. */
-export function PeopleList({ people }: { people: Person[] }) {
+export function PeopleList({ people, footer }: { people: Person[]; footer: ReactNode }) {
   const shown = people.filter((p) => p.status !== "removed");
-  if (shown.length === 0) return null;
   return (
     <section aria-label="Your team" className="flex flex-col gap-3">
-      <div>
-        <h2 className="font-semibold text-base">Your team</h2>
-        <p className="text-muted-foreground text-sm">
-          Their time shows up on your Today, Week and Month pages, marked with their name.
-        </p>
-      </div>
+      {shown.length > 0 && (
+        <div>
+          <h2 className="font-semibold text-base">Your team</h2>
+          <p className="text-foreground/75 text-sm">
+            Their time shows up on your Today, Week and Month pages, marked with their name.
+          </p>
+        </div>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2">
         {shown.map((p) => (
           <PersonCard key={p.id} person={p} />
         ))}
+        {footer}
       </ul>
     </section>
   );

@@ -31,6 +31,22 @@ const rules = [
     only: /(__tests__|e2e)/,
   },
   { name: "no dangerouslySetInnerHTML", re: /dangerouslySetInnerHTML/ },
+  // UI rules (docs/ui-spec.md): one shade per depth, one empty state, one notice.
+  {
+    name: "a card header band uses bg-band-1/2/3, not bg-muted/40 (docs/ui-spec.md)",
+    re: /border-b bg-muted\/40/,
+    only: /^src\//,
+  },
+  {
+    name: "a notice box is the Notice component, not a hand-made tinted box (docs/ui-spec.md)",
+    re: /rounded-(lg|xl) border bg-muted\/40 p-/,
+    only: /^src\//,
+  },
+  {
+    name: "an empty state is the EmptyState component, not a hand-made dashed paragraph (docs/ui-spec.md)",
+    re: /<p className="[^"]*border-dashed/,
+    only: /^src\//,
+  },
   { name: "no eval / new Function", re: /\beval\(|new Function\(/ },
 ];
 
