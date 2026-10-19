@@ -11,17 +11,20 @@ export function HeaderCard({
   header,
   onSubmit,
   className,
+  light = false,
   children,
 }: {
   header: ReactNode;
   onSubmit?: FormEventHandler<HTMLFormElement>;
   className?: string;
+  /** A white header like the page card's own header, instead of the light tint (the Week page's day card). */
+  light?: boolean;
   children?: ReactNode;
 }) {
   const body = "flex flex-col gap-3 p-3 sm:p-4";
   return (
     <section className={cn("overflow-hidden rounded-xl border bg-card", className)}>
-      <header className="bg-band-2 px-3 py-3 sm:px-4">{header}</header>
+      <header className={cn("px-3 py-3 sm:px-4", light ? "bg-card" : "bg-band-2")}>{header}</header>
       {!children ? null : onSubmit ? (
         <form method="post" onSubmit={onSubmit} className={body}>
           {children}
