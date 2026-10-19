@@ -2,7 +2,7 @@
 
 import { CircleAlert, CircleCheck, CircleDollarSign, Download, Send, Trash2 } from "lucide-react";
 
-import { ICON_TONE, IconAction } from "@/components/icon-action";
+import { IconAction } from "@/components/icon-action";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
 import { formatMoney } from "@/lib/invoice";
@@ -82,7 +82,7 @@ function InvoiceActions({
         text={words ? "Send" : undefined}
         onClick={() => handlers.onSend(i)}
       >
-        <Send className={ICON_TONE.send} />
+        <Send />
       </IconAction>
       <IconAction
         label={`Download PDF for ${i.number}`}

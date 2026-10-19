@@ -59,7 +59,7 @@ export function FirstRun() {
           autoFocus
         />
       </div>
-      <Button type="submit" size="lg" className="h-12 text-base" disabled={pending}>
+      <Button type="submit" size="lg" variant="primary" className="h-12 text-base" disabled={pending}>
         {pending ? "Saving…" : "Continue"}
       </Button>
     </form>

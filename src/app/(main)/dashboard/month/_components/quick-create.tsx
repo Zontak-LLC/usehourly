@@ -189,7 +189,7 @@ export function QuickCreate({
           placeholder="What did you work on? (same note on every day)"
           aria-label="Description of work"
           rows={1}
-          className="min-h-9 resize-none py-1.5"
+          className="min-h-9 resize-none py-2"
         />
       </div>
 

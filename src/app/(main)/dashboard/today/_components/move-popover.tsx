@@ -90,7 +90,7 @@ export function MovePopover({
               variant="outline"
               disabled={update.isPending}
               onClick={() => move(p.date)}
-              className="h-auto flex-col items-start gap-0 py-1.5 text-left"
+              className="h-auto flex-col items-start gap-0 py-2 text-left"
             >
               <span className="text-xs">{p.label}</span>
               <span className="font-normal text-muted-foreground text-xs">{shortDate.format(fromISODate(p.date))}</span>

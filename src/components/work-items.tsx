@@ -147,7 +147,7 @@ export function WorkItems({
                         type="button"
                         onClick={() => (editInPlace && !e.started_at ? startEditing([e.id]) : onOpenDay(e.date))}
                         title="Edit this day"
-                        className="group flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
+                        className="group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
                       >
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2 text-sm">

@@ -8,7 +8,7 @@ const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / 
 
 function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3 py-2.5">
+    <div className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3 py-3">
       <span className="text-muted-foreground text-sm">{label}</span>
       <span className="font-semibold text-3xl tabular-nums">{value}</span>
       {hint && <span className="text-muted-foreground text-xs">{hint}</span>}

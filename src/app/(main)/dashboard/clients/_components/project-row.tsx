@@ -3,7 +3,7 @@
 import { Archive, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
-import { ICON_TONE, IconAction } from "@/components/icon-action";
+import { IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
 import { ProjectMark } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ export function ProjectCard({
 }) {
   return (
     <li className="flex flex-col overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1.5 pr-1.5 pl-3">
+      <div className="flex items-center justify-between gap-2 border-b bg-muted/40 py-2 pr-2 pl-3">
         <span className="flex min-w-0 items-center gap-2">
           <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
           <h3 className="truncate font-semibold text-sm">{p.name}</h3>
@@ -45,10 +45,10 @@ export function ProjectCard({
         {/* Wide screens: icons with a tooltip (as on Invoices). Phones: the labelled row at the foot of the card. */}
         <span className="flex gap-1 max-sm:hidden">
           <IconAction label={`Edit ${p.name}`} tip="Edit project" onClick={onEdit}>
-            <Pencil className={ICON_TONE.edit} />
+            <Pencil />
           </IconAction>
           <IconAction label={`Archive ${p.name}`} tip="Archive project" onClick={onArchive}>
-            <Archive className={ICON_TONE.archive} />
+            <Archive />
           </IconAction>
         </span>
       </div>
@@ -77,10 +77,10 @@ export function ProjectCard({
         {budget && <BudgetBar status={budget} />}
         <div className="flex gap-1.5 sm:hidden">
           <IconAction label={`Edit ${p.name}`} tip="Edit project" text="Edit" onClick={onEdit}>
-            <Pencil className={ICON_TONE.edit} />
+            <Pencil />
           </IconAction>
           <IconAction label={`Archive ${p.name}`} tip="Archive project" text="Archive" onClick={onArchive}>
-            <Archive className={ICON_TONE.archive} />
+            <Archive />
           </IconAction>
         </div>
       </div>
