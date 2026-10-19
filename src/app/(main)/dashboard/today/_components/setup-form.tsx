@@ -13,10 +13,13 @@ import { trpc } from "@/lib/trpc";
 export function SetupForm({
   clientId,
   onDone,
+  onCancel,
   bar = false,
 }: {
   clientId?: string;
   onDone?: (projectId: string) => void;
+  /** Closes the form: called when Escape is pressed in a field (the parent shows its own Cancel button). */
+  onCancel?: () => void;
   /** Fill the row from `sm` up: the project field stretches and the Add button ends at the far right. */
   bar?: boolean;
 }) {
@@ -49,6 +52,10 @@ export function SetupForm({
     }
   }
 
+  const escapeToCancel = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") onCancel?.();
+  };
+
   return (
     <form
       method="post"
@@ -70,6 +77,8 @@ export function SetupForm({
         aria-label="Project name"
         placeholder="Project (e.g. Website)"
         required
+        autoFocus={bar}
+        onKeyDown={escapeToCancel}
         className={bar ? "max-sm:col-span-2 sm:min-w-0 sm:flex-1" : "w-44"}
       />
       <Input
@@ -79,6 +88,7 @@ export function SetupForm({
         min="0"
         step="0.01"
         aria-label="Hourly rate in dollars"
+        onKeyDown={escapeToCancel}
         placeholder="Rate $/h"
         className={bar ? "shrink-0 max-sm:w-full sm:w-28" : "w-28 shrink-0"}
       />
