@@ -97,3 +97,21 @@ test("a day's total says it is the total, and the day has a labelled Edit day bu
   await expect(list.getByRole("button", { name: "Edit", exact: true })).toHaveCount(1); // the entry's own pencil is icon-only
   await expect(page.getByText("Total hours this week", { exact: true })).toBeVisible();
 });
+
+test("Edit day on the Week page opens that day's entries for editing, and saving changes the time", async ({
+  page,
+}) => {
+  await startFreshAccount(page);
+  await page.getByLabel("Time to add").fill("1.5");
+  await page.getByLabel("Description").fill("edit me from the day button");
+  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await expect(page.getByText("edit me from the day button")).toBeVisible();
+  await page.goto("/dashboard/week");
+  const list = page.getByRole("region", { name: "What you worked on" });
+  await list.getByRole("button", { name: /^Edit .*\d/ }).click(); // "Edit day"
+  await expect(list.getByRole("button", { name: "Save" })).toBeVisible(); // the entry is now a form
+  await list.getByLabel("Time", { exact: true }).fill("2");
+  await list.getByRole("button", { name: "Save" }).click();
+  await expect(list.getByText("2:00").first()).toBeVisible();
+  await expect(list.getByRole("button", { name: "Save" })).toHaveCount(0); // back to reading
+});
