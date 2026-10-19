@@ -51,7 +51,7 @@ export function DayTiles({
             onClick={() => onPick(d)}
             className={`relative flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-3 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
               on
-                ? "border-primary bg-primary/15 shadow-sm ring-2 ring-primary/40"
+                ? "border-primary bg-tint shadow-sm ring-2 ring-primary/40"
                 : d === today
                   ? "border-primary/50 bg-card hover:bg-muted"
                   : "bg-card hover:bg-muted"

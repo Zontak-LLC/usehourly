@@ -39,7 +39,7 @@ export function ProjectBreakdown({
                 onClick={() => onProjectId(on ? "" : r.projectId)}
                 title={on ? "Show all projects again" : "Show only this project"}
                 className={`flex min-h-20 flex-col justify-between gap-2 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-muted ${
-                  on ? "border-primary bg-primary/10" : projectId ? "text-muted-foreground" : ""
+                  on ? "border-primary bg-tint" : projectId ? "text-muted-foreground" : ""
                 }`}
               >
                 <span className="flex items-center gap-2 text-sm">

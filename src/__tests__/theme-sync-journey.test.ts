@@ -102,8 +102,8 @@ describe("colour and light/dark follow the account", () => {
       save: {},
     });
     // Mixed: the account's colour wins, its missing mode comes from the browser.
-    expect(planThemeSync({ preset: "ink", mode: null }, { preset: "mint", mode: "dark" })).toEqual({
-      apply: { preset: "ink" },
+    expect(planThemeSync({ preset: "cream", mode: null }, { preset: "mint", mode: "dark" })).toEqual({
+      apply: { preset: "cream" },
       save: { mode: "dark" },
     });
   });

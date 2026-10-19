@@ -4,10 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { EmptyState } from "@/components/empty-state";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
-import { NonBillableToggle } from "@/components/non-billable-toggle";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -22,7 +20,8 @@ import { FirstRun } from "./first-run";
 import { QuickAdd } from "./quick-add";
 import { TimerBanner } from "./timer-banner";
 
-const longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+const _longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+const shortDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 
 export function TodayView() {
   const router = useRouter();
@@ -52,13 +51,28 @@ export function TodayView() {
   return (
     <PageShell
       nav="today"
-      title={date === today ? "Today" : longDate.format(fromISODate(date))}
-      description={date === today ? longDate.format(fromISODate(date)) : undefined}
+      title={date === today ? "Today" : shortDate.format(fromISODate(date))}
+      description={
+        date === today ? (
+          shortDate.format(fromISODate(date))
+        ) : (
+          <button
+            type="button"
+            aria-label="Back to today"
+            className="py-1 font-medium text-foreground underline"
+            onClick={() => go(today ?? date)}
+          >
+            Today
+          </button>
+        )
+      }
       descriptionOnPhone
+      prominent
+      inlineDescription
+      titleClassName={date === today ? undefined : "text-2xl leading-10"}
       actions={
         hasProjects && (
-          <div className="grid w-full grid-cols-[auto_auto_1fr_auto] items-center gap-2 sm:flex sm:w-auto sm:gap-1">
-            <NonBillableToggle date={date} />
+          <div className="flex items-center gap-1">
             <Button
               size="icon"
               variant="outline"
@@ -67,14 +81,6 @@ export function TodayView() {
               aria-label="Previous day"
             >
               <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 disabled:bg-muted disabled:text-foreground/70 disabled:opacity-100"
-              onClick={() => go(today ?? date)}
-              disabled={date === today}
-            >
-              Today
             </Button>
             <Button
               size="icon"
@@ -113,9 +119,7 @@ export function TodayView() {
         <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
       ) : week.isLoading ? (
         <Skeleton className="h-32 w-full" />
-      ) : !hasProjects ? null : dayEntries.length === 0 ? (
-        <EmptyState className="py-10">Nothing logged yet. Type a time above, or start a timer.</EmptyState>
-      ) : (
+      ) : !hasProjects || dayEntries.length === 0 ? null : (
         <>
           <EntryList entries={dayEntries} date={date} today={today} />
           <MergeEntriesBar entries={dayEntries} />

@@ -22,7 +22,7 @@ export default async function ReminderOffPage({ searchParams }: Props) {
             <input type="hidden" name="page" value="1" />
             <button
               type="submit"
-              className="h-11 rounded-lg border border-primary/35 bg-primary/20 px-6 font-medium text-foreground hover:bg-primary/30"
+              className="h-11 rounded-lg border border-tint-edge bg-tint px-6 font-medium text-foreground hover:bg-tint-hover"
             >
               Yes, turn it off
             </button>

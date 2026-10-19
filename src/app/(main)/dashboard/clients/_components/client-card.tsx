@@ -136,7 +136,7 @@ export function ClientCard({
             <li className="flex flex-col gap-2 rounded-lg bg-foreground/[0.03] p-3 sm:col-span-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-foreground">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">
                     <Plus className="size-3.5" aria-hidden />
                   </span>
                   <span className="truncate">Add a project for {c.name}</span>

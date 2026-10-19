@@ -80,7 +80,7 @@ function IssuedPresets({ filters, today }: { filters: InvoiceFilters; today: str
               filters.setFrom(on ? "" : r.from);
               filters.setTo(on ? "" : r.to);
             }}
-            className={`rounded-full border px-3 py-1 text-xs hover:bg-muted ${on ? "border-primary bg-primary/10" : ""}`}
+            className={`rounded-full border px-3 py-1 text-xs hover:bg-muted ${on ? "border-primary bg-tint" : ""}`}
           >
             {PRESETS.find((x) => x.key === k)?.label}
           </button>
