@@ -38,7 +38,8 @@ export async function buildTimesheetWorkbook(opts: {
   // Leave out zero-hour entries, and any day with no logged time (weekends, days off), so the
   // grid and the entry list only show days that were actually worked. If nothing was logged at
   // all, keep the requested days so the empty grid still has columns.
-  const entries = opts.entries.filter((e) => e.minutes > 0);
+  // Days marked non-billable are left out too, so nothing in the file can be mistaken for billable time.
+  const entries = opts.entries.filter((e) => e.minutes > 0 && !e.non_billable);
   const worked = new Set(entries.map((e) => e.date));
   const workedDays = opts.days.filter((d) => worked.has(d));
   const days = workedDays.length > 0 ? workedDays : opts.days;

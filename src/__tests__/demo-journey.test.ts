@@ -16,6 +16,7 @@ import { createDemoUser } from "@/server/demo";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
@@ -50,6 +51,7 @@ function world() {
   const id = (p: string) => `${p}${++n}`;
 
   const prisma = {
+    ...memoryNonBillableDays(),
     rateLimit: limits.rateLimit,
     authUser: {
       create: vi.fn(async ({ data }: { data: Partial<User> & { id?: string } }) => {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ChevronLeft, ChevronRight, Clock, Pencil, Search } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, Clock, Pencil, Search } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { NoteText } from "@/components/folded-note";
@@ -25,12 +25,15 @@ export function WorkItems({
   onOpenDay,
   period = "month",
   editInPlace = false,
+  nonBillable,
 }: {
   entries: SheetEntry[];
   onOpenDay: (date: string) => void;
   period?: string;
   /** Edit an entry right where it sits in the list (no jump to the day editor). */
   editInPlace?: boolean;
+  /** Dates marked non-billable: their header carries a badge. */
+  nonBillable?: ReadonlySet<string>;
 }) {
   const logos = useProjectLogos();
   // Long notes fold to two lines; the ids here are the ones the user opened.
@@ -101,7 +104,14 @@ export function WorkItems({
               className="overflow-hidden rounded-xl border bg-card"
             >
               <h3 className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-2 pl-4 font-medium text-sm">
-                {dayFmt.format(fromISODate(g.date))}
+                <span className="flex min-w-0 items-center gap-2">
+                  {dayFmt.format(fromISODate(g.date))}
+                  {nonBillable?.has(g.date) && (
+                    <span className="flex shrink-0 items-center gap-1 rounded-full border border-rose-600/40 px-2 py-0.5 font-medium text-foreground/80 text-xs dark:border-rose-400/40">
+                      <Ban className="size-3" aria-hidden /> Non-billable
+                    </span>
+                  )}
+                </span>
                 <span className="flex items-center gap-1">
                   <span className="flex items-center gap-1.5 font-mono tabular-nums">
                     <Clock className="size-3.5" aria-hidden />

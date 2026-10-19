@@ -204,6 +204,7 @@ These serve as the fallback; there is no separate default.css file. */
     @apply text-emerald-600 dark:text-emerald-400;
   }
   :is(
+    .lucide-ban,
     .lucide-trash-2,
     .lucide-x,
     .lucide-log-out,

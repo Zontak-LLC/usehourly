@@ -32,6 +32,7 @@ async function world() {
     timesheetShare: [{ user_id: "u1" }, { user_id: "u2" }],
     invoiceLink: [{ user_id: "u1" }, { user_id: "u2" }],
     invoiceEmail: [{ user_id: "u1" }, { user_id: "u2" }],
+    nonBillableDay: [{ user_id: "u1" }, { user_id: "u2" }],
   };
   const limiter = memoryRateLimit();
   const model = (name: string) => ({
@@ -54,6 +55,7 @@ async function world() {
     timesheetShare: model("timesheetShare"),
     invoiceLink: model("invoiceLink"),
     invoiceEmail: model("invoiceEmail"),
+    nonBillableDay: model("nonBillableDay"),
     authUser: {
       findUnique: vi.fn(
         async ({ where }: { where: { id?: string; email?: string } }) =>

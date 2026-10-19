@@ -10,6 +10,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
 
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
+import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
 
 const MAX_SNAPSHOT_CHARS = 900_000; // D1 rows top out at 2 MB; keep well under
@@ -186,14 +187,19 @@ export const invoiceRouter = router({
       const dup = await ctx.prisma.invoice.findFirst({ where: { user_id: ctx.userId, number: input.number } });
       if (dup) throw new TRPCError({ code: "CONFLICT", message: `Invoice number ${input.number} is already used.` });
 
-      const entries = await ctx.prisma.timeEntry.findMany({
-        where: {
-          user_id: ctx.userId,
-          date: { gte: input.from, lte: input.to },
-          project: { client_id: client.id },
-        },
-        include: { project: true },
-      });
+      const [allEntries, skipDays] = await Promise.all([
+        ctx.prisma.timeEntry.findMany({
+          where: {
+            user_id: ctx.userId,
+            date: { gte: input.from, lte: input.to },
+            project: { client_id: client.id },
+          },
+          include: { project: true },
+        }),
+        nonBillableDates(ctx.prisma, ctx.userId, input),
+      ]);
+      // Days marked non-billable are never invoiced.
+      const entries = allEntries.filter((e) => !skipDays.has(e.date));
       const rounding: Rounding = {
         step: client.round_step ?? 0,
         mode: client.round_mode === "nearest" ? "nearest" : "up",

@@ -7,6 +7,7 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 /**
@@ -81,6 +82,7 @@ function setup(over: Partial<TokenRow> = {}) {
   const limits = memoryRateLimit();
   const prisma = {
     ...memoryInvoiceLogos(),
+    ...memoryNonBillableDays(),
     apiToken: {
       findUnique: vi.fn(async ({ where }: { where: { token_hash: string } }) =>
         where.token_hash === expectedHash ? row : null,

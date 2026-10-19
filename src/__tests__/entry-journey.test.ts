@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
 function mockPrisma() {
   return {
+    ...memoryNonBillableDays(),
     project: { findFirst: vi.fn() },
     timeEntry: {
       count: vi.fn(async () => 0),

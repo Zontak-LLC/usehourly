@@ -10,10 +10,11 @@ export const QUOTAS = {
   projects: 500,
   entries: 50_000,
   invoices: 2_000,
+  nonBillableDays: 3_650,
 } as const;
 
 /** A demo account is a sandbox, so it gets a much smaller allowance. */
-export const DEMO_QUOTAS = { clients: 6, projects: 12, entries: 600, invoices: 6 } as const;
+export const DEMO_QUOTAS = { clients: 6, projects: 12, entries: 600, invoices: 6, nonBillableDays: 60 } as const;
 
 export type QuotaKind = keyof typeof QUOTAS;
 

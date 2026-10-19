@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
+import { NonBillableToggle } from "@/components/non-billable-toggle";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +55,7 @@ export function TodayView() {
       actions={
         hasProjects && (
           <div className="flex items-center gap-1">
+            <NonBillableToggle date={date} />
             <Button
               size="icon"
               variant="outline"

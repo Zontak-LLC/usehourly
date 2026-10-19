@@ -1,5 +1,7 @@
 "use client";
 
+import { Ban } from "lucide-react";
+
 import { formatDuration } from "@/lib/duration";
 
 import type { DaySelection } from "./use-day-selection";
@@ -12,6 +14,7 @@ function DayCell({
   max,
   inMonth,
   isToday,
+  nonBillable,
   selectMode,
   isPicked,
   onPointerDown,
@@ -23,6 +26,7 @@ function DayCell({
   max: number;
   inMonth: boolean;
   isToday: boolean;
+  nonBillable: boolean;
   selectMode: boolean;
   isPicked: boolean;
   onPointerDown: (e: React.PointerEvent) => void;
@@ -36,7 +40,7 @@ function DayCell({
       onPointerEnter={onPointerEnter}
       onClick={onClick}
       aria-pressed={selectMode ? isPicked : undefined}
-      aria-label={`${d}: ${formatDuration(mins)}`}
+      aria-label={`${d}: ${formatDuration(mins)}${nonBillable ? ", non-billable" : ""}`}
       className={`flex min-h-16 cursor-pointer flex-col justify-between border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
         inMonth ? "" : "bg-muted/30 text-muted-foreground"
       } ${isToday ? "ring-2 ring-primary ring-inset" : ""} ${
@@ -50,7 +54,10 @@ function DayCell({
           : undefined
       }
     >
-      <span className="text-xs">{Number(d.slice(8))}</span>
+      <span className="flex items-center justify-between text-xs">
+        {Number(d.slice(8))}
+        {nonBillable && <Ban className="size-3" aria-hidden />}
+      </span>
       <span className="text-right font-mono text-xs tabular-nums sm:text-sm">{mins ? formatDuration(mins) : ""}</span>
     </button>
   );
@@ -64,6 +71,7 @@ export function MonthCalendar({
   selectMode,
   selection,
   shownPicked,
+  nonBillable,
   onOpenDay,
 }: {
   weeks: string[][];
@@ -73,6 +81,8 @@ export function MonthCalendar({
   selectMode: boolean;
   selection: DaySelection;
   shownPicked: Set<string>;
+  /** Dates marked non-billable: the cell carries a small mark. */
+  nonBillable: ReadonlySet<string>;
   onOpenDay: (d: string) => void;
 }) {
   const { picked, setPicked, drag, setDrag, suppressClick } = selection;
@@ -101,6 +111,7 @@ export function MonthCalendar({
                   max={max}
                   inMonth={inMonth(d)}
                   isToday={d === today}
+                  nonBillable={nonBillable.has(d)}
                   selectMode={selectMode}
                   isPicked={shownPicked.has(d)}
                   onPointerDown={(e) => {

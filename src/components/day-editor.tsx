@@ -5,6 +5,7 @@ import Link from "next/link";
 import { QuickAdd } from "@/app/(main)/dashboard/today/_components/quick-add";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
+import { NonBillableToggle } from "@/components/non-billable-toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fromISODate } from "@/lib/dates";
@@ -79,7 +80,10 @@ export function DayEditorDialog({ date, onClose }: { date: string | null; onClos
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{date ? longDate.format(fromISODate(date)) : ""}</DialogTitle>
+          <div className="flex items-center justify-between gap-3 pr-8">
+            <DialogTitle>{date ? longDate.format(fromISODate(date)) : ""}</DialogTitle>
+            {date && <NonBillableToggle date={date} />}
+          </div>
           <DialogDescription>
             {entries.data ? `${formatDuration(total)} logged` : "Loading…"} · change hours inline, or add an entry below
           </DialogDescription>

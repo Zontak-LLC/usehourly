@@ -10,6 +10,7 @@ import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 import { assertWithinQuota } from "@/lib/quotas";
 
+import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
 
 const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
@@ -41,24 +42,56 @@ const withProject = {
   project: { omit: { logo: true }, include: { client: { omit: { logo: true } } } },
 } as const;
 
+const rangeSchema = z
+  .object({ from: dateSchema, to: dateSchema })
+  .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
+  .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
+    message: `Choose a range of up to a year (${MAX_QUERY_DAYS} days).`,
+  });
+
 export const entryRouter = router({
-  /** Entries in [from, to] inclusive, newest first. At most a year at a time (see `listAll` for everything). */
-  list: protectedProcedure
-    .input(
-      z
-        .object({ from: dateSchema, to: dateSchema })
-        .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
-        .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
-          message: `Choose a range of up to a year (${MAX_QUERY_DAYS} days).`,
-        }),
-    )
-    .query(({ ctx, input }) =>
+  /**
+   * Entries in [from, to] inclusive, newest first. At most a year at a time (see `listAll` for everything). Each entry
+   * carries `non_billable`: true when its day is marked non-billable (exports, reports and invoices skip those).
+   */
+  list: protectedProcedure.input(rangeSchema).query(async ({ ctx, input }) => {
+    const [rows, days] = await Promise.all([
       ctx.prisma.timeEntry.findMany({
         where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
         include: withProject,
         orderBy: [{ date: "desc" }, { created_at: "desc" }],
       }),
-    ),
+      nonBillableDates(ctx.prisma, ctx.userId, input),
+    ]);
+    return rows.map((e) => ({ ...e, non_billable: days.has(e.date) }));
+  }),
+
+  /** The dates in [from, to] the account has marked non-billable, oldest first. */
+  nonBillableDays: protectedProcedure
+    .input(rangeSchema)
+    .query(async ({ ctx, input }) => [...(await nonBillableDates(ctx.prisma, ctx.userId, input))].sort()),
+
+  /** Marks (or un-marks) one day non-billable. Nothing about the day's entries changes; marking twice is harmless. */
+  setNonBillable: protectedProcedure
+    .input(z.object({ date: dateSchema, nonBillable: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const key = { user_id_date: { user_id: ctx.userId, date: input.date } };
+      if (input.nonBillable) {
+        const already = await ctx.prisma.nonBillableDay.findUnique({ where: key });
+        if (!already) {
+          assertWithinQuota(
+            await ctx.prisma.nonBillableDay.count({ where: { user_id: ctx.userId } }),
+            1,
+            "nonBillableDays",
+            isDemoSession(ctx.session),
+          );
+          await ctx.prisma.nonBillableDay.create({ data: { user_id: ctx.userId, date: input.date } });
+        }
+      } else {
+        await ctx.prisma.nonBillableDay.deleteMany({ where: { user_id: ctx.userId, date: input.date } });
+      }
+      return { date: input.date, nonBillable: input.nonBillable };
+    }),
 
   /**
    * Every entry, a page at a time (for "export everything"). Pass the previous page's `nextCursor`
@@ -75,7 +108,8 @@ export const entryRouter = router({
         ...(input.cursor ? { cursor: { id: input.cursor }, skip: 0 } : {}),
       });
       const more = rows.length > LIST_ALL_PAGE;
-      const items = more ? rows.slice(0, LIST_ALL_PAGE) : rows;
+      const days = await nonBillableDates(ctx.prisma, ctx.userId);
+      const items = (more ? rows.slice(0, LIST_ALL_PAGE) : rows).map((e) => ({ ...e, non_billable: days.has(e.date) }));
       return { items, nextCursor: more ? rows[LIST_ALL_PAGE].id : null };
     }),
 
