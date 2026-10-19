@@ -3,6 +3,7 @@
 import { Archive, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
+import { GuideLink } from "@/components/guide-link";
 import { IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
 import { ProjectMark } from "@/components/project-logo";
@@ -136,6 +137,7 @@ export function ProjectEditCard({
         <fieldset className="flex basis-full flex-wrap items-center gap-2 text-sm">
           <legend className="sr-only">Budget</legend>
           <span className="text-muted-foreground">Budget</span>
+          <GuideLink topic="budgets" label="project budgets" />
           <Input
             name="budgetAmount"
             inputMode="decimal"

@@ -8,6 +8,9 @@ const PUBLIC_PAGES: [string, string][] = [
   ["/privacy", "privacy"],
   ["/terms", "terms"],
   ["/tools/hours-calculator", "hours calculator"],
+  ["/help", "guide"],
+  ["/help/faq", "faq"],
+  ["/help/rounding", "guide topic"],
 ];
 
 test.describe("public pages", () => {

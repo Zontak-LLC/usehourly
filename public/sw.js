@@ -7,6 +7,10 @@
  *   very slow one, once a copy exists) the kept copy opens instead; a page that was never opened falls back to the same
  *   page without its query (a copy of /dashboard/week for /dashboard/week?date=...), then to /offline.html. It never
  *   shows one page under another page's address.
+ * - The guide and FAQ (/help, /help/...) are public and hold nothing personal, so they have their own cache that sign-out does
+ *   not clear. A page is kept when opened, and the app also fetches every guide page once (a request carrying the header
+ *   "x-keep: 1") so the whole guide reads offline. Other requests for those addresses (like Next's own page-data
+ *   requests) are left alone.
  * - Nothing else is touched: the API, sign-in, other sites and anything that is not a plain GET go straight through, so
  *   this can never answer for the server.
  * - The kept pages hold the person's own data, so the app sends the message "clear" on sign-out and when a different
@@ -15,6 +19,7 @@
 const VERSION = "v1";
 const STATIC = `hourly-static-${VERSION}`;
 const PAGES = `hourly-pages-${VERSION}`;
+const GUIDE = `hourly-guide-${VERSION}`;
 const SLOW_AFTER_MS = 6000;
 
 self.addEventListener("install", (event) => {
@@ -40,7 +45,9 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((names) =>
         Promise.all(
-          names.filter((n) => n.startsWith("hourly-") && n !== STATIC && n !== PAGES).map((n) => caches.delete(n)),
+          names
+            .filter((n) => n.startsWith("hourly-") && n !== STATIC && n !== PAGES && n !== GUIDE)
+            .map((n) => caches.delete(n)),
         ),
       )
       .then(() => self.clients.claim()),
@@ -68,7 +75,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (request.mode === "navigate" && (url.pathname === "/dashboard" || url.pathname.startsWith("/dashboard/"))) {
-    event.respondWith(networkFirstPage(request));
+    event.respondWith(networkFirstPage(request, PAGES));
+    return;
+  }
+  const isGuide = url.pathname === "/help" || url.pathname.startsWith("/help/");
+  if (isGuide && (request.mode === "navigate" || request.headers.get("x-keep") === "1")) {
+    event.respondWith(networkFirstPage(request, GUIDE));
   }
 });
 
@@ -87,8 +99,8 @@ async function cacheFirst(request) {
   return response;
 }
 
-async function networkFirstPage(request) {
-  const cache = await caches.open(PAGES);
+async function networkFirstPage(request, cacheName) {
+  const cache = await caches.open(cacheName);
   const cached = await cache.match(request.url);
   const network = fetch(request).then(async (response) => {
     // Keep only a real page for this person: not a redirect (to the log-in page) and not an error.
@@ -111,7 +123,7 @@ async function networkFirstPage(request) {
     return (
       cached ??
       (url.search ? await cache.match(url.origin + url.pathname) : undefined) ??
-      (await caches.match("/offline.html")) ??
+      (request.mode === "navigate" ? await caches.match("/offline.html") : undefined) ??
       Response.error()
     );
   }

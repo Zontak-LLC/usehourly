@@ -7,7 +7,7 @@ const CODE = readFileSync(`${process.cwd()}/public/sw.js`, "utf8");
 const ORIGIN = "https://app.test";
 
 type Handler = (event: Record<string, unknown>) => void;
-type Req = { method: string; url: string; mode: string };
+type Req = { method: string; url: string; mode: string; headers?: Headers };
 
 /** A response that looks like a real same-origin one (type "basic"), with the redirect flag a test can set. */
 function basic(body: string, init: ResponseInit = {}, redirected = false): Response {
@@ -80,10 +80,16 @@ function loadWorker(network: (req: Req) => Promise<Response>, offlinePageRedirec
     await pending;
   }
   /** Fires a request through the worker. Undefined means the worker left it alone (the browser handles it itself). */
-  async function request(req: Partial<Req> & { url: string }): Promise<Response | undefined> {
+  async function request(req: Partial<Req> & { url: string; keep?: boolean }): Promise<Response | undefined> {
     let answer: Promise<Response> | undefined;
     handlers.fetch({
-      request: { method: "GET", mode: "cors", ...req, url: new URL(req.url, ORIGIN).toString() },
+      request: {
+        method: "GET",
+        mode: "cors",
+        headers: new Headers(req.keep ? { "x-keep": "1" } : {}),
+        ...req,
+        url: new URL(req.url, ORIGIN).toString(),
+      },
       respondWith: (p: Promise<Response>) => {
         answer = p;
       },
@@ -188,6 +194,49 @@ describe("the offline service worker", () => {
     const expired = loadWorker(async () => basic("<main>log in</main>", {}, true));
     await expired.request(page("/dashboard/today"));
     expect(expired.store.get("hourly-pages-v1")?.size ?? 0).toBe(0);
+  });
+
+  it("keeps the public guide in its own cache, whole, so it reads offline and survives signing out", async () => {
+    let online = true;
+    const w = loadWorker(async (req) => {
+      if (!online) throw new TypeError("Failed to fetch");
+      return basic(`<main>guide ${new URL(req.url).pathname}</main>`);
+    });
+    await w.waitUntil("install");
+
+    // opening a guide page keeps it, in the guide's cache and not among the person's own pages
+    await w.request(page("/help/offline"));
+    expect([...(w.store.get("hourly-guide-v1")?.keys() ?? [])]).toEqual([`${ORIGIN}/help/offline`]);
+    expect(w.store.get("hourly-pages-v1")?.size ?? 0).toBe(0);
+
+    // the app's own once-only fetch of every guide page (a plain request carrying x-keep) keeps those too
+    for (const path of ["/help", "/help/faq", "/help/rounding"]) await w.request({ url: path, keep: true });
+    expect(w.store.get("hourly-guide-v1")?.size).toBe(4);
+
+    // a page the person never opened still opens offline, and a topic opened with a query falls back to the plain page
+    online = false;
+    expect(await text(await w.request(page("/help/rounding")))).toBe("<main>guide /help/rounding</main>");
+    expect(await text(await w.request(page("/help/faq")))).toBe("<main>guide /help/faq</main>");
+    expect(await text(await w.request(page("/help?q=round")))).toBe("<main>guide /help</main>");
+    // a topic that was never kept does not borrow another page: the offline page shows
+    expect(await text(await w.request(page("/help/budgets")))).toBe("the offline page");
+
+    // signing out clears the person's pages but not the public guide
+    w.store.set("hourly-pages-v1", new Map([[`${ORIGIN}/dashboard/today`, basic("private")]]));
+    await w.waitUntil("message", { data: "clear" });
+    expect([...w.store.keys()].sort()).toEqual(["hourly-guide-v1", "hourly-static-v1"]);
+
+    // an old version of the guide cache is removed on activation, the current one stays
+    w.store.set("hourly-guide-v0", new Map());
+    await w.waitUntil("activate");
+    expect([...w.store.keys()].sort()).toEqual(["hourly-guide-v1", "hourly-static-v1"]);
+  });
+
+  it("leaves the guide's background requests alone: only a page opening or the app's own keep-fetch is answered", async () => {
+    const w = loadWorker(async () => basic("x"));
+    expect(await w.request({ url: "/help/rounding?_rsc=abc", mode: "cors" })).toBeUndefined();
+    expect(await w.request({ url: "/help", mode: "navigate", method: "POST" })).toBeUndefined();
+    expect(await w.request({ url: "/helpful-page", mode: "navigate" })).toBeUndefined();
   });
 
   it("leaves everything else alone: the API, sign-in, other pages, other sites and anything that is not a plain GET", async () => {

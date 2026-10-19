@@ -9,6 +9,7 @@
  * - `/timesheet/<token>` is a private link a freelancer sends a client for sign-off: public for everyone, protected by the unguessable token.
  * - `/invoice/<token>` is a private link a freelancer sends a client to view an invoice: public for everyone, protected by the unguessable token.
  * - `/team/join/<token>` is the page a team invitation opens: public so it can send a signed-out visitor to log in and bring them back; the link is claimed only by the signed-in person's button.
+ * - `/help` and `/help/*` are the guide and FAQ: public for everyone, so a support reply can link to them and they can be read with no account.
  * - `/.well-known/*` is public (the MCP registry reads its domain-verification file there).
  * - everything else needs a signed-in user.
  */
@@ -39,7 +40,9 @@ export function accessDecision(pathname: string, signedIn: boolean): AccessDecis
     pathname.startsWith("/.well-known/") ||
     pathname.startsWith("/timesheet/") ||
     pathname.startsWith("/invoice/") ||
-    pathname.startsWith("/team/join/")
+    pathname.startsWith("/team/join/") ||
+    pathname === "/help" ||
+    pathname.startsWith("/help/")
   ) {
     return "allow";
   }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ChevronDown, Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
+import { ChevronDown, CircleHelp, Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { RangeExport } from "@/components/range-export";
@@ -71,6 +71,11 @@ export function ShareExportMenu({
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setPanel("share")}>
             <Send /> Send to a client for sign-off…
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href="/help/share-and-export" target="_blank" rel="noopener noreferrer">
+              <CircleHelp /> Which one do I use?
+            </a>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

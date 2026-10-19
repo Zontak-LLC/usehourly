@@ -6,12 +6,14 @@ import { redirect } from "next/navigation";
 import { cn } from "cn";
 
 import { DemoBanner } from "@/components/demo-banner";
+import { GuideKeeper } from "@/components/guide-keeper";
 import { LogoMark } from "@/components/logo";
 import { OfflineGuard } from "@/components/offline-guard";
 import { OfflineSync } from "@/components/offline-sync";
 import { ThemeSync } from "@/components/theme-sync";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UsageBeacon } from "@/components/usage-beacon";
+import { GUIDE_PATHS, GUIDE_VERSION } from "@/content/guide";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
@@ -71,6 +73,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           )}
         >
           <UsageBeacon />
+          <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
           <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
           {session?.user?.demo === true && <DemoBanner />}
           <header
