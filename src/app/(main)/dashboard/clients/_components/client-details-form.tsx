@@ -113,7 +113,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
     return <p className="px-4 py-3 text-destructive text-sm">Couldn't load client: {client.error?.message}</p>;
   }
   return (
-    <form method="post" onSubmit={save} className="flex flex-col gap-3 border-b bg-muted/30 px-4 py-3">
+    <form method="post" onSubmit={save} className="flex flex-col gap-3 px-4 py-3">
       <div className="grid gap-1.5">
         <Label htmlFor={`cn-${id}`}>Client name</Label>
         <Input id={`cn-${id}`} name="name" defaultValue={client.data.name} required maxLength={80} />

@@ -30,16 +30,16 @@ export function AccountView() {
   const account = me.data;
 
   return (
-    <PageShell title="Account" description="Your details, invoices, data and connections. Jump to a section:" size="xl">
-      {/* Icon over a word, like the top navigation, so the jump links look like the rest of the app's tabs. */}
-      <nav aria-label="Account sections" className="grid grid-cols-5 gap-1">
+    <PageShell title="Account" description="Your details, invoices, data and connections.">
+      {/* Plain text chips, not icons over words: this row must not look like the main navigation above it. */}
+      <nav aria-label="Account sections" className="flex flex-wrap items-center gap-2 px-1">
+        <span className="text-muted-foreground text-sm">Jump to</span>
         {SECTIONS.map((x) => (
           <a
             key={x.id}
             href={`#${x.id}`}
-            className="flex min-h-14 flex-col items-center justify-start gap-1 rounded-lg px-1 pt-2 text-center font-medium text-foreground/80 text-xs leading-tight hover:bg-muted hover:text-foreground"
+            className="inline-flex min-h-9 items-center rounded-full border bg-background px-3 text-foreground/80 text-sm transition-colors hover:bg-muted hover:text-foreground"
           >
-            <x.icon className="size-5" aria-hidden />
             {x.label}
           </a>
         ))}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Archive, FolderKanban, Pencil, Plus, X } from "lucide-react";
+import { Archive, Pencil, Plus, X } from "lucide-react";
 
 import { ClientLogoSlot } from "@/components/client-logo";
 import { ICON_TONE, IconAction } from "@/components/icon-action";
@@ -12,10 +12,10 @@ import { formatDuration } from "@/lib/duration";
 import { SetupForm } from "../../today/_components/setup-form";
 import { ClientDetailsForm } from "./client-details-form";
 import type { ClientRow, ProjectBudgets, ProjectTotals } from "./client-types";
-import { PROJECT_GRID, ProjectEditRow, ProjectRow } from "./project-row";
+import { ProjectCard, ProjectEditCard } from "./project-row";
 import type { ProjectEditing } from "./use-project-editing";
 
-/** One client: its header, the billing-details form when open, its projects and the add-a-project card. */
+/** One client: a plain heading with its buttons, the billing-details form when open, and its projects as cards. */
 export function ClientCard({
   client: c,
   allClients,
@@ -44,8 +44,8 @@ export function ClientCard({
   const [adding, setAdding] = useState(false);
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
   return (
-    <section className="overflow-hidden rounded-xl border bg-card">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b bg-muted/40 px-4 py-3">
+    <section aria-label={c.name} className="flex flex-col gap-3 border-t pt-4 first:border-t-0 first:pt-0">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
         <div className="flex min-w-0 items-center gap-3">
           <ClientLogoSlot clientId={c.id} name={c.name} />
           <div className="min-w-0">
@@ -56,8 +56,11 @@ export function ClientCard({
             </p>
           </div>
         </div>
-        {/* Same pattern as Invoices and the project rows: icons with a tooltip on wide screens, icon over word on a phone. */}
+        {/* Same pattern as Invoices and the project cards: icons with a tooltip on wide screens, icon over word on a phone. */}
         <span className="flex gap-1 max-sm:hidden">
+          <IconAction label={`Add a project for ${c.name}`} tip="Add a project" onClick={() => setAdding(true)}>
+            <Plus />
+          </IconAction>
           <IconAction label={`Edit ${c.name} billing details`} tip="Billing details" onClick={onToggleBilling}>
             <Pencil className={ICON_TONE.edit} />
           </IconAction>
@@ -66,6 +69,14 @@ export function ClientCard({
           </IconAction>
         </span>
         <div className="flex w-full gap-1.5 sm:hidden">
+          <IconAction
+            label={`Add a project for ${c.name}`}
+            tip="Add a project"
+            text="Add project"
+            onClick={() => setAdding(true)}
+          >
+            <Plus />
+          </IconAction>
           <IconAction
             label={`Edit ${c.name} billing details`}
             tip="Billing details"
@@ -79,40 +90,34 @@ export function ClientCard({
           </IconAction>
         </div>
       </header>
-      {billingOpen && <ClientDetailsForm id={c.id} onDone={onCloseBilling} />}
-      <div className={`bg-muted/20 px-4 pt-3 pb-4 ${billingOpen ? "border-t" : ""}`}>
-        <div
-          className={`mb-1 grid grid-cols-[minmax(0,1fr)] gap-x-3 px-1 font-medium text-muted-foreground text-xs uppercase tracking-wider ${PROJECT_GRID}`}
-        >
-          <span className="flex items-center gap-1">
-            <FolderKanban className="size-3.5" aria-hidden /> Projects
-          </span>
-          <span className="max-sm:hidden">Rate</span>
-          <span className="text-right max-sm:hidden">This month</span>
-          <span className="text-right max-sm:hidden">All time</span>
-          <span className="max-sm:hidden" />
+      {billingOpen && (
+        <div className="overflow-hidden rounded-xl border bg-card">
+          <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
         </div>
-        <ul className="divide-y">
-          {c.projects.map((p) =>
-            editing.editingId === p.id ? (
-              <ProjectEditRow key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
-            ) : (
-              <ProjectRow
-                key={p.id}
-                project={p}
-                clientColor={c.color}
-                logos={logos}
-                totals={totals}
-                budget={budgets?.[p.id]}
-                onEdit={() => editing.startEditing(p.id)}
-                onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
-              />
-            ),
-          )}
-        </ul>
-        {/* Collapsed to one button so a card with many clients stays short; a plain section, since cards go one level deep. */}
+      )}
+      {/* The projects are the cards (one level under the page card); the + in the heading opens a dashed card to add another. */}
+      {c.projects.length === 0 && !adding && (
+        <p className="text-muted-foreground text-sm">No projects yet. Use the + above to add one.</p>
+      )}
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {c.projects.map((p) =>
+          editing.editingId === p.id ? (
+            <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
+          ) : (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              clientColor={c.color}
+              logos={logos}
+              totals={totals}
+              budget={budgets?.[p.id]}
+              onEdit={() => editing.startEditing(p.id)}
+              onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
+            />
+          ),
+        )}
         {adding ? (
-          <div className="mt-3 flex flex-col gap-2 border-foreground/30 border-t border-dashed pt-3">
+          <li className="flex flex-col gap-2 rounded-xl border border-foreground/30 border-dashed p-3 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-foreground">
@@ -132,18 +137,9 @@ export function ClientCard({
               </Button>
             </div>
             <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            className="mt-2 h-10 w-full justify-start"
-            onClick={() => setAdding(true)}
-          >
-            <Plus /> Add a project
-          </Button>
-        )}
-      </div>
+          </li>
+        ) : null}
+      </ul>
     </section>
   );
 }
