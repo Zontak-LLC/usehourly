@@ -56,9 +56,11 @@ test("the Week page shows a colour dot on a day with time, and none on an empty 
   const tiles = page.getByRole("tab");
   await expect(tiles.first()).toBeVisible();
   await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(0); // a new account has no time: no dots anywhere
+  await expect(page.getByRole("region", { name: "What you worked on" })).toHaveCount(0); // and no empty "What you worked on"
   await page.getByLabel("Time to add").fill("1");
   await page.getByRole("button", { name: /Add to the day/ }).click();
   await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(1); // one client, one day
+  await expect(page.getByRole("region", { name: "What you worked on" })).toBeVisible(); // the list appears with the first entry
   const withDot = page.getByRole("tab").filter({ has: page.locator("[data-dot]") });
   await expect(withDot).toHaveCount(1);
   await expect(withDot).toHaveAttribute("aria-selected", "true");

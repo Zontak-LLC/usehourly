@@ -50,6 +50,10 @@ export function WorkItems({
   const view = paginate(matches, page);
   const days = groupByDay(view.items, matches);
 
+  // Nothing logged in this period: there is nothing to list, so the section is not shown at all (a search that finds
+  // nothing still shows it, so the box stays to be cleared).
+  if (entries.length === 0) return null;
+
   return (
     <section aria-label="What you worked on" className="overflow-hidden rounded-xl border bg-card">
       <header className="flex flex-wrap items-center justify-between gap-2 bg-band-2 px-3 py-3 sm:px-4">

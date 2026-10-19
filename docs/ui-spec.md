@@ -68,7 +68,7 @@ Plain, short, no jargon, no blame. Name things the way the menu does ("Clients &
 
 ## Per page (what to expect)
 - **Today:** the add form card, two total cards, the day's entry cards (or the dashed empty state).
-- **Week / Month:** toolbar (project filter, Share & export, date arrows), the day strip or calendar card, "What you worked on" as day headings with one entry card each.
+- **Week / Month:** toolbar (project filter, Share & export, date arrows), the day strip or calendar card, the Week summary strip, and "What you worked on": one card (header: title, count, search) holding day headings with an entry tile each. **That card is not shown at all when the period has no entries.** The Week page's address carries the picked day (`?date=`), so a refresh returns to it.
 - **Invoices:** total cards, filters in one card, an invoice card per invoice with four icon buttons.
 - **Clients & Projects:** stat cards, search, then one **card per client** (header: logo, name, summary, buttons) holding **project tiles** (header row: name and buttons), ending in the dashed "Add a project" tile.
 - **Year summary:** stat cards, then one card per table.
