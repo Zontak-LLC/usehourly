@@ -75,6 +75,8 @@ export function MonthToolbar({
         <Button
           variant="ghost"
           className="h-10 flex-1 rounded-none border-x"
+          // Already showing this month: nothing to go back to (like the Today button on the Today page).
+          disabled={!today || first === `${today.slice(0, 7)}-01`}
           onClick={() => today && onFirst(`${today.slice(0, 7)}-01`)}
         >
           This month
