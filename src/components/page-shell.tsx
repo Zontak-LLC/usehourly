@@ -15,6 +15,8 @@ export function PageShell({
   description,
   descriptionOnPhone = false,
   prominent = false,
+  titleClassName,
+  inlineDescription = false,
   actions,
   children,
 }: {
@@ -24,8 +26,12 @@ export function PageShell({
   description?: ReactNode;
   /** The one-line description is hidden on phones to save room; set this when it carries information (the date). */
   descriptionOnPhone?: boolean;
-  /** A bigger title (twice the size) on a plain white header: the Today page, where the day is the whole point. */
+  /** A bigger title (its line is as tall as the 40px controls beside it) on a plain white header: the Today page, where the day is the whole point. */
   prominent?: boolean;
+  /** Replaces the prominent title's size (the Today page uses a smaller one for a date than for the word Today). */
+  titleClassName?: string;
+  /** Put the description on the title's line (baseline-aligned) instead of under it. */
+  inlineDescription?: boolean;
   actions?: ReactNode;
   children?: ReactNode;
 }) {
@@ -35,7 +41,7 @@ export function PageShell({
       <header
         className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b ${prominent ? "bg-card" : "bg-band-1"} px-3 py-3 sm:px-4`}
       >
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {Icon && (
             <span
               className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-foreground/80 ${prominent ? "border" : ""}`}
@@ -43,10 +49,16 @@ export function PageShell({
               <Icon className="size-5" aria-hidden />
             </span>
           )}
-          <div className="min-w-0">
-            <h1 className={`font-semibold ${prominent ? "text-[2.5rem] leading-tight" : "text-xl"}`}>{title}</h1>
+          <div className={inlineDescription ? "flex min-w-0 items-baseline gap-x-2" : "min-w-0"}>
+            <h1 className={`font-semibold ${prominent ? (titleClassName ?? "text-4xl leading-10") : "text-xl"}`}>
+              {title}
+            </h1>
             {description && (
-              <p className={`text-foreground/75 text-sm ${descriptionOnPhone ? "" : "max-sm:hidden"}`}>{description}</p>
+              <p
+                className={`text-foreground/75 text-sm ${inlineDescription ? "shrink-0" : ""} ${descriptionOnPhone ? "" : "max-sm:hidden"}`}
+              >
+                {description}
+              </p>
             )}
           </div>
         </div>

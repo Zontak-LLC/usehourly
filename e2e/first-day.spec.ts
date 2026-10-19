@@ -326,17 +326,13 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await audit("year summary");
   });
 
-  await test.step("mark today non-billable: it stays on screen, flagged, and the year summary leaves it out", async () => {
-    await page.goto("/dashboard/today");
+  await test.step("mark today non-billable (on the Week day card): it stays on screen, flagged, and the year summary leaves it out", async () => {
+    await page.goto("/dashboard/week");
     await page.getByRole("button", { name: "Mark day non-billable" }).click();
     const marked = page.getByRole("button", { name: /Non-billable day/ });
     await expect(marked).toHaveAttribute("aria-pressed", "true");
     await expect(marked).toHaveAttribute("title", /left out of invoices, exports and the year summary/i);
-    await expect(page.getByText("Logo concepts for the homepage")).toBeVisible(); // the work is still shown
-    await shot("non-billable-today");
-    await audit("today, non-billable");
-
-    await page.goto("/dashboard/week");
+    await expect(page.getByText("Logo concepts for the homepage").first()).toBeVisible(); // the work is still shown
     await expect(page.getByRole("tab", { name: /non-billable/ })).toBeVisible();
     await expect(page.getByText("Non-billable", { exact: true }).first()).toBeVisible(); // badge in the list
     await shot("non-billable-week");
@@ -347,7 +343,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(page.locator("body")).not.toContainText("3.00 h");
     await shot("non-billable-year-summary");
 
-    await page.goto("/dashboard/today");
+    await page.goto("/dashboard/week");
     await page.getByRole("button", { name: /Non-billable day/ }).click(); // undo
     await expect(page.getByRole("button", { name: "Mark day non-billable" })).toBeVisible();
     await page.goto("/dashboard/report");
