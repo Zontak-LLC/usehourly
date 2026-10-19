@@ -51,7 +51,7 @@ export function InvoiceDetailsCard({
             id="client"
             value={clientId}
             onChange={(e) => onClientId(e.target.value)}
-            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
           >
             {clients.map((c) => (
               <option key={c.id} value={c.id}>

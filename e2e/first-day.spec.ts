@@ -172,16 +172,17 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
       ["Account", /^Account$/, /^Account/],
     ];
     for (const [menu, heading, title] of pages) {
-      if (["Invoices", "Clients & Projects"].includes(menu)) {
-        const label = menu === "Invoices" ? menu : "Clients"; // the top strip says "Clients"
+      if (menu === "Year summary (taxes)") {
+        // Rarely used, so it lives in the "More" menu of the top strip.
+        await page.getByRole("button", { name: "More", exact: true }).click();
+        await page.getByRole("menuitem", { name: menu, exact: true }).click();
+      } else {
+        // Invoices, Clients and Account are tabs in the top strip (it says "Clients" for the long name).
+        const label = menu === "Clients & Projects" ? "Clients" : menu;
         await page
           .getByRole("navigation", { name: "Main pages" })
           .getByRole("link", { name: label, exact: true })
           .click();
-      } else {
-        // The rest of the pages are in the "More" menu of the top strip.
-        await page.getByRole("button", { name: "More", exact: true }).click();
-        await page.getByRole("menuitem", { name: menu, exact: true }).click();
       }
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
       await expect(page).toHaveTitle(title);

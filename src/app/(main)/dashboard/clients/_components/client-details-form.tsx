@@ -24,7 +24,7 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
           name="roundStep"
           aria-label="Round to"
           defaultValue={step}
-          className="h-9 rounded-lg border border-input bg-transparent px-2 dark:bg-input/30"
+          className="h-9 rounded-lg border border-input bg-card px-2 dark:bg-input/30"
         >
           <option value={0}>Don't round</option>
           <option value={6}>Every 6 minutes (0.1 h)</option>
@@ -35,7 +35,7 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
           name="roundMode"
           aria-label="Round up or to the nearest"
           defaultValue={mode}
-          className="h-9 rounded-lg border border-input bg-transparent px-2 dark:bg-input/30"
+          className="h-9 rounded-lg border border-input bg-card px-2 dark:bg-input/30"
         >
           <option value="up">Round up</option>
           <option value="nearest">Round to the nearest</option>
@@ -44,7 +44,7 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
           name="roundMin"
           aria-label="Minimum per entry"
           defaultValue={min}
-          className="h-9 rounded-lg border border-input bg-transparent px-2 dark:bg-input/30"
+          className="h-9 rounded-lg border border-input bg-card px-2 dark:bg-input/30"
         >
           <option value={0}>No minimum</option>
           <option value={15}>At least 15 min per entry</option>

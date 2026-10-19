@@ -226,7 +226,7 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
               id={`link-expiry-${invoiceId}`}
               value={expiresInDays}
               onChange={(e) => setExpiresInDays(Number(e.target.value))}
-              className="h-9 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              className="h-9 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             >
               {LINK_EXPIRY_DAYS.map((d) => (
                 <option key={d} value={d}>
