@@ -41,7 +41,7 @@ export function EntryRow({
   initialEditing?: boolean;
   /** Called when the edit form closes (saved or cancelled). */
   onEditDone?: () => void;
-  /** No frame of its own, for when it already sits inside a card (a card never holds a framed card). */
+  /** A borderless tile with a lighter header, for when it already sits inside a card (a card never holds a framed card). */
   bare?: boolean;
 }) {
   const uid = useId();
@@ -102,9 +102,13 @@ export function EntryRow({
   ));
 
   return (
-    <li className={bare ? "overflow-hidden" : "overflow-hidden rounded-xl border bg-card"}>
+    <li
+      className={bare ? "overflow-hidden rounded-lg bg-foreground/[0.03]" : "overflow-hidden rounded-xl border bg-card"}
+    >
       {/* Header: which project this entry is for, and its controls, always visible. */}
-      <header className="flex items-center justify-between gap-2 border-b bg-band-2 py-2 pr-2 pl-3">
+      <header
+        className={`flex items-center justify-between gap-2 py-2 pr-2 pl-3 ${bare ? "bg-band-3" : "border-b bg-band-2"}`}
+      >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           {editing ? (

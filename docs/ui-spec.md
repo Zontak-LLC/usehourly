@@ -38,7 +38,9 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - `EmptyState` (`components/empty-state.tsx`): the dashed "nothing here yet" card **[checked: `check-rules` forbids hand-made dashed paragraphs]**. An empty list that can be filled becomes an **actionable dashed card with a +** that turns into the form in place (Clients "Add a project", Team "Invite someone").
 - `Notice` (`components/notice.tsx`): a short message set apart; `tone="danger"` for failures **[checked]**.
 - Stat cards: a `dl` of small white cards (label above, figure below), three across on Clients, Invoices and Year summary, four on Insights.
+- **Controls look pressable, labels do not.** A control (button, chip you can click, field) is white with a border. Information (the hours label `HoursChip`, status pills) is a flat tint with no outline, so nobody taps it expecting something to happen.
 - Chips and pills: `rounded-full`, no shadow; a selected project is a white card with a dark outline and a tick (not amber).
+- **A summary is not a card:** the Week page's "This week" is a frameless darker strip with a big figure, then the projects that made it up. Day tiles carry a dot per client that has time that day, none when empty.
 - Icon buttons: 40px in headers (`h-10`), 32px inside a card header, tooltip on wide screens, a labelled row on phones (`IconAction`).
 - `GuideLink` (`?`): beside any setting that is easy to misunderstand; it opens the matching guide topic **[checked: the topic must exist]**.
 

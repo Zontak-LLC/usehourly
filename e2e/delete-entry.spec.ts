@@ -48,3 +48,34 @@ test("an entry is deleted only after confirming, from the list and from Today", 
     await expect(page.getByText("keep me").first()).toBeVisible();
   });
 });
+
+test("the Week page shows a colour dot on a day with time, and none on an empty day", async ({ page }) => {
+  await startFreshAccount(page);
+  await page.goto("/dashboard/week");
+  const today = new Date().getDay(); // the tile for today
+  const tiles = page.getByRole("tab");
+  await expect(tiles.first()).toBeVisible();
+  await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(0); // a new account has no time: no dots anywhere
+  await page.getByLabel("Time to add").fill("1");
+  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(1); // one client, one day
+  const withDot = page.getByRole("tab").filter({ has: page.locator("[data-dot]") });
+  await expect(withDot).toHaveCount(1);
+  await expect(withDot).toHaveAttribute("aria-selected", "true");
+  void today;
+});
+
+test("the Week page keeps the day you picked in the address, so a refresh comes back to it", async ({ page }) => {
+  await startFreshAccount(page);
+  await page.goto("/dashboard/week?date=2026-09-09");
+  await expect(page.getByRole("heading", { name: "Wednesday, September 9" })).toBeVisible();
+  await page.getByRole("tab", { name: /Friday, September 11/ }).click();
+  await expect(page).toHaveURL(/date=2026-09-11/);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Friday, September 11" })).toBeVisible(); // the same day after a refresh
+  await expect(page.getByRole("tab", { name: /Friday, September 11/ })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Next week" }).click();
+  await expect(page).toHaveURL(/date=2026-09-14/); // the Monday of the week now showing
+  await page.reload();
+  await expect(page.getByRole("tab", { name: /Monday, September 14/ })).toBeVisible();
+});
