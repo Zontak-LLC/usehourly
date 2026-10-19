@@ -53,7 +53,7 @@ export function SetupForm({
     <form
       method="post"
       onSubmit={onSubmit}
-      className={`flex flex-wrap items-end gap-2 ${bar ? "sm:min-w-0 sm:flex-1 sm:flex-nowrap" : ""}`}
+      className={`flex flex-wrap items-end gap-2 ${bar ? "w-full max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto] sm:flex-nowrap" : ""}`}
     >
       {!clientId && (
         <Input
@@ -70,7 +70,7 @@ export function SetupForm({
         aria-label="Project name"
         placeholder="Project (e.g. Website)"
         required
-        className={`w-44 ${bar ? "sm:w-auto sm:min-w-0 sm:flex-1" : ""}`}
+        className={bar ? "max-sm:col-span-2 sm:min-w-0 sm:flex-1" : "w-44"}
       />
       <Input
         name="rate"
@@ -79,9 +79,9 @@ export function SetupForm({
         step="0.01"
         aria-label="Hourly rate in dollars"
         placeholder="Rate $/h"
-        className="w-28 shrink-0"
+        className={bar ? "shrink-0 max-sm:w-full sm:w-28" : "w-28 shrink-0"}
       />
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className={bar ? "px-6" : undefined}>
         {pending ? "Saving…" : "Add"}
       </Button>
     </form>
