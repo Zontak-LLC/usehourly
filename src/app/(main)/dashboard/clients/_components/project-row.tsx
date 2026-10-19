@@ -108,7 +108,7 @@ export function ProjectEditCard({
           name="clientId"
           defaultValue={p.client_id}
           aria-label="Client"
-          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+          className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
         >
           {clients?.map((cl) => (
             <option key={cl.id} value={cl.id}>
@@ -152,7 +152,7 @@ export function ProjectEditCard({
             name="budgetUnit"
             defaultValue={p.budget_unit ?? "dollars"}
             aria-label="Budget unit"
-            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
           >
             <option value="dollars">dollars</option>
             <option value="hours">hours</option>
@@ -161,7 +161,7 @@ export function ProjectEditCard({
             name="budgetPeriod"
             defaultValue={p.budget_period}
             aria-label="Budget period"
-            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
           >
             <option value="month">per month</option>
             <option value="total">in total</option>

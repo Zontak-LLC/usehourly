@@ -26,17 +26,17 @@ import { useProjectEditing } from "./use-project-editing";
 function ClientStats({ clients, totals }: { clients: ClientRow[]; totals: ProjectTotals | undefined }) {
   return (
     <dl className="grid grid-cols-3 gap-2 sm:gap-3">
-      <div className="rounded-lg bg-muted/50 px-3 py-3">
+      <div className="rounded-xl border bg-card px-3 py-3">
         <dt className="text-muted-foreground text-xs">Clients</dt>
         <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{clients.length}</dd>
       </div>
-      <div className="rounded-lg bg-muted/50 px-3 py-3">
+      <div className="rounded-xl border bg-card px-3 py-3">
         <dt className="text-muted-foreground text-xs">Projects</dt>
         <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
           {clients.reduce((a, c) => a + c.projects.length, 0)}
         </dd>
       </div>
-      <div className="rounded-lg bg-muted/50 px-3 py-3">
+      <div className="rounded-xl border bg-card px-3 py-3">
         <dt className="text-muted-foreground text-xs">Logged this month</dt>
         <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
           {formatDuration(Object.values(totals ?? {}).reduce((a, t) => a + t.range, 0))}

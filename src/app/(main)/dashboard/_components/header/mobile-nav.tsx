@@ -16,7 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
-const MAIN = ["today", "week", "month", "invoices", "clients"];
+const MAIN = ["today", "week", "month", "invoices", "clients", "account"];
+/**
+ * Tabs that only show where there is room: Account from 480px wide. On a narrower phone it stays in the More menu,
+ * which hides its own copy once the tab shows. Full class names so Tailwind keeps them.
+ */
+const ROOMY: Record<string, { tab: string; menu: string }> = {
+  account: { tab: "max-[479px]:hidden", menu: "min-[480px]:hidden" },
+};
 
 /**
  * The pages used most: a tab bar at the bottom of a phone (where a thumb reaches) and a strip under the top bar from `sm` up. Every tab has an icon and a word, and
@@ -32,7 +39,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
       aria-label="Main pages"
       className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 z-40 border-b bg-background max-sm:border-t max-sm:border-b-0 max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12"
     >
-      <div className="mx-auto grid max-w-5xl grid-cols-6">
+      <div className="mx-auto grid max-w-5xl grid-cols-6 min-[480px]:grid-cols-7">
         {items.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
           return (
@@ -41,8 +48,8 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
               href={item.url}
               aria-current={active ? "page" : undefined}
               className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 text-xs font-medium max-sm:border-t-2 max-sm:border-b-0 ${
-                active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"
-              }`}
+                ROOMY[item.id] ? `${ROOMY[item.id].tab} ` : ""
+              }${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"}`}
             >
               <item.icon className="size-5" aria-hidden />
               {item.short ?? item.title}
@@ -66,7 +73,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {more.map((item) => (
-              <DropdownMenuItem key={item.id} asChild>
+              <DropdownMenuItem key={item.id} asChild className={ROOMY[item.id]?.menu}>
                 <Link href={item.url} prefetch={false}>
                   <item.icon /> {item.title}
                 </Link>

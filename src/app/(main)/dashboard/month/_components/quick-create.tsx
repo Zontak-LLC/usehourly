@@ -146,7 +146,7 @@ export function QuickCreate({
             setDuration(formatDuration(t.entry.minutes));
             setNote(t.entry.note);
           }}
-          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+          className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
         >
           <option value="">Copy from an entry in this month…</option>
           {templates.map(({ key, entry }) => (
@@ -163,7 +163,7 @@ export function QuickCreate({
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
           aria-label="Project"
-          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+          className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
         >
           {clients.data?.map((c) => (
             <optgroup key={c.id} label={c.name}>

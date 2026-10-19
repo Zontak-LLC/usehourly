@@ -71,7 +71,8 @@ function InvoiceActions({
         label={i.paid_date ? `Edit payment for ${i.number}` : `Mark ${i.number} as paid`}
         tip={i.paid_date ? "Edit payment" : "Mark as paid"}
         text={words ? (i.paid_date ? "Payment" : "Mark paid") : undefined}
-        className="border-success/40 text-success hover:bg-success-soft hover:text-success"
+        // Green means "this invoice is paid": only the paid state is green; marking it paid is a plain action.
+        className={i.paid_date ? "border-success/40 text-success hover:bg-success-soft hover:text-success" : undefined}
         onClick={() => handlers.onMarkPaid(i)}
       >
         {i.paid_date ? <CircleCheck /> : <CircleDollarSign />}

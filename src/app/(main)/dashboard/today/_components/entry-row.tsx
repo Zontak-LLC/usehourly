@@ -177,7 +177,7 @@ export function EntryRow({
                 id={`${uid}-project`}
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="h-10 rounded-lg border border-input bg-transparent px-2 font-normal text-foreground text-sm dark:bg-input/30"
+                className="h-10 rounded-lg border border-input bg-card px-2 font-normal text-foreground text-sm dark:bg-input/30"
               >
                 {projectOptions}
               </select>

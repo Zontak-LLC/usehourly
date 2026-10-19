@@ -10,8 +10,7 @@ import { PRESETS, presetRange } from "@/lib/export-range";
 
 import type { InvoiceFilters, InvoiceSort, InvoiceStatusFilter } from "./use-invoice-filters";
 
-const SELECT =
-  "h-9 w-full min-w-0 rounded-lg border border-input bg-transparent px-2 text-sm max-md:h-10 dark:bg-input/30";
+const SELECT = "h-9 w-full min-w-0 rounded-lg border border-input bg-card px-2 text-sm max-md:h-10 dark:bg-input/30";
 
 function SearchRow({
   filters,

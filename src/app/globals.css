@@ -156,7 +156,7 @@ These serve as the fallback; there is no separate default.css file. */
      meaning: green for done, paid and confirmed, red for remove, stop and problems, yellow for warnings. Everything
      else stays quiet so the accent and the status colours stand out. These sit in the base layer, so a utility class
      on an icon still wins, and icons on a solid primary surface keep that surface's text colour (below). */
-  :is(.lucide-check, .lucide-circle-check, .lucide-circle-dollar-sign, .lucide-shield-check) {
+  :is(.lucide-check, .lucide-circle-check, .lucide-shield-check) {
     @apply text-emerald-600 dark:text-emerald-400;
   }
   :is(.lucide-trash-2, .lucide-octagon-x, .lucide-circle-alert, .lucide-ban) {
