@@ -58,8 +58,7 @@ export function TodayView() {
       prominent
       actions={
         hasProjects && (
-          <div className="grid w-full grid-cols-[auto_auto_1fr_auto] items-center gap-2 sm:flex sm:w-auto sm:gap-1">
-            <NonBillableToggle date={date} />
+          <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-2 sm:flex sm:w-auto sm:gap-1">
             <Button
               size="icon"
               variant="outline"
@@ -105,6 +104,13 @@ export function TodayView() {
         <div className="grid grid-cols-2 gap-3">
           <Stat label="This day" value={formatDuration(sum(dayEntries))} />
           <Stat label="This week" value={formatDuration(sum(week.data ?? []))} />
+        </div>
+      )}
+
+      {/* Works on an empty day too (a holiday), so it lives here and not in the entry list. */}
+      {hasProjects && (
+        <div className="flex justify-end">
+          <NonBillableToggle date={date} labelled />
         </div>
       )}
 
