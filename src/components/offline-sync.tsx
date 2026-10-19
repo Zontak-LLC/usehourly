@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw, Trash2, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
+import { useCurrentUserId } from "@/components/offline-guard";
 import { Button } from "@/components/ui/button";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
@@ -21,11 +22,10 @@ const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short
  */
 export function OfflineSync() {
   const utils = trpc.useUtils();
-  const me = trpc.account.me.useQuery();
   const clients = trpc.clients.list.useQuery();
   const online = useOnline();
   const all = usePendingEntries();
-  const userId = me.data?.id;
+  const userId = useCurrentUserId() ?? undefined;
   const mine = userId ? forUser(all, userId) : [];
   const waiting = mine.filter((e) => !e.error).length;
   const [syncing, setSyncing] = useState(false);

@@ -1,22 +1,9 @@
-import { expect, newUser, test } from "./helpers";
+import { expect, startFreshAccount, test } from "./helpers";
 
 /**
  * Entries typed with no connection are kept on the device and sent when it returns, exactly once: also when the
  * request fails while the browser still thinks it is online, and when the server saved the entry but the answer was lost.
  */
-async function startFreshAccount(page: import("@playwright/test").Page) {
-  const user = newUser();
-  await page.goto("/auth/v2/register");
-  await page.getByLabel("Name", { exact: true }).fill(user.name);
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/dashboard\/today/);
-  await page.getByPlaceholder(/company or a person/i).fill("Offline Co");
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByLabel("Time to add")).toBeVisible();
-}
-
 const addEntry = async (page: import("@playwright/test").Page, time: string, note: string) => {
   await page.getByLabel("Time to add").fill(time);
   await page.getByLabel("Description").fill(note);

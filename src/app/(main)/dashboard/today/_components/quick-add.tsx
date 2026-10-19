@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
 import { NoteTextarea } from "@/components/note-textarea";
+import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ export function QuickAdd({
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
-  const me = trpc.account.me.useQuery();
+  const userId = useCurrentUserId();
   const online = useOnline();
   const create = trpc.entry.create.useMutation();
   const start = trpc.entry.start.useMutation();
@@ -121,7 +122,6 @@ export function QuickAdd({
 
   /** Keeps an entry typed without a connection on this device; OfflineSync sends it when the connection is back. */
   function saveOnDevice(clientId: string, minutes: number, finish: () => void) {
-    const userId = me.data?.id;
     if (!userId) return toast.error("Couldn't save that without a connection. Please try again when you're online.");
     const kept = addPending(localStorage, { clientId, userId, projectId, date, minutes, note, createdAt: Date.now() });
     if (!kept) return toast.error("Couldn't save that on this device. Please try again when you're online.");

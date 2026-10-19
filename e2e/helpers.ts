@@ -10,6 +10,21 @@ export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 /** A throwaway account. Every address starts with "e2e-" so teardown can find and delete them all. */
 export const newUser = () => ({ name: "Sam Freelancer", email: `e2e-${stamp()}@example.test`, password: PASSWORD });
+/** Signs a new account up through the real pages and answers the first-run question, ending on Today with the add form ready. */
+export async function startFreshAccount(page: Page, clientName = "Offline Co") {
+  const user = newUser();
+  await page.goto("/auth/v2/register");
+  await page.getByLabel("Name", { exact: true }).fill(user.name);
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill(user.password);
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/dashboard\/today/);
+  await page.getByPlaceholder(/company or a person/i).fill(clientName);
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByLabel("Time to add")).toBeVisible();
+  return user;
+}
+
 export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>
@@ -186,6 +201,7 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
 // These net:: errors are what the browser logs when a test switches it offline or aborts a request on purpose.
 const IGNORED = [
   /net::ERR_(INTERNET_DISCONNECTED|CONNECTION_FAILED|FAILED)/i,
+  /Failed to fetch RSC payload/i, // Next logs this when a page change falls back to a normal page load while offline
   /favicon/i,
   /Download the React DevTools/i,
   /status of 40[013]/i,

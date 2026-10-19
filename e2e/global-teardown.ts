@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 export default function globalTeardown() {
   const mine = "(SELECT id FROM auth_users WHERE email LIKE 'e2e-%@example.test')";
   const tables = [
+    "non_billable_days",
     "invoice_emails",
     "invoice_links",
     "timesheet_shares",

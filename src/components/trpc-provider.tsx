@@ -10,7 +10,14 @@ import { MAX_BATCH } from "@/lib/trpc-limits";
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
-    () => new QueryClient({ defaultOptions: { queries: { staleTime: 15_000, retry: 1 } } }),
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { staleTime: 15_000, retry: 1 },
+          // Without a connection an action should fail at once with a clear message, not wait silently and run later.
+          mutations: { networkMode: "always" },
+        },
+      }),
   );
   const [client] = useState(() =>
     trpc.createClient({

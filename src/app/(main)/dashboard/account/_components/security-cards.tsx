@@ -1,12 +1,13 @@
 "use client";
 
-import { signIn, signOut } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { signOutOfDevice } from "@/lib/sign-out";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -48,7 +49,7 @@ export function ChangePasswordCard({ me }: { me: AccountMe }) {
       toast.success(
         res?.error ? "Password changed. Please log in again." : "Password changed. Other devices have been signed out.",
       );
-      if (res?.error) await signOut({ callbackUrl: "/auth/v2/login" });
+      if (res?.error) await signOutOfDevice({ callbackUrl: "/auth/v2/login" });
     } catch (err) {
       toastError(err, "Couldn't change your password.");
     }
@@ -84,7 +85,7 @@ export function SignOutCard() {
       description="Log out here, or on every device at once. Signing out everywhere also stops every AI assistant access token."
     >
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => signOut({ callbackUrl: "/auth/v2/login" })}>
+        <Button variant="outline" onClick={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
           Log out
         </Button>
         <Button
@@ -93,7 +94,7 @@ export function SignOutCard() {
           onClick={async () => {
             try {
               await signOutEverywhere.mutateAsync();
-              await signOut({ callbackUrl: "/auth/v2/login" });
+              await signOutOfDevice({ callbackUrl: "/auth/v2/login" });
             } catch (err) {
               toastError(err, "Couldn't sign out your other devices.");
             }
