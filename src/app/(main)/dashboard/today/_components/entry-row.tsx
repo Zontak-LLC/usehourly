@@ -26,13 +26,27 @@ export type EntryData = {
   project: { name: string; client: { name: string; color: string } };
 };
 
-export function EntryRow({ entry }: { entry: EntryData }) {
+export function EntryRow({
+  entry,
+  initialEditing = false,
+  onEditDone,
+}: {
+  entry: EntryData;
+  /** Open straight into the edit form (the lists that edit an entry where it sits). */
+  initialEditing?: boolean;
+  /** Called when the edit form closes (saved or cancelled). */
+  onEditDone?: () => void;
+}) {
   const uid = useId();
   const utils = trpc.useUtils();
   const logos = useProjectLogos();
   const update = trpc.entry.update.useMutation();
   const del = trpc.entry.delete.useMutation();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditingState] = useState(initialEditing);
+  const setEditing = (on: boolean) => {
+    setEditingState(on);
+    if (!on) onEditDone?.();
+  };
   const [duration, setDuration] = useState(formatDuration(entry.minutes));
   const [note, setNote] = useState(entry.note);
   const [projectId, setProjectId] = useState(entry.project_id);

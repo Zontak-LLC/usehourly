@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
+import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { NoteText } from "@/components/folded-note";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -23,10 +24,13 @@ export function WorkItems({
   entries,
   onOpenDay,
   period = "month",
+  editInPlace = false,
 }: {
   entries: SheetEntry[];
   onOpenDay: (date: string) => void;
   period?: string;
+  /** Edit an entry right where it sits in the list (no jump to the day editor). */
+  editInPlace?: boolean;
 }) {
   const logos = useProjectLogos();
   // Long notes fold to two lines; the ids here are the ones the user opened.
@@ -45,6 +49,15 @@ export function WorkItems({
       const next = new Set(prev);
       if (is) next.add(id);
       else next.delete(id);
+      return next;
+    });
+  // Entries open for editing in place (only used with `editInPlace`).
+  const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
+  const startEditing = (ids: string[]) => setEditing((prev) => new Set([...prev, ...ids]));
+  const stopEditing = (id: string) =>
+    setEditing((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
       return next;
     });
   const [query, setQuery] = useState("");
@@ -99,7 +112,11 @@ export function WorkItems({
                     size="icon"
                     variant="ghost"
                     className="size-8 text-muted-foreground"
-                    onClick={() => onOpenDay(g.date)}
+                    onClick={() =>
+                      editInPlace
+                        ? startEditing(g.items.filter((e) => !e.started_at).map((e) => e.id))
+                        : onOpenDay(g.date)
+                    }
                     aria-label={`Edit ${dayFmt.format(fromISODate(g.date))}`}
                     title="Edit this day"
                   >
@@ -110,32 +127,42 @@ export function WorkItems({
               <ul className="divide-y">
                 {g.items.map((e) => (
                   <li key={e.id}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenDay(e.date)}
-                      title="Edit this day"
-                      className="group flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 text-sm">
-                          <ProjectMark projectId={e.project_id} color={e.project.client.color} logos={logos} />
-                          <span className="truncate font-medium">{e.project.name}</span>
-                          <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
-                          {/* A day with one entry shows its time in the header; with several, each row says its own, beside the name. */}
-                          {!(g.items.length === 1 && g.items[0].minutes === g.minutes) && (
-                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-xs tabular-nums">
-                              {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
-                            </span>
+                    {editInPlace && editing.has(e.id) ? (
+                      <ul className="p-2">
+                        <EntryRow entry={e} initialEditing onEditDone={() => stopEditing(e.id)} />
+                      </ul>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => (editInPlace && !e.started_at ? startEditing([e.id]) : onOpenDay(e.date))}
+                        title="Edit this day"
+                        className="group flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2 text-sm">
+                            <ProjectMark projectId={e.project_id} color={e.project.client.color} logos={logos} />
+                            <span className="truncate font-medium">{e.project.name}</span>
+                            <span className="truncate text-muted-foreground">· {e.project.client.name}</span>
+                            {/* A day with one entry shows its time in the header; with several, each row says its own, beside the name. */}
+                            {!(g.items.length === 1 && g.items[0].minutes === g.minutes) && (
+                              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-xs tabular-nums">
+                                {e.started_at ? `${formatDuration(e.minutes)} +` : formatDuration(e.minutes)}
+                              </span>
+                            )}
+                          </span>
+                          {e.note ? (
+                            <NoteText
+                              note={e.note}
+                              expanded={open.has(e.id)}
+                              onClipped={(is) => markClipped(e.id, is)}
+                            />
+                          ) : (
+                            <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
                           )}
                         </span>
-                        {e.note ? (
-                          <NoteText note={e.note} expanded={open.has(e.id)} onClipped={(is) => markClipped(e.id, is)} />
-                        ) : (
-                          <span className="mt-0.5 block text-muted-foreground/60 text-sm italic">No description</span>
-                        )}
-                      </span>
-                    </button>
-                    {(clipped.has(e.id) || open.has(e.id)) && (
+                      </button>
+                    )}
+                    {!(editInPlace && editing.has(e.id)) && (clipped.has(e.id) || open.has(e.id)) && (
                       <button
                         type="button"
                         onClick={() => toggle(e.id)}

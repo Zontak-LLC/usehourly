@@ -104,7 +104,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
 
             {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
-            <WorkItems key={`${start}-${projectId}`} entries={shown} onOpenDay={openDay} period="week" />
+            <WorkItems key={`${start}-${projectId}`} entries={shown} onOpenDay={openDay} period="week" editInPlace />
           </>
         )}
       </div>
