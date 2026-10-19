@@ -107,7 +107,7 @@ export function WeekTotalCard({
   onProjectId: (id: string) => void;
 }) {
   return (
-    <section aria-label="This week" className="flex flex-col gap-3 rounded-xl bg-foreground/[0.06] p-4">
+    <section aria-label="This week" className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       {/* A summary, not another card: no frame and no header, a big figure first, then the projects that made it up. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className="font-medium text-foreground/75 text-sm">Total hours this week</h2>
