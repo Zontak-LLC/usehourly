@@ -11,7 +11,7 @@ export function HoursChip({ children, className }: { children: ReactNode; classN
   return (
     <span
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-lg border bg-background px-2.5 font-mono font-semibold tabular-nums",
+        "inline-flex h-8 items-center gap-1.5 rounded-lg border bg-background px-3 font-mono font-semibold tabular-nums",
         className,
       )}
     >

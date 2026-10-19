@@ -47,7 +47,7 @@ export function DayTiles({
             aria-selected={on}
             aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}${nonBillable.has(d) ? ", non-billable" : ""}`}
             onClick={() => onPick(d)}
-            className={`relative flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-2.5 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
+            className={`relative flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-3 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
               on
                 ? "border-primary bg-primary/15 shadow-sm ring-2 ring-primary/40"
                 : d === today
@@ -95,7 +95,7 @@ export function WeekTotalCard({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2.5">
+      <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-3">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <h2 className="font-semibold text-base">This week</h2>
           <HoursChip>{formatDuration(sheet.total)}</HoursChip>
@@ -113,7 +113,7 @@ export function WeekTotalCard({
                   aria-pressed={on}
                   onClick={() => onProjectId(toggleProjectFilter(projectId, r.projectId))}
                   title={on ? "Show all projects" : `Show only ${r.project}`}
-                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm hover:bg-muted ${
+                  className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm hover:bg-muted ${
                     on ? "border-primary bg-primary/10" : ""
                   }`}
                 >

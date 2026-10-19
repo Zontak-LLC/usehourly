@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Archive, Pencil, Plus, X } from "lucide-react";
 
 import { ClientLogoSlot } from "@/components/client-logo";
-import { ICON_TONE, IconAction } from "@/components/icon-action";
+import { IconAction } from "@/components/icon-action";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
 
@@ -62,10 +62,10 @@ export function ClientCard({
             <Plus />
           </IconAction>
           <IconAction label={`Edit ${c.name} billing details`} tip="Billing details" onClick={onToggleBilling}>
-            <Pencil className={ICON_TONE.edit} />
+            <Pencil />
           </IconAction>
           <IconAction label={`Archive ${c.name}`} tip="Archive client" onClick={onArchiveClient}>
-            <Archive className={ICON_TONE.archive} />
+            <Archive />
           </IconAction>
         </span>
         <div className="flex w-full gap-1.5 sm:hidden">
@@ -83,10 +83,10 @@ export function ClientCard({
             text="Billing details"
             onClick={onToggleBilling}
           >
-            <Pencil className={ICON_TONE.edit} />
+            <Pencil />
           </IconAction>
           <IconAction label={`Archive ${c.name}`} tip="Archive client" text="Archive" onClick={onArchiveClient}>
-            <Archive className={ICON_TONE.archive} />
+            <Archive />
           </IconAction>
         </div>
       </header>

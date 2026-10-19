@@ -52,11 +52,11 @@ export function InvoicePreviewCard({
               </tr>
             ))}
             <tr className="bg-muted/40 font-semibold">
-              <td className="px-4 py-2.5">Total</td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums">
+              <td className="px-4 py-3">Total</td>
+              <td className="px-4 py-3 text-right font-mono tabular-nums">
                 {formatDecimalHours(totals.totalMinutes)} h
               </td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums">{formatMoney(totals.totalCents)}</td>
+              <td className="px-4 py-3 text-right font-mono tabular-nums">{formatMoney(totals.totalCents)}</td>
             </tr>
           </tbody>
         </table>

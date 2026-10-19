@@ -21,7 +21,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
-const selectClass = "h-10 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm dark:bg-input/30";
+const selectClass = "h-10 w-full rounded-lg border border-input bg-transparent px-3 text-sm dark:bg-input/30";
 
 /**
  * Invoices as a file Xero or QuickBooks Online can import, or a list of payments received: pick a year, a format and

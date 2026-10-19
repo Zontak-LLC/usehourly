@@ -188,6 +188,7 @@ export function NewInvoiceView() {
             <div className="flex gap-2">
               <Button
                 type="submit"
+                variant="primary"
                 disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
               >
                 {create.isPending ? "Creating…" : "Create invoice & download PDF"}

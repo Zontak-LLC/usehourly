@@ -141,7 +141,7 @@ function Screen({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border bg-background shadow-xl ring-1 ring-black/5">
-      <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5" aria-hidden>
+      <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-3" aria-hidden>
         <span className="size-2.5 rounded-full bg-border" />
         <span className="size-2.5 rounded-full bg-border" />
         <span className="size-2.5 rounded-full bg-border" />
@@ -317,17 +317,17 @@ export default function LandingPage() {
                   role="img"
                   aria-label="Example conversation: a freelancer asks an AI assistant to log 1 hour 30 minutes on the Acme website project, and the assistant confirms it was logged."
                 >
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground text-sm">
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
                     Log 1h30 on Acme / Website for fixing the checkout bug.
                   </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm">
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
                     Done. I logged <strong>1.5 hours</strong> on Acme / Website for today: &ldquo;Fixed the checkout
                     bug.&rdquo; That brings this week to <strong>12.5 hours</strong>.
                   </div>
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground text-sm">
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
                     Great. Start the timer on Support.
                   </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm">
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
                     Timer started on Acme / Support.
                   </div>
                 </div>

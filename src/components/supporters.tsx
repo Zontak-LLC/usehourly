@@ -23,12 +23,12 @@ export function Supporters() {
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block rounded-full border bg-background px-4 py-1.5 font-medium text-sm hover:bg-muted"
+                  className="inline-block rounded-full border bg-background px-4 py-2 font-medium text-sm hover:bg-muted"
                 >
                   {s.name}
                 </a>
               ) : (
-                <span className="inline-block rounded-full border bg-background px-4 py-1.5 font-medium text-sm">
+                <span className="inline-block rounded-full border bg-background px-4 py-2 font-medium text-sm">
                   {s.name}
                 </span>
               )}

@@ -77,13 +77,13 @@ export function ClaimDemoCard() {
         </div>
         <fieldset className="grid gap-1 text-sm">
           <legend className="mb-1 font-medium">What about the sample data?</legend>
-          <label className="flex items-start gap-2 py-1.5">
+          <label className="flex items-start gap-2 py-2">
             <input type="radio" className="mt-1" checked={startFresh} onChange={() => setStartFresh(true)} />
             <span>
               <strong>Start fresh</strong> (recommended): remove the sample clients, projects, entries and invoices.
             </span>
           </label>
-          <label className="flex items-start gap-2 py-1.5">
+          <label className="flex items-start gap-2 py-2">
             <input type="radio" className="mt-1" checked={!startFresh} onChange={() => setStartFresh(false)} />
             <span>
               <strong>Keep everything</strong> in the demo, including anything you added.

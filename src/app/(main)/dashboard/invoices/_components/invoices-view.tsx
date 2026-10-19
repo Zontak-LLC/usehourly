@@ -79,7 +79,7 @@ export function InvoicesView() {
       title="Invoices"
       description="Every invoice you've issued, saved exactly as sent."
       actions={
-        <Button asChild size="lg" className="h-10">
+        <Button asChild size="lg" variant="primary" className="h-10">
           <Link href="/dashboard/invoices/new">
             <Plus /> New invoice
           </Link>

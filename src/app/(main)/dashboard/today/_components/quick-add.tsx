@@ -133,14 +133,14 @@ export function QuickAdd({
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
-      <div className="border-b bg-muted/40 px-3 py-2.5 sm:px-4">
+      <div className="border-b bg-muted/40 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">
           Add to the day
           {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
         </h2>
       </div>
 
-      <div className="flex flex-col gap-3 p-2.5 sm:p-4">
+      <div className="flex flex-col gap-3 p-3 sm:p-4">
         <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
           {onlyProject ? (
             <p className="text-base">
@@ -219,13 +219,14 @@ export function QuickAdd({
             placeholder="What did you work on? (optional)"
             aria-label="Description"
             rows={1}
-            className="min-h-12 resize-none py-2.5 text-base"
+            className="min-h-12 resize-none py-3 text-base"
           />
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               type="submit"
               size="lg"
+              variant="primary"
               disabled={create.isPending || parsed === null}
               className="h-12 w-full text-base sm:flex-1"
             >
