@@ -21,9 +21,9 @@ Look at the real thing first: the pages are the reference, this file is the expl
 | Level | What | Header shade |
 |---|---|---|
 | Page | the page background: a quiet neutral off-white | none |
-| 1. Page card | `PageShell`: one main card per dashboard page | `bg-band-1` (one light shade, 5%) |
+| 1. Page card | `PageShell`: one main card per dashboard page | `bg-band-1` (one light shade, 3.5%) |
 | 2. Card | cards directly inside it (`HeaderCard`, `SectionCard`, entry cards, client cards, invoice cards) | `bg-band-2` (the same shade as band-1) |
-| 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (3%, a notch lighter), body `bg-foreground/[0.03]` |
+| 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (2.5%, a notch lighter), body `bg-foreground/[0.03]` |
 
 - `--band-1/2/3` are mixed from the theme's own text and page colours (`globals.css`), so presets and dark mode follow. **Never use `bg-muted/40` for a header band** **[checked: `check-rules`]**.
 - **Cards go one level deep** **[checked: `auditPage` fails a bordered, rounded box nested 3 deep]**. A card never holds another framed card: inside a card use plain sections, borderless tiles, spacing or a heading.
