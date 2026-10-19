@@ -75,6 +75,8 @@ test.describe("every control does something", () => {
     const notClickable: string[] = [];
     let downloads = 0;
     let popups = 0;
+    let pickers = 0;
+    page.on("filechooser", () => pickers++); // "Add a logo" opens the computer's file picker, which the page cannot see
     page.on("download", () => downloads++);
     context.on("page", () => popups++);
 
@@ -110,7 +112,7 @@ test.describe("every control does something", () => {
             characterData: true,
           });
         });
-        const before = { url: page.url(), downloads, popups };
+        const before = { url: page.url(), downloads, popups, pickers };
         let requests = 0;
         const onRequest = () => requests++;
         page.on("request", onRequest);
@@ -132,7 +134,8 @@ test.describe("every control does something", () => {
             page.url() !== before.url ||
             requests > 0 ||
             downloads > before.downloads ||
-            popups > before.popups;
+            popups > before.popups ||
+            pickers > before.pickers;
         }
         page.off("request", onRequest);
         if (!changed && !quiet) dead.push(`${path}  "${meta.name}"`);

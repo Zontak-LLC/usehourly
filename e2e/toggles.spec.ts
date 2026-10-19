@@ -66,3 +66,16 @@ test("buttons that open a form close it on the second click; the day's list is h
     await expect(page.getByText("Round the time on invoices")).toHaveCount(0);
   });
 });
+
+test("the Month page's This month button is disabled while already on this month, and works from another month", async ({
+  page,
+}) => {
+  await startFreshAccount(page);
+  await page.goto("/dashboard/month");
+  const thisMonth = page.getByRole("button", { name: "This month" });
+  await expect(thisMonth).toBeDisabled();
+  await page.getByRole("button", { name: "Previous month" }).click();
+  await expect(thisMonth).toBeEnabled();
+  await thisMonth.click();
+  await expect(thisMonth).toBeDisabled();
+});
