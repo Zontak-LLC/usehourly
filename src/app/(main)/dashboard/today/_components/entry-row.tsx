@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { DeleteEntryDialog } from "@/components/delete-entry-dialog";
 import { FoldedNote } from "@/components/folded-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
@@ -47,7 +48,7 @@ export function EntryRow({
   const utils = trpc.useUtils();
   const logos = useProjectLogos();
   const update = trpc.entry.update.useMutation();
-  const del = trpc.entry.delete.useMutation();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditingState] = useState(initialEditing);
   const setEditing = (on: boolean) => {
     setEditingState(on);
@@ -87,16 +88,6 @@ export function EntryRow({
       toast.success(name ? `Moved to ${name}.` : "Entry moved.");
     } catch (err) {
       toastError(err, "Couldn't move that entry.");
-    }
-  }
-
-  async function remove() {
-    try {
-      await del.mutateAsync({ id: entry.id });
-      await Promise.all([refresh(), utils.entry.running.invalidate()]);
-      toast.success("Entry deleted.");
-    } catch (err) {
-      toastError(err, "Couldn't delete that entry.");
     }
   }
 
@@ -165,7 +156,7 @@ export function EntryRow({
             >
               <Pencil />
             </Button>
-            <Button size="icon" variant="outline" onClick={remove} aria-label="Delete" disabled={del.isPending}>
+            <Button size="icon" variant="outline" onClick={() => setConfirmingDelete(true)} aria-label="Delete">
               <Trash2 />
             </Button>
           </div>
@@ -258,6 +249,7 @@ export function EntryRow({
           </button>
         </div>
       )}
+      <DeleteEntryDialog entry={confirmingDelete ? entry : null} onClose={() => setConfirmingDelete(false)} />
     </li>
   );
 }

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
-import { Ban, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, Pencil, Search, Trash2 } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
+import { DeleteEntryDialog } from "@/components/delete-entry-dialog";
 import { NoteText } from "@/components/folded-note";
 import { HoursChip } from "@/components/hours-chip";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
@@ -65,6 +66,7 @@ export function WorkItems({
       return next;
     });
   const [query, setQuery] = useState("");
+  const [deleting, setDeleting] = useState<SheetEntry | null>(null);
   const [page, setPage] = useState(1);
 
   const matches = searchWorkItems(entries, query);
@@ -137,7 +139,7 @@ export function WorkItems({
               </h3>
               <ul className="divide-y">
                 {g.items.map((e) => (
-                  <li key={e.id}>
+                  <li key={e.id} className="relative">
                     {editInPlace && editing.has(e.id) ? (
                       <ul>
                         <EntryRow entry={e} initialEditing bare onEditDone={() => stopEditing(e.id)} />
@@ -147,7 +149,7 @@ export function WorkItems({
                         type="button"
                         onClick={() => (editInPlace && !e.started_at ? startEditing([e.id]) : onOpenDay(e.date))}
                         title="Edit this day"
-                        className="group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+                        className="group flex w-full items-start gap-3 py-3 pr-14 pl-4 text-left transition-colors hover:bg-muted"
                       >
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2 text-sm">
@@ -172,6 +174,19 @@ export function WorkItems({
                           )}
                         </span>
                       </button>
+                    )}
+                    {!(editInPlace && editing.has(e.id)) && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="absolute top-2 right-2 size-8"
+                        onClick={() => setDeleting(e)}
+                        aria-label={`Delete ${e.project.name}, ${formatDuration(e.minutes)}, ${dayFmt.format(fromISODate(e.date))}`}
+                        title="Delete this entry"
+                      >
+                        <Trash2 />
+                      </Button>
                     )}
                     {!(editInPlace && editing.has(e.id)) && (clipped.has(e.id) || open.has(e.id)) && (
                       <button
@@ -221,6 +236,7 @@ export function WorkItems({
           </div>
         </div>
       )}
+      <DeleteEntryDialog entry={deleting} onClose={() => setDeleting(null)} />
     </div>
   );
 }
