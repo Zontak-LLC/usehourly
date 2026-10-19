@@ -84,7 +84,7 @@ export function InvoiceDetailsCard({
             onChange={(e) => onNetDays(e.target.value)}
           />
         </div>
-        <details className="rounded-lg border px-3 py-2 sm:col-span-2">
+        <details className="border-t pt-3 sm:col-span-2">
           <summary className="cursor-pointer font-medium text-sm">More options</summary>
           <div className="mt-3 flex flex-col gap-2">
             <label className="flex min-h-8 items-center gap-2 text-sm">

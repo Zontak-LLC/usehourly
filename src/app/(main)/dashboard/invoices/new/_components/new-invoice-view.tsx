@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, toISODate } from "@/lib/dates";
@@ -137,8 +137,8 @@ export function NewInvoiceView() {
   const hasClients = (clients.data ?? []).length > 0;
 
   return (
-    <form method="post" onSubmit={submit} className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <PageHeader
+    <form method="post" onSubmit={submit}>
+      <PageShell
         title="New invoice"
         description={
           <>
@@ -149,55 +149,55 @@ export function NewInvoiceView() {
             and downloaded as a PDF.
           </>
         }
-      />
+      >
+        {missingProfile && <MissingProfileNotice ein={me.data?.ein} address={me.data?.address} />}
 
-      {missingProfile && <MissingProfileNotice ein={me.data?.ein} address={me.data?.address} />}
+        {!hasClients ? (
+          <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
+            Add a client and project first, then log some time to invoice.
+          </p>
+        ) : (
+          <>
+            <InvoiceDetailsCard
+              clients={clients.data ?? []}
+              values={{ clientId, number, from, to, netDays, notes, includeDetail, compactNotes }}
+              onClientId={setClientId}
+              onNumber={(v) => {
+                setNumber(v);
+                setNumberTouched(true);
+              }}
+              onFrom={setFrom}
+              onTo={setTo}
+              onNetDays={setNetDays}
+              onNotes={setNotes}
+              onIncludeDetail={setIncludeDetail}
+              onCompactNotes={setCompactNotes}
+            />
 
-      {!hasClients ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
-          Add a client and project first, then log some time to invoice.
-        </p>
-      ) : (
-        <>
-          <InvoiceDetailsCard
-            clients={clients.data ?? []}
-            values={{ clientId, number, from, to, netDays, notes, includeDetail, compactNotes }}
-            onClientId={setClientId}
-            onNumber={(v) => {
-              setNumber(v);
-              setNumberTouched(true);
-            }}
-            onFrom={setFrom}
-            onTo={setTo}
-            onNetDays={setNetDays}
-            onNotes={setNotes}
-            onIncludeDetail={setIncludeDetail}
-            onCompactNotes={setCompactNotes}
-          />
+            <InvoicePreviewCard
+              validRange={validRange}
+              loading={entries.isLoading}
+              error={entries.error?.message ?? null}
+              totals={totals}
+              clientName={client?.name}
+            />
 
-          <InvoicePreviewCard
-            validRange={validRange}
-            loading={entries.isLoading}
-            error={entries.error?.message ?? null}
-            totals={totals}
-            clientName={client?.name}
-          />
+            <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
 
-          <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
-
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
-            >
-              {create.isPending ? "Creating…" : "Create invoice & download PDF"}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link href="/dashboard/invoices">Cancel</Link>
-            </Button>
-          </div>
-        </>
-      )}
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
+              >
+                {create.isPending ? "Creating…" : "Create invoice & download PDF"}
+              </Button>
+              <Button type="button" variant="outline" asChild>
+                <Link href="/dashboard/invoices">Cancel</Link>
+              </Button>
+            </div>
+          </>
+        )}
+      </PageShell>
     </form>
   );
 }

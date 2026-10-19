@@ -1,6 +1,6 @@
 "use client";
 
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
@@ -58,27 +58,25 @@ export function InsightsView() {
   const { signedUp, withEntry, withInvoice, firstEntryWithinDay } = d.funnel;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 lg:p-6">
+    <PageShell
+      title="Insights"
+      description="Totals only: no names, emails, clients or entries appear here. Sample accounts are left out."
+    >
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+        <Tile
+          label="Accounts"
+          value={d.totals.users}
+          hint={`${d.totals.demoAccounts} sample account${d.totals.demoAccounts === 1 ? "" : "s"} now`}
+        />
+        <Tile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`} />
+        <Tile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time" />
+        <Tile
+          label="Active, last 30 days"
+          value={d.active.last30}
+          hint={d.entriesPerActiveUser30 === null ? "" : `${d.entriesPerActiveUser30} entries each`}
+        />
+      </div>
       {/* One header card: what the page is, then the four headline numbers. */}
-      <PageHeader
-        title="Insights"
-        description="Totals only: no names, emails, clients or entries appear here. Sample accounts are left out."
-      >
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-          <Tile
-            label="Accounts"
-            value={d.totals.users}
-            hint={`${d.totals.demoAccounts} sample account${d.totals.demoAccounts === 1 ? "" : "s"} now`}
-          />
-          <Tile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`} />
-          <Tile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time" />
-          <Tile
-            label="Active, last 30 days"
-            value={d.active.last30}
-            hint={d.entriesPerActiveUser30 === null ? "" : `${d.entriesPerActiveUser30} entries each`}
-          />
-        </div>
-      </PageHeader>
 
       <Card title="Do people get going?" note="Of everyone who signed up, how far they got.">
         <div className="flex flex-col gap-2">
@@ -129,6 +127,6 @@ export function InsightsView() {
           ))}
         </div>
       </Card>
-    </div>
+    </PageShell>
   );
 }

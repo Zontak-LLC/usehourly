@@ -149,6 +149,28 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
     const wide = document.documentElement.scrollWidth;
     if (wide > window.innerWidth + 1)
       out.push(`scrolls sideways: the page is ${wide}px wide in a ${window.innerWidth}px window`);
+    // A card (bordered, rounded box) may sit on the page or inside one card, never inside a card inside a card.
+    // Buttons, fields, tabs and links are not cards, and dialogs render outside the page so they start again.
+    const notCards = new Set(["BUTTON", "INPUT", "SELECT", "TEXTAREA", "A", "OPTION", "LABEL", "SUMMARY"]);
+    const isCard = (el: Element) => {
+      const role = el.getAttribute("role");
+      if (notCards.has(el.tagName) || (role && ["tab", "radio", "button"].includes(role))) return false;
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return (
+        Number.parseFloat(s.borderTopWidth) > 0 &&
+        Number.parseFloat(s.borderTopLeftRadius) >= 8 &&
+        r.width > 120 &&
+        r.height > 36
+      );
+    };
+    const cards = [...document.body.querySelectorAll("*")].filter(isCard);
+    const cardSet = new Set(cards);
+    for (const card of cards) {
+      let depth = 1;
+      for (let p = card.parentElement; p; p = p.parentElement) if (cardSet.has(p)) depth++;
+      if (depth > 2) out.push(`card nested ${depth} deep (max 2): ${snippet(card)}`);
+    }
     if (!document.title.trim()) out.push("page has no title");
     const h1s = document.querySelectorAll("h1").length;
     if (h1s !== 1) out.push(`${h1s} top-level headings (expected exactly 1)`);

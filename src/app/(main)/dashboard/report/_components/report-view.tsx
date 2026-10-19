@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadAnnualXlsx } from "@/lib/export-annual-xlsx";
@@ -46,35 +46,50 @@ export function ReportView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <PageHeader
-        title={<>Year summary · {year}</>}
-        description="Your year at a glance, ready for your accountant or tax software."
-        actions={
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1">
-            <div className="grid grid-cols-[auto_1fr_auto] gap-2 sm:flex sm:gap-1">
-              <Button size="icon" variant="outline" onClick={() => setYear(year - 1)} aria-label="Previous year">
-                <ChevronLeft />
-              </Button>
-              <Button variant="outline" onClick={() => today && setYear(today)} disabled={year === today}>
-                This year
-              </Button>
-              <Button size="icon" variant="outline" onClick={() => setYear(year + 1)} aria-label="Next year">
-                <ChevronRight />
-              </Button>
-            </div>
+    <PageShell
+      title={<>Year summary · {year}</>}
+      description="Your year at a glance, ready for your accountant or tax software."
+      actions={
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-2 sm:flex sm:gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              className="size-10"
+              onClick={() => setYear(year - 1)}
+              aria-label="Previous year"
+            >
+              <ChevronLeft />
+            </Button>
             <Button
               variant="outline"
-              className="w-full sm:order-first sm:w-auto"
-              onClick={exportXlsx}
-              disabled={!data || exporting}
+              className="h-10"
+              onClick={() => today && setYear(today)}
+              disabled={year === today}
             >
-              <Download /> {exporting ? "Exporting…" : "Export Excel"}
+              This year
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              className="size-10"
+              onClick={() => setYear(year + 1)}
+              aria-label="Next year"
+            >
+              <ChevronRight />
             </Button>
           </div>
-        }
-      />
-
+          <Button
+            variant="outline"
+            className="h-10 w-full sm:order-first sm:w-auto"
+            onClick={exportXlsx}
+            disabled={!data || exporting}
+          >
+            <Download /> {exporting ? "Exporting…" : "Export Excel"}
+          </Button>
+        </div>
+      }
+    >
       {report.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
           Couldn't load the report: {report.error.message}
@@ -88,6 +103,6 @@ export function ReportView() {
       ) : (
         <ReportBody data={data} year={year} />
       )}
-    </div>
+    </PageShell>
   );
 }

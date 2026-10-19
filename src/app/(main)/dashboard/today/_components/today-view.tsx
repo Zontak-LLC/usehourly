@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
@@ -47,33 +47,43 @@ export function TodayView() {
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <PageHeader
-        title={date === today ? "Today" : longDate.format(fromISODate(date))}
-        description={date === today ? longDate.format(fromISODate(date)) : undefined}
-        descriptionOnPhone
-        actions={
-          hasProjects && (
-            <div className="flex items-center gap-1">
-              <Button size="icon" variant="outline" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
-                <ChevronLeft />
-              </Button>
-              <Button
-                variant="outline"
-                className="disabled:bg-muted disabled:text-foreground/70 disabled:opacity-100"
-                onClick={() => go(today ?? date)}
-                disabled={date === today}
-              >
-                Today
-              </Button>
-              <Button size="icon" variant="outline" onClick={() => go(addDays(date, 1))} aria-label="Next day">
-                <ChevronRight />
-              </Button>
-            </div>
-          )
-        }
-      />
-
+    <PageShell
+      title={date === today ? "Today" : longDate.format(fromISODate(date))}
+      description={date === today ? longDate.format(fromISODate(date)) : undefined}
+      descriptionOnPhone
+      actions={
+        hasProjects && (
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              className="size-10"
+              onClick={() => go(addDays(date, -1))}
+              aria-label="Previous day"
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 disabled:bg-muted disabled:text-foreground/70 disabled:opacity-100"
+              onClick={() => go(today ?? date)}
+              disabled={date === today}
+            >
+              Today
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              className="size-10"
+              onClick={() => go(addDays(date, 1))}
+              aria-label="Next day"
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        )
+      }
+    >
       <TimerBanner />
 
       {clients.isLoading ? (
@@ -110,7 +120,7 @@ export function TodayView() {
           <MergeEntriesBar entries={dayEntries} />
         </>
       )}
-    </div>
+    </PageShell>
   );
 }
 

@@ -64,7 +64,7 @@ export function ClientCard({
         <p className="mb-2 flex items-center gap-1 font-medium text-muted-foreground text-xs uppercase tracking-wider">
           <FolderKanban className="size-3.5" aria-hidden /> Projects
         </p>
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y">
           {c.projects.map((p) =>
             editing.editingId === p.id ? (
               <ProjectEditRow key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
@@ -81,8 +81,8 @@ export function ClientCard({
             ),
           )}
         </ul>
-        {/* A dashed, unfilled slot so it reads as "add" and not as one more project; the label on its own line with the fields filling the width under it. */}
-        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-foreground/30 border-dashed p-3 sm:p-4">
+        {/* A dashed divider and a plus mark it as "add" and not as one more project (a plain section: cards go one level deep); the label on its own line with the fields filling the width under it. */}
+        <div className="mt-3 flex flex-col gap-2 border-foreground/30 border-t border-dashed pt-3">
           <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm" title={`Add a project for ${c.name}`}>
             <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-foreground">
               <Plus className="size-3.5" aria-hidden />

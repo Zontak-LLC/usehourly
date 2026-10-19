@@ -132,7 +132,7 @@ export function QuickAdd({
         </h2>
       </div>
 
-      <div className="flex flex-col gap-3 p-3 sm:p-4">
+      <div className="flex flex-col gap-3 p-2.5 sm:p-4">
         <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
           {onlyProject ? (
             <p className="text-base">
