@@ -58,7 +58,8 @@ export const entryRouter = router({
     const [rows, days] = await Promise.all([
       ctx.prisma.timeEntry.findMany({
         where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
-        include: withProject,
+        // `author` is the team member who typed the entry (null for the owner's own).
+        include: { ...withProject, author: { select: { name: true } } },
         orderBy: [{ date: "desc" }, { created_at: "desc" }],
       }),
       nonBillableDates(ctx.prisma, ctx.userId, input),

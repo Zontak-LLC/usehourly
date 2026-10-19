@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { escapeHtml, renderEmail, safeUrl } from "@/lib/email-template";
-import { createMailer, resetPasswordMessage, timesheetApprovedMessage, verifyEmailMessage } from "@/lib/mailer";
+import {
+  createMailer,
+  resetPasswordMessage,
+  teamInviteMessage,
+  timesheetApprovedMessage,
+  verifyEmailMessage,
+} from "@/lib/mailer";
 import { buildWeeklyReminder } from "@/lib/reminder";
 
 /**
@@ -68,6 +74,34 @@ describe("the real messages carry both parts and say the same thing", () => {
     expect(m.text).toContain('"All good"');
     expect(m.html).toContain("All good");
     expect(m.html).toContain("Kirk Smith approved the hours you shared:");
+  });
+});
+
+describe("team invitation", () => {
+  const base = {
+    ownerEmail: "ada@example.com",
+    link: "https://usehourly.app/team/join/tok_123",
+    stopUrl: "https://usehourly.app/stop-emails?e=a&t=b",
+    oneClickUrl: "https://usehourly.app/api/stop-emails?e=a&t=b",
+    days: 7,
+  };
+
+  it("names who invited you, carries the link in both parts, and replies go to the inviter", () => {
+    const m = teamInviteMessage("sam@example.com", { ...base, ownerName: "Ada Makes Sites" });
+    expect(m.subject).toBe("Ada Makes Sites invited you to a team on UseHourly");
+    expect(m.text).toContain("https://usehourly.app/team/join/tok_123");
+    expect(m.html).toContain('href="https://usehourly.app/team/join/tok_123"');
+    expect(m).toMatchObject({ replyTo: "ada@example.com", fromName: "Ada Makes Sites via UseHourly" });
+    expect(m.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+  });
+
+  it("a hostile inviter name cannot add markup or break the subject line", () => {
+    const m = teamInviteMessage("sam@example.com", {
+      ...base,
+      ownerName: `<script>alert(1)</script>\r\nBcc: x@evil.test`,
+    });
+    expect(m.html).not.toContain("<script");
+    expect(m.subject).not.toMatch(/[\r\n]/);
   });
 });
 

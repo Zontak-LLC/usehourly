@@ -179,3 +179,34 @@ export function invoiceEmailMessage(
     },
   };
 }
+
+/** The email a team invitation goes out in: who invited you, what you can do, one button. Replies go to the inviter. */
+export function teamInviteMessage(
+  to: string,
+  d: { ownerName: string; ownerEmail: string; link: string; stopUrl: string; oneClickUrl: string; days: number },
+): MailMessage {
+  const owner = oneLine(d.ownerName, 80) || "Someone";
+  const mail = renderEmail({
+    title: "Join a team on UseHourly",
+    greeting: "Hi,",
+    blocks: [
+      `${owner} invited you to log time on their clients in UseHourly.`,
+      "You'll see only the clients they choose, and never their rates, invoices or other people's time. They can remove you at any time.",
+      { button: { label: "Join the team", url: d.link } },
+      `The link works once and for ${d.days} days. You'll need a free UseHourly account: you can create one when you open it.`,
+      `Not expecting this? You can ignore the message, and reply to ask ${owner} about it.`,
+    ],
+    footnote: {
+      text: `You're getting this because ${owner} entered your address in UseHourly.`,
+      link: { label: "Stop these emails", url: d.stopUrl },
+    },
+  });
+  return {
+    to,
+    subject: `${owner} invited you to a team on UseHourly`,
+    ...mail,
+    fromName: `${owner} via UseHourly`,
+    replyTo: d.ownerEmail,
+    headers: { "List-Unsubscribe": `<${d.oneClickUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+  };
+}

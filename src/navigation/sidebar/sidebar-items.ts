@@ -8,6 +8,7 @@ import {
   type LucideIcon,
   UserRound,
   Users,
+  UsersRound,
 } from "lucide-react";
 
 export interface NavLink {
@@ -34,6 +35,7 @@ export const navLinks: NavLink[] = [
   },
   { id: "invoices", title: "Invoices", url: "/dashboard/invoices", icon: FileText },
   { id: "clients", title: "Clients & Projects", short: "Clients", url: "/dashboard/clients", icon: Users },
+  { id: "team", title: "Team", url: "/dashboard/team", icon: UsersRound, secondary: true },
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
 ];
 

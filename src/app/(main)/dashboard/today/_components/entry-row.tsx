@@ -23,6 +23,9 @@ export type EntryData = {
   minutes: number;
   note: string;
   started_at: Date | string | null;
+  /** The team member who logged it; absent or null for the account's own entries. */
+  author?: { name: string | null } | null;
+  author_id?: string | null;
   project: { name: string; client: { name: string; color: string } };
 };
 
@@ -143,6 +146,11 @@ export function EntryRow({
                 <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
               </p>
             </div>
+          )}
+          {entry.author_id && (
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
+              by {entry.author?.name?.trim() || "a team member"}
+            </span>
           )}
         </div>
         {!editing && (

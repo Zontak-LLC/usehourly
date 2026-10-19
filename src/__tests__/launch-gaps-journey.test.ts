@@ -33,6 +33,8 @@ async function world() {
     invoiceLink: [{ user_id: "u1" }, { user_id: "u2" }],
     invoiceEmail: [{ user_id: "u1" }, { user_id: "u2" }],
     nonBillableDay: [{ user_id: "u1" }, { user_id: "u2" }],
+    // u1 owns a team, u2 owns a team, and u1 is a member of u2's team: deleting u1 removes the first and the last.
+    teamMember: [{ owner_id: "u1" }, { owner_id: "u2" }, { owner_id: "u2", member_id: "u1" }],
   };
   const limiter = memoryRateLimit();
   const model = (name: string) => ({
@@ -56,6 +58,15 @@ async function world() {
     invoiceLink: model("invoiceLink"),
     invoiceEmail: model("invoiceEmail"),
     nonBillableDay: model("nonBillableDay"),
+    teamMember: {
+      deleteMany: vi.fn(async ({ where }: { where: { OR: { owner_id?: string; member_id?: string }[] } }) => {
+        const hit = (r: Row) =>
+          where.OR.some(
+            (c) => (c.owner_id && r.owner_id === c.owner_id) || (c.member_id && r.member_id === c.member_id),
+          );
+        tables.teamMember = tables.teamMember.filter((r) => !hit(r));
+      }),
+    },
     authUser: {
       findUnique: vi.fn(
         async ({ where }: { where: { id?: string; email?: string } }) =>
@@ -95,6 +106,8 @@ describe("deleting your own account", () => {
     ]) {
       expect(w.count(t, "u1"), t).toBe(0);
     }
+    // the team u1 owned and u1's membership of u2's team are gone; u2's own team (owner_id u2, no member) stays
+    expect(w.tables.teamMember).toEqual([{ owner_id: "u2" }]);
     expect(w.count("timeEntry", "u2")).toBe(1);
     expect(w.count("invoice", "u2")).toBe(1);
     expect(w.count("apiToken", "u2")).toBe(1);

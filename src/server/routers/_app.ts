@@ -7,9 +7,11 @@ import { insightsRouter } from "./insights";
 import { invoiceRouter } from "./invoice";
 import { invoiceLinkRouter } from "./invoice-link";
 import { invoiceMailRouter } from "./invoice-mail";
+import { memberRouter } from "./member";
 import { oauthRouter } from "./oauth";
 import { projectRouter } from "./project";
 import { reportRouter } from "./report";
+import { teamRouter } from "./team";
 import { timeImportRouter } from "./time-import";
 import { timesheetShareRouter } from "./timesheet-share";
 
@@ -27,6 +29,8 @@ export const appRouter = router({
   invoiceLink: invoiceLinkRouter,
   invoiceMail: invoiceMailRouter,
   timesheetShare: timesheetShareRouter,
+  team: teamRouter,
+  member: memberRouter,
 });
 
 export type AppRouter = typeof appRouter;
