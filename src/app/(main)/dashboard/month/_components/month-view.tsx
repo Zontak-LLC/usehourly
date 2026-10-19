@@ -127,7 +127,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           <MergeDaysPanel entries={shown} />
 
           {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
-          <WorkItems key={`${first}-${projectId}`} entries={shown} onOpenDay={setEditDate} period="month" />
+          <WorkItems key={`${first}-${projectId}`} entries={shown} onOpenDay={setEditDate} period="month" editInPlace />
         </>
       )}
     </div>
