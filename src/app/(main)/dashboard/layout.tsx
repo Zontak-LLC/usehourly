@@ -7,6 +7,7 @@ import { cn } from "cn";
 
 import { DemoBanner } from "@/components/demo-banner";
 import { LogoMark } from "@/components/logo";
+import { OfflineSync } from "@/components/offline-sync";
 import { ThemeSync } from "@/components/theme-sync";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UsageBeacon } from "@/components/usage-beacon";
@@ -91,6 +92,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         <MobileNav user={user} isAdmin={isAdmin} />
         {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
         <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-2 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] has-data-[content-padding=false]:p-0 md:p-6 md:has-data-[content-padding=false]:p-0">
+          <OfflineSync />
           {children}
         </div>
       </SidebarInset>

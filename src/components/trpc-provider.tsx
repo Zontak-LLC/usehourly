@@ -13,7 +13,21 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     () => new QueryClient({ defaultOptions: { queries: { staleTime: 15_000, retry: 1 } } }),
   );
   const [client] = useState(() =>
-    trpc.createClient({ links: [httpBatchLink({ url: "/api/trpc", maxItems: MAX_BATCH })] }),
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: "/api/trpc",
+          maxItems: MAX_BATCH,
+          // Saving an entry gives up after 20 seconds so a dead connection does not leave the form hanging; the entry is
+          // then kept on the device and retried (its own id makes the retry safe).
+          fetch: (url, options) =>
+            fetch(
+              url,
+              String(url).includes("entry.create") ? { ...options, signal: AbortSignal.timeout(20_000) } : options,
+            ),
+        }),
+      ],
+    }),
   );
   return (
     <trpc.Provider client={client} queryClient={queryClient}>

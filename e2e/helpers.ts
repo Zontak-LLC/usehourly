@@ -183,7 +183,14 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
 
 /** Console messages that are noise in development, not problems with the app. */
 // 400/401/403 are the app saying no on purpose (a wrong password, a refused send); 5xx and uncaught errors still fail.
-const IGNORED = [/favicon/i, /Download the React DevTools/i, /status of 40[013]/i, /\[Fast Refresh\]/i];
+// These net:: errors are what the browser logs when a test switches it offline or aborts a request on purpose.
+const IGNORED = [
+  /net::ERR_(INTERNET_DISCONNECTED|CONNECTION_FAILED|FAILED)/i,
+  /favicon/i,
+  /Download the React DevTools/i,
+  /status of 40[013]/i,
+  /\[Fast Refresh\]/i,
+];
 
 type Fixtures = {
   /** Save a full-page screenshot, numbered, under e2e/report/screens/<device>/. */
