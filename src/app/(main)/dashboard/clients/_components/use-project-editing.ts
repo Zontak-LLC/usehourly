@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { toast } from "sonner";
 
+import { parseBudgetInput } from "@/lib/budget";
 import { fileToLogo } from "@/lib/logo";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +21,11 @@ export function useProjectEditing() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const rate = Math.round(Number(fd.get("rate") || 0) * 100);
+    const unit = fd.get("budgetUnit") === "hours" ? "hours" : "dollars";
+    const budgetAmount = parseBudgetInput(String(fd.get("budgetAmount") ?? ""), unit);
+    if (budgetAmount === undefined) {
+      return toast.error("Couldn't read that budget. Try 1000 for dollars or 22.5 for hours, or leave it blank.");
+    }
     try {
       await updateProject.mutateAsync({
         id,
@@ -27,11 +33,15 @@ export function useProjectEditing() {
         clientId: String(fd.get("clientId")),
         hourlyRate: Number.isFinite(rate) ? rate : 0,
         billable: fd.get("billable") === "on",
+        budgetAmount,
+        budgetUnit: unit,
+        budgetPeriod: fd.get("budgetPeriod") === "total" ? "total" : "month",
         logo: logoDraft,
       });
       await Promise.all([
         utils.clients.list.invalidate(),
         utils.entry.list.invalidate(),
+        utils.project.budgets.invalidate(),
         utils.project.logos.invalidate(),
       ]);
       setEditingId(null);

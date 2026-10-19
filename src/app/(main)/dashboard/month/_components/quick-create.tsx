@@ -90,7 +90,7 @@ export function QuickCreate({
       } catch {
         // Remembering the project is a convenience only.
       }
-      await utils.entry.list.invalidate();
+      await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       if (res.skipped.length) {
         toast.warning(
           `Created ${res.created} entr${res.created === 1 ? "y" : "ies"}. Skipped ${res.skipped.length} day${

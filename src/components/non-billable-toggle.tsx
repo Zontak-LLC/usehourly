@@ -21,7 +21,11 @@ export function NonBillableToggle({ date, compact = false }: { date: string; com
   async function toggle() {
     try {
       await set.mutateAsync({ date, nonBillable: !on });
-      await Promise.all([utils.entry.nonBillableDays.invalidate(), utils.entry.list.invalidate()]);
+      await Promise.all([
+        utils.entry.nonBillableDays.invalidate(),
+        utils.entry.list.invalidate(),
+        utils.project.budgets.invalidate(),
+      ]);
     } catch (err) {
       toastError(err, "Couldn't change that day.");
     }

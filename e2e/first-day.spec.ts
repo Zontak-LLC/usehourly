@@ -1,4 +1,5 @@
 import { anonymous, clearMail, clientEmail, expect, linkIn, mailTo, newUser, seen, sql, test, today } from "./helpers";
+import { readFileSync } from "node:fs";
 
 /**
  * A new freelancer's first day, start to finish, the way the product is meant to be used: sign up, say who you work for,
@@ -117,6 +118,33 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(page.getByText("$60.00/h")).toBeVisible();
     await audit("my work");
     await shot("my-work-after");
+  });
+
+  await test.step("give the project a monthly budget: the bar shows on Clients and above the add form", async () => {
+    await page.goto("/dashboard/clients");
+    await page.getByRole("button", { name: "Edit General" }).click();
+    await page.getByLabel("Budget amount").fill("100");
+    await page.getByLabel("Budget unit").selectOption("dollars");
+    await page.getByLabel("Budget period").selectOption("month");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    // 3 hours at $60/h = $180 so far: already past a $100 budget
+    const over = "Budget: $180 of $100 this month · 180% · over budget";
+    await expect(page.getByText(over)).toBeVisible();
+    await shot("budget-on-clients");
+    await audit("clients with a budget");
+
+    await page.goto("/dashboard/today");
+    await expect(page.getByText(over)).toBeVisible();
+    await shot("budget-over");
+    await audit("today, over budget");
+
+    // a blank budget removes it again
+    await page.goto("/dashboard/clients");
+    await page.getByRole("button", { name: "Edit General" }).click();
+    await page.getByLabel("Budget amount").fill("");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("$60.00/h")).toBeVisible();
+    await expect(page.getByText(/Budget: /)).toBeHidden();
   });
 
   await test.step("confirm the email address (from the email the app sent)", async () => {
@@ -323,6 +351,38 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(page.getByRole("button", { name: "Mark day non-billable" })).toBeVisible();
     await page.goto("/dashboard/report");
     await expect(page.locator("body")).toContainText("3.00 h");
+  });
+
+  await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
+    await page.goto("/dashboard/account");
+    await expect(page.getByText("Send invoices to your accounting app")).toBeVisible();
+    await shot("accounting-export");
+    await audit("account, accounting export");
+
+    const save = async () => {
+      const [download] = await Promise.all([
+        page.waitForEvent("download"),
+        page.getByRole("button", { name: "Download CSV" }).click(),
+      ]);
+      const path = await download.path();
+      return { name: download.suggestedFilename(), text: path ? readFileSync(path, "utf8") : "" };
+    };
+
+    const xero = await save(); // Xero is the default format
+    expect(xero.name).toMatch(/^usehourly-xero-\d{4}\.csv$/);
+    expect(xero.text).toContain("*ContactName");
+    expect(xero.text).toContain("Acme Studio");
+    expect(xero.text).toMatch(/INV-\d{4}-\d{3}/);
+
+    await page.getByLabel("Send to").selectOption("quickbooks");
+    const quickbooks = await save();
+    expect(quickbooks.name).toMatch(/^usehourly-quickbooks-\d{4}\.csv$/);
+    expect(quickbooks.text).toContain("Item(Product/Service)");
+
+    await page.getByLabel("Send to").selectOption("payments");
+    const payments = await save(); // the journey marked its invoice paid
+    expect(payments.name).toMatch(/^usehourly-payments-\d{4}\.csv$/);
+    expect(payments.text).toMatch(/INV-\d{4}-\d{3}/);
   });
 
   await test.step("delete the account; the details no longer work", async () => {

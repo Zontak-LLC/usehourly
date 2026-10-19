@@ -11,7 +11,7 @@ import { formatDuration } from "@/lib/duration";
 
 import { SetupForm } from "../../today/_components/setup-form";
 import { ClientDetailsForm } from "./client-details-form";
-import type { ClientRow, ProjectTotals } from "./client-types";
+import type { ClientRow, ProjectBudgets, ProjectTotals } from "./client-types";
 import { PROJECT_GRID, ProjectEditRow, ProjectRow } from "./project-row";
 import type { ProjectEditing } from "./use-project-editing";
 
@@ -21,6 +21,7 @@ export function ClientCard({
   allClients,
   logos,
   totals,
+  budgets,
   editing,
   billingOpen,
   onToggleBilling,
@@ -32,6 +33,7 @@ export function ClientCard({
   allClients: ClientRow[] | undefined;
   logos: Record<string, string>;
   totals: ProjectTotals | undefined;
+  budgets: ProjectBudgets | undefined;
   editing: ProjectEditing;
   billingOpen: boolean;
   onToggleBilling: () => void;
@@ -101,6 +103,7 @@ export function ClientCard({
                 clientColor={c.color}
                 logos={logos}
                 totals={totals}
+                budget={budgets?.[p.id]}
                 onEdit={() => editing.startEditing(p.id)}
                 onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
               />

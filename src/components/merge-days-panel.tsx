@@ -41,7 +41,11 @@ export function MergeDaysPanel({ entries }: { entries: Entry[] }) {
         failed.push(`${dayFmt.format(fromISODate(g.date))}: ${err instanceof Error ? err.message : "failed"}`);
       }
     }
-    await Promise.all([utils.entry.list.invalidate(), utils.entry.running.invalidate()]);
+    await Promise.all([
+      utils.entry.list.invalidate(),
+      utils.entry.running.invalidate(),
+      utils.project.budgets.invalidate(),
+    ]);
     setBusy(false);
     if (merged > 0) toast.success(`Merged ${merged} ${merged === 1 ? "day" : "days"} into one entry each.`);
     if (failed.length > 0) toast.error(`Couldn't merge: ${failed.join(" · ")}`);

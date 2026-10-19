@@ -1,10 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { type BudgetPeriod, type BudgetUnit, budgetStatus, usedAmount } from "@/lib/budget";
+import { DATE_RE, isRealDate } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { assertWithinQuota } from "@/lib/quotas";
 
 import { projectLogoSchema } from "../logo-schema";
+import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
 
 export const projectRouter = router({
@@ -51,15 +54,23 @@ export const projectRouter = router({
 
   update: protectedProcedure
     .input(
-      z.object({
-        id: z.string(),
-        name: z.string().trim().min(1).max(80).optional(),
-        clientId: z.string().optional(),
-        hourlyRate: z.number().int().min(0).max(10_000_00).optional(),
-        billable: z.boolean().optional(),
-        // undefined = leave as is; null = remove the logo.
-        logo: projectLogoSchema.optional(),
-      }),
+      z
+        .object({
+          id: z.string(),
+          name: z.string().trim().min(1).max(80).optional(),
+          clientId: z.string().optional(),
+          hourlyRate: z.number().int().min(0).max(10_000_00).optional(),
+          billable: z.boolean().optional(),
+          // undefined = leave as is; null = remove the logo.
+          logo: projectLogoSchema.optional(),
+          // The budget: minutes (hours) or cents (dollars). undefined = leave as is; null = remove the budget.
+          budgetAmount: z.number().int().min(1).max(100_000_000).nullable().optional(),
+          budgetUnit: z.enum(["hours", "dollars"]).optional(),
+          budgetPeriod: z.enum(["month", "total"]).optional(),
+        })
+        .refine((v) => v.budgetAmount == null || v.budgetUnit !== undefined, {
+          message: "Say whether the budget is in hours or dollars.",
+        }),
     )
     .mutation(async ({ ctx, input }) => {
       const project = await ctx.prisma.project.findFirst({ where: { id: input.id, user_id: ctx.userId } });
@@ -86,6 +97,11 @@ export const projectRouter = router({
           ...(input.hourlyRate !== undefined && { hourly_rate: input.hourlyRate }),
           ...(input.billable !== undefined && { billable: input.billable }),
           ...(input.logo !== undefined && { logo: input.logo }),
+          ...(input.budgetAmount !== undefined && {
+            budget_amount: input.budgetAmount,
+            budget_unit: input.budgetAmount === null ? null : (input.budgetUnit ?? null),
+            ...(input.budgetPeriod !== undefined && { budget_period: input.budgetPeriod }),
+          }),
         },
         omit: { logo: true },
       });
@@ -139,6 +155,63 @@ export const projectRouter = router({
         const entry = out[r.project_id] ?? { total: 0, range: 0 };
         entry.range = r._sum.minutes ?? 0;
         out[r.project_id] = entry;
+      }
+      return out;
+    }),
+
+  /**
+   * How much of each project's budget is used, for the projects that have one. A "month" budget counts the entries
+   * in [from, to] (the calendar month the screen is showing); a "total" budget counts everything. Days marked
+   * non-billable are left out. A dollars budget prices the time at the project's rate, so a non-billable project
+   * uses none of it; an hours budget counts the hours either way.
+   */
+  budgets: protectedProcedure
+    .input(
+      z.object({
+        from: z.string().regex(DATE_RE).refine(isRealDate),
+        to: z.string().regex(DATE_RE).refine(isRealDate),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const projects = await ctx.prisma.project.findMany({
+        where: { user_id: ctx.userId, budget_amount: { not: null } },
+        select: {
+          id: true,
+          hourly_rate: true,
+          billable: true,
+          budget_amount: true,
+          budget_unit: true,
+          budget_period: true,
+        },
+      });
+      if (projects.length === 0) return {};
+      const [entries, skipDays] = await Promise.all([
+        ctx.prisma.timeEntry.findMany({
+          where: { user_id: ctx.userId, project_id: { in: projects.map((p) => p.id) } },
+          select: { project_id: true, date: true, minutes: true },
+        }),
+        nonBillableDates(ctx.prisma, ctx.userId),
+      ]);
+      const out: Record<string, ReturnType<typeof budgetStatus>> = {};
+      for (const p of projects) {
+        if (p.budget_amount === null || (p.budget_unit !== "hours" && p.budget_unit !== "dollars")) continue;
+        const unit: BudgetUnit = p.budget_unit;
+        const period: BudgetPeriod = p.budget_period === "total" ? "total" : "month";
+        const minutes = entries
+          .filter(
+            (e) =>
+              e.project_id === p.id &&
+              !skipDays.has(e.date) &&
+              (period === "total" || (e.date >= input.from && e.date <= input.to)),
+          )
+          .reduce((sum, e) => sum + e.minutes, 0);
+        out[p.id] = budgetStatus({
+          amount: p.budget_amount,
+          unit,
+          period,
+          // a non-billable project costs nothing, but its hours are still hours
+          used: usedAmount(minutes, p.billable ? p.hourly_rate : 0, unit),
+        });
       }
       return out;
     }),

@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountingExport } from "@/components/accounting-export";
 import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
 import { DeleteAccountCard } from "@/components/delete-account-card";
@@ -68,6 +69,13 @@ export function AccountView() {
             description="Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook, one per client, and plain CSV files."
           >
             <ExportEverything className="self-start" />
+          </SectionCard>
+
+          <SectionCard
+            title="Send invoices to your accounting app"
+            description="Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you marked non-billable are already left off every invoice."
+          >
+            <AccountingExport />
           </SectionCard>
 
           <ImportTime />

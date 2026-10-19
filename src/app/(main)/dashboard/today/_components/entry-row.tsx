@@ -56,7 +56,9 @@ export function EntryRow({
   // Shared with the Today page's own query (same cache key), so this costs no extra request.
   const clients = trpc.clients.list.useQuery();
 
-  const refresh = () => utils.entry.list.invalidate();
+  const refresh = async () => {
+    await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
+  };
   const isRunning = !!entry.started_at;
 
   async function save() {

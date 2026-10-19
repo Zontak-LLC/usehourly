@@ -44,7 +44,11 @@ export function TimerBanner() {
   async function onStop() {
     try {
       await stop.mutateAsync();
-      await Promise.all([utils.entry.running.invalidate(), utils.entry.list.invalidate()]);
+      await Promise.all([
+        utils.entry.running.invalidate(),
+        utils.entry.list.invalidate(),
+        utils.project.budgets.invalidate(),
+      ]);
     } catch (err) {
       toastError(err, "Couldn't stop the timer.");
     }

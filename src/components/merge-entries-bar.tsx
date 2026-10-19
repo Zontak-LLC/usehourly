@@ -30,7 +30,11 @@ export function MergeEntriesBar({ entries }: { entries: Entry[] }) {
   async function run(group: Entry[]) {
     try {
       const r = await merge.mutateAsync({ ids: group.map((e) => e.id) });
-      await Promise.all([utils.entry.list.invalidate(), utils.entry.running.invalidate()]);
+      await Promise.all([
+        utils.entry.list.invalidate(),
+        utils.entry.running.invalidate(),
+        utils.project.budgets.invalidate(),
+      ]);
       toast.success(`Merged ${r.merged} entries into one (${formatDuration(r.minutes)}).`);
     } catch (err) {
       toastError(err, "Couldn't merge those entries.");
