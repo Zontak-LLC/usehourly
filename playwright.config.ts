@@ -48,6 +48,7 @@ export default defineConfig({
           timeout: 240_000,
           env: {
             NEXT_DIST_DIR: ".next-e2e",
+            NEXT_PUBLIC_ENABLE_SW: "1", // the offline worker is off in development unless a test asks for it
             AUTH_URL: BASE,
             NEXT_PUBLIC_APP_URL: BASE,
             TURNSTILE_SITE_KEY: "",

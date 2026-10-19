@@ -7,15 +7,18 @@ import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
 import { NoteTextarea } from "@/components/note-textarea";
+import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { fromISODate, monthBounds } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
+import { addPending, isNetworkError } from "@/lib/offline-queue";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { notifyPending, useOnline } from "@/lib/use-offline";
 import { useToday } from "@/lib/use-today";
 
 const LAST_PROJECT_KEY = "hourly:lastProject";
@@ -41,6 +44,8 @@ export function QuickAdd({
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
+  const userId = useCurrentUserId();
+  const online = useOnline();
   const create = trpc.entry.create.useMutation();
   const start = trpc.entry.start.useMutation();
 
@@ -96,15 +101,33 @@ export function QuickAdd({
     e?.preventDefault();
     if (!projectId) return toast.error("Pick a project first.");
     if (parsed === null) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
-    try {
-      await create.mutateAsync({ projectId, date, minutes: parsed, note });
-      await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
+    // One id for this entry, kept if the send has to be retried, so the server saves it once however many times it arrives.
+    const clientId = crypto.randomUUID();
+    const finish = () => {
       setDuration("");
       setNote("");
       durationRef.current?.focus();
+    };
+    if (!online) return saveOnDevice(clientId, parsed, finish);
+    try {
+      await create.mutateAsync({ projectId, date, minutes: parsed, note, clientId });
+      await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
+      finish();
     } catch (err) {
+      // No connection (or the server is unreachable): keep the entry on this device and send it later.
+      if (isNetworkError(err)) return saveOnDevice(clientId, parsed, finish);
       toastError(err, "Couldn't save that entry.");
     }
+  }
+
+  /** Keeps an entry typed without a connection on this device; OfflineSync sends it when the connection is back. */
+  function saveOnDevice(clientId: string, minutes: number, finish: () => void) {
+    if (!userId) return toast.error("Couldn't save that without a connection. Please try again when you're online.");
+    const kept = addPending(localStorage, { clientId, userId, projectId, date, minutes, note, createdAt: Date.now() });
+    if (!kept) return toast.error("Couldn't save that on this device. Please try again when you're online.");
+    notifyPending();
+    toast.info("No connection: saved on this device. It will be sent when you're back online.");
+    finish();
   }
 
   async function startTimer() {
@@ -239,7 +262,8 @@ export function QuickAdd({
                 size="lg"
                 variant="outline"
                 onClick={startTimer}
-                disabled={start.isPending}
+                disabled={start.isPending || !online}
+                title={online ? undefined : "A timer needs a connection"}
                 className="h-12 w-full text-base sm:w-auto sm:px-6"
               >
                 <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}

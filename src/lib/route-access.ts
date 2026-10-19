@@ -5,7 +5,7 @@
  * - `/` is the public landing page. Visitors see it; someone already signed in goes straight
  *   to their day, so returning users never see the sales page.
  * - `/auth/*` are the log-in and create-account pages: public, but pointless once signed in.
- * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off` and the app manifest are public for everyone, signed in or not.
+ * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off`, the app manifest and the offline worker (`/sw.js`, `/offline.html`) are public for everyone, signed in or not.
  * - `/timesheet/<token>` is a private link a freelancer sends a client for sign-off: public for everyone, protected by the unguessable token.
  * - `/invoice/<token>` is a private link a freelancer sends a client to view an invoice: public for everyone, protected by the unguessable token.
  * - `/.well-known/*` is public (the MCP registry reads its domain-verification file there).
@@ -27,6 +27,9 @@ const PUBLIC_FOR_EVERYONE = new Set([
   "/oauth/authorize",
   "/tools/hours-calculator",
   "/manifest.webmanifest",
+  // The offline service worker and its fallback page: the browser fetches them before anyone is signed in.
+  "/sw.js",
+  "/offline.html",
 ]);
 
 export function accessDecision(pathname: string, signedIn: boolean): AccessDecision {

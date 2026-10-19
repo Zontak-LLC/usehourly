@@ -25,6 +25,8 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // The service worker script is always re-checked, so a new version reaches people promptly.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
       {
         source: "/(.*)",
         headers: [

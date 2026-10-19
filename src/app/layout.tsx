@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 
 import type { Metadata, Viewport } from "next";
 
+import { ServiceWorkerRegister } from "@/components/service-worker";
 import { TRPCProvider } from "@/components/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <TooltipProvider>
           <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
             <TRPCProvider>{children}</TRPCProvider>
+            <ServiceWorkerRegister />
             <Toaster />
           </PreferencesStoreProvider>
         </TooltipProvider>

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { LogOut, Menu } from "lucide-react";
-import { signOut } from "next-auth/react";
 
 import {
   DropdownMenu,
@@ -14,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { signOutOfDevice } from "@/lib/sign-out";
 import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
 const MAIN = ["today", "week", "month", "invoices", "clients", "account"];
@@ -80,7 +80,7 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/auth/v2/login" })}>
+            <DropdownMenuItem onSelect={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
               <LogOut /> Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

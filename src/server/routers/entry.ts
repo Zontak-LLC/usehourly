@@ -123,10 +123,22 @@ export const entryRouter = router({
           minutes: minutesSchema.optional(),
           duration: z.string().optional(),
           note: noteSchema,
+          /**
+           * An id the browser made for this entry (a UUID). Sending the same one twice saves the entry once: a retry after a
+           * dropped connection (or an entry that waited offline and was sent again) returns the saved entry, never a copy.
+           */
+          clientId: z.string().uuid().optional(),
         })
         .refine((v) => v.minutes !== undefined || v.duration !== undefined, { message: "Enter a duration." }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.clientId) {
+        const already = await ctx.prisma.timeEntry.findFirst({
+          where: { id: input.clientId, user_id: ctx.userId },
+          include: withProject,
+        });
+        if (already) return already;
+      }
       const minutes = input.minutes ?? parseDuration(input.duration ?? "");
       if (!minutes || minutes < 1 || minutes > 24 * 60) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Couldn't read that duration. Try 1.5, 1:30 or 90m." });
@@ -134,10 +146,29 @@ export const entryRouter = router({
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
       await assertEntryQuota(ctx, 1);
-      return ctx.prisma.timeEntry.create({
-        data: { user_id: ctx.userId, project_id: project.id, date: input.date, minutes, note: input.note },
-        include: withProject,
-      });
+      try {
+        return await ctx.prisma.timeEntry.create({
+          data: {
+            ...(input.clientId ? { id: input.clientId } : {}),
+            user_id: ctx.userId,
+            project_id: project.id,
+            date: input.date,
+            minutes,
+            note: input.note,
+          },
+          include: withProject,
+        });
+      } catch (err) {
+        // Two sends of the same entry at once: the other one won, so hand back what it saved.
+        if (input.clientId) {
+          const won = await ctx.prisma.timeEntry.findFirst({
+            where: { id: input.clientId, user_id: ctx.userId },
+            include: withProject,
+          });
+          if (won) return won;
+        }
+        throw err;
+      }
     }),
 
   update: protectedProcedure

@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
-import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { signOutOfDevice } from "@/lib/sign-out";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -23,7 +23,7 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
     try {
       await del.mutateAsync({ confirm });
       toast.success("Your account and data were deleted.");
-      await signOut({ callbackUrl: "/" });
+      await signOutOfDevice({ callbackUrl: "/" }, true);
     } catch (err) {
       toastError(err, "Couldn't delete the account.");
     }
