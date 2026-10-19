@@ -7,7 +7,7 @@
 @import "../styles/presets/coral.css";
 @import "../styles/presets/sky.css";
 @import "../styles/presets/lilac.css";
-@import "../styles/presets/ink.css";
+@import "../styles/presets/sunshine.css";
 @import "../styles/presets/mono.css";
 @import "../styles/presets/cream.css";
 @import "../styles/presets/azure.css";
@@ -65,7 +65,7 @@
 /* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
 These serve as the fallback; there is no separate default.css file. */
 :root {
-  /* Palette: sunshine (primary), a quiet neutral off-white page (so white cards stand out without the background being noticed), warm ink (text), mint (success only). */
+  /* Palette: near-black (primary; the amber "Sunshine" accent is an optional preset), a quiet neutral off-white page (so white cards stand out without the background being noticed), warm ink (text), mint (success only). */
   --radius: 0.625rem;
   --background: oklch(0.985 0 0);
   --foreground: oklch(0.21 0.006 286);
@@ -73,8 +73,8 @@ These serve as the fallback; there is no separate default.css file. */
   --card-foreground: oklch(0.21 0.006 286);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.006 286);
-  --primary: oklch(0.79 0.17 75);
-  --primary-foreground: oklch(0.24 0.02 75);
+  --primary: oklch(0.21 0.006 286);
+  --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.967 0.001 286);
   --secondary-foreground: oklch(0.21 0.006 286);
   --muted: oklch(0.967 0.001 286);
@@ -86,20 +86,20 @@ These serve as the fallback; there is no separate default.css file. */
   --success-soft: oklch(0.95 0.04 170);
   --border: oklch(0.92 0.004 286);
   --input: oklch(0.92 0.004 286);
-  --ring: oklch(0.79 0.17 75);
-  --chart-1: oklch(0.79 0.17 75);
+  --ring: oklch(0.21 0.006 286);
+  --chart-1: oklch(0.21 0.006 286);
   --chart-2: oklch(0.7 0.13 170);
   --chart-3: oklch(0.62 0.12 60);
   --chart-4: oklch(0.55 0.08 170);
   --chart-5: oklch(0.4 0.04 75);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.21 0.006 286);
-  --sidebar-primary: oklch(0.79 0.17 75);
-  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-primary: oklch(0.21 0.006 286);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.967 0.001 286);
   --sidebar-accent-foreground: oklch(0.21 0.006 286);
   --sidebar-border: oklch(0.92 0.004 286);
-  --sidebar-ring: oklch(0.79 0.17 75);
+  --sidebar-ring: oklch(0.21 0.006 286);
 
   /* Header shades: the page card's header and the header of a card inside it share ONE light shade (just enough to
      stand out from the white body), and a tile inside a card is a notch lighter still. They are mixed from the theme's
@@ -120,8 +120,8 @@ These serve as the fallback; there is no separate default.css file. */
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.21 0.006 286);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.82 0.15 78);
-  --primary-foreground: oklch(0.24 0.02 75);
+  --primary: oklch(0.93 0 0);
+  --primary-foreground: oklch(0.2 0.006 286);
   --secondary: oklch(0.274 0.006 286);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.274 0.006 286);
@@ -133,20 +133,20 @@ These serve as the fallback; there is no separate default.css file. */
   --success-soft: oklch(0.3 0.05 170);
   --border: oklch(0.274 0.006 286);
   --input: oklch(0.32 0.006 286);
-  --ring: oklch(0.82 0.15 78);
-  --chart-1: oklch(0.82 0.15 78);
+  --ring: oklch(0.93 0 0);
+  --chart-1: oklch(0.93 0 0);
   --chart-2: oklch(0.75 0.12 170);
   --chart-3: oklch(0.68 0.12 60);
   --chart-4: oklch(0.6 0.08 170);
   --chart-5: oklch(0.5 0.04 75);
   --sidebar: oklch(0.17 0.005 286);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.82 0.15 78);
-  --sidebar-primary-foreground: oklch(0.24 0.02 75);
+  --sidebar-primary: oklch(0.93 0 0);
+  --sidebar-primary-foreground: oklch(0.2 0.006 286);
   --sidebar-accent: oklch(0.274 0.006 286);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.274 0.006 286);
-  --sidebar-ring: oklch(0.82 0.15 78);
+  --sidebar-ring: oklch(0.93 0 0);
 }
 
 @layer base {

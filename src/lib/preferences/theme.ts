@@ -12,8 +12,16 @@ export type ResolvedThemeMode = "light" | "dark";
 
 export const THEME_PRESET_OPTIONS = [
   {
-    label: "Sunshine",
+    label: "Neutral",
     value: "default",
+    primary: {
+      light: "oklch(0.21 0.006 286)",
+      dark: "oklch(0.93 0 0)",
+    },
+  },
+  {
+    label: "Sunshine",
+    value: "sunshine",
     primary: {
       light: "oklch(0.79 0.17 75)",
       dark: "oklch(0.82 0.15 78)",
@@ -65,14 +73,6 @@ export const THEME_PRESET_OPTIONS = [
     primary: {
       light: "oklch(0.52 0.07 60)",
       dark: "oklch(0.82 0.07 78)",
-    },
-  },
-  {
-    label: "Ink",
-    value: "ink",
-    primary: {
-      light: "oklch(0.24 0.02 75)",
-      dark: "oklch(0.93 0.02 85)",
     },
   },
   {
