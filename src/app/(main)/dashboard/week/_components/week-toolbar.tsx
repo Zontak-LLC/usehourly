@@ -35,7 +35,7 @@ export function WeekToolbar({
     >
       <ProjectFilter className="h-10 max-sm:flex-1" value={projectId} onChange={onProjectId} />
       <ShareExportMenu
-        className="h-10 max-sm:flex-1"
+        className="h-10 border-foreground/25 bg-card max-sm:flex-1 dark:bg-card"
         entries={shown}
         days={days}
         filename={`usehourly-${start}_to_${end}.xlsx`}
@@ -44,7 +44,7 @@ export function WeekToolbar({
         defaultTo={end}
         projectId={projectId}
       />
-      <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full sm:min-w-44">
+      <div className="flex items-center overflow-hidden rounded-lg border border-foreground/25 bg-card max-sm:w-full sm:min-w-44">
         <Button
           size="icon"
           variant="ghost"

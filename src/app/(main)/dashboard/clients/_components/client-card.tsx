@@ -36,7 +36,7 @@ export function ClientCard({
   onArchiveProject: (project: { id: string; name: string }) => void;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-l-4 bg-card" style={{ borderLeftColor: c.color }}>
+    <section className="overflow-hidden rounded-xl border bg-card">
       <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b bg-muted/40 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <ClientLogoSlot clientId={c.id} name={c.name} />
