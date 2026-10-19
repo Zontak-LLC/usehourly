@@ -45,6 +45,9 @@ model AuthUser {
   entries  TimeEntry[]
   invoices Invoice[]
   non_billable_days NonBillableDay[]
+  team_members_owned TeamMember[] @relation("TeamOwner")
+  team_memberships   TeamMember[] @relation("TeamMemberOf")
+  authored_entries   TimeEntry[]  @relation("EntryAuthor")
   invoice_logos InvoiceLogo[]
   email_tokens EmailToken[]
   api_tokens ApiToken[]
@@ -76,6 +79,7 @@ model Client {
 
   user     AuthUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
   projects Project[]
+  team_grants TeamMemberClient[]
   invoices Invoice[]
 
   @@unique([user_id, name])
@@ -121,9 +125,15 @@ model TimeEntry {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  user    AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  project Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  // Who typed it. null = the account's owner. A team member's entries belong to the OWNER (user_id) and carry the
+  // member's id here; if that member's account is deleted the entry stays on the owner's books with author_id null.
+  author_id  String?
 
+  user    AuthUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  author  AuthUser? @relation("EntryAuthor", fields: [author_id], references: [id], onDelete: SetNull)
+  project Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([author_id])
   @@index([user_id, date])
   @@index([user_id, started_at])
   // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
@@ -361,4 +371,39 @@ model InvoiceEmail {
   @@index([invoice_id, created_at])
   @@index([user_id])
   @@map("invoice_emails")
+}
+
+// Delegated access (issue #68): the owner invites a person, who signs in with their own account and may log time on the
+// clients they were granted. The member never gets the owner's data: every read and write goes through the `member`
+// router, which checks this row (accepted, not revoked) and the grant.
+model TeamMember {
+  id          String   @id @default(uuid())
+  owner_id    String
+  member_id   String?  // set when the invitation is accepted
+  email       String   // the address the invitation went to (lowercase)
+  label       String   // what the owner calls this person (their name, or the address when none was given)
+  token_hash  String?  @unique // SHA-256 of the invite link; cleared once accepted
+  expires_at  Int?     // the invitation's last moment (unix seconds); cleared once accepted
+  accepted_at Int?
+  revoked_at  Int?
+  created_at  DateTime @default(now())
+
+  owner   AuthUser           @relation("TeamOwner", fields: [owner_id], references: [id], onDelete: Cascade)
+  member  AuthUser?          @relation("TeamMemberOf", fields: [member_id], references: [id], onDelete: Cascade)
+  clients TeamMemberClient[]
+
+  @@index([owner_id])
+  @@index([member_id])
+  @@map("team_members")
+}
+
+model TeamMemberClient {
+  team_member_id String
+  client_id      String
+
+  team_member TeamMember @relation(fields: [team_member_id], references: [id], onDelete: Cascade)
+  client      Client     @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@id([team_member_id, client_id])
+  @@map("team_member_clients")
 }
