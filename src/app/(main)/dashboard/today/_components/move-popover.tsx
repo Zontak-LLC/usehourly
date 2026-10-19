@@ -72,7 +72,7 @@ export function MovePopover({
       <PopoverTrigger asChild>
         <Button
           size="icon"
-          variant="ghost"
+          variant="outline"
           aria-label="Move to another day"
           title="Move to another day"
           disabled={disabled}

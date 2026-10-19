@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-import { Ban, ChevronLeft, ChevronRight, Clock, Pencil, Search } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { NoteText } from "@/components/folded-note";
+import { HoursChip } from "@/components/hours-chip";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,16 +114,15 @@ export function WorkItems({
                   )}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="flex items-center gap-1.5 font-mono tabular-nums">
-                    <Clock className="size-3.5" aria-hidden />
+                  <HoursChip>
                     {formatDuration(g.minutes)}
                     {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
-                  </span>
+                  </HoursChip>
                   <Button
                     type="button"
                     size="icon"
-                    variant="ghost"
-                    className="size-8 text-muted-foreground"
+                    variant="outline"
+                    className="size-8"
                     onClick={() =>
                       editInPlace
                         ? startEditing(g.items.filter((e) => !e.started_at).map((e) => e.id))

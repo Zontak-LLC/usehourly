@@ -26,7 +26,7 @@ export function ThemeSwitcher() {
   return (
     <Button
       size="icon"
-      variant="ghost"
+      variant="outline"
       onClick={cycleTheme}
       aria-label={`Current theme: ${themeMode}. Click to cycle themes`}
     >
