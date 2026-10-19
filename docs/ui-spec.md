@@ -21,7 +21,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 | Level | What | Header shade |
 |---|---|---|
 | Page | the page background: a quiet neutral off-white | none |
-| 1. Page card | `PageShell`: one main card per dashboard page | `bg-band-1` (one light shade, 2%) |
+| 1. Page card | `PageShell`: one main card per dashboard page | white (`bg-card`) header, title line as tall as the 40px controls beside it (24px on a phone, 30px from `sm`; Today's word is 36px), icon tile with a thin border; a short description (a date) can sit on the title's line with `inlineDescription` |
 | 2. Card | cards directly inside it (`HeaderCard`, `SectionCard`, entry cards, client cards, invoice cards) | `bg-band-2` (the same shade as band-1) |
 | 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (1.5%, a notch lighter), body `bg-foreground/[0.03]` |
 

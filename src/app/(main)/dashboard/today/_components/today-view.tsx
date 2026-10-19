@@ -67,9 +67,8 @@ export function TodayView() {
         )
       }
       descriptionOnPhone
-      prominent
       inlineDescription
-      titleClassName={date === today ? undefined : "text-2xl leading-10"}
+      titleClassName={date === today ? "text-4xl leading-10" : "text-2xl leading-10"}
       actions={
         hasProjects && (
           <div className="flex items-center gap-1">
