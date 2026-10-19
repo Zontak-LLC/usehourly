@@ -141,11 +141,11 @@ export function ClientsView() {
           type="button"
           size="lg"
           variant="primary"
-          className="h-10 max-sm:w-10 max-sm:px-0"
+          className="h-10 max-sm:w-10 max-sm:rounded-xl max-sm:px-0"
           title="New client"
           onClick={() => setNewOpen(true)}
         >
-          <Plus /> <span className="max-sm:sr-only">New client</span>
+          <Plus className="max-sm:size-5" /> <span className="max-sm:sr-only">New client</span>
         </Button>
       }
     >
