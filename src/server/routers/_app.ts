@@ -1,5 +1,6 @@
 import { router } from "../trpc";
 import { accountRouter } from "./account";
+import { accountingRouter } from "./accounting";
 import { clientRouter } from "./client";
 import { entryRouter } from "./entry";
 import { insightsRouter } from "./insights";
@@ -14,6 +15,7 @@ import { timesheetShareRouter } from "./timesheet-share";
 
 export const appRouter = router({
   account: accountRouter,
+  accounting: accountingRouter,
   clients: clientRouter,
   project: projectRouter,
   entry: entryRouter,

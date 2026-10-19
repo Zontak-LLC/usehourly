@@ -92,6 +92,11 @@ model Project {
   logo        String?  // small data URL (png/jpeg), resized client-side; served via project.logos
   archived    Boolean  @default(false)
   created_at  DateTime @default(now())
+  // An optional spending limit: minutes when budget_unit is "hours", cents when "dollars"; null = no budget.
+  // budget_period is "month" (resets each calendar month) or "total" (the life of the project).
+  budget_amount Int?
+  budget_unit   String?
+  budget_period String   @default("month")
 
   user    AuthUser    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   client  Client      @relation(fields: [client_id], references: [id], onDelete: Cascade)

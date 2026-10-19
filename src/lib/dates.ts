@@ -28,6 +28,15 @@ export function fromISODate(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** First and last day of the month containing `s` (YYYY-MM-DD), for "this month" figures. */
+export function monthBounds(s: string): { from: string; to: string } {
+  const d = fromISODate(s);
+  return {
+    from: toISODate(new Date(d.getFullYear(), d.getMonth(), 1)),
+    to: toISODate(new Date(d.getFullYear(), d.getMonth() + 1, 0)),
+  };
+}
+
 export function addDays(s: string, n: number): string {
   const d = fromISODate(s);
   d.setDate(d.getDate() + n);

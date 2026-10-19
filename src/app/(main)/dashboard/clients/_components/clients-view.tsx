@@ -99,6 +99,7 @@ export function ClientsView() {
     return { from: toISODate(first), to: toISODate(last) };
   });
   const totals = trpc.project.totals.useQuery(month);
+  const budgets = trpc.project.budgets.useQuery(month);
 
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const visibleClients = filterClients(clients.data ?? [], words);
@@ -166,6 +167,7 @@ export function ClientsView() {
           allClients={clients.data}
           logos={logos}
           totals={totals.data}
+          budgets={budgets.data}
           editing={editing}
           billingOpen={editingClientId === c.id}
           onToggleBilling={() => setEditingClientId(editingClientId === c.id ? null : c.id)}

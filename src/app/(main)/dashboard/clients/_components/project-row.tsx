@@ -2,11 +2,13 @@
 
 import { Archive, Pencil } from "lucide-react";
 
+import { BudgetBar } from "@/components/budget-bar";
 import { ICON_TONE, IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
 import { ProjectMark } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { type BudgetStatus, budgetInputValue } from "@/lib/budget";
 import { formatDuration } from "@/lib/duration";
 
 import type { ClientRow, ProjectRow as ProjectData, ProjectTotals } from "./client-types";
@@ -21,6 +23,7 @@ export function ProjectRow({
   clientColor,
   logos,
   totals,
+  budget,
   onEdit,
   onArchive,
 }: {
@@ -28,6 +31,7 @@ export function ProjectRow({
   clientColor: string;
   logos: Record<string, string>;
   totals: ProjectTotals | undefined;
+  budget?: BudgetStatus;
   onEdit: () => void;
   onArchive: () => void;
 }) {
@@ -74,6 +78,7 @@ export function ProjectRow({
           {formatDuration(totals?.[p.id]?.total ?? 0)}
         </span>
       </div>
+      {budget && <BudgetBar status={budget} className="col-span-full mt-2 pl-7" />}
       <div className="col-span-2 mt-2 flex gap-1.5 sm:hidden">
         <IconAction label={`Edit ${p.name}`} tip="Edit project" text="Edit" onClick={onEdit}>
           <Pencil className={ICON_TONE.edit} />
@@ -86,7 +91,7 @@ export function ProjectRow({
   );
 }
 
-/** One project in its edit form: name, client, rate, billable, logo. */
+/** One project in its edit form: name, client, rate, billable, budget, logo. */
 export function ProjectEditRow({
   project: p,
   clients,
@@ -131,6 +136,41 @@ export function ProjectEditRow({
         <label className="flex items-center gap-1.5 text-sm">
           <input type="checkbox" name="billable" defaultChecked={p.billable} /> Billable
         </label>
+        <fieldset className="flex basis-full flex-wrap items-center gap-2 text-sm">
+          <legend className="sr-only">Budget</legend>
+          <span className="text-muted-foreground">Budget</span>
+          <Input
+            name="budgetAmount"
+            inputMode="decimal"
+            placeholder="none"
+            defaultValue={
+              p.budget_amount !== null && (p.budget_unit === "hours" || p.budget_unit === "dollars")
+                ? budgetInputValue(p.budget_amount, p.budget_unit)
+                : ""
+            }
+            className="w-24"
+            aria-label="Budget amount"
+          />
+          <select
+            name="budgetUnit"
+            defaultValue={p.budget_unit ?? "dollars"}
+            aria-label="Budget unit"
+            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+          >
+            <option value="dollars">dollars</option>
+            <option value="hours">hours</option>
+          </select>
+          <select
+            name="budgetPeriod"
+            defaultValue={p.budget_period}
+            aria-label="Budget period"
+            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+          >
+            <option value="month">per month</option>
+            <option value="total">in total</option>
+          </select>
+          <span className="text-muted-foreground text-xs">Leave blank for no budget.</span>
+        </fieldset>
         <LogoPicker
           compact
           value={editing.logoDraft === undefined ? logos[p.id] : editing.logoDraft}

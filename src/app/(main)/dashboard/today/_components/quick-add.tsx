@@ -5,12 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { toast } from "sonner";
 
+import { BudgetBar } from "@/components/budget-bar";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { fromISODate } from "@/lib/dates";
+import { fromISODate, monthBounds } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
@@ -51,6 +52,9 @@ export function QuickAdd({
   const isToday = useToday() === date;
 
   const projects = clients.data?.flatMap((c) => c.projects) ?? [];
+  // The month of the day being logged: the budget for the project picked below, if it has one.
+  const budgets = trpc.project.budgets.useQuery(monthBounds(date));
+  const budget = budgets.data?.[projectId];
   // Restore the last-used project, falling back to the first available one.
   useEffect(() => {
     if (projectId || projects.length === 0) return;
@@ -94,7 +98,7 @@ export function QuickAdd({
     if (parsed === null) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
     try {
       await create.mutateAsync({ projectId, date, minutes: parsed, note });
-      await utils.entry.list.invalidate();
+      await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       setDuration("");
       setNote("");
       durationRef.current?.focus();
@@ -107,7 +111,11 @@ export function QuickAdd({
     if (!projectId) return toast.error("Pick a project first.");
     try {
       await start.mutateAsync({ projectId, date, note });
-      await Promise.all([utils.entry.running.invalidate(), utils.entry.list.invalidate()]);
+      await Promise.all([
+        utils.entry.running.invalidate(),
+        utils.entry.list.invalidate(),
+        utils.project.budgets.invalidate(),
+      ]);
       setNote("");
     } catch (err) {
       toastError(err, "Couldn't start the timer.");
@@ -152,6 +160,8 @@ export function QuickAdd({
               />
             </div>
           )}
+
+          {budget && <BudgetBar status={budget} />}
 
           <div className="flex flex-col gap-2">
             <Input
