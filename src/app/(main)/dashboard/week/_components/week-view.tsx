@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Clock } from "lucide-react";
-
 import { DayEditorPanel } from "@/components/day-editor";
+import { HoursChip } from "@/components/hours-chip";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { NonBillableToggle } from "@/components/non-billable-toggle";
 import { PageShell } from "@/components/page-shell";
@@ -103,17 +102,12 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             <div className="mb-2 flex items-center justify-between gap-3 px-1">
               <h2 className="font-semibold text-base">{longDayLabel.format(fromISODate(selected))}</h2>
               <span className="flex items-center gap-3">
-                <span className="flex items-center gap-1.5 font-medium font-mono tabular-nums">
-                  {sheet.dayTotals[selected] ? (
-                    <>
-                      <Clock className="size-4" aria-hidden />
-                      {formatDuration(sheet.dayTotals[selected])}
-                    </>
-                  ) : (
-                    "Nothing yet"
-                  )}
-                </span>
-                <NonBillableToggle date={selected} bare />
+                {sheet.dayTotals[selected] ? (
+                  <HoursChip>{formatDuration(sheet.dayTotals[selected])}</HoursChip>
+                ) : (
+                  <span className="text-muted-foreground text-sm">Nothing yet</span>
+                )}
+                <NonBillableToggle date={selected} compact />
               </span>
             </div>
             <DayEditorPanel key={selected} date={selected} projectFilter={projectId} />

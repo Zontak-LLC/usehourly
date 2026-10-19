@@ -2,6 +2,7 @@
 
 import { Ban, Clock } from "lucide-react";
 
+import { HoursChip } from "@/components/hours-chip";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -96,10 +97,9 @@ export function WeekTotalCard({
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2.5">
         <h2 className="font-semibold text-base">This week</h2>
-        <span className="flex items-center gap-1.5 font-semibold font-mono text-lg tabular-nums">
-          <Clock className="size-4" aria-hidden />
-          {formatDuration(sheet.total)}
-          <span className="font-normal text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
+        <span className="flex items-center gap-2">
+          <HoursChip>{formatDuration(sheet.total)}</HoursChip>
+          <span className="text-muted-foreground text-xs">({formatDecimalHours(sheet.total)} h)</span>
         </span>
       </div>
       {sheet.rows.length > 0 && (

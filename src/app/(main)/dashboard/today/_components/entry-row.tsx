@@ -108,7 +108,7 @@ export function EntryRow({
   return (
     <li className={bare ? "overflow-hidden" : "overflow-hidden rounded-xl border bg-card"}>
       {/* Header: which project this entry is for, and its controls, always visible. */}
-      <header className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-1 pl-3">
+      <header className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1.5 pr-1.5 pl-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           {editing ? (
@@ -144,12 +144,18 @@ export function EntryRow({
           )}
         </div>
         {!editing && (
-          <div className="flex shrink-0">
+          <div className="flex shrink-0 gap-1">
             <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />
-            <Button size="icon" variant="ghost" onClick={() => setEditing(true)} aria-label="Edit" disabled={isRunning}>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setEditing(true)}
+              aria-label="Edit"
+              disabled={isRunning}
+            >
               <Pencil />
             </Button>
-            <Button size="icon" variant="ghost" onClick={remove} aria-label="Delete" disabled={del.isPending}>
+            <Button size="icon" variant="outline" onClick={remove} aria-label="Delete" disabled={del.isPending}>
               <Trash2 />
             </Button>
           </div>

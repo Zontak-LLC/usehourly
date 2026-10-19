@@ -58,7 +58,7 @@ export function LayoutControls() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button size="icon" variant="ghost" aria-label="Appearance and layout settings" title="Appearance and layout">
+        <Button size="icon" variant="outline" aria-label="Appearance and layout settings" title="Appearance and layout">
           <Settings />
         </Button>
       </PopoverTrigger>
