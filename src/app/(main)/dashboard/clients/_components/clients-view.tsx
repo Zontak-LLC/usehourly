@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,26 +131,24 @@ export function ClientsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+    <PageShell
+      title="Clients & Projects"
+      description="Your clients, and the projects you do for each. Hourly rates live here."
+      actions={
+        <Button type="button" size="lg" className="h-10" onClick={() => setNewOpen(true)}>
+          <Plus /> New client
+        </Button>
+      }
+    >
+      {(clients.data?.length ?? 0) > 0 && (
+        <>
+          <ClientStats clients={clients.data ?? []} totals={totals.data} />
+          <ClientSearch value={search} onChange={setSearch} />
+        </>
+      )}
       <ArchiveConfirmDialog target={confirming} onCancel={() => setConfirming(null)} onConfirm={archive} />
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
-      <PageHeader
-        title="Clients & Projects"
-        description="Your clients, and the projects you do for each. Hourly rates live here."
-        actions={
-          <Button type="button" size="lg" className="h-10" onClick={() => setNewOpen(true)}>
-            <Plus /> New client
-          </Button>
-        }
-      >
-        {(clients.data?.length ?? 0) > 0 && (
-          <>
-            <ClientStats clients={clients.data ?? []} totals={totals.data} />
-            <ClientSearch value={search} onChange={setSearch} />
-          </>
-        )}
-      </PageHeader>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen} clientCount={clients.data?.length ?? 0} />
 
@@ -181,6 +179,6 @@ export function ClientsView() {
         <p className="py-10 text-center text-muted-foreground text-sm">No clients yet. Use New client above.</p>
       )}
       <ArchivedSection />
-    </div>
+    </PageShell>
   );
 }

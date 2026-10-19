@@ -38,8 +38,8 @@ export function SectionCard({
     >
       <div
         className={cn(
-          "bg-muted/40 px-4 py-3",
-          children && "border-b",
+          // Inside an Account section the section's own band is the only one: its cards keep a plain heading.
+          grouped ? "px-4 pt-4" : cn("bg-muted/40 px-4 py-3", children && "border-b"),
           tone === "danger" && "border-destructive/30 bg-destructive/5",
         )}
       >

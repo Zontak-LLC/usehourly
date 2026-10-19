@@ -18,7 +18,7 @@ export type AccountMe = Outputs["account"]["me"];
 export type EmailEnabled = Outputs["account"]["emailEnabled"] | undefined;
 
 /**
- * One grouped card per topic: the tinted banner is its top band and the cards inside are separated by thin lines
+ * One grouped card per topic: the neutral header band (same as every card) is its top band and the cards inside are separated by thin lines
  * (they flatten themselves through SectionGroupProvider), so a long page reads as a few clear sections.
  */
 export function Section({
@@ -38,11 +38,11 @@ export function Section({
       aria-labelledby={`${id}-heading`}
       className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
     >
-      <div className="border-primary/30 border-b bg-primary/10 px-4 py-3">
+      <div className="border-b bg-muted/40 px-4 py-3">
         <h2 id={`${id}-heading`} className="font-semibold text-lg">
           {title}
         </h2>
-        <p className="text-foreground/70 text-sm">{description}</p>
+        <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <SectionGroupProvider value>
         <div className="divide-y">{children}</div>

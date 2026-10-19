@@ -12,8 +12,8 @@ type Sheet = ReturnType<typeof buildSheet>;
 
 /**
  * The week as seven tiles. Pick one and its entries and the add form open below.
- * Seven tiles always share the row (no sideways scrolling). On a phone each is about 50px wide, so the tile
- * is compact there: tighter padding, and a dot instead of the word "Today".
+ * Seven tiles always share the row (no sideways scrolling). On a phone each is about 54px wide (the strip runs
+ * a little past the card padding), so the tile is compact there: no side padding, smaller type, and a dot instead of "Today".
  */
 export function DayTiles({
   days,
@@ -29,7 +29,7 @@ export function DayTiles({
   onPick: (d: string) => void;
 }) {
   return (
-    <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1 sm:gap-2">
+    <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1 max-sm:-mx-1 sm:gap-2">
       {days.map((d) => {
         const on = d === selected;
         const total = dayTotals[d] ?? 0;
@@ -42,7 +42,7 @@ export function DayTiles({
             aria-selected={on}
             aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}`}
             onClick={() => onPick(d)}
-            className={`flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-2.5 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
+            className={`flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-2.5 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
               on
                 ? "border-primary bg-primary/15 shadow-sm ring-2 ring-primary/40"
                 : d === today
@@ -51,13 +51,13 @@ export function DayTiles({
             } ${[0, 6].includes(date.getDay()) && !on ? "bg-muted/40" : ""}`}
           >
             <span
-              className={`font-medium text-xs uppercase tracking-wide ${on ? "text-foreground/75" : "text-muted-foreground"}`}
+              className={`font-medium text-xs uppercase tracking-normal max-sm:text-[0.7rem] sm:tracking-wide ${on ? "text-foreground/75" : "text-muted-foreground"}`}
             >
               {weekdayShort.format(date)}
             </span>
             <span className="font-semibold text-xl leading-none">{date.getDate()}</span>
             <span
-              className={`font-mono text-xs tabular-nums sm:text-sm ${total ? "font-medium" : "text-muted-foreground"}`}
+              className={`font-mono text-xs tabular-nums max-sm:text-[0.7rem] sm:text-sm ${total ? "font-medium" : "text-muted-foreground"}`}
             >
               {total ? formatDuration(total) : "–"}
             </span>

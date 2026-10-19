@@ -7,7 +7,7 @@ import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,28 +75,26 @@ export function InvoicesView() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+    <PageShell
+      title="Invoices"
+      description="Every invoice you've issued, saved exactly as sent."
+      actions={
+        <Button asChild size="lg" className="h-10">
+          <Link href="/dashboard/invoices/new">
+            <Plus /> New invoice
+          </Link>
+        </Button>
+      }
+    >
+      {showFilters && (
+        <>
+          {(invoices.data?.length ?? 0) > 0 && (
+            <InvoiceTotals count={invoices.data?.length ?? 0} total={total} unpaid={unpaid} filtering={filtering} />
+          )}
+          <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
+        </>
+      )}
       {/* The page's header card: what this page is, the button to make one, and where the money stands. */}
-      <PageHeader
-        title="Invoices"
-        description="Every invoice you've issued, saved exactly as sent."
-        actions={
-          <Button asChild size="lg" className="h-10">
-            <Link href="/dashboard/invoices/new">
-              <Plus /> New invoice
-            </Link>
-          </Button>
-        }
-      >
-        {showFilters && (
-          <>
-            {(invoices.data?.length ?? 0) > 0 && (
-              <InvoiceTotals count={invoices.data?.length ?? 0} total={total} unpaid={unpaid} filtering={filtering} />
-            )}
-            <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
-          </>
-        )}
-      </PageHeader>
 
       {invoices.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -129,6 +127,6 @@ export function InvoicesView() {
         onSave={(date) => (paidFor ? setPaid(paidFor.id, paidFor.number, date) : Promise.resolve())}
         onClose={() => setPaidFor(null)}
       />
-    </div>
+    </PageShell>
   );
 }

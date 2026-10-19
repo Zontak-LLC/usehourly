@@ -10,12 +10,14 @@ import { Input } from "@/components/ui/input";
 import { ALL_AS_CHIPS, chipProjects, type PickerProject, pushRecentId, searchProjects } from "@/lib/project-picker";
 
 const RECENT_KEY = "hourly:recentProjects";
-/** One row from tablet width up when every project is a chip; full class names so Tailwind keeps them. */
+/** One row, never wrapped, when every project is a chip; full class names so Tailwind keeps them. */
 const CHIP_COLUMNS: Record<number, string> = {
-  2: "sm:grid sm:grid-cols-2",
-  3: "sm:grid sm:grid-cols-3",
-  4: "sm:grid sm:grid-cols-4",
+  2: "grid grid-cols-2",
+  3: "grid grid-cols-3",
+  4: "grid grid-cols-4",
 };
+/** With more projects: the three chips share the row equally and the search button takes only what it needs. */
+const MANY_COLUMNS = "grid grid-cols-[repeat(3,minmax(0,1fr))_auto]";
 
 const many_ = (projects: PickerProject[]) => projects.length > ALL_AS_CHIPS;
 
@@ -83,7 +85,7 @@ export function ProjectPicker({
       <div
         role="radiogroup"
         aria-labelledby="quick-project-label"
-        className={`flex flex-wrap gap-2 ${many ? "" : (CHIP_COLUMNS[projects.length] ?? "")}`}
+        className={`flex flex-wrap gap-2 ${many ? MANY_COLUMNS : (CHIP_COLUMNS[projects.length] ?? "")}`}
       >
         {chips.map((p) => {
           const on = value === p.id;
@@ -95,7 +97,7 @@ export function ProjectPicker({
               aria-checked={on}
               variant={on ? "default" : "outline"}
               onClick={() => choose(p.id)}
-              className="h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
+              className="h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
             >
               <span
                 aria-hidden="true"
@@ -103,10 +105,12 @@ export function ProjectPicker({
               >
                 {on && <Check className="size-3.5 max-sm:size-3" strokeWidth={3} />}
               </span>
-              <span className="flex min-w-0 flex-col items-start">
-                <span className="max-w-full break-words font-medium sm:text-base">{p.name}</span>
+              <span className="flex min-w-0 flex-col items-start max-sm:items-center">
+                <span className="max-w-full break-words font-medium max-sm:truncate sm:text-base" title={p.name}>
+                  {p.name}
+                </span>
                 <span
-                  className={`max-w-full break-words font-normal text-xs ${sameName.has(p.name) ? "" : "max-sm:hidden"} ${
+                  className={`max-w-full break-words font-normal text-xs max-sm:truncate ${sameName.has(p.name) ? "" : "max-sm:hidden"} ${
                     on ? "text-foreground/75" : "text-muted-foreground"
                   }`}
                 >
@@ -121,9 +125,10 @@ export function ProjectPicker({
             type="button"
             variant="outline"
             onClick={() => setOpen(true)}
+            aria-label="Another project"
             className="h-auto border-dashed text-muted-foreground max-sm:min-h-10 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
           >
-            <Search /> Another project…
+            <Search /> <span className="max-sm:sr-only">Another project…</span>
           </Button>
         )}
       </div>

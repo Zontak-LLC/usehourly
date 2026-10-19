@@ -128,8 +128,8 @@ export function WorkItems({
                 {g.items.map((e) => (
                   <li key={e.id}>
                     {editInPlace && editing.has(e.id) ? (
-                      <ul className="p-2">
-                        <EntryRow entry={e} initialEditing onEditDone={() => stopEditing(e.id)} />
+                      <ul>
+                        <EntryRow entry={e} initialEditing bare onEditDone={() => stopEditing(e.id)} />
                       </ul>
                     ) : (
                       <button

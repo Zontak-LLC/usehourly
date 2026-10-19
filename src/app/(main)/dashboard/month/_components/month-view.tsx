@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { DayEditorDialog } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
-import { PageHeader } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
@@ -63,27 +63,25 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   const shownPicked = selection.resolve(weeks, inMonth);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <PageHeader
-        title={monthTitle.format(fromISODate(first))}
-        description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}
-      >
-        <MonthToolbar
-          first={first}
-          last={last}
-          today={today}
-          monthDays={monthDays}
-          shown={entries.data ? shown : undefined}
-          selectMode={selectMode}
-          projectId={projectId}
-          onToggleSelectMode={() => {
-            setSelectMode((on) => !on);
-            setPicked(new Set());
-          }}
-          onProjectId={setProjectId}
-          onFirst={setFirst}
-        />
-      </PageHeader>
+    <PageShell
+      title={monthTitle.format(fromISODate(first))}
+      description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}
+    >
+      <MonthToolbar
+        first={first}
+        last={last}
+        today={today}
+        monthDays={monthDays}
+        shown={entries.data ? shown : undefined}
+        selectMode={selectMode}
+        projectId={projectId}
+        onToggleSelectMode={() => {
+          setSelectMode((on) => !on);
+          setPicked(new Set());
+        }}
+        onProjectId={setProjectId}
+        onFirst={setFirst}
+      />
 
       <DayEditorDialog date={editDate} onClose={() => setEditDate(null)} />
 
@@ -130,6 +128,6 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           <WorkItems key={`${first}-${projectId}`} entries={shown} onOpenDay={setEditDate} period="month" editInPlace />
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

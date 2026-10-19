@@ -28,7 +28,7 @@ export function ProjectRow({
   onArchive: () => void;
 }) {
   return (
-    <li className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-foreground/15 bg-card px-3 py-2 text-sm">
+    <li className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 py-2.5 text-sm">
       <span className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 sm:flex-1">
         <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
         <span className="font-medium">{p.name}</span>
@@ -72,7 +72,7 @@ export function ProjectEditRow({
   editing: ProjectEditing;
 }) {
   return (
-    <li className="rounded-lg border border-foreground/15 bg-card px-3 py-3">
+    <li className="px-1 py-3">
       <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
         <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
         <select

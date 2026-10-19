@@ -30,12 +30,15 @@ export function EntryRow({
   entry,
   initialEditing = false,
   onEditDone,
+  bare = false,
 }: {
   entry: EntryData;
   /** Open straight into the edit form (the lists that edit an entry where it sits). */
   initialEditing?: boolean;
   /** Called when the edit form closes (saved or cancelled). */
   onEditDone?: () => void;
+  /** No frame of its own, for when it already sits inside a card (a card never holds a framed card). */
+  bare?: boolean;
 }) {
   const uid = useId();
   const utils = trpc.useUtils();
@@ -103,7 +106,7 @@ export function EntryRow({
   ));
 
   return (
-    <li className="overflow-hidden rounded-xl border bg-card">
+    <li className={bare ? "overflow-hidden" : "overflow-hidden rounded-xl border bg-card"}>
       {/* Header: which project this entry is for, and its controls, always visible. */}
       <header className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-1 pl-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
