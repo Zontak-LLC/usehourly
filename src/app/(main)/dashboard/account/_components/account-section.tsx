@@ -1,5 +1,4 @@
 import type { inferRouterOutputs } from "@trpc/server";
-import { Database, FileText, Heart, Sparkles, UserRound } from "lucide-react";
 
 import { SectionGroupProvider } from "@/components/section-card";
 import type { AppRouter } from "@/server/routers/_app";
@@ -7,11 +6,11 @@ import type { AppRouter } from "@/server/routers/_app";
 type Outputs = inferRouterOutputs<AppRouter>;
 
 export const SECTIONS = [
-  { id: "account", label: "Your account", icon: UserRound },
-  { id: "invoices", label: "Invoices", icon: FileText },
-  { id: "data", label: "Your data", icon: Database },
-  { id: "ai", label: "AI assistants", icon: Sparkles },
-  { id: "support", label: "Support", icon: Heart },
+  { id: "account", label: "Your account" },
+  { id: "invoices", label: "Invoices" },
+  { id: "data", label: "Your data" },
+  { id: "ai", label: "AI assistants" },
+  { id: "support", label: "Support" },
 ] as const;
 
 export type AccountMe = Outputs["account"]["me"];
@@ -45,7 +44,10 @@ export function Section({
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <SectionGroupProvider value>
-        <div className="divide-y">{children}</div>
+        {/* The page is as wide as the others, but a text box stays a comfortable length: fields stop at 28rem. */}
+        <div className="divide-y [&_input:not([type=checkbox]):not([type=radio]):not([type=file])]:max-w-md [&_select]:max-w-md [&_textarea]:max-w-md">
+          {children}
+        </div>
       </SectionGroupProvider>
     </section>
   );
