@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { FoldedNote } from "@/components/folded-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -208,7 +209,7 @@ export function EntryRow({ entry }: { entry: EntryData }) {
         <div className="flex items-end justify-between gap-3 px-3 py-3">
           <div className="min-w-0 flex-1">
             {entry.note ? (
-              <p className="whitespace-pre-wrap break-words text-sm">{entry.note}</p>
+              <FoldedNote note={entry.note} />
             ) : (
               <p className="text-muted-foreground/70 text-sm italic">No description</p>
             )}
