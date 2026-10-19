@@ -84,33 +84,36 @@ export function WorkItems({
           <div className="flex flex-col gap-3">
             {days.map((g) => (
               <section key={g.date} aria-label={dayFmt.format(fromISODate(g.date))} className="flex flex-col gap-2">
-                <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1 font-medium text-sm">
-                  {dayFmt.format(fromISODate(g.date))}
-                  <HoursChip>
-                    {formatDuration(g.minutes)}
-                    {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
-                  </HoursChip>
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <h3 className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-medium text-sm">
+                    {dayFmt.format(fromISODate(g.date))}
+                    <HoursChip label="Total">
+                      {formatDuration(g.minutes)}
+                      {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
+                    </HoursChip>
+                    {nonBillable?.has(g.date) && (
+                      <span className="flex shrink-0 items-center gap-1 rounded-full border border-rose-600/40 px-2 py-0.5 font-medium text-foreground/80 text-xs dark:border-rose-400/40">
+                        <Ban className="size-3" aria-hidden /> Non-billable
+                      </span>
+                    )}
+                  </h3>
+                  {/* Words, not just an icon: the entry cards below each have their own pencil, and this one edits the whole day. */}
                   <Button
                     type="button"
-                    size="icon"
+                    size="sm"
                     variant="outline"
-                    className="size-8"
+                    className="h-8 shrink-0"
                     onClick={() =>
                       editInPlace
                         ? startEditing(g.items.filter((e) => !e.started_at).map((e) => e.id))
                         : onOpenDay(g.date)
                     }
                     aria-label={`Edit ${dayFmt.format(fromISODate(g.date))}`}
-                    title="Edit this day"
+                    title="Edit every entry of this day"
                   >
-                    <Pencil />
+                    <Pencil /> Edit day
                   </Button>
-                  {nonBillable?.has(g.date) && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full border border-rose-600/40 px-2 py-0.5 font-medium text-foreground/80 text-xs dark:border-rose-400/40">
-                      <Ban className="size-3" aria-hidden /> Non-billable
-                    </span>
-                  )}
-                </h3>
+                </div>
                 {/* One card per entry, the same card as on Today: its header carries Move, Edit and Delete (which asks first). */}
                 <ul className="flex flex-col gap-2">
                   {g.items.map((e) => (

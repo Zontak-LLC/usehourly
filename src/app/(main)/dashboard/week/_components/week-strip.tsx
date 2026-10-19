@@ -110,7 +110,7 @@ export function WeekTotalCard({
     <section aria-label="This week" className="flex flex-col gap-3 rounded-xl bg-foreground/[0.06] p-4">
       {/* A summary, not another card: no frame and no header, a big figure first, then the projects that made it up. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="font-medium text-foreground/75 text-sm">This week</h2>
+        <h2 className="font-medium text-foreground/75 text-sm">Total hours this week</h2>
         <p className="font-mono font-semibold text-3xl tabular-nums leading-none">{formatDuration(sheet.total)}</p>
         <p className="text-foreground/75 text-sm">({formatDecimalHours(sheet.total)} h)</p>
       </div>

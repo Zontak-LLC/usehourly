@@ -45,7 +45,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     // Nothing to total or point at yet: no "type a time above" with nothing above, no 0:00 tiles.
     await expect(page.getByText(/Welcome! Let's get your first hours logged/)).toBeVisible();
     await expect(page.getByText(/Type a time above/)).toBeHidden();
-    await expect(page.getByText("This week", { exact: true })).toBeHidden();
+    await expect(page.getByText("Total hours this week", { exact: true })).toBeHidden();
     await shot("first-run");
     await audit("first run");
     await page.getByPlaceholder(/company or a person/i).fill("Acme Studio");

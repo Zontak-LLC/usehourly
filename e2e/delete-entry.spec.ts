@@ -81,3 +81,19 @@ test("the Week page keeps the day you picked in the address, so a refresh comes 
   await page.reload();
   await expect(page.getByRole("tab", { name: /Monday, September 14/ })).toBeVisible();
 });
+
+test("a day's total says it is the total, and the day has a labelled Edit day button apart from the entry buttons", async ({
+  page,
+}) => {
+  await startFreshAccount(page);
+  await page.getByLabel("Time to add").fill("1.5");
+  await page.getByLabel("Description").fill("labelled total");
+  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await expect(page.getByText("labelled total")).toBeVisible();
+  await page.goto("/dashboard/week");
+  const list = page.getByRole("region", { name: "What you worked on" });
+  await expect(list.getByText("Total", { exact: true })).toBeVisible();
+  await expect(list.getByRole("button", { name: /^Edit .*\d/ })).toContainText("Edit day"); // words on the day's button
+  await expect(list.getByRole("button", { name: "Edit", exact: true })).toHaveCount(1); // the entry's own pencil is icon-only
+  await expect(page.getByText("Total hours this week", { exact: true })).toBeVisible();
+});
