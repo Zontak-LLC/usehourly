@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Pencil, Search } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { NoteText } from "@/components/folded-note";
@@ -103,7 +103,8 @@ export function WorkItems({
               <h3 className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-2 pl-4 font-medium text-sm">
                 {dayFmt.format(fromISODate(g.date))}
                 <span className="flex items-center gap-1">
-                  <span className="font-mono tabular-nums">
+                  <span className="flex items-center gap-1.5 font-mono tabular-nums">
+                    <Clock className="size-3.5 text-muted-foreground" aria-hidden />
                     {formatDuration(g.minutes)}
                     {g.items.length === 1 && g.items[0].minutes === g.minutes && g.items[0].started_at ? " +" : ""}
                   </span>

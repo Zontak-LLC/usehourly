@@ -2,6 +2,7 @@
 
 import { Archive, Pencil } from "lucide-react";
 
+import { ICON_TONE, IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
 import { ProjectMark } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -37,13 +38,19 @@ export function ProjectRow({
         <span className="truncate font-medium">{p.name}</span>
         {!p.billable && <span className="shrink-0 text-foreground/70 text-xs">non-billable</span>}
       </span>
-      <span className="col-start-2 row-start-1 flex justify-end sm:col-start-5">
-        <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Edit ${p.name}`}>
-          <Pencil />
-        </Button>
-        <Button size="icon" variant="ghost" onClick={onArchive} aria-label={`Archive ${p.name}`}>
-          <Archive />
-        </Button>
+      {/* Wide screens: icons with a tooltip (as on Invoices). Phones: see the labelled row below. */}
+      <span className="col-start-2 row-start-1 flex justify-end gap-1 max-sm:hidden sm:col-start-5">
+        <IconAction label={`Edit ${p.name}`} tip="Edit project" onClick={onEdit} className="border-transparent">
+          <Pencil className={ICON_TONE.edit} />
+        </IconAction>
+        <IconAction
+          label={`Archive ${p.name}`}
+          tip="Archive project"
+          onClick={onArchive}
+          className="border-transparent"
+        >
+          <Archive className={ICON_TONE.archive} />
+        </IconAction>
       </span>
       {/* Second line on a phone (labelled); on sm and up the three cells join the columns above. */}
       <div className="col-span-2 row-start-2 flex flex-wrap justify-between gap-x-4 pl-7 text-foreground/75 sm:contents">
@@ -66,6 +73,14 @@ export function ProjectRow({
           <span className="font-sans text-xs sm:hidden">All time </span>
           {formatDuration(totals?.[p.id]?.total ?? 0)}
         </span>
+      </div>
+      <div className="col-span-2 mt-2 flex gap-1.5 sm:hidden">
+        <IconAction label={`Edit ${p.name}`} tip="Edit project" text="Edit" onClick={onEdit}>
+          <Pencil className={ICON_TONE.edit} />
+        </IconAction>
+        <IconAction label={`Archive ${p.name}`} tip="Archive project" text="Archive" onClick={onArchive}>
+          <Archive className={ICON_TONE.archive} />
+        </IconAction>
       </div>
     </li>
   );
