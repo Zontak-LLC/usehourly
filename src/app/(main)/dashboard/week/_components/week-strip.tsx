@@ -12,8 +12,7 @@ type Sheet = ReturnType<typeof buildSheet>;
 
 /**
  * The week as seven tiles. Pick one and its entries and the add form open below.
- * Seven tiles always share the row (no sideways scrolling). On a phone each is about 54px wide (the strip runs
- * a little past the card padding), so the tile is compact there: no side padding, smaller type, and a dot instead of "Today".
+ * Seven tiles always share the row (no sideways scrolling). On a phone each is about 52px wide, so the tile is compact there: no side padding, smaller type, and a dot instead of "Today".
  */
 export function DayTiles({
   days,
@@ -29,7 +28,7 @@ export function DayTiles({
   onPick: (d: string) => void;
 }) {
   return (
-    <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1 max-sm:-mx-1 sm:gap-2">
+    <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1 sm:gap-2">
       {days.map((d) => {
         const on = d === selected;
         const total = dayTotals[d] ?? 0;
