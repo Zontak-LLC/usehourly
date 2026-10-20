@@ -50,7 +50,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     content_layout,
     navbar_style,
     nav_position,
-    nav_collapsed,
     sidebar_variant,
     sidebar_collapsible,
     font,
@@ -63,7 +62,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       data-content-layout={content_layout}
       data-navbar-style={navbar_style}
       data-nav-position={nav_position}
-      data-nav-collapsed={nav_collapsed}
       data-sidebar-variant={sidebar_variant}
       data-sidebar-collapsible={sidebar_collapsible}
       data-font={font}

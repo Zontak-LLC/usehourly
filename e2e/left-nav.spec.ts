@@ -1,11 +1,11 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
- * The main navigation is down the left on a wide screen by default (2026-10-20): using the side menu, collapsing it to
- * icons, keeping both choices across a reload, switching to the tab strip along the top in the settings gear and back,
+ * The main navigation is down the left on a wide screen by default (2026-10-20): using the side menu (always open, no
+ * collapsing), keeping the choice across a reload, switching to the tab strip along the top in the settings gear and back,
  * and phones keeping their bottom bar.
  */
-test("navigation can sit down the left, collapse to icons, and survives a reload", async ({ page }, info) => {
+test("navigation sits down the left by default, stays open, and survives a reload", async ({ page }, info) => {
   const phone = info.project.name === "phone";
   await startFreshAccount(page);
   const top = page.getByRole("navigation", { name: "Main pages" });
@@ -56,38 +56,13 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
     await expect(side.getByRole("link", { name: "Today" })).not.toHaveAttribute("aria-current", "page");
   });
 
-  await test.step("collapse to icons only: the words are hidden but the links keep their names", async () => {
-    const before = (await side.boundingBox())?.width ?? 0;
-    await side.getByRole("button", { name: "Collapse menu" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
-    await expect.poll(async () => (await side.boundingBox())?.width ?? 999).toBeLessThan(before / 2);
-    await expect(side.getByRole("link", { name: "Month" })).toBeVisible(); // still has its name for a screen reader
-  });
-
-  await test.step("double-clicking empty space in the menu unfolds it, and again folds it (links and buttons are not affected)", async () => {
-    // empty space: between the last link and the Collapse menu button
-    const lastLink = (await side.getByRole("link", { name: "Guide" }).boundingBox()) ?? {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-    };
-    const logOut = (await side.getByRole("button", { name: "Collapse menu" }).boundingBox()) ?? {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-    };
-    const box = (await side.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
-    const gapY = (lastLink.y + lastLink.height + logOut.y) / 2;
-    const empty = { x: box.x + box.width / 2, y: gapY };
-    await page.mouse.dblclick(empty.x, empty.y);
-    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "open");
-    await page.mouse.dblclick(box.x + 120, gapY);
-    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
-    await side.getByRole("link", { name: "Month" }).dblclick(); // goes to Month, does not toggle
+  await test.step("the menu is always open: there is no collapse button and no way to fold it to icons", async () => {
+    await expect(side.getByRole("button", { name: /Collapse menu/ })).toHaveCount(0);
+    await expect(side.getByText("Track", { exact: true })).toBeVisible();
+    expect((await side.boundingBox())?.width ?? 0).toBeGreaterThan(200);
+    await side.getByRole("link", { name: "Month" }).dblclick(); // a double click goes to the page and folds nothing
     await expect(page).toHaveURL(/dashboard\/month/);
-    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
+    expect((await side.boundingBox())?.width ?? 0).toBeGreaterThan(200);
   });
 
   await test.step("the page card still fits beside the menu without sideways scrolling", async () => {
@@ -97,10 +72,9 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  await test.step("both choices survive a reload and are applied on the first paint", async () => {
+  await test.step("the choice survives a reload and is applied on the first paint", async () => {
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-nav-position", "left");
-    await expect(page.locator("html")).toHaveAttribute("data-nav-collapsed", "collapsed");
     await expect(side).toBeVisible();
     await expect(top).toBeHidden();
   });

@@ -35,7 +35,3 @@ export type NavbarStyle = (typeof NAVBAR_STYLE_VALUES)[number];
 // Phones always get the bottom bar, whatever this says.
 export const NAV_POSITION_VALUES = ["top", "left"] as const;
 export type NavPosition = (typeof NAV_POSITION_VALUES)[number];
-
-// The left menu either shows words next to its icons, or icons only.
-export const NAV_COLLAPSED_VALUES = ["open", "collapsed"] as const;
-export type NavCollapsed = (typeof NAV_COLLAPSED_VALUES)[number];
