@@ -13,7 +13,7 @@ from PIL import Image, ImageOps
 VERSION = os.environ.get("LANDING_VERSION", "v2")
 
 # name -> pixel height to keep from the top (None = the whole picture)
-CROPS = {"today": None, "week": 760, "month": 1010, "report": 1150}
+CROPS = {"today": None, "week": 1230, "month": 1010, "report": 1150}
 
 for name, keep in CROPS.items():
     im = Image.open(f"e2e/report/landing/{name}.png").convert("RGB")

@@ -169,7 +169,7 @@ const FEATURES = [
     id: "week",
     title: "A real weekly timesheet.",
     body: "Every project and every day in one grid. Type straight into any cell, fill several days at once, then export the week to Excel.",
-    image: { src: "/landing/week-v2.webp", width: 2144, height: 840 },
+    image: { src: "/landing/week-v3.webp", width: 2144, height: 1310 },
     alt: "The weekly timesheet: projects down the side, the days of the week across, with totals, and a Share & export menu.",
     // A wide, dense table: it gets the full width, under its text, so the numbers stay readable.
     wide: true,
@@ -178,7 +178,7 @@ const FEATURES = [
     id: "month",
     title: "See the whole month at a glance.",
     body: "A calendar that shows how every day and week added up, with a breakdown by project underneath. Spot a light week before it costs you.",
-    image: { src: "/landing/month-v2.webp", width: 2144, height: 1090 },
+    image: { src: "/landing/month-v3.webp", width: 2144, height: 1090 },
     alt: "The month calendar: each day shaded by hours logged, with weekly totals on the right.",
     wide: false,
   },
@@ -186,7 +186,7 @@ const FEATURES = [
     id: "year",
     title: "Ready for invoices and tax time.",
     body: "Turn your tracked hours into invoices you can send as a PDF. At year end, see hours, earnings, invoiced and received by quarter and by month, ready for your accountant.",
-    image: { src: "/landing/report-v2.webp", width: 1888, height: 1230 },
+    image: { src: "/landing/report-v3.webp", width: 2144, height: 1230 },
     alt: "The year summary: hours worked, earned, invoiced, received and outstanding, with a table by quarter.",
     wide: false,
   },
@@ -251,10 +251,10 @@ export default function LandingPage() {
 
           <div className="mx-auto mt-14 max-w-4xl text-left">
             <Screen
-              src="/landing/today-v2.webp"
+              src="/landing/today-v3.webp"
               alt="The Today screen: pick a project, type a time like 1.5, 1:30 or 90m or tap a quick pick, add a note, and the day's entries with totals for the day and the week."
-              width={1632}
-              height={1762}
+              width={2144}
+              height={1938}
               priority
             />
           </div>

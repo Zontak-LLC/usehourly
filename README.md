@@ -8,7 +8,7 @@
 
 https://github.com/Zontak-LLC/usehourly/raw/main/public/landing/assistant-demo.mp4
 
-![The weekly timesheet](public/landing/week-v2.webp)
+![The weekly timesheet](public/landing/week-v3.webp)
 
 ## What it does
 
