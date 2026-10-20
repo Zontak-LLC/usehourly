@@ -44,7 +44,14 @@ It shows your real logged time, even if you round for invoices.`,
 - **Xero:** the **sales account code** (a Revenue account from your chart of accounts) and the **tax type** name exactly as your organisation spells it, for example \`Tax Exempt\`.
 - **QuickBooks:** the **product or service** name.
 
-Then download the CSV. In Xero, open Invoices, choose **Import** and upload it: the invoices arrive as **drafts** to approve. In QuickBooks, use its invoice import and map the columns by name.
+Then download the CSV. In Xero, open Invoices, choose **Import** and upload it: the invoices arrive as **drafts** to approve, and Xero asks whether the amounts include tax (ours do not). In QuickBooks, use its invoice import and map the columns by name.
+
+Before a QuickBooks import:
+
+- The **product or service** must already exist, spelled exactly the same.
+- To keep your own invoice numbers, switch on **Custom transaction numbers** in QuickBooks (Account and settings, Sales). Otherwise it numbers them itself.
+- Tick **Add new customers** during the upload if the client is not in QuickBooks yet, and keep each file under 1,000 rows.
+- Files with several currencies are written one currency at a time (choose it in the export).
 
 > These files follow the apps' published import formats, but have not yet been checked against every account setup. If an import complains, send us the message (see [Where do I report a problem?](/help/faq#problem)).`,
   },
