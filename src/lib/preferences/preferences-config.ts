@@ -15,7 +15,6 @@ import { fontKeys } from "@/lib/fonts/registry";
 
 import {
   CONTENT_LAYOUT_VALUES,
-  NAV_COLLAPSED_VALUES,
   NAV_POSITION_VALUES,
   NAVBAR_STYLE_VALUES,
   SIDEBAR_COLLAPSIBLE_VALUES,
@@ -95,13 +94,6 @@ export const PREFERENCE_REGISTRY = {
     defaultValue: "left",
     persistence: "client-cookie",
     attribute: "data-nav-position",
-  }),
-
-  nav_collapsed: definePreference({
-    values: NAV_COLLAPSED_VALUES,
-    defaultValue: "open",
-    persistence: "client-cookie",
-    attribute: "data-nav-collapsed",
   }),
 
   sidebar_variant: defineSSRPreference({

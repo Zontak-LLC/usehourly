@@ -6,19 +6,18 @@ import { PREFERENCE_DEFAULTS, PREFERENCE_REGISTRY, parsePreference } from "@/lib
 vi.mock("@/lib/fonts/registry", () => ({ fontKeys: ["geist"], fontOptions: [] }));
 
 describe("where the main navigation sits on a wide screen", () => {
-  it("starts down the left on a wide screen, with words next to the icons, until someone chooses otherwise", () => {
+  it("starts down the left on a wide screen until someone chooses otherwise", () => {
     expect(PREFERENCE_DEFAULTS.nav_position).toBe("left");
-    expect(PREFERENCE_DEFAULTS.nav_collapsed).toBe("open");
+  });
+
+  it("has no icons-only mode any more: the old collapse choice is gone from the registry", () => {
+    expect(Object.keys(PREFERENCE_REGISTRY)).not.toContain("nav_collapsed");
   });
 
   it("is saved in a cookie and put on <html> before the page paints, from fixed attribute names the styles rely on", () => {
     expect(PREFERENCE_REGISTRY.nav_position).toMatchObject({
       persistence: "client-cookie",
       attribute: "data-nav-position",
-    });
-    expect(PREFERENCE_REGISTRY.nav_collapsed).toMatchObject({
-      persistence: "client-cookie",
-      attribute: "data-nav-collapsed",
     });
   });
 
@@ -28,7 +27,5 @@ describe("where the main navigation sits on a wide screen", () => {
     expect(parsePreference("nav_position", "right")).toBe("left");
     expect(parsePreference("nav_position", "<script>")).toBe("left");
     expect(parsePreference("nav_position", null)).toBe("left");
-    expect(parsePreference("nav_collapsed", "collapsed")).toBe("collapsed");
-    expect(parsePreference("nav_collapsed", "tiny")).toBe("open");
   });
 });
