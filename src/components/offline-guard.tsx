@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useEffect } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -16,16 +16,20 @@ export const useCurrentUserId = () => useContext(CurrentUser);
  * as it changes (so the app has something to show offline), and puts that copy back when the app opens. If the copy
  * belongs to a different account, it is forgotten instead. See lib/offline-cache.ts.
  */
+/** A layout effect runs before the browser paints (and before any query below starts), but only exists in the browser. */
+const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 export function OfflineGuard({ userId, children }: { userId: string; children: ReactNode }) {
   const queryClient = useQueryClient();
 
-  useEffect(() => {
+  // Put the saved copy back BEFORE the first paint, so a returning visitor never sees an empty frame while the first
+  // request is on its way: the page paints with its last data and the fresh data replaces it a moment later.
+  useBeforePaint(() => {
     let owner: string | null = null;
     try {
       owner = localStorage.getItem(OWNER_KEY);
     } catch {
-      // storage blocked: no offline copy
-      return;
+      return; // storage blocked: no offline copy
     }
     if (ownerAction(owner, userId) === "reset") {
       void clearOfflineData().then(() => {
@@ -37,6 +41,14 @@ export function OfflineGuard({ userId, children }: { userId: string; children: R
       });
     } else {
       restoreQueries(queryClient, localStorage);
+    }
+  }, [userId, queryClient]);
+
+  useEffect(() => {
+    try {
+      if (ownerAction(localStorage.getItem(OWNER_KEY), userId) === "reset") return; // being cleared: save nothing yet
+    } catch {
+      return;
     }
 
     let timer: ReturnType<typeof setTimeout> | undefined;
