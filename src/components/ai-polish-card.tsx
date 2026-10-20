@@ -21,11 +21,16 @@ function ModelPicker({
   value,
   onChange,
   id,
+  live = true,
+  disabled = false,
 }: {
   provider: ProviderId;
   value: string;
   onChange: (model: string) => void;
   id: string;
+  /** True: a typed name is passed on as it is typed. False: only when the box is left or Enter is pressed (each pass costs a check). */
+  live?: boolean;
+  disabled?: boolean;
 }) {
   const presets = PROVIDERS[provider].models;
   const isPreset = presets.some((m) => m.id === value);
@@ -37,6 +42,7 @@ function ModelPicker({
         id={id}
         className={selectClass}
         value={custom ? CUSTOM : value}
+        disabled={disabled}
         onChange={(e) => {
           if (e.target.value === CUSTOM) {
             setCustom(true);
@@ -61,9 +67,19 @@ function ModelPicker({
           autoComplete="off"
           spellCheck={false}
           className="max-w-xl"
+          disabled={disabled}
           onChange={(e) => {
             setText(e.target.value);
-            onChange(e.target.value.trim());
+            if (live) onChange(e.target.value.trim());
+          }}
+          onBlur={() => {
+            if (!live && text.trim() !== value) onChange(text.trim());
+          }}
+          onKeyDown={(e) => {
+            if (!live && e.key === "Enter") {
+              e.preventDefault();
+              if (text.trim() !== value) onChange(text.trim());
+            }
           }}
         />
       )}
@@ -83,6 +99,30 @@ export function AiPolishCard() {
   const [model, setModel] = useState(defaultModel("anthropic"));
   const [testing, setTesting] = useState(false);
   const info = PROVIDERS[provider];
+
+  /** Switches the saved key to another model, but only after one tiny call proves that model works for this key. */
+  async function changeModel(next: string) {
+    if (!setup) return;
+    if (!isModelId(next)) {
+      toast.error("That isn't a model name. Use letters, digits and - . _ : / only.");
+      return;
+    }
+    const candidate = { ...setup, model: next };
+    setTesting(true);
+    try {
+      await testKey(fetch.bind(globalThis), candidate);
+    } catch (err) {
+      toast.error(err instanceof AiError ? err.message : "Couldn't check that model. Try again.");
+      return;
+    } finally {
+      setTesting(false);
+    }
+    if (!save(candidate)) {
+      toast.error("This browser wouldn't let us keep that. Check that it allows site storage.");
+      return;
+    }
+    toast.success(`Checked: Polish now uses ${next}.`);
+  }
 
   function chooseProvider(next: ProviderId) {
     setProvider(next);
@@ -137,9 +177,9 @@ export function AiPolishCard() {
               id="ai-model-saved"
               provider={setup.provider}
               value={setup.model}
-              onChange={(next) => {
-                if (isModelId(next)) save({ ...setup, model: next });
-              }}
+              live={false}
+              disabled={testing}
+              onChange={(next) => void changeModel(next)}
             />
             <p className="text-muted-foreground text-xs">
               The first choice is the cheapest. It is plenty for tidying a sentence.

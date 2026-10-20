@@ -17,6 +17,10 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   await page.route("https://api.anthropic.com/**", async (route) => {
     const req = route.request();
     calls.push({ headers: req.headers(), body: req.postDataJSON() });
+    if (req.postDataJSON().model === "nonexistent-model") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: "{}" }); // (a 404 would log a browser error and fail the run)
+      return;
+    }
     const note = String(req.postDataJSON().messages[0].content);
     await route.fulfill(
       note.includes("Note: fixed bug")
@@ -98,11 +102,9 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
       .getByText(/Reworked the homepage layout/)
       .first()
       .hover();
-    await page
-      .getByRole("listitem")
-      .filter({ hasText: "Reworked the homepage layout" })
-      .getByRole("button", { name: "Edit", exact: true })
-      .click({ force: true });
+    const row = page.getByRole("listitem").filter({ hasText: "Reworked the homepage layout" });
+    await expect(row).not.toHaveAttribute("aria-busy", "true"); // a row the server has not confirmed yet cannot be edited
+    await row.getByRole("button", { name: "Edit", exact: true }).click({ force: true });
     // one in the add form and one in the entry's own edit form
     await expect(
       page.getByRole("region", { name: "Today's timesheet" }).getByRole("button", { name: /Polish/ }),
@@ -112,12 +114,26 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   await test.step("the model can be changed without entering the key again", async () => {
     await page.goto("/dashboard/account");
     await expect(page.getByLabel("Model", { exact: true })).toHaveValue("claude-haiku-5-5"); // the cheapest is the default
+    const before = calls.length;
     await page.getByLabel("Model", { exact: true }).selectOption("claude-sonnet-5-5");
+    await expect(page.getByText(/Checked: Polish now uses claude-sonnet-5-5/)).toBeVisible(); // proven with one call first
+    expect(calls.length).toBe(before + 1);
+    expect(calls.at(-1)?.body.model).toBe("claude-sonnet-5-5");
     await page.goto("/dashboard/today");
     await page.getByLabel("Description").fill("sonnet please");
     await page.getByRole("button", { name: /Polish/ }).click();
     await expect(page.getByTestId("polish-suggestion")).toBeVisible();
     expect(calls.at(-1)?.body.model).toBe("claude-sonnet-5-5");
+  });
+
+  await test.step("a model that fails the check is refused, and the old one stays", async () => {
+    await page.goto("/dashboard/account");
+    await page.getByLabel("Model", { exact: true }).selectOption({ label: "Other model…" });
+    await page.getByLabel("Model name").fill("nonexistent-model");
+    await page.getByLabel("Model name").press("Enter");
+    await expect(page.getByText(/Anthropic refused that key/).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel("Model", { exact: true })).toHaveValue("claude-sonnet-5-5"); // unchanged
   });
 
   await test.step("an OpenAI key works the same way, on its own default model", async () => {

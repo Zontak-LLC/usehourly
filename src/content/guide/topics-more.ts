@@ -128,7 +128,7 @@ The **Polish** button then appears under description boxes: when you add time an
 
 ## Choosing a model
 
-The first model in each list is the cheapest, and it is plenty for tidying a sentence. A bigger one is slower and costs more without making this job better. You can change the model later on the same Account card without entering the key again, or choose **Other model…** and type a model name as the service lists it.
+The first model in each list is the cheapest, and it is plenty for tidying a sentence. A bigger one is slower and costs more without making this job better. You can change the model later on the same Account card without entering the key again, or choose **Other model…** and type a model name as the service lists it. A key is checked with one tiny call when you save it, and a new model is checked the same way before it is used, so you see "Checked" or a plain reason it failed.
 
 ## What is sent, and where the key lives
 
