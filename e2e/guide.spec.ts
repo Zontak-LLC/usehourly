@@ -49,18 +49,14 @@ test("a visitor can search the guide, read a topic and the FAQ, with no account"
     await expect(page.getByRole("heading", { name: "Is UseHourly really free?" })).toBeVisible();
   });
 
-  await test.step("the guide wears the app's own navigation, with nothing personal in it", async () => {
+  await test.step("a visitor with no account sees a plain header, not the app's pages", async () => {
     await page.goto("/help/faq");
-    const tabs = page.getByRole("navigation", { name: "Main pages" });
-    await expect(tabs.getByRole("link", { name: "Today" })).toHaveAttribute("href", "/dashboard/today");
-    await expect(tabs.getByRole("link", { name: "Clients" })).toBeVisible();
-    // the guide is cached on devices for offline use: no name, no address, no Log out in it
+    await expect(page.getByRole("navigation", { name: "Main pages" })).toHaveCount(0); // no Today, Week, Clients ...
+    await expect(page.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/auth/v2/login");
+    await expect(page.getByRole("link", { name: "Create account" })).toHaveAttribute("href", "/auth/v2/register");
+    await expect(page.getByRole("link", { name: "UseHourly" }).first()).toHaveAttribute("href", "/");
+    // nothing personal and no leftovers of the old header
     await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
-    await tabs.getByRole("button", { name: "More" }).click();
-    await expect(page.getByRole("menuitem", { name: "Log out" })).toHaveCount(0);
-    await page.keyboard.press("Escape");
-    // and no second header of its own: no Guide / FAQ / Open the app buttons
-    await expect(page.getByRole("navigation", { name: "Guide", exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Open the app" })).toHaveCount(0);
   });
 
@@ -96,6 +92,19 @@ test("the app links to the guide: the menu, and a ? beside the settings that are
     const guide = await link.boundingBox();
     expect(guide?.x ?? 0).toBeLessThan(gear?.x ?? 0); // just left of the gear, in the same top bar
     expect(Math.abs((guide?.y ?? 0) - (gear?.y ?? 99))).toBeLessThan(4);
+  });
+
+  await test.step("the guide keeps the app's navigation for a signed-in person, with nothing personal in it", async () => {
+    await page.goto("/help/faq");
+    const tabs = page.getByRole("navigation", { name: "Main pages" });
+    await expect(tabs.getByRole("link", { name: "Today" })).toHaveAttribute("href", "/dashboard/today");
+    await expect(tabs.getByRole("link", { name: "Clients" })).toBeVisible();
+    // the guide is cached on devices for offline use: no name, no address, no Log out in it
+    await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
+    await tabs.getByRole("button", { name: "More" }).click();
+    await expect(page.getByRole("menuitem", { name: "Log out" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await page.goto("/dashboard/today");
   });
 
   await test.step("the menu has a Guide entry", async () => {
