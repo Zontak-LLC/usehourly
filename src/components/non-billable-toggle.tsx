@@ -3,6 +3,7 @@
 import { Ban } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -16,18 +17,27 @@ export function NonBillableToggle({
   date,
   compact = false,
   labelled = false,
+  seed,
 }: {
   date: string;
   compact?: boolean;
   /** Show the words "Non-billable day" beside the icon (the Week page's day card). */
   labelled?: boolean;
+  /** The marked days of a longer range already loaded (the week): used instead of asking again for this one day. */
+  seed?: { days: string[]; updatedAt: number };
 }) {
   const utils = trpc.useUtils();
-  const days = trpc.entry.nonBillableDays.useQuery({ from: date, to: date });
+  const days = trpc.entry.nonBillableDays.useQuery(
+    { from: date, to: date },
+    seed ? { initialData: seed.days.filter((d) => d === date), initialDataUpdatedAt: seed.updatedAt } : undefined,
+  );
   const set = trpc.entry.setNonBillable.useMutation();
+  const optimistic = useOptimisticEntries();
   const on = days.data?.includes(date) ?? false;
 
   async function toggle() {
+    // The day shows as marked (or un-marked) at once; the server's answer confirms it or undoes it.
+    const undo = await optimistic.markDay(date, !on);
     try {
       await set.mutateAsync({ date, nonBillable: !on });
       await Promise.all([
@@ -36,6 +46,7 @@ export function NonBillableToggle({
         utils.project.budgets.invalidate(),
       ]);
     } catch (err) {
+      undo();
       toastError(err, "Couldn't change that day.");
     }
   }

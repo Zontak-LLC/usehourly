@@ -12,7 +12,8 @@ const createCaller = createCallerFactory(appRouter);
 function mockPrisma() {
   return {
     ...memoryNonBillableDays(),
-    project: { findFirst: vi.fn() },
+    // findMany: entry.list reads the account's projects alongside the entries
+    project: { findFirst: vi.fn(), findMany: vi.fn(async () => []) },
     timeEntry: {
       count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }) => ({ id: "e1", ...data })),

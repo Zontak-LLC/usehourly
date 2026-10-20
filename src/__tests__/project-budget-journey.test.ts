@@ -46,6 +46,22 @@ const entry = (project_id: string, date: string, minutes: number, user_id = "u1"
   minutes,
 });
 
+type EntryWhere = {
+  user_id: string;
+  project_id: { in: string[] };
+  date?: { gte?: string; lte?: string; in?: string[] };
+};
+/** The part of Prisma's where the budgets query uses: the account, the projects and an optional date filter. */
+function matches(e: Entry, where: EntryWhere): boolean {
+  if (e.user_id !== where.user_id || !where.project_id.in.includes(e.project_id)) return false;
+  const d = where.date;
+  if (!d) return true;
+  if (d.gte !== undefined && e.date < d.gte) return false;
+  if (d.lte !== undefined && e.date > d.lte) return false;
+  if (d.in !== undefined && !d.in.includes(e.date)) return false;
+  return true;
+}
+
 function world(projects: ProjectRow[], entries: Entry[], days: { user_id: string; date: string }[] = []) {
   const stored = [...projects];
   const prisma = {
@@ -67,9 +83,13 @@ function world(projects: ProjectRow[], entries: Entry[], days: { user_id: string
     },
     client: { findFirst: vi.fn() },
     timeEntry: {
-      findMany: vi.fn(async ({ where }: { where: { user_id: string; project_id: { in: string[] } } }) =>
-        entries.filter((e) => e.user_id === where.user_id && where.project_id.in.includes(e.project_id)),
-      ),
+      findMany: vi.fn(async ({ where }: { where: EntryWhere }) => entries.filter((e) => matches(e, where))),
+      groupBy: vi.fn(async ({ where }: { where: EntryWhere }) => {
+        const sums = new Map<string, number>();
+        for (const e of entries.filter((x) => matches(x, where)))
+          sums.set(e.project_id, (sums.get(e.project_id) ?? 0) + e.minutes);
+        return [...sums].map(([project_id, minutes]) => ({ project_id, _sum: { minutes } }));
+      }),
     },
   };
   const as = (id: string | null) =>
@@ -195,6 +215,43 @@ describe("project budgets", () => {
     await expect(as("u1").project.budgets({ from: "2026-13-01", to: OCT.to })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("budgets read as little as possible", () => {
+  const total = (id = "site") => project({ id, budget_amount: 20 * 60, budget_unit: "hours", budget_period: "total" });
+
+  it("never loads the whole history: a whole-project budget is one SUM plus the few entries on non-billable days", async () => {
+    const entries = Array.from({ length: 400 }, (_, i) =>
+      entry("site", `2025-${String((i % 12) + 1).padStart(2, "0")}-${String((i % 27) + 1).padStart(2, "0")}`, 30),
+    );
+    entries.push(entry("site", "2026-10-20", 120)); // the day marked non-billable below
+    const { prisma, as } = world([total()], entries, [{ user_id: "u1", date: "2026-10-20" }]);
+    const budgets = await as("u1").project.budgets(OCT);
+    expect(budgets.site.used).toBe(400 * 30); // the 120 minutes on the non-billable day are taken back out
+    expect(prisma.timeEntry.groupBy).toHaveBeenCalledTimes(1);
+    // every entry read is bounded by a date filter, so the account's whole history is never fetched
+    for (const [arg] of prisma.timeEntry.findMany.mock.calls) expect(arg.where.date).toBeDefined();
+  });
+
+  it("keeps every query under D1's 100 bound values, however many days are marked non-billable", async () => {
+    const days = Array.from({ length: 250 }, (_, i) => {
+      const d = new Date(Date.UTC(2025, 0, 1 + i));
+      return { user_id: "u1", date: d.toISOString().slice(0, 10) };
+    });
+    const entries = [
+      entry("site", days[0].date, 60),
+      entry("site", days[249].date, 60),
+      entry("site", "2026-10-02", 90),
+    ];
+    const { prisma, as } = world([total()], entries, days);
+    const budgets = await as("u1").project.budgets(OCT);
+    expect(budgets.site.used).toBe(90); // only the entry on an ordinary day counts
+    expect(prisma.timeEntry.findMany.mock.calls.length).toBeGreaterThan(1); // the days went in groups
+    for (const [arg] of prisma.timeEntry.findMany.mock.calls) {
+      const values = 1 + arg.where.project_id.in.length + (arg.where.date?.in?.length ?? 0);
+      expect(values).toBeLessThanOrEqual(100);
+    }
   });
 });
 

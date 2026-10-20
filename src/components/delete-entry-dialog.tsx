@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
@@ -27,8 +28,12 @@ const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "lon
 export function DeleteEntryDialog({ entry, onClose }: { entry: EntryToDelete | null; onClose: () => void }) {
   const utils = trpc.useUtils();
   const del = trpc.entry.delete.useMutation();
+  const optimistic = useOptimisticEntries();
 
   async function remove(id: string) {
+    // Gone from the list and the dialog closed at once; the server's answer confirms it, or the entry comes back.
+    const undo = await optimistic.remove(id);
+    onClose();
     try {
       await del.mutateAsync({ id });
       await Promise.all([
@@ -38,8 +43,8 @@ export function DeleteEntryDialog({ entry, onClose }: { entry: EntryToDelete | n
         utils.project.totals.invalidate(),
       ]);
       toast.success("Entry deleted.");
-      onClose();
     } catch (err) {
+      undo();
       toastError(err, "Couldn't delete that entry.");
     }
   }

@@ -6,6 +6,7 @@ import { DayEditorDialog } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
+import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
@@ -42,6 +43,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   }, [initialMonth]);
 
   const last = first ? monthEnd(first) : "";
+  useProjectLogos(); // the project logos start with the first batch, not after the entries arrive
   const entries = trpc.entry.list.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
   const nonBillableDays = trpc.entry.nonBillableDays.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
   const nonBillable = useMemo(() => new Set(nonBillableDays.data ?? []), [nonBillableDays.data]);

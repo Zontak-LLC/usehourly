@@ -39,7 +39,15 @@ describe("the copy of your last data kept for offline", () => {
   it("keeps only everyday queries, so nothing large or private is written to the device", () => {
     expect(queryPath(key("entry.list"))).toBe("entry.list");
     expect(queryPath(["not", "a", "trpc", "key"])).toBe("");
-    for (const ok of ["entry.list", "entry.nonBillableDays", "clients.list", "project.totals", "project.budgets"]) {
+    for (const ok of [
+      "entry.list",
+      "entry.nonBillableDays",
+      "clients.list",
+      "project.totals",
+      "project.budgets",
+      "invoice.list",
+      "report.annual",
+    ]) {
       expect(persistable(key(ok))).toBe(true);
     }
     for (const no of [
@@ -118,7 +126,7 @@ describe("the copy of your last data kept for offline", () => {
     expect(Math.min(...kept.map((q) => q.state.dataUpdatedAt))).toBe(1000 + 6); // the six oldest are gone
 
     const big = new QueryClient();
-    const chunk = "x".repeat(400_000);
+    const chunk = "x".repeat(Math.floor(MAX_BYTES * 0.4)); // three of these are over the cap, two are under
     big.setQueryData(key("entry.list", { n: 1 }), [chunk], { updatedAt: 1 });
     big.setQueryData(key("entry.list", { n: 2 }), [chunk], { updatedAt: 2 });
     big.setQueryData(key("entry.list", { n: 3 }), [chunk], { updatedAt: 3 });

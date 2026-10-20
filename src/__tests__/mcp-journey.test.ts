@@ -105,7 +105,7 @@ function setup(over: Partial<TokenRow> = {}) {
     project: {
       count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({ id: "p1" })),
-      findMany: vi.fn(async () => []),
+      findMany: vi.fn(async () => [] as unknown[]),
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "p9", ...data })),
       updateMany: vi.fn(async () => ({ count: 1 })),
       groupBy: vi.fn(),
@@ -594,12 +594,18 @@ describe("an assistant tracks a day of work", () => {
   });
 
   it("lists a week with totals per project and day, and can narrow to one project", async () => {
+    // entry.list reads the account's projects (with their clients) next to the entries and joins them itself
+    s.prisma.project.findMany.mockResolvedValue([
+      { id: "p1", name: "Website", client: { id: "c1", name: "Acme" } },
+      { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
+    ]);
     s.prisma.timeEntry.findMany.mockResolvedValue([
       entryRow({ id: "a", date: "2026-10-09", minutes: 90 }),
       entryRow({
         id: "b",
         date: "2026-10-09",
         minutes: 30,
+        project_id: "p3",
         project: { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
       }),
       entryRow({ id: "c", date: "2026-10-08", minutes: 60 }),
