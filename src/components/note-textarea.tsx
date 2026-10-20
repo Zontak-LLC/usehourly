@@ -5,12 +5,15 @@ import type * as React from "react";
 import { cn } from "cn";
 import { toast } from "sonner";
 
+import { PolishAction } from "@/components/polish-action";
 import { Textarea } from "@/components/ui/textarea";
 import { fitPaste, NOTE_MAX, noteCounter } from "@/lib/notes";
 
 type Props = Omit<React.ComponentProps<typeof Textarea>, "value" | "onChange" | "maxLength"> & {
   value: string;
   onChange: (value: string) => void;
+  /** Names sent with the note when the person polishes it with their own AI key (nothing shows without a key). */
+  polish?: { project: string; client: string };
 };
 
 /**
@@ -18,7 +21,7 @@ type Props = Omit<React.ComponentProps<typeof Textarea>, "value" | "onChange" | 
  * to a scrollable maximum), shows a counter as the limit gets close, and — instead of letting the
  * browser silently chop a long paste — keeps what fits and says how much was left out.
  */
-export function NoteTextarea({ value, onChange, className, onPaste, ...rest }: Props) {
+export function NoteTextarea({ value, onChange, className, onPaste, polish, ...rest }: Props) {
   const counter = noteCounter(value.length);
   const atLimit = value.length >= NOTE_MAX;
 
@@ -55,6 +58,7 @@ export function NoteTextarea({ value, onChange, className, onPaste, ...rest }: P
           {atLimit ? `${counter} · limit reached` : counter}
         </p>
       )}
+      {polish && <PolishAction value={value} onUse={onChange} context={polish} />}
     </div>
   );
 }
