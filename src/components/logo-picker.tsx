@@ -13,6 +13,7 @@ export function LogoPicker({
   onRemove,
   name,
   compact = false,
+  addLabel = "Add logo",
 }: {
   value: string | null | undefined;
   onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -20,6 +21,8 @@ export function LogoPicker({
   /** What it is, for the buttons' names ("client logo"). */
   name: string;
   compact?: boolean;
+  /** The button's words when nothing is chosen yet (default "Add logo"). */
+  addLabel?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   return (
@@ -44,7 +47,7 @@ export function LogoPicker({
         onChange={onPick}
       />
       <Button type="button" variant="outline" size="sm" onClick={() => input.current?.click()}>
-        {value ? "Change" : "Add logo"}
+        {value ? "Change" : addLabel}
       </Button>
       {value && (
         <Button

@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { signOutOfDevice } from "@/lib/sign-out";
 import { adminLinks, type NavLink, navLinks } from "@/navigation/sidebar/sidebar-items";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
@@ -47,17 +46,10 @@ function Item({ item, active }: { item: NavLink; active: boolean }) {
 
 /**
  * The left-hand navigation some people prefer on a wide screen (Settings gear > Navigation). Same pages as the tab
- * strip, plus the rest, grouped under small headings by what they are for (Track, Bill, Manage, Settings), the signed-in person and Log out; the current page has a bar in the accent colour beside it. Hidden unless chosen, and never on
+ * strip, plus the rest, grouped under small headings by what they are for (Track, Bill, Manage, Settings), the collapse button (the signed-in person and Log out are in the top bar); the current page has a bar in the accent colour beside it. Hidden unless chosen, and never on
  * a phone, which keeps its bottom bar.
  */
-export function SideNav({
-  user,
-  isAdmin = false,
-}: {
-  /** Left out on pages that must hold nothing personal (the public guide): then no name, address or Log out. */
-  user?: { name: string; email: string } | null;
-  isAdmin?: boolean;
-}) {
+export function SideNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const collapsed = usePreferencesStore((s) => s.values.nav_collapsed === "collapsed");
   const setPreference = usePreferencesStore((s) => s.setPreference);
@@ -101,23 +93,6 @@ export function SideNav({
         </div>
       ))}
       <div className="mt-auto flex flex-col gap-1 border-t pt-3">
-        {user && (
-          <>
-            <div className={`px-3 ${WORDS}`}>
-              <p className="truncate font-medium text-sm">{user.name}</p>
-              <p className="truncate text-muted-foreground text-xs">{user.email}</p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="justify-start [html[data-nav-collapsed=collapsed]_&]:justify-center"
-              title="Log out"
-              onClick={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}
-            >
-              <LogOut /> <span className={WORDS}>Log out</span>
-            </Button>
-          </>
-        )}
         <Button
           type="button"
           variant="ghost"

@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 
 import { toast } from "sonner";
 
+import { LogoPicker } from "@/components/logo-picker";
 import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fileToAvatar } from "@/lib/logo";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -19,6 +21,29 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
   const router = useRouter();
   const utils = trpc.useUtils();
   const updateProfile = trpc.account.updateProfile.useMutation();
+  const setAvatar = trpc.account.setAvatar.useMutation();
+
+  async function saveAvatar(avatar: string | null) {
+    try {
+      await setAvatar.mutateAsync({ avatar });
+      await utils.account.me.invalidate();
+      router.refresh(); // the top bar is read on the server
+      toast.success(avatar ? "Picture saved." : "Picture removed.");
+    } catch (err) {
+      toastError(err, "Couldn't save that picture.");
+    }
+  }
+
+  async function pickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      await saveAvatar(await fileToAvatar(file));
+    } catch (err) {
+      toastError(err, "Couldn't use that image.");
+    }
+  }
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,6 +72,18 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
         ) : emailEnabled?.enabled ? (
           <ConfirmEmailHint />
         ) : null}
+      </div>
+      <div className="grid gap-1.5">
+        <Label>Picture</Label>
+        <LogoPicker
+          value={me.avatar}
+          onPick={pickAvatar}
+          onRemove={() => void saveAvatar(null)}
+          name="picture"
+          compact
+          addLabel="Add a picture"
+        />
+        <p className="text-muted-foreground text-xs">Shown beside your name at the top right. Only you see it.</p>
       </div>
       <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
         Save

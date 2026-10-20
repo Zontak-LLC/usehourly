@@ -7,7 +7,7 @@ import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
 import { isThemeMode, isThemePreset } from "@/lib/theme-sync";
 
-import { logoSchema } from "../logo-schema";
+import { avatarSchema, logoSchema } from "../logo-schema";
 import { protectedProcedure } from "../trpc";
 
 export const profileProcedures = {
@@ -72,6 +72,7 @@ export const profileProcedures = {
         is_demo: true,
         weekly_reminder: true,
         currency: true,
+        avatar: true,
         password_hash: true,
       },
     });
@@ -144,6 +145,15 @@ export const profileProcedures = {
         select: { id: true, name: true, email: true },
       }),
     ),
+
+  /** The person's picture, shown beside their name in the top bar. null removes it (initials show again). */
+  setAvatar: protectedProcedure.input(z.object({ avatar: avatarSchema })).mutation(async ({ ctx, input }) => {
+    if (isDemoSession(ctx.session)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to add your picture." });
+    }
+    await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { avatar: input.avatar } });
+    return { saved: true };
+  }),
 
   /** Business details printed on invoices. Empty strings clear a field. */
   updateBusiness: protectedProcedure
