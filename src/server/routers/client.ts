@@ -1,8 +1,10 @@
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { isDemoSession } from "@/lib/demo";
 import { emailField } from "@/lib/email";
+import { CURRENCY_CODES, effectiveCurrency } from "@/lib/money";
 import { assertWithinQuota } from "@/lib/quotas";
 import { roundingSchema } from "@/lib/rounding";
 
@@ -10,6 +12,28 @@ import { logoSchema } from "../logo-schema";
 import { protectedProcedure, router } from "../trpc";
 
 const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+/**
+ * A client's currency can change until it has an invoice: an invoice keeps the currency it was issued in, and the
+ * client's rates, budgets and totals must not switch currency underneath it. Saving the same effective currency again
+ * is always fine (the form sends it on every save).
+ */
+async function assertCurrencyChangeAllowed(
+  ctx: { prisma: PrismaClient; userId: string },
+  existing: { id: string; currency: string | null },
+  next: string | null,
+) {
+  const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { currency: true } });
+  if (effectiveCurrency(existing.currency, user?.currency) === effectiveCurrency(next, user?.currency)) return;
+  const invoices = await ctx.prisma.invoice.count({ where: { user_id: ctx.userId, client_id: existing.id } });
+  if (invoices > 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        "This client's currency is fixed once you have made an invoice for it, so its invoices stay in one currency.",
+    });
+  }
+}
 
 export const clientRouter = router({
   list: protectedProcedure.query(({ ctx }) =>
@@ -64,10 +88,13 @@ export const clientRouter = router({
         round_step: true,
         round_mode: true,
         round_min: true,
+        currency: true,
       },
     });
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
-    return c;
+    // The currency is fixed once the client has an invoice (see assertCurrencyChangeAllowed).
+    const invoices = await ctx.prisma.invoice.count({ where: { user_id: ctx.userId, client_id: c.id } });
+    return { ...c, currency_locked: invoices > 0 };
   }),
 
   /** Rename and set the billing address / logo printed on this client's invoices. */
@@ -82,6 +109,8 @@ export const clientRouter = router({
         email: z.union([z.literal(""), emailField]).optional(),
         // Billing rounding for this client's invoices. Left out = unchanged.
         rounding: roundingSchema.optional(),
+        // This client's billing currency. Left out = unchanged; null = use the account's currency (issue #71 step 2).
+        currency: z.enum(CURRENCY_CODES).nullable().optional(),
         logo: logoSchema,
       }),
     )
@@ -92,10 +121,12 @@ export const clientRouter = router({
         const dup = await ctx.prisma.client.findFirst({ where: { user_id: ctx.userId, name: input.name } });
         if (dup) throw new TRPCError({ code: "CONFLICT", message: `You already have a client named "${input.name}".` });
       }
+      if (input.currency !== undefined) await assertCurrencyChangeAllowed(ctx, existing, input.currency);
       return ctx.prisma.client.update({
         where: { id: input.id, user_id: ctx.userId },
         data: {
           name: input.name,
+          ...(input.currency === undefined ? {} : { currency: input.currency }),
           legal_name: input.legalName || null,
           address: input.address || null,
           ...(input.email === undefined ? {} : { email: input.email || null }),

@@ -193,6 +193,7 @@ describe("Export everything as a zip", () => {
       period_to: "2026-03-31",
       total_minutes: 150,
       total_cents: 25000,
+      currency: "USD",
     },
     {
       number: "INV-2026-002",
@@ -204,6 +205,7 @@ describe("Export everything as a zip", () => {
       period_to: "2026-04-30",
       total_minutes: 150,
       total_cents: 17500,
+      currency: "USD",
     },
   ];
 
@@ -267,22 +269,22 @@ describe("Export everything as a zip", () => {
     const csv = await fileIn(zip, "all-entries.csv").async("string");
     expect(csv.charCodeAt(0)).toBe(0xfeff); // so Excel reads it as UTF-8
     const lines = csv.slice(1).split("\r\n");
-    expect(lines[0]).toBe("Date,Client,Project,Note,Hours,Minutes,Billable,Rate ($/h),Amount ($)");
+    expect(lines[0]).toBe("Date,Client,Project,Note,Hours,Minutes,Billable,Rate (per hour),Amount,Currency");
     // commas, quotes and line breaks inside a note stay inside one field
     expect(csv).toContain('"Homepage, hero & nav"');
     expect(csv).toContain('"Said ""ship it""\nsecond line"');
-    expect(csv).toContain('2026-03-03,Acme,Website,"Homepage, hero & nav",1.5,90,Yes,100,150');
+    expect(csv).toContain('2026-03-03,Acme,Website,"Homepage, hero & nav",1.5,90,Yes,100,150,USD');
     expect(csv).toContain("Fernhill Café,Menu"); // accents survive
-    expect(csv).toContain("2026-04-21,Acme,Retainer,,0.75,45,No,,"); // not billable: no rate or amount
+    expect(csv).toContain("2026-04-21,Acme,Retainer,,0.75,45,No,,,USD"); // not billable: no rate or amount
     expect(csv).not.toContain("timer just started"); // zero-minute entry left out
   });
 
   it("writes the invoice history with a plain Paid / Unpaid status", async () => {
     const { zip } = await build();
     const csv = await fileIn(zip, "invoices.csv").async("string");
-    expect(csv).toContain("Number,Client,Issued,Due,Paid,Period from,Period to,Hours,Total ($),Status");
-    expect(csv).toContain("INV-2026-001,Acme,2026-04-01,2026-04-15,2026-04-10,2026-03-01,2026-03-31,2.5,250,Paid");
-    expect(csv).toContain("INV-2026-002,Fernhill Café,2026-04-30,,,2026-04-01,2026-04-30,2.5,175,Unpaid");
+    expect(csv).toContain("Number,Client,Issued,Due,Paid,Period from,Period to,Hours,Total,Currency,Status");
+    expect(csv).toContain("INV-2026-001,Acme,2026-04-01,2026-04-15,2026-04-10,2026-03-01,2026-03-31,2.5,250,USD,Paid");
+    expect(csv).toContain("INV-2026-002,Fernhill Café,2026-04-30,,,2026-04-01,2026-04-30,2.5,175,USD,Unpaid");
   });
 
   it("gives each client a real workbook that holds only that client's time", async () => {

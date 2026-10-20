@@ -36,6 +36,10 @@ export const isCurrency = (value: unknown): value is CurrencyCode =>
 /** A stored or received value as a supported currency; anything else (an old row, a bad value) is the default. */
 export const currencyOrDefault = (value: unknown): CurrencyCode => (isCurrency(value) ? value : DEFAULT_CURRENCY);
 
+/** The currency a client is billed in: its own when it has one, else the account's (issue #71 step 2). */
+export const effectiveCurrency = (clientCurrency: unknown, accountCurrency: unknown): CurrencyCode =>
+  isCurrency(clientCurrency) ? clientCurrency : currencyOrDefault(accountCurrency);
+
 /** "$1,234.50", "€1,234.50", "CHF 1,234.50": always the en-US pattern, so server and browser write it the same way. */
 export const formatMoney = (cents: number, currency: string = DEFAULT_CURRENCY) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: currencyOrDefault(currency) }).format(cents / 100);
@@ -63,3 +67,24 @@ export const formatMoneyForPdf = (cents: number, currency: string = DEFAULT_CURR
     currencyDisplay: "code",
   }).format(cents / 100);
 };
+
+export type CurrencyTotals = { currency: CurrencyCode; count: number; total: number; unpaid: number };
+
+/**
+ * Invoice totals per currency, in the order each currency first appears. Amounts in different currencies are never
+ * added together (nothing converts between them), so a list that mixes two shows two sets of figures.
+ */
+export function totalsByCurrency(
+  invoices: { currency: string; total_cents: number; paid_date: string | null }[],
+): CurrencyTotals[] {
+  const groups = new Map<CurrencyCode, CurrencyTotals>();
+  for (const i of invoices) {
+    const currency = currencyOrDefault(i.currency);
+    const g = groups.get(currency) ?? { currency, count: 0, total: 0, unpaid: 0 };
+    g.count += 1;
+    g.total += i.total_cents;
+    if (!i.paid_date) g.unpaid += i.total_cents;
+    groups.set(currency, g);
+  }
+  return [...groups.values()];
+}

@@ -22,6 +22,7 @@ export function shapeInvoiceSummary(i: {
   period_to: string;
   total_minutes: number;
   total_cents: number;
+  currency: string;
   notes: string;
 }) {
   return {
@@ -37,6 +38,7 @@ export function shapeInvoiceSummary(i: {
     hours: hours(i.total_minutes),
     total: round2(i.total_cents / 100),
     total_cents: i.total_cents,
+    currency: i.currency,
     notes: i.notes,
   };
 }

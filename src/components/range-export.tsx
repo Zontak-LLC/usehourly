@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAccountCurrency } from "@/components/currency-provider";
 import { ExportEverything } from "@/components/export-everything";
 import { ProjectFilter } from "@/components/project-filter";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ export function RangeExport({
   defaultTo: string;
   projectId?: string;
 }) {
+  const accountCurrency = useAccountCurrency();
   const utils = trpc.useUtils();
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
@@ -66,6 +68,7 @@ export function RangeExport({
         days: dateRange(from, to, addDays),
         filename: rangeFilename(from, to, projectName),
         range: true,
+        accountCurrency,
       });
       toast.success("Your timesheet has been downloaded.");
       onOpenChange(false);

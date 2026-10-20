@@ -24,19 +24,34 @@ Your business name, EIN, address and payment instructions come from **Account**.
     slug: "currency",
     title: "Choosing your currency",
     group: "billing",
-    summary:
-      "Pick the currency your rates, budgets and invoices are written in, and why it locks after your first invoice.",
-    keywords: ["euro", "pound", "dollar", "money", "symbol", "eur", "gbp", "usd", "foreign", "country"],
+    summary: "Pick your usual currency, bill a client in a different one, and why each locks after its first invoice.",
+    keywords: [
+      "client",
+      "multiple",
+      "euro",
+      "pound",
+      "dollar",
+      "money",
+      "symbol",
+      "eur",
+      "gbp",
+      "usd",
+      "foreign",
+      "country",
+    ],
     body: `Open **Account**, then **Invoices**, then **Currency**. Pick the currency you bill in: US dollar, euro, British pound and several others (those that use two decimals, like cents).
 
 - It changes how amounts are **written** (the symbol and format) on rates, budgets, invoices, the invoice page your client sees, invoice emails, the year summary and Excel exports.
 - **It does not convert anything.** A rate of 85 stays 85: only the symbol changes. Check your project rates after changing it.
-- You can change it **until you make your first invoice**. After that it is fixed, so an account's invoices, totals, year summary and accounting export are always in one currency.
+- You can change it **until you make your first invoice**. After that it is fixed. It is the currency of every client that does not have one of its own.
 - Each invoice keeps the currency it was made in.
 
-An invoice PDF shows the **code** (for example EUR 150.00) for currencies whose symbol its built-in font cannot draw. The invoice page and emails show the symbol.
+**Billing one client in another currency:** on **Clients & Projects**, open **Billing details** for that client and pick its **Currency**. Its rates, budgets and invoices are then written in it, and the client's currency is fixed once you have made an invoice for it.
 
-Billing different clients in different currencies is planned, not built yet.`,
+- **Totals are never added across currencies.** The Invoices page shows one set of figures per currency, and the **Year summary** shows one currency at a time (a currency picker appears when you use more than one).
+- The **accounting export** asks which currency to write, because its files hold plain numbers.
+
+An invoice PDF shows the **code** (for example EUR 150.00) for currencies whose symbol its built-in font cannot draw. The invoice page and emails show the symbol.`,
   },
   {
     slug: "rounding",
