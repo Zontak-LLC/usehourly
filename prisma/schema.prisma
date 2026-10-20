@@ -219,6 +219,19 @@ model InvoiceLogo {
   @@map("invoice_logos")
 }
 
+// What changed in time_entries, written by database triggers (migration 0032) so every write path is covered. A
+// device remembers the last `seq` it saw (local-first sync, issue #95). Rows say WHICH entry changed, not how.
+model EntryChange {
+  seq      Int    @id @default(autoincrement())
+  user_id  String
+  entry_id String
+  at       Int    @default(dbgenerated("(unixepoch())"))
+
+  @@index([user_id, seq])
+  @@index([at])
+  @@map("entry_changes")
+}
+
 // Fixed-window counters used to throttle sign-in and register. `reset_at` is epoch seconds.
 model RateLimit {
   key      String @id

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { SYNC_LOG_KEEP_DAYS } from "@/lib/entry-sync";
 import { LINK_KEEP_AFTER_EXPIRY_DAYS } from "@/lib/invoice-link";
 import { logError } from "@/lib/log";
 import { SHARE_KEEP_AFTER_EXPIRY_DAYS } from "@/lib/timesheet-share";
@@ -10,6 +11,7 @@ export type Housekeeping = {
   oauthCodes: number;
   timesheetShares: number;
   invoiceLinks: number;
+  entryChanges: number;
 };
 
 const HOUR = 3600;
@@ -47,6 +49,10 @@ export async function runHousekeeping(
       prisma.timesheetShare.deleteMany({
         where: { expires_at: { lt: nowSeconds - SHARE_KEEP_AFTER_EXPIRY_DAYS * DAY } },
       }),
+    ),
+    // The sync change log only has to reach back as far as a device may stay away (lib/entry-sync.ts).
+    entryChanges: await count(() =>
+      prisma.entryChange.deleteMany({ where: { at: { lt: nowSeconds - SYNC_LOG_KEEP_DAYS * DAY } } }),
     ),
   };
 }

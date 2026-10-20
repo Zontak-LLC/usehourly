@@ -8,6 +8,7 @@ import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
 import { GuideLink } from "@/components/guide-link";
 import { ImportTime } from "@/components/import-time";
+import { LocalFirstCard } from "@/components/local-first-card";
 import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
 import { SupportHourly } from "@/components/support-hourly";
@@ -87,6 +88,8 @@ export function AccountView() {
           </SectionCard>
 
           <ImportTime />
+
+          {!account.is_demo && <LocalFirstCard />}
 
           {!account.is_demo && <DeleteAccountCard hasPassword={account.has_password} email={account.email} />}
         </Section>

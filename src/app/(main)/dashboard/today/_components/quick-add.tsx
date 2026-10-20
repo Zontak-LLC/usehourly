@@ -16,6 +16,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate, monthBounds } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
+import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
 import { pendingEntry } from "@/lib/optimistic-entries";
 import { DURATION_CHIPS } from "@/lib/quick-start";
@@ -112,7 +113,8 @@ export function QuickAdd({
       setNote("");
       durationRef.current?.focus();
     };
-    if (!online) return saveOnDevice(clientId, parsed, finish);
+    // With the copy on this device switched on, the device itself takes the entry and sends it later (issue #95).
+    if (!online && !getActiveEngine()?.ready) return saveOnDevice(clientId, parsed, finish);
     // Show the entry in the list and clear the form NOW; the server's answer only confirms it (or takes it back).
     const owner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
     const row =

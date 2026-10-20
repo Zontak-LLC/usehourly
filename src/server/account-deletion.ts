@@ -19,6 +19,7 @@ export async function deleteAccountData(prisma: PrismaClient, userId: string): P
   await prisma.nonBillableDay.deleteMany(mine);
   await prisma.teamMember.deleteMany({ where: { OR: [{ owner_id: userId }, { member_id: userId }] } });
   await prisma.timeEntry.deleteMany(mine);
+  await prisma.entryChange.deleteMany(mine); // after the entries: their delete triggers add rows
   await prisma.project.deleteMany(mine);
   await prisma.client.deleteMany(mine);
   await prisma.authUser.delete({ where: { id: userId } });

@@ -11,6 +11,7 @@ import { memberRouter } from "./member";
 import { oauthRouter } from "./oauth";
 import { projectRouter } from "./project";
 import { reportRouter } from "./report";
+import { syncRouter } from "./sync";
 import { teamRouter } from "./team";
 import { timeImportRouter } from "./time-import";
 import { timesheetShareRouter } from "./timesheet-share";
@@ -31,6 +32,7 @@ export const appRouter = router({
   timesheetShare: timesheetShareRouter,
   team: teamRouter,
   member: memberRouter,
+  sync: syncRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -47,6 +47,7 @@ function fakeDb(users: U[], entries: E[] = []) {
     oauthCode: { deleteMany: vi.fn(async () => ({ count: 3 })) },
     timesheetShare: { deleteMany: vi.fn(async () => ({ count: 1 })) },
     invoiceLink: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+    entryChange: { deleteMany: vi.fn(async () => ({ count: 0 })) },
     invoice: { findMany: vi.fn(async () => []), updateMany: vi.fn(async () => ({ count: 0 })) },
     authUser: {
       findMany: vi.fn(async ({ where, take }: { where: { id: { gt: string } }; take: number }) =>
@@ -264,7 +265,14 @@ describe("the cron route and the unsubscribe link", () => {
     // No email service, so nothing is sent, but the housekeeping sweep still runs.
     expect(await ok.json()).toEqual({
       skipped: expect.stringContaining("Email is not set up"),
-      housekeeping: { rateLimits: 7, emailTokens: 2, oauthCodes: 3, timesheetShares: 1, invoiceLinks: 1 },
+      housekeeping: {
+        rateLimits: 7,
+        emailTokens: 2,
+        oauthCodes: 3,
+        timesheetShares: 1,
+        invoiceLinks: 1,
+        entryChanges: 0,
+      },
     });
     const now = Math.floor(Date.now() / 1000);
     expect(db.rateLimit.deleteMany).toHaveBeenCalledWith({ where: { reset_at: { lt: now - 3600 } } });
@@ -288,7 +296,14 @@ describe("the cron route and the unsubscribe link", () => {
       sent: 1,
       failed: 0,
       invoiceReminders: { considered: 0, sent: 0, skipped: 0, retry: 0 },
-      housekeeping: { rateLimits: 7, emailTokens: 2, oauthCodes: 3, timesheetShares: 1, invoiceLinks: 1 },
+      housekeeping: {
+        rateLimits: 7,
+        emailTokens: 2,
+        oauthCodes: 3,
+        timesheetShares: 1,
+        invoiceLinks: 1,
+        entryChanges: 0,
+      },
     });
     const payload = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, { body: string }])[1].body);
     expect(payload).toMatchObject({ to: "a-la@example.com", from: "UseHourly <hello@usehourly.app>" });

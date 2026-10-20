@@ -5,6 +5,8 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 
+import { getActiveEngine } from "@/lib/local-sync/active";
+import { localFirstLink } from "@/lib/local-sync/link";
 import { trpc } from "@/lib/trpc";
 import { MAX_BATCH } from "@/lib/trpc-limits";
 
@@ -24,6 +26,8 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [client] = useState(() =>
     trpc.createClient({
       links: [
+        // Local-first spike (issue #95): answers entry reads and writes from the device when the switch is on.
+        localFirstLink({ engine: getActiveEngine }),
         httpBatchLink({
           url: "/api/trpc",
           maxItems: MAX_BATCH,
