@@ -291,6 +291,10 @@ export default function LandingPage() {
                 assistants such as Claude work with your apps. Connect one and you can log time, run the timer and check
                 your week just by asking.
               </p>
+              <p className="mt-3 text-lg text-muted-foreground">
+                If you work in an AI assistant all day, connect it to UseHourly&rsquo;s MCP server and manage your
+                timesheets right from there.
+              </p>
               <ul className="mt-6 grid gap-4">
                 {AI_POINTS.map(({ Icon, title, body }) => (
                   <li key={title} className="flex gap-3">
