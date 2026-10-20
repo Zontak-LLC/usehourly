@@ -5,6 +5,7 @@ import { ArrowRight, Bot, FileText, KeyRound, MessageSquare, Server, ShieldCheck
 import type { Metadata } from "next";
 
 import { LogoMark } from "@/components/logo";
+import { ProductTour } from "@/components/product-tour";
 import { SupportHourly } from "@/components/support-hourly";
 import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
@@ -206,12 +207,15 @@ export default function LandingPage() {
           <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
             Guide
           </Link>
-          <Link href="/auth/v2/login" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted">
+          <Link
+            href="/auth/v2/login"
+            className="whitespace-nowrap rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted"
+          >
             Log in
           </Link>
           <Link
             href="/auth/v2/register"
-            className="rounded-lg border border-tint-edge bg-tint px-4 py-2 font-medium text-foreground text-sm hover:bg-tint-hover"
+            className="whitespace-nowrap rounded-lg border border-tint-edge bg-tint px-4 py-2 font-medium text-foreground text-sm hover:bg-tint-hover"
           >
             Create an account
           </Link>
@@ -237,26 +241,20 @@ export default function LandingPage() {
             Enter and you&rsquo;re done.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a href="#ai-assistants" className={primary}>
+            <a href="#ai-assistants" className={`${primary} w-full max-w-xs sm:w-auto`}>
               Connect your assistant
             </a>
-            <Link href="/auth/v2/register" className={secondary}>
+            <Link href="/auth/v2/register" className={`${secondary} w-full max-w-xs sm:w-auto`}>
               Create a free account
             </Link>
-            <TryDemoButton className={secondary}>Try the demo, no sign-up</TryDemoButton>
+            <TryDemoButton className={`${secondary} w-full max-w-xs sm:w-auto`}>Try the demo, no sign-up</TryDemoButton>
           </div>
           <p className="mt-3 text-muted-foreground text-sm">
             Free to use. No paywall, no ads. The demo comes with sample data and is deleted after a day.
           </p>
 
-          <div className="mx-auto mt-14 max-w-4xl text-left">
-            <Screen
-              src="/landing/today-v3.webp"
-              alt="The Today screen: pick a project, type a time like 1.5, 1:30 or 90m or tap a quick pick, add a note, and the day's entries with totals for the day and the week."
-              width={2144}
-              height={1938}
-              priority
-            />
+          <div className="mx-auto mt-14 max-w-5xl text-left">
+            <ProductTour />
           </div>
         </section>
 
