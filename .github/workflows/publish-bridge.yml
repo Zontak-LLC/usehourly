@@ -1,0 +1,93 @@
+name: Publish bridge
+
+# Publishing usehourly-mcp is automatic: bump "version" in bridge/package.json and server.json together, merge to main,
+# and this publishes the package to npm and the entry to the official MCP registry. Nothing runs when the version on
+# npm is already that version, so an ordinary merge to main does nothing here.
+#
+# npm side: "trusted publishing" (npmjs.com > usehourly-mcp > Settings > Trusted Publisher: GitHub Actions, repository
+# Zontak-LLC/usehourly, workflow publish-bridge.yml). No npm token is stored anywhere.
+# Registry side: the name app.usehourly/usehourly is a domain name, so GitHub's own login does not work for it; the
+# registry wants the ed25519 key for usehourly.app (repository secret MCP_REGISTRY_KEY). Without the secret that step is
+# skipped and the log says so.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bridge/package.json
+      - server.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm trusted publishing and provenance
+
+concurrency:
+  group: publish-bridge
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24 # npm 11.5.1 or newer is needed for trusted publishing
+          registry-url: https://registry.npmjs.org
+
+      - name: Versions agree and the tool list is current
+        id: version
+        run: |
+          node -e '
+            const pkg = require("./bridge/package.json");
+            const srv = require("./server.json");
+            const versions = [srv.version, ...srv.packages.map((p) => p.version)];
+            if (versions.some((v) => v !== pkg.version)) {
+              console.error(`bridge/package.json is ${pkg.version} but server.json says ${versions.join(", ")}`);
+              process.exit(1);
+            }
+            if (srv.description.length > 100) {
+              console.error("server.json description is over the registry limit of 100 characters");
+              process.exit(1);
+            }
+            console.log(`version=${pkg.version}`);
+          ' >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Is it already on npm?
+        id: npm
+        run: |
+          if npm view "usehourly-mcp@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.npm.outputs.published == 'false'
+        working-directory: bridge
+        run: npm publish --access public --provenance
+
+      - name: Wait until npm serves it
+        run: |
+          for i in $(seq 1 30); do
+            v=$(npm view usehourly-mcp version --prefer-online 2>/dev/null || true)
+            [ "$v" = "${{ steps.version.outputs.version }}" ] && exit 0
+            sleep 10
+          done
+          echo "npm is not serving ${{ steps.version.outputs.version }} yet" >&2
+          exit 1
+
+      - name: Publish to the MCP registry
+        env:
+          MCP_REGISTRY_KEY: ${{ secrets.MCP_REGISTRY_KEY }}
+        run: |
+          if [ -z "$MCP_REGISTRY_KEY" ]; then
+            echo "MCP_REGISTRY_KEY is not set: skipping the MCP registry. Run mcp-publisher by hand." >&2
+            exit 0
+          fi
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login http --domain usehourly.app --private-key "$MCP_REGISTRY_KEY"
+          ./mcp-publisher publish
