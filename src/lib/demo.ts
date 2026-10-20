@@ -7,8 +7,12 @@ import type { Session } from "next-auth";
  */
 export const DEMO_TTL_HOURS = 24;
 export const DEMO_EMAIL_DOMAIN = "demo.usehourly.invalid";
-/** Most demo accounts alive at once: a ceiling on how much sample data can pile up. */
-export const MAX_LIVE_DEMOS = 300;
+/**
+ * Most demo accounts alive at once: a ceiling on how much sample data can pile up. They live for DEMO_TTL_HOURS, so
+ * this is also how many people can try it in a day: 300 was reached within hours by a busy post, so it is 3,000 (each
+ * demo is a few dozen small rows, well inside what D1 holds). Each connection is still limited by DEMO_PER_IP.
+ */
+export const MAX_LIVE_DEMOS = 3000;
 /** New demos per connection per hour. */
 export const DEMO_PER_IP = { limit: 5, windowSeconds: 60 * 60 };
 /** Not a valid bcrypt hash, so no password ever matches a demo account. */

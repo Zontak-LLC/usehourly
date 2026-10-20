@@ -301,6 +301,13 @@ describe("a visitor tries the demo", () => {
     expect(w.users).toHaveLength(0);
   });
 
+  it("has room for a busy day: the ceiling is thousands, and one below it still makes a demo", async () => {
+    expect(MAX_LIVE_DEMOS).toBeGreaterThanOrEqual(3000); // 300 ran out within hours of a busy post
+    const w = world();
+    w.prisma.authUser.count.mockResolvedValue((MAX_LIVE_DEMOS - 1) as never);
+    expect((await createDemoUser(w.prisma as never, { now: NOW })).ok).toBe(true);
+  });
+
   it("leaves nothing half-made behind when seeding fails", async () => {
     const w = world();
     w.prisma.project.create.mockRejectedValueOnce(new Error("database went away"));
