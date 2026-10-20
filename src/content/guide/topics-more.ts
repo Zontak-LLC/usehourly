@@ -45,7 +45,7 @@ It also keeps working offline (see [Working offline](/help/offline)). Phones sho
     keywords: ["navigation", "sidebar", "layout", "theme", "dark mode", "colour", "color", "appearance"],
     body: `Click the **gear** at the top right (Appearance and layout).
 
-- **Navigation: Top or Left** (wide screens only). Left puts every page in a side menu, grouped under Track, Bill, Manage and Settings. The current page has a marker beside it. Collapse it to icons with the button at the bottom, or by double-clicking empty space in the menu.
+- **Navigation: Top or Left** (wide screens only). Left puts every page in a side menu, grouped under Track, Bill, Manage and Settings. The current page has a marker beside it. Your name, picture and Log out are in the top bar.
 - **Theme Preset** picks the accent colour, and **Theme Mode** is light, dark or follows your computer.
 
 Your colour choice follows your account to other devices. The menu position is saved in this browser only. Phones always keep the bottom bar.`,

@@ -34,7 +34,8 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
   await test.step("the menu names the person and links to Account", async () => {
     await trigger.click();
     await expect(page.getByRole("menu").getByText(user.email)).toBeVisible();
-    await page.getByRole("menuitem", { name: "Account" }).click();
+    await expect(page.getByRole("menuitem", { name: "Add a picture" })).toBeVisible(); // a way in to uploading your own
+    await page.getByRole("menuitem", { name: "Account", exact: true }).click();
     await expect(page).toHaveURL(/dashboard\/account/);
   });
 

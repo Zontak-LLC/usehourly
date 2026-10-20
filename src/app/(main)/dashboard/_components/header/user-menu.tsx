@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, ImagePlus, LogOut, User } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -45,6 +45,11 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
         <DropdownMenuItem asChild>
           <Link href="/dashboard/account" prefetch={false}>
             <User /> Account
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account" prefetch={false}>
+            <ImagePlus /> {user.avatar ? "Change your picture" : "Add a picture"}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
