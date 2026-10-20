@@ -49,15 +49,19 @@ test("a visitor can search the guide, read a topic and the FAQ, with no account"
     await expect(page.getByRole("heading", { name: "Is UseHourly really free?" })).toBeVisible();
   });
 
-  await test.step("the Guide and FAQ buttons stay pressed on the page you are on", async () => {
-    const nav = page.getByRole("navigation", { name: "Guide", exact: true });
-    await expect(nav.getByRole("link", { name: "FAQ" })).toHaveAttribute("aria-current", "page");
-    await expect(nav.getByRole("link", { name: "Guide" })).not.toHaveAttribute("aria-current", "page");
-    await page.goto("/help");
-    await expect(nav.getByRole("link", { name: "Guide" })).toHaveAttribute("aria-current", "page");
-    await expect(nav.getByRole("link", { name: "FAQ" })).not.toHaveAttribute("aria-current", "page");
-    await page.goto("/help/rounding"); // a topic is part of the guide
-    await expect(nav.getByRole("link", { name: "Guide" })).toHaveAttribute("aria-current", "page");
+  await test.step("the guide wears the app's own navigation, with nothing personal in it", async () => {
+    await page.goto("/help/faq");
+    const tabs = page.getByRole("navigation", { name: "Main pages" });
+    await expect(tabs.getByRole("link", { name: "Today" })).toHaveAttribute("href", "/dashboard/today");
+    await expect(tabs.getByRole("link", { name: "Clients" })).toBeVisible();
+    // the guide is cached on devices for offline use: no name, no address, no Log out in it
+    await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
+    await tabs.getByRole("button", { name: "More" }).click();
+    await expect(page.getByRole("menuitem", { name: "Log out" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    // and no second header of its own: no Guide / FAQ / Open the app buttons
+    await expect(page.getByRole("navigation", { name: "Guide", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Open the app" })).toHaveCount(0);
   });
 
   await test.step("every topic is listed in the guide's own contents, with the page you are on marked", async () => {
