@@ -92,7 +92,7 @@ export const PREFERENCE_REGISTRY = {
 
   nav_position: definePreference({
     values: NAV_POSITION_VALUES,
-    defaultValue: "top",
+    defaultValue: "left",
     persistence: "client-cookie",
     attribute: "data-nav-position",
   }),

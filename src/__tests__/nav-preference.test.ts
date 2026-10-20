@@ -6,8 +6,8 @@ import { PREFERENCE_DEFAULTS, PREFERENCE_REGISTRY, parsePreference } from "@/lib
 vi.mock("@/lib/fonts/registry", () => ({ fontKeys: ["geist"], fontOptions: [] }));
 
 describe("where the main navigation sits on a wide screen", () => {
-  it("starts along the top with words next to the icons, so nobody's layout changes until they choose", () => {
-    expect(PREFERENCE_DEFAULTS.nav_position).toBe("top");
+  it("starts down the left on a wide screen, with words next to the icons, until someone chooses otherwise", () => {
+    expect(PREFERENCE_DEFAULTS.nav_position).toBe("left");
     expect(PREFERENCE_DEFAULTS.nav_collapsed).toBe("open");
   });
 
@@ -24,9 +24,10 @@ describe("where the main navigation sits on a wide screen", () => {
 
   it("only accepts the known values: anything else in a cookie falls back to the default", () => {
     expect(parsePreference("nav_position", "left")).toBe("left");
-    expect(parsePreference("nav_position", "right")).toBe("top");
-    expect(parsePreference("nav_position", "<script>")).toBe("top");
-    expect(parsePreference("nav_position", null)).toBe("top");
+    expect(parsePreference("nav_position", "top")).toBe("top"); // a saved choice of Top is kept
+    expect(parsePreference("nav_position", "right")).toBe("left");
+    expect(parsePreference("nav_position", "<script>")).toBe("left");
+    expect(parsePreference("nav_position", null)).toBe("left");
     expect(parsePreference("nav_collapsed", "collapsed")).toBe("collapsed");
     expect(parsePreference("nav_collapsed", "tiny")).toBe("open");
   });

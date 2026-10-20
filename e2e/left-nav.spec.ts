@@ -1,8 +1,9 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
- * The choice of having the main navigation down the left on a wide screen: switching it in the settings gear, using the
- * side menu, collapsing it to icons, keeping both choices across a reload, and phones keeping their bottom bar.
+ * The main navigation is down the left on a wide screen by default (2026-10-20): using the side menu, collapsing it to
+ * icons, keeping both choices across a reload, switching to the tab strip along the top in the settings gear and back,
+ * and phones keeping their bottom bar.
  */
 test("navigation can sit down the left, collapse to icons, and survives a reload", async ({ page }, info) => {
   const phone = info.project.name === "phone";
@@ -10,13 +11,14 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
   const top = page.getByRole("navigation", { name: "Main pages" });
   const side = page.getByRole("navigation", { name: "Side menu" });
 
-  await test.step("by default the tab strip is shown and the side menu is not", async () => {
-    await expect(top).toBeVisible();
-    await expect(side).toBeHidden();
-  });
+  // Every journey starts with the tab strip saved as the choice (see helpers.ts); here nothing is chosen, to see the real default.
+  await page.context().clearCookies({ name: "nav_position" });
+  await page.reload();
 
   if (phone) {
-    await test.step("a phone has no choice to make and keeps its bottom bar even if the saved choice says left", async () => {
+    await test.step("a phone has no choice to make: by default, and with Left saved, it keeps its bottom bar", async () => {
+      await expect(top).toBeVisible();
+      await expect(side).toBeHidden();
       await page.context().addCookies([{ name: "nav_position", value: "left", url: page.url() }]);
       await page.reload();
       await expect(top).toBeVisible();
@@ -25,10 +27,8 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
     return;
   }
 
-  await test.step("choose Left in the settings: the side menu appears and the tab strip goes", async () => {
-    await page.getByRole("button", { name: "Appearance and layout settings" }).click();
-    await page.getByRole("radio", { name: "Navigation down the left" }).click();
-    await page.keyboard.press("Escape");
+  await test.step("by default, on a wide screen, the side menu is shown and the tab strip is not", async () => {
+    await expect(page.locator("html")).toHaveAttribute("data-nav-position", "left");
     await expect(side).toBeVisible();
     await expect(top).toBeHidden();
     for (const name of [
@@ -105,11 +105,22 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
     await expect(top).toBeHidden();
   });
 
-  await test.step("switching back to Top restores the tab strip", async () => {
+  await test.step("switching to Top puts the tab strip back, and that choice survives a reload", async () => {
     await page.getByRole("button", { name: "Appearance and layout settings" }).click();
     await page.getByRole("radio", { name: "Navigation along the top" }).click();
     await page.keyboard.press("Escape");
     await expect(top).toBeVisible();
     await expect(side).toBeHidden();
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-nav-position", "top");
+    await expect(top).toBeVisible();
+  });
+
+  await test.step("choosing Left again in the settings brings the side menu back", async () => {
+    await page.getByRole("button", { name: "Appearance and layout settings" }).click();
+    await page.getByRole("radio", { name: "Navigation down the left" }).click();
+    await page.keyboard.press("Escape");
+    await expect(side).toBeVisible();
+    await expect(top).toBeHidden();
   });
 });
