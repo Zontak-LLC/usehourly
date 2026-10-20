@@ -2,10 +2,10 @@
 
 import { CircleAlert, CircleCheck, CircleDollarSign, Download, Send, Trash2 } from "lucide-react";
 
+import { useMoney } from "@/components/currency-provider";
 import { IconAction } from "@/components/icon-action";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
-import { formatMoney } from "@/lib/invoice";
 
 import type { InvoiceRow } from "./invoice-types";
 
@@ -116,6 +116,7 @@ export function InvoiceCard({
   today: string | null;
   handlers: InvoiceActionHandlers;
 }) {
+  const money = useMoney();
   return (
     <li className="overflow-hidden rounded-xl border bg-card">
       {/* Header: which invoice, and the actions pinned on the right (same shape as the entry cards). */}
@@ -140,11 +141,11 @@ export function InvoiceCard({
               {fmt(i.issue_date)}
             </p>
           </div>
-          <p className="shrink-0 font-mono font-semibold text-lg tabular-nums">{formatMoney(i.total_cents)}</p>
+          <p className="shrink-0 font-mono font-semibold text-lg tabular-nums">{money(i.total_cents)}</p>
         </div>
       </div>
       {/* On a phone the actions get words and a full-width row; tooltips do not exist on touch. */}
-      <div className="border-t bg-muted/20 p-2 sm:hidden">
+      <div className="border-t p-2 sm:hidden">
         <InvoiceActions invoice={i} words handlers={handlers} />
       </div>
     </li>

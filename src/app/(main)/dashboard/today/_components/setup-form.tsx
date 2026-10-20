@@ -4,8 +4,10 @@ import { useState } from "react";
 
 import { toast } from "sonner";
 
+import { useCurrency } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { currencySymbol } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -23,6 +25,7 @@ export function SetupForm({
   /** Fill the row from `sm` up: the project field stretches and the Add button ends at the far right. */
   bar?: boolean;
 }) {
+  const currency = useCurrency();
   const utils = trpc.useUtils();
   const createClient = trpc.clients.create.useMutation();
   const createProject = trpc.project.create.useMutation();
@@ -87,9 +90,9 @@ export function SetupForm({
         inputMode="decimal"
         min="0"
         step="0.01"
-        aria-label="Hourly rate in dollars"
+        aria-label={`Hourly rate in ${currency}`}
         onKeyDown={escapeToCancel}
-        placeholder="Rate $/h"
+        placeholder={`Rate ${currencySymbol(currency)}/h`}
         className={bar ? "shrink-0 max-sm:w-full sm:w-28" : "w-28 shrink-0"}
       />
       <Button type="submit" disabled={pending} className={bar ? "px-6" : undefined}>

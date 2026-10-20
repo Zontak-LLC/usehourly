@@ -3,6 +3,7 @@
 import { Archive, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
+import { useCurrency, useMoney } from "@/components/currency-provider";
 import { GuideLink } from "@/components/guide-link";
 import { IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type BudgetStatus, budgetInputValue } from "@/lib/budget";
 import { formatDuration } from "@/lib/duration";
+import { currencySymbol } from "@/lib/money";
 
 import type { ClientRow, ProjectRow as ProjectData, ProjectTotals } from "./client-types";
 import type { ProjectEditing } from "./use-project-editing";
@@ -33,9 +35,10 @@ export function ProjectCard({
   onEdit: () => void;
   onArchive: () => void;
 }) {
+  const money = useMoney();
   return (
-    <li className="flex flex-col overflow-hidden rounded-lg bg-foreground/[0.03]">
-      <div className="flex items-center justify-between gap-2 bg-band-3 py-2 pr-2 pl-3">
+    <li className="flex flex-col overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
+      <div className="flex items-center justify-between gap-2 bg-card py-2 pr-2 pl-3">
         <span className="flex min-w-0 items-center gap-2">
           <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
           <h3 className="truncate font-semibold text-sm">{p.name}</h3>
@@ -56,7 +59,7 @@ export function ProjectCard({
       <div className="flex flex-1 flex-col gap-3 p-3 text-sm">
         <p>
           {p.hourly_rate > 0 ? (
-            <span className="font-medium">${(p.hourly_rate / 100).toFixed(2)}/h</span>
+            <span className="font-medium">{money(p.hourly_rate)}/h</span>
           ) : p.billable ? (
             <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
               No hourly rate yet
@@ -101,8 +104,9 @@ export function ProjectEditCard({
   logos: Record<string, string>;
   editing: ProjectEditing;
 }) {
+  const currency = useCurrency();
   return (
-    <li className="overflow-hidden rounded-lg bg-foreground/[0.03] px-4 py-3 sm:col-span-2">
+    <li className="overflow-hidden rounded-lg bg-card px-4 py-3 ring-1 ring-foreground/10 sm:col-span-2">
       <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
         <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
         <select
@@ -118,7 +122,7 @@ export function ProjectEditCard({
           ))}
         </select>
         <span className="flex items-center gap-1 text-muted-foreground text-sm">
-          $
+          {currencySymbol(currency)}
           <Input
             name="rate"
             type="number"
@@ -156,7 +160,7 @@ export function ProjectEditCard({
             aria-label="Budget unit"
             className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
           >
-            <option value="dollars">dollars</option>
+            <option value="dollars">{currency}</option>
             <option value="hours">hours</option>
           </select>
           <select

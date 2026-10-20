@@ -49,7 +49,7 @@ export function ClientCard({
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
   return (
     <section aria-label={c.name} className="overflow-hidden rounded-xl border bg-card">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-band-2 px-3 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-card px-3 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <ClientLogoSlot clientId={c.id} name={c.name} />
           <div className="min-w-0">
@@ -108,7 +108,7 @@ export function ClientCard({
       </header>
       <div className="flex flex-col gap-3 p-3">
         {billingOpen && (
-          <div className="overflow-hidden rounded-lg bg-foreground/[0.03]">
+          <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
             <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
           </div>
         )}
@@ -133,7 +133,7 @@ export function ClientCard({
             ),
           )}
           {adding ? (
-            <li className="flex flex-col gap-2 rounded-lg bg-foreground/[0.03] p-3 sm:col-span-2">
+            <li className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10 sm:col-span-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">

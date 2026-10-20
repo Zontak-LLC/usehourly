@@ -78,13 +78,13 @@ On **Month**, use **Add to several days** to put the same time on many days at o
     slug: "budgets",
     title: "Project budgets",
     group: "time",
-    summary: "Set a limit in hours or dollars and get a warning before you pass it.",
+    summary: "Set a limit in hours or money and get a warning before you pass it.",
     keywords: ["limit", "cap", "retainer", "warning", "over budget", "80%"],
-    body: `Edit a project on Clients & Projects and fill in **Budget**: an amount, whether it is in **hours** or **dollars**, and whether it **resets each month** or covers the **whole life** of the project. Clear the amount to remove it.
+    body: `Edit a project on Clients & Projects and fill in **Budget**: an amount, whether it is in **hours** or **money** (in your account's currency), and whether it **resets each month** or covers the **whole life** of the project. Clear the amount to remove it.
 
 A bar appears under the project and above the time box when you add time. It turns yellow at **80%** and red at **100%**, and the words say the same ("nearly used up", "over budget").
 
-- A dollars budget prices time at the project's hourly rate. A non-billable project uses none of a dollars budget.
+- A money budget prices time at the project's hourly rate. A non-billable project uses none of a money budget.
 - Time on days you marked non-billable does not count.
 - It is a warning only: nothing stops you logging more.`,
   },

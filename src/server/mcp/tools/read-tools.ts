@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { currencyOrDefault } from "@/lib/money";
+
 import { defineTool, type McpTool } from "./core";
 import { type EntryRow, shapeEntry, summarize } from "./entry-shape";
 import { hours, round2 } from "./format";
@@ -12,7 +14,7 @@ export const READ_TOOLS: McpTool[] = [
     name: "whoami",
     title: "Who am I",
     description:
-      "The signed-in account (name, email, business details printed on invoices) and what this token may do (read or write). Call this first to confirm the connection.",
+      "The signed-in account (name, email, currency, business details printed on invoices) and what this token may do (read or write). Call this first to confirm the connection.",
     access: "read",
     idempotent: true,
     input: z.object({}),
@@ -24,6 +26,7 @@ export const READ_TOOLS: McpTool[] = [
         email: me.email,
         member_since: me.created_at,
         token_access: x.access,
+        currency: currencyOrDefault(me.currency),
         business: {
           name: me.business_name,
           ein: me.ein,

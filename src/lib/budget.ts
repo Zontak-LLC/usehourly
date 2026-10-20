@@ -1,4 +1,5 @@
 import { formatDuration } from "@/lib/duration";
+import { currencyOrDefault, DEFAULT_CURRENCY } from "@/lib/money";
 
 /**
  * Project budgets: a limit in hours or dollars, per calendar month or for the whole project. Money is compared as
@@ -39,19 +40,25 @@ export function budgetStatus(b: {
   return { ...b, fraction, level: fraction >= 1 ? "over" : fraction >= WARN_AT ? "warn" : "ok" };
 }
 
-const dollars = (cents: number) =>
-  `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
+/** A budget amount in the account's currency, without ".00" when it is whole: "$640", "€1,000", "$12.50". */
+const money = (cents: number, currency: string) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyOrDefault(currency),
+    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
 
-/** "$640" for a dollars budget, "9:30 h" for an hours budget. */
-export function formatBudgetAmount(value: number, unit: BudgetUnit): string {
-  return unit === "dollars" ? dollars(value) : `${formatDuration(value)} h`;
+/** "$640" for a money budget, "9:30 h" for an hours budget (the money is in the account's currency). */
+export function formatBudgetAmount(value: number, unit: BudgetUnit, currency: string = DEFAULT_CURRENCY): string {
+  return unit === "dollars" ? money(value, currency) : `${formatDuration(value)} h`;
 }
 
 /** "$640 of $1,000 this month · 64%". */
-export function describeBudget(s: BudgetStatus): string {
+export function describeBudget(s: BudgetStatus, currency: string = DEFAULT_CURRENCY): string {
   const when = s.period === "month" ? " this month" : "";
   const pct = Math.round(s.fraction * 100);
-  return `${formatBudgetAmount(s.used, s.unit)} of ${formatBudgetAmount(s.amount, s.unit)}${when} · ${pct}%`;
+  return `${formatBudgetAmount(s.used, s.unit, currency)} of ${formatBudgetAmount(s.amount, s.unit, currency)}${when} · ${pct}%`;
 }
 
 /**

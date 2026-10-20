@@ -6,6 +6,7 @@ import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { summarizeInvoice } from "@/lib/invoice-summary";
 import { logError } from "@/lib/log";
+import { currencyOrDefault, formatMoney } from "@/lib/money";
 import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
 
@@ -205,6 +206,9 @@ export const invoiceRouter = router({
         mode: client.round_mode === "nearest" ? "nearest" : "up",
         min: client.round_min ?? 0,
       };
+      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
+      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
+      const currency = currencyOrDefault(user.currency);
       const totals = buildInvoice(entries, rounding);
       if (totals.lines.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "No billable time for this client in that period." });
@@ -212,17 +216,14 @@ export const invoiceRouter = router({
       if (totals.totalCents === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Every project in that period has an hourly rate of $0, so the invoice would be $0.00. Set the rates under Clients & Projects first.",
+          message: `Every project in that period has an hourly rate of ${formatMoney(0, currency).replace(/\.00$/, "")}, so the invoice would be ${formatMoney(0, currency)}. Set the rates under Clients & Projects first.`,
         });
       }
-
-      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
-      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
 
       const sellerLogoHash = await storeInvoiceLogo(ctx.prisma, ctx.userId, user.logo);
       const clientLogoHash = await storeInvoiceLogo(ctx.prisma, ctx.userId, client.logo);
       const snapshot: InvoiceSnapshot = {
+        currency,
         seller: {
           name: user.business_name || user.name || user.email,
           ein: user.ein,

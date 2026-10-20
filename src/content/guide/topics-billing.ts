@@ -21,6 +21,24 @@ The invoice is saved **exactly as issued** and a PDF downloads. Changing a rate,
 Your business name, EIN, address and payment instructions come from **Account**.`,
   },
   {
+    slug: "currency",
+    title: "Choosing your currency",
+    group: "billing",
+    summary:
+      "Pick the currency your rates, budgets and invoices are written in, and why it locks after your first invoice.",
+    keywords: ["euro", "pound", "dollar", "money", "symbol", "eur", "gbp", "usd", "foreign", "country"],
+    body: `Open **Account**, then **Invoices**, then **Currency**. Pick the currency you bill in: US dollar, euro, British pound and several others (those that use two decimals, like cents).
+
+- It changes how amounts are **written** (the symbol and format) on rates, budgets, invoices, the invoice page your client sees, invoice emails, the year summary and Excel exports.
+- **It does not convert anything.** A rate of 85 stays 85: only the symbol changes. Check your project rates after changing it.
+- You can change it **until you make your first invoice**. After that it is fixed, so an account's invoices, totals, year summary and accounting export are always in one currency.
+- Each invoice keeps the currency it was made in.
+
+An invoice PDF shows the **code** (for example EUR 150.00) for currencies whose symbol its built-in font cannot draw. The invoice page and emails show the symbol.
+
+Billing different clients in different currencies is planned, not built yet.`,
+  },
+  {
     slug: "rounding",
     title: "Rounding time on invoices",
     group: "billing",

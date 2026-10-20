@@ -55,7 +55,7 @@ export function DayTiles({
                 : d === today
                   ? "border-primary/50 bg-card hover:bg-muted"
                   : "bg-card hover:bg-muted"
-            } ${[0, 6].includes(date.getDay()) && !on ? "bg-muted/40" : ""}`}
+            }`}
           >
             {nonBillable.has(d) && <Ban className="absolute top-1 right-1 size-3" aria-hidden />}
             <span

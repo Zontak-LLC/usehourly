@@ -1,3 +1,4 @@
+import { formatMoney } from "./money";
 import { billedMinutes, NO_ROUNDING, type Rounding } from "./rounding";
 
 /** Pure invoice math, shared by the server (which snapshots) and the builder page (live preview). */
@@ -87,6 +88,8 @@ export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_RO
 }
 
 export type InvoiceSnapshot = {
+  /** ISO currency the amounts are in, frozen when the invoice is made; absent on older invoices (US dollars). */
+  currency?: string;
   seller: {
     name: string;
     ein: string | null;
@@ -130,8 +133,8 @@ export type InvoiceSnapshot = {
   totalCents: number;
 };
 
-export const formatMoney = (cents: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+// Money formatting lives in lib/money.ts (one currency per account); re-exported so invoice code reads as before.
+export { formatMoney };
 
 /** Lowercase blob the history search matches against. */
 export function buildSearchText(s: InvoiceSnapshot): string {
@@ -143,7 +146,7 @@ export function buildSearchText(s: InvoiceSnapshot): string {
     ...s.lines.map((l) => l.project),
     ...s.detail.map((d) => d.note),
     s.issueDate,
-    formatMoney(s.totalCents),
+    formatMoney(s.totalCents, s.currency),
   ]
     .join(" \n ")
     .toLowerCase();

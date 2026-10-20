@@ -29,7 +29,7 @@ export const SUPPORTED_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"] as 
 export const INSTRUCTIONS = [
   "UseHourly tracks a freelancer's time. Time is whole minutes; dates are local calendar dates (YYYY-MM-DD).",
   "The server runs in UTC and does not know the user's today: always pass the date you mean.",
-  'Name projects as "Client / Project" or by id (list_projects shows both). Money is in dollars.',
+  'Name projects as "Client / Project" or by id (list_projects shows both). Money is in the account currency (whole units like 85 or 62.5, not cents; whoami says which currency).',
   "Before adding time, check list_entries for that day so nothing is logged twice.",
   "Ask the user before destructive actions (delete_entry, delete_invoice, merge_entries) and before create_invoice.",
 ].join(" ");

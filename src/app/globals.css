@@ -104,12 +104,11 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-border: oklch(0.92 0.004 286);
   --sidebar-ring: oklch(0.21 0.006 286);
 
-  /* Header shades: the page card's header and the header of a card inside it share ONE light shade (just enough to
-     stand out from the white body), and a tile inside a card is a notch lighter still. They are mixed from the theme's
-     own text and page colours, so every colour preset and dark mode follows. */
-  --band-1: color-mix(in oklch, var(--foreground) 2%, var(--background));
-  --band-2: var(--band-1);
-  --band-3: color-mix(in oklch, var(--foreground) 1.5%, var(--background));
+  /* Header shades. Since 2026-10-20 every card header is the card's own colour (white): the grey bands looked heavy.
+     The tokens stay so a header can be tinted again in one place, and the checks that name them keep working. */
+  --band-1: var(--card);
+  --band-2: var(--card);
+  --band-3: var(--card);
 
   /* A soft tint of the accent (default buttons, a selected day or chip). A coloured accent can carry a strong tint; a
      near-black or black one turns it heavy grey, so the neutral palettes use a much weaker mix (set just below). */

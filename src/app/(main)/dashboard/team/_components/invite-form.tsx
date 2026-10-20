@@ -123,7 +123,7 @@ export function InviteCard({ onClose }: { onClose: () => void }) {
         </Button>
       </div>
       {sent && (
-        <div className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
+        <div className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10">
           <p className="text-sm">
             {sent.note} You can also send this link yourself. It works once and for 7 days, and you can't see it again.
           </p>

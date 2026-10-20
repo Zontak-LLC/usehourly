@@ -15,6 +15,7 @@ import { trpc } from "@/lib/trpc";
 
 import { SECTIONS, Section } from "./account-section";
 import { BusinessDetailsCard } from "./business-details-card";
+import { CurrencyCard } from "./currency-card";
 import { FridayReminderCard } from "./friday-reminder-card";
 import { InvoiceFooterCard } from "./invoice-footer-card";
 import { ProfileCard } from "./profile-card";
@@ -57,6 +58,7 @@ export function AccountView() {
 
         <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
           <BusinessDetailsCard me={account} />
+          <CurrencyCard me={account} />
           <InvoiceFooterCard me={account} />
         </Section>
 

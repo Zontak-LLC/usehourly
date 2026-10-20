@@ -149,8 +149,11 @@ export async function deliverInvoiceEmail(i: DeliverInput): Promise<{ to: string
   }
 
   let sellerName = "";
+  let currency: string | undefined;
   try {
-    sellerName = (JSON.parse(invoice.snapshot) as InvoiceSnapshot).seller.name;
+    const snapshot = JSON.parse(invoice.snapshot) as InvoiceSnapshot;
+    sellerName = snapshot.seller.name;
+    currency = snapshot.currency; // the amounts' own currency, frozen with the invoice
   } catch {
     // an unreadable copy still sends, under a plain name
   }
@@ -161,7 +164,7 @@ export async function deliverInvoiceEmail(i: DeliverInput): Promise<{ to: string
     sellerName: sellerName || "Your contact",
     sellerEmail: owner.email,
     number: invoice.number,
-    totalLabel: formatMoney(invoice.total_cents),
+    totalLabel: formatMoney(invoice.total_cents, currency),
     dueLabel: invoice.due_date ? longDate(invoice.due_date) : null,
     note: i.note,
     link: `${i.appUrl}/invoice/${link.token}`,

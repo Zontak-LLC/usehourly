@@ -5,7 +5,7 @@
     "title": "UseHourly",
     "version": "1.0.0"
   },
-  "instructions": "UseHourly tracks a freelancer's time. Time is whole minutes; dates are local calendar dates (YYYY-MM-DD). The server runs in UTC and does not know the user's today: always pass the date you mean. Name projects as \"Client / Project\" or by id (list_projects shows both). Money is in dollars. Before adding time, check list_entries for that day so nothing is logged twice. Ask the user before destructive actions (delete_entry, delete_invoice, merge_entries) and before create_invoice.",
+  "instructions": "UseHourly tracks a freelancer's time. Time is whole minutes; dates are local calendar dates (YYYY-MM-DD). The server runs in UTC and does not know the user's today: always pass the date you mean. Name projects as \"Client / Project\" or by id (list_projects shows both). Money is in the account currency (whole units like 85 or 62.5, not cents; whoami says which currency). Before adding time, check list_entries for that day so nothing is logged twice. Ask the user before destructive actions (delete_entry, delete_invoice, merge_entries) and before create_invoice.",
   "capabilities": {
     "tools": {
       "listChanged": false
@@ -21,7 +21,7 @@
     {
       "name": "whoami",
       "title": "Who am I",
-      "description": "The signed-in account (name, email, business details printed on invoices) and what this token may do (read or write). Call this first to confirm the connection.",
+      "description": "The signed-in account (name, email, currency, business details printed on invoices) and what this token may do (read or write). Call this first to confirm the connection.",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -47,6 +47,10 @@
             "enum": ["read", "write"],
             "description": "What this token may do"
           },
+          "currency": {
+            "type": "string",
+            "description": "ISO 4217 code every amount is in, e.g. USD or EUR"
+          },
           "business": {
             "type": "object",
             "properties": {
@@ -70,7 +74,7 @@
             "additionalProperties": {}
           }
         },
-        "required": ["id", "name", "email", "member_since", "token_access", "business"],
+        "required": ["id", "name", "email", "member_since", "token_access", "currency", "business"],
         "additionalProperties": {}
       },
       "annotations": {
@@ -2103,7 +2107,7 @@
     {
       "name": "create_project",
       "title": "Create a project",
-      "description": "Add a project under a client, with an hourly rate in dollars and whether it is billable.",
+      "description": "Add a project under a client, with an hourly rate in the account's currency and whether it is billable.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2120,7 +2124,7 @@
           },
           "hourly_rate": {
             "default": 0,
-            "description": "Dollars per hour, e.g. 85 or 62.5 (default 0)",
+            "description": "Amount per hour in the account's currency, e.g. 85 or 62.5 (default 0)",
             "type": "number",
             "minimum": 0,
             "maximum": 10000
@@ -2191,7 +2195,7 @@
             "minLength": 1
           },
           "hourly_rate": {
-            "description": "New dollars per hour, e.g. 85 or 62.5",
+            "description": "New amount per hour in the account's currency, e.g. 85 or 62.5",
             "type": "number",
             "minimum": 0,
             "maximum": 10000

@@ -17,5 +17,9 @@ export const durationText = z
   .describe(
     'Free-form duration: "1.5", "1:30", "90m", "2h", "1h30". A bare number up to 12 means hours, larger means minutes',
   );
-export const dollars = z.number().min(0).max(10_000).describe("Dollars per hour, e.g. 85 or 62.5");
+export const dollars = z
+  .number()
+  .min(0)
+  .max(10_000)
+  .describe("Amount per hour in the account's currency, e.g. 85 or 62.5");
 export const invoiceRef = z.string().trim().min(1).describe("Invoice id or invoice number, e.g. INV-2026-004");

@@ -103,7 +103,11 @@ export function EntryRow({
 
   return (
     <li
-      className={bare ? "overflow-hidden rounded-lg bg-foreground/[0.03]" : "overflow-hidden rounded-xl border bg-card"}
+      className={
+        bare
+          ? "overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10"
+          : "overflow-hidden rounded-xl border bg-card"
+      }
     >
       {/* Header: which project this entry is for, and its controls, always visible. */}
       <header

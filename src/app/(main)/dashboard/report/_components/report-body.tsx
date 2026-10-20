@@ -1,7 +1,7 @@
 import type { inferRouterOutputs } from "@trpc/server";
 
+import { useMoney } from "@/components/currency-provider";
 import { formatDecimalHours } from "@/lib/duration";
-import { formatMoney } from "@/lib/invoice";
 import type { AppRouter } from "@/server/routers/_app";
 
 import { Section, Stat, Table } from "./report-table";
@@ -26,6 +26,7 @@ const MONTHS = [
 const h = (m: number) => `${formatDecimalHours(m)} h`;
 
 function ReportStats({ data }: { data: AnnualReport }) {
+  const money = useMoney();
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
       <Stat
@@ -38,37 +39,38 @@ function ReportStats({ data }: { data: AnnualReport }) {
         value={h(data.totals.billableMinutes)}
         hint={data.totals.nonBillableMinutes ? `${h(data.totals.nonBillableMinutes)} non-billable` : undefined}
       />
-      <Stat label="Earned" value={formatMoney(data.totals.earnedCents)} hint="billable hours × rate" />
+      <Stat label="Earned" value={money(data.totals.earnedCents)} hint="billable hours × rate" />
       <Stat
         label="Invoiced"
-        value={formatMoney(data.invoices.totalCents)}
+        value={money(data.invoices.totalCents)}
         hint={`${data.invoices.count} invoice${data.invoices.count === 1 ? "" : "s"} issued`}
       />
       <Stat
         label="Received"
-        value={formatMoney(data.received.totalCents)}
+        value={money(data.received.totalCents)}
         hint={`${data.received.count} payment${data.received.count === 1 ? "" : "s"} · by paid date`}
       />
       <Stat
         label="Outstanding"
-        value={formatMoney(data.outstanding.totalCents)}
+        value={money(data.outstanding.totalCents)}
         hint={`${data.outstanding.count} unpaid at year end`}
       />
     </div>
   );
 }
 
-function totalsRow(data: AnnualReport): string[] {
+function totalsRow(data: AnnualReport, money: (cents: number) => string): string[] {
   return [
     "Total",
     h(data.totals.minutes),
     h(data.totals.billableMinutes),
-    formatMoney(data.totals.earnedCents),
-    formatMoney(data.received.totalCents),
+    money(data.totals.earnedCents),
+    money(data.received.totalCents),
   ];
 }
 
 function PeriodSections({ data }: { data: AnnualReport }) {
+  const money = useMoney();
   return (
     <>
       <Section title="By quarter" note="Handy for quarterly estimated tax payments.">
@@ -78,10 +80,10 @@ function PeriodSections({ data }: { data: AnnualReport }) {
             `Q${q.quarter} · ${MONTHS[(q.quarter - 1) * 3].slice(0, 3)}–${MONTHS[q.quarter * 3 - 1].slice(0, 3)}`,
             h(q.minutes),
             h(q.billableMinutes),
-            formatMoney(q.earnedCents),
-            q.receivedCents ? formatMoney(q.receivedCents) : "–",
+            money(q.earnedCents),
+            q.receivedCents ? money(q.receivedCents) : "–",
           ])}
-          total={totalsRow(data)}
+          total={totalsRow(data, money)}
         />
       </Section>
 
@@ -92,10 +94,10 @@ function PeriodSections({ data }: { data: AnnualReport }) {
             MONTHS[m.month - 1],
             m.minutes ? h(m.minutes) : "–",
             m.billableMinutes ? h(m.billableMinutes) : "–",
-            m.earnedCents ? formatMoney(m.earnedCents) : "–",
-            m.receivedCents ? formatMoney(m.receivedCents) : "–",
+            m.earnedCents ? money(m.earnedCents) : "–",
+            m.receivedCents ? money(m.receivedCents) : "–",
           ])}
-          total={totalsRow(data)}
+          total={totalsRow(data, money)}
         />
       </Section>
     </>
@@ -103,6 +105,7 @@ function PeriodSections({ data }: { data: AnnualReport }) {
 }
 
 function ClientProjectSection({ data }: { data: AnnualReport }) {
+  const money = useMoney();
   return (
     <Section title="By client and project">
       <div className="divide-y">
@@ -112,7 +115,7 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
               <p className="font-medium">{c.client}</p>
               <p className="font-mono text-sm tabular-nums">
                 <span className="text-muted-foreground">{h(c.minutes)} · </span>
-                <span className="font-medium">{formatMoney(c.earnedCents)}</span>
+                <span className="font-medium">{money(c.earnedCents)}</span>
               </p>
             </div>
             <ul className="mt-1 space-y-0.5">
@@ -123,16 +126,14 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
                     <span className="text-muted-foreground">
                       {p.project}
                       {!p.billable && <span className="ml-2 text-xs">non-billable</span>}
-                      {p.billable && p.rateCents > 0 && (
-                        <span className="ml-2 text-xs">{formatMoney(p.rateCents)}/h</span>
-                      )}
+                      {p.billable && p.rateCents > 0 && <span className="ml-2 text-xs">{money(p.rateCents)}/h</span>}
                       {p.billable && p.rateCents === 0 && (
                         <span className="ml-2 text-amber-600 text-xs">no rate set</span>
                       )}
                     </span>
                     <span className="font-mono tabular-nums">
                       {h(p.minutes)}
-                      <span className="ml-3">{p.billable ? formatMoney(p.earnedCents) : "–"}</span>
+                      <span className="ml-3">{p.billable ? money(p.earnedCents) : "–"}</span>
                     </span>
                   </li>
                 ))}
@@ -145,6 +146,7 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
 }
 
 function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
+  const money = useMoney();
   return (
     <>
       {data.invoices.count > 0 && (
@@ -156,10 +158,10 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
               i.number,
               i.client_name,
               i.issue_date,
-              formatMoney(i.total_cents),
+              money(i.total_cents),
               i.paid_date ?? "Unpaid",
             ])}
-            total={["Total", "", "", formatMoney(data.invoices.totalCents), ""]}
+            total={["Total", "", "", money(data.invoices.totalCents), ""]}
           />
         </Section>
       )}
@@ -172,13 +174,8 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
           <Table
             textCols={3}
             head={["Invoice", "Client", "Paid on", "Amount"]}
-            rows={data.received.list.map((i) => [
-              i.number,
-              i.client_name,
-              i.paid_date ?? "",
-              formatMoney(i.total_cents),
-            ])}
-            total={["Total", "", "", formatMoney(data.received.totalCents)]}
+            rows={data.received.list.map((i) => [i.number, i.client_name, i.paid_date ?? "", money(i.total_cents)])}
+            total={["Total", "", "", money(data.received.totalCents)]}
           />
         </Section>
       )}

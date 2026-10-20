@@ -74,12 +74,15 @@ export const CLIENT_PROJECT_TOOLS: McpTool[] = [
   defineTool({
     name: "create_project",
     title: "Create a project",
-    description: "Add a project under a client, with an hourly rate in dollars and whether it is billable.",
+    description:
+      "Add a project under a client, with an hourly rate in the account's currency and whether it is billable.",
     access: "write",
     input: z.object({
       client: clientRef,
       name: z.string().trim().min(1).max(80).describe("The project's name (max 80 characters)"),
-      hourly_rate: dollars.default(0).describe("Dollars per hour, e.g. 85 or 62.5 (default 0)"),
+      hourly_rate: dollars
+        .default(0)
+        .describe("Amount per hour in the account's currency, e.g. 85 or 62.5 (default 0)"),
       billable: z.boolean().default(true).describe("Whether the time goes on invoices (default true)"),
     }),
     run: async (c, a) => {
@@ -113,7 +116,7 @@ export const CLIENT_PROJECT_TOOLS: McpTool[] = [
         project: projectRef,
         name: z.string().trim().min(1).max(80).optional().describe("New project name"),
         client: clientRef.optional().describe("Move the project to this client"),
-        hourly_rate: dollars.optional().describe("New dollars per hour, e.g. 85 or 62.5"),
+        hourly_rate: dollars.optional().describe("New amount per hour in the account's currency, e.g. 85 or 62.5"),
         billable: z.boolean().optional().describe("Whether the time goes on invoices"),
       })
       .refine((v) => [v.name, v.client, v.hourly_rate, v.billable].some((x) => x !== undefined), {
