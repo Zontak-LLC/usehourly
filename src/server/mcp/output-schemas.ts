@@ -99,6 +99,32 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     currency: z.string().describe("The currency this client's rates and invoices are in"),
     has_logo: z.boolean(),
   }),
+  get_timesheet: obj({
+    from: z.string(),
+    to: z.string(),
+    scope: z.string().describe("The client or project the sheet is for, or All clients"),
+    days: z.array(z.string()).describe("The dates that have time logged, oldest first"),
+    rows: z.array(
+      obj({
+        client: z.string(),
+        project: z.string(),
+        label: z.string(),
+        hours_by_day: z.record(z.string(), z.number()).describe("Hours per date, only dates with time"),
+        total_hours: z.number(),
+      }),
+    ),
+    day_totals: z.record(z.string(), z.number()).describe("Hours per date across the rows"),
+    total_hours: z.number(),
+    weekdays_without_time: z.array(z.string()).describe("Monday to Friday dates in the range with nothing logged"),
+  }),
+  share_timesheet: obj({
+    url: z.string().describe("The private link to send to the client. Shown only once"),
+    from: z.string(),
+    to: z.string(),
+    includes_notes: z.boolean(),
+    expires_in_days: z.number(),
+    note: z.string(),
+  }),
   list_entries: obj({
     from: z.string(),
     to: z.string(),

@@ -103,10 +103,10 @@ describe("the catalog the bridge ships", () => {
     if (process.env.UPDATE_MCP_CATALOG) writeFileSync(CATALOG_FILE, `${JSON.stringify(fresh, null, 2)}\n`);
     const shipped = JSON.parse(readFileSync(CATALOG_FILE, "utf8"));
     expect(shipped, "bridge/catalog.json is stale: run `npm run mcp:catalog`").toEqual(fresh);
-    expect(shipped.tools).toHaveLength(30);
+    expect(shipped.tools).toHaveLength(32);
     expect(shipped.resources).toHaveLength(2);
     expect(shipped.resourceTemplates).toHaveLength(1);
-    expect(shipped.prompts).toHaveLength(3);
+    expect(shipped.prompts).toHaveLength(4);
   });
 });
 
@@ -135,7 +135,7 @@ describe("a client connects over stdio", () => {
     expect(String(r.byId(1).result?.instructions)).toContain("UseHourly tracks a freelancer's time");
     expect(r.byId(7).result).toMatchObject({ protocolVersion: "2025-06-18" }); // unknown ask: newest we speak
     const tools = r.byId(2).result?.tools as { name: string; inputSchema: object; outputSchema: object }[];
-    expect(tools).toHaveLength(30);
+    expect(tools).toHaveLength(32);
     expect(tools.map((t) => t.name)).toEqual(expect.arrayContaining(["log_time", "create_invoice", "annual_report"]));
     for (const t of tools) {
       expect(t.inputSchema).toMatchObject({ type: "object" });
@@ -143,7 +143,7 @@ describe("a client connects over stdio", () => {
     }
     expect(r.byId(3).result?.resources).toHaveLength(2);
     expect(r.byId(4).result?.resourceTemplates).toHaveLength(1);
-    expect(r.byId(5).result?.prompts).toHaveLength(3);
+    expect(r.byId(5).result?.prompts).toHaveLength(4);
     expect(r.byId(6).result).toEqual({});
     // The notification got no reply, and none of this touched the network.
     expect(r.messages).toHaveLength(7);

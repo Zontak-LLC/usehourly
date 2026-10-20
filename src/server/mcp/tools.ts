@@ -6,6 +6,7 @@ import { INVOICE_READ_TOOLS, INVOICE_WRITE_TOOLS } from "./tools/invoice-tools";
 import { listProjects } from "./tools/lookup";
 import { READ_TOOLS } from "./tools/read-tools";
 import { TIME_TOOLS } from "./tools/time-tools";
+import { TIMESHEET_READ_TOOLS, TIMESHEET_WRITE_TOOLS } from "./tools/timesheet-tools";
 
 /**
  * The tools the MCP server offers. Every tool calls the same tRPC procedures the website uses,
@@ -27,9 +28,11 @@ export { PROMPTS, RESOURCE_TEMPLATES, RESOURCES } from "./tools/resources";
 export const TOOLS: McpTool[] = [
   ...READ_TOOLS,
   ...INVOICE_READ_TOOLS,
+  ...TIMESHEET_READ_TOOLS,
   ...TIME_TOOLS,
   ...CLIENT_PROJECT_TOOLS,
   ...INVOICE_WRITE_TOOLS,
+  ...TIMESHEET_WRITE_TOOLS,
 ];
 
 export const TOOLS_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));

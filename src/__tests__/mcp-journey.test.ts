@@ -128,6 +128,10 @@ function setup(over: Partial<TokenRow> = {}) {
       updateMany: vi.fn(async () => ({ count: 1 })),
       update: vi.fn(),
     },
+    timesheetShare: {
+      count: vi.fn(async () => 0),
+      create: vi.fn(async (_a: { data: Record<string, unknown> }) => ({ id: "s1" })),
+    },
     authUser: {
       findUnique: vi.fn(async () => ({
         id: "u1",
@@ -417,6 +421,8 @@ describe("the protocol", () => {
       "mark_invoice_paid",
       "annual_report",
       "parse_duration",
+      "get_timesheet",
+      "share_timesheet",
     ]) {
       expect(names).toContain(n);
     }
@@ -442,6 +448,8 @@ describe("the protocol", () => {
     expect(by.log_time).toMatchObject({ readOnlyHint: false, destructiveHint: false });
     expect(by.delete_entry).toMatchObject({ readOnlyHint: false, destructiveHint: true });
     expect(by.delete_invoice.destructiveHint).toBe(true);
+    expect(by.get_timesheet).toMatchObject({ readOnlyHint: true });
+    expect(by.share_timesheet).toMatchObject({ readOnlyHint: false, destructiveHint: false });
     // Optional fields are optional in the schema; required ones are required.
     const logTime = tools.find((t) => t.name === "log_time")?.inputSchema as { required?: string[] };
     expect(logTime.required).toEqual(expect.arrayContaining(["project", "date"]));
@@ -489,6 +497,7 @@ describe("the protocol", () => {
     expect((await s.rpc("prompts/list")).result.prompts.map((p: { name: string }) => p.name)).toEqual([
       "log_session_time",
       "week_summary",
+      "client_timesheet",
       "invoice_client",
     ]);
   });
@@ -1045,6 +1054,134 @@ describe("a batch cannot multiply what one token may do", () => {
     expect(attempt.isError).toBe(true);
     expect(attempt.text).toContain("read-only");
     expect(s.prisma.timeEntry.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("timesheets", () => {
+  const week = { from: "2026-10-05", to: "2026-10-11" }; // Monday to Sunday
+  const projects = [
+    { id: "p1", name: "Website", client: { id: "c1", name: "Acme" } },
+    { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
+  ];
+  const entries = [
+    entryRow({ id: "a", date: "2026-10-09", minutes: 90 }),
+    entryRow({ id: "b", date: "2026-10-08", minutes: 60, note: "review" }),
+    entryRow({
+      id: "c",
+      date: "2026-10-09",
+      minutes: 30,
+      project_id: "p3",
+      project: { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
+    }),
+  ];
+  const withWeek = async (access = "write") => {
+    const s = setup({ access });
+    s.prisma.project.findMany.mockResolvedValue(projects);
+    s.prisma.timeEntry.findMany.mockResolvedValue(entries);
+    return s;
+  };
+
+  it("gets the timesheet as a grid: a row per project, hours per day, totals, and the weekdays with nothing logged", async () => {
+    const s = await withWeek("read"); // reading needs no write access
+    const r = await s.call("get_timesheet", week);
+    expect(r.data).toMatchObject({
+      scope: "All clients",
+      days: ["2026-10-08", "2026-10-09"],
+      total_hours: 3,
+      day_totals: { "2026-10-08": 1, "2026-10-09": 2 },
+      weekdays_without_time: ["2026-10-05", "2026-10-06", "2026-10-07"], // the weekend is not a gap
+    });
+    expect((r.data as { rows: unknown[] }).rows).toEqual([
+      {
+        client: "Acme",
+        project: "Website",
+        label: "Acme / Website",
+        hours_by_day: { "2026-10-08": 1, "2026-10-09": 1.5 },
+        total_hours: 2.5,
+      },
+      {
+        client: "Globex",
+        project: "Website",
+        label: "Globex / Website",
+        hours_by_day: { "2026-10-09": 0.5 },
+        total_hours: 0.5,
+      },
+    ]);
+    expect(s.prisma.timeEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { user_id: "u1", date: { gte: week.from, lte: week.to } } }),
+    ); // only this account, only this range
+  });
+
+  it("can narrow the grid to one client or one project", async () => {
+    const s = await withWeek();
+    const one = await s.call("get_timesheet", { ...week, client: "Globex" });
+    expect(one.data).toMatchObject({ scope: "Globex", total_hours: 0.5 });
+    expect((one.data as { rows: { client: string }[] }).rows.map((x) => x.client)).toEqual(["Globex"]);
+    const proj = await s.call("get_timesheet", { ...week, project: "Acme / Website" });
+    expect(proj.data).toMatchObject({ scope: "Acme / Website", total_hours: 2.5 });
+  });
+
+  it("refuses a backwards range, a range longer than a quarter, and a client that is not yours", async () => {
+    const s = await withWeek();
+    expect((await s.call("get_timesheet", { from: week.to, to: week.from })).isError).toBe(true);
+    const long = await s.call("get_timesheet", { from: "2026-01-01", to: "2026-12-31" });
+    expect(long.isError).toBe(true);
+    expect(long.text).toContain("93 days");
+    const stranger = await s.call("get_timesheet", { ...week, client: "Initech" });
+    expect(stranger.isError).toBe(true);
+    expect(stranger.text).toContain("No client matches");
+  });
+
+  it("creates a private link for a client: the token is returned once and only its hash is stored", async () => {
+    const s = await withWeek();
+    const r = await s.call("share_timesheet", { ...week, client: "Acme", include_notes: false, expires_in_days: 7 });
+    expect(r.isError).toBe(false);
+    const data = r.data as { url: string; includes_notes: boolean; expires_in_days: number };
+    expect(data.url).toMatch(/\/timesheet\/[A-Za-z0-9_-]{20,}$/);
+    expect(data).toMatchObject({ includes_notes: false, expires_in_days: 7 });
+    const token = data.url.split("/").pop() ?? "";
+    const stored = s.prisma.timesheetShare.create.mock.calls[0][0].data as {
+      token_hash: string;
+      user_id: string;
+      snapshot: string;
+    };
+    expect(stored.user_id).toBe("u1");
+    expect(stored.token_hash).not.toBe(token); // only a hash is kept
+    expect(JSON.stringify(stored)).not.toContain(token);
+    expect(stored.snapshot).not.toContain("review"); // notes left out when asked
+    expect(s.prisma.timeEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ user_id: "u1", project: { client_id: "c1" } }), // Acme only
+      }),
+    );
+  });
+
+  it("is refused for a read-only token, for a bad lifetime, and when there is nothing to share", async () => {
+    const ro = await withWeek("read");
+    const refused = await ro.call("share_timesheet", week);
+    expect(refused.isError).toBe(true);
+    expect(refused.text).toContain("read-only");
+    expect(ro.prisma.timesheetShare.create).not.toHaveBeenCalled();
+
+    const s = await withWeek();
+    expect((await s.call("share_timesheet", { ...week, expires_in_days: 10 })).isError).toBe(true);
+    s.prisma.timeEntry.findMany.mockResolvedValue([]);
+    const empty = await s.call("share_timesheet", week);
+    expect(empty.isError).toBe(true);
+    expect(empty.text).toContain("no logged time");
+    expect(s.prisma.timesheetShare.create).not.toHaveBeenCalled();
+  });
+
+  it("offers a prompt that walks through building a client's timesheet and asks before sharing", async () => {
+    const s = setup();
+    const r = await s.rpc("prompts/get", {
+      name: "client_timesheet",
+      arguments: { client: "Acme", from: week.from, to: week.to },
+    });
+    const text = JSON.stringify(r.result);
+    expect(text).toContain("get_timesheet");
+    expect(text).toContain("share_timesheet");
+    expect(text).toMatch(/confirm/i);
   });
 });
 
