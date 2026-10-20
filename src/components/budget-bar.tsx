@@ -6,7 +6,7 @@ import { useCurrency } from "@/components/currency-provider";
 import { type BudgetStatus, describeBudget } from "@/lib/budget";
 
 const FILL = {
-  ok: "bg-emerald-600 dark:bg-emerald-400",
+  ok: "bg-success-bright",
   warn: "bg-yellow-600 dark:bg-yellow-400",
   over: "bg-rose-600 dark:bg-rose-400",
 } as const;

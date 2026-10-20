@@ -32,7 +32,7 @@ export function InvoiceTotals({ groups, filtering }: { groups: CurrencyTotals[];
             </div>
             <div className="rounded-xl border bg-card px-3 py-3">
               <dt className="flex items-center gap-1 text-muted-foreground text-xs">
-                <CircleCheck aria-hidden className="size-3.5 text-success" /> Paid
+                <CircleCheck aria-hidden className="size-3.5 text-success-bright" /> Paid
               </dt>
               <dd className="font-mono font-semibold text-base text-success tabular-nums sm:text-xl">
                 {money(total - unpaid)}

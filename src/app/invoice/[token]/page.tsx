@@ -108,7 +108,7 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
       </div>
 
       {invoice.paid_date ? (
-        <p className="rounded-xl border border-success/40 bg-success-soft p-3 font-medium text-sm text-success">
+        <p className="rounded-xl border border-success-bright/60 bg-success-soft p-3 font-medium text-sm text-success">
           Paid on {day(invoice.paid_date)}. Thank you.
         </p>
       ) : overdue ? (

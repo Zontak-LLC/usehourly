@@ -14,7 +14,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - **Accent (near-black "Neutral"; amber "Sunshine" is an optional preset):** only for **the one main button** (`variant="primary"`), **the current page** (tab underline, side-menu bar) and focus. Other presets (Sunshine, Mint, Coral, Sky, Lilac, Azure, Cream, Mono) change the accent only; Azure also sets cool-grey surfaces.
 - **One solid button per screen** **[checked: `auditPage`]**. Everything else is the soft tint (`default`) or an outline.
 - **Status colours carry meaning only:** green = done, paid, confirmed; red = remove, stop, problem; yellow = warning. Icons are neutral grey otherwise; the status colours are applied to icons by class in `globals.css`. A check icon on a dark or accent surface sets its own colour.
-- **Mint** is only for good news (`text-success`, `bg-success-soft`).
+- **Green** (Bright Optimistic Green `#50B83C`, 2026-10-20) is only for good news. It is too pale for words on white (2.5:1), so `bg-success-bright` / `text-success-bright` and the check icons use it for icons, bars and fills, while `text-success` is the same hue darker (7:1) and `bg-success-soft` the pale tint behind it.
 - **Contrast:** WCAG AA (4.5:1) for text in every preset, light and dark, both layouts **[checked: `THEME_AUDIT=1 npx playwright test e2e/theme-audit.spec.ts`, also with `THEME_AUDIT_NAV=left`]**. Text on a tinted band uses `text-foreground/75`, never `text-muted-foreground` on the darker bands, and never `text-primary` for small text.
 
 ## Surfaces: three levels (all headers are white since 2026-10-20: `--band-1/2/3` are the card colour)

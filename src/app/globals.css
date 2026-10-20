@@ -39,6 +39,7 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
+  --color-success-bright: var(--success-bright);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -85,8 +86,11 @@ These serve as the fallback; there is no separate default.css file. */
   --accent: oklch(0.967 0.001 286);
   --accent-foreground: oklch(0.21 0.006 286);
   --destructive: oklch(0.577 0.245 27.325);
-  --success: oklch(0.45 0.09 170);
-  --success-soft: oklch(0.95 0.04 170);
+  /* Success is Bright Optimistic Green #50B83C. On white it is only 2.5:1, too pale for words, so it is used for icons,
+     bars and fills (--success-bright) and the same hue, darker, writes the words (--success, 7:1). */
+  --success-bright: #50b83c;
+  --success: oklch(0.45 0.13 141);
+  --success-soft: oklch(0.955 0.05 141);
   --border: oklch(0.92 0.004 286);
   --input: oklch(0.92 0.004 286);
   --ring: oklch(0.21 0.006 286);
@@ -152,8 +156,9 @@ These serve as the fallback; there is no separate default.css file. */
   --accent: oklch(0.274 0.006 286);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --success: oklch(0.83 0.11 170);
-  --success-soft: oklch(0.3 0.05 170);
+  --success-bright: #50b83c;
+  --success: oklch(0.8 0.17 141);
+  --success-soft: oklch(0.3 0.07 141);
   --border: oklch(0.274 0.006 286);
   --input: oklch(0.32 0.006 286);
   --ring: oklch(0.93 0 0);
@@ -190,7 +195,7 @@ These serve as the fallback; there is no separate default.css file. */
      else stays quiet so the accent and the status colours stand out. These sit in the base layer, so a utility class
      on an icon still wins, and icons on a solid primary surface keep that surface's text colour (below). */
   :is(.lucide-check, .lucide-circle-check, .lucide-shield-check) {
-    @apply text-emerald-600 dark:text-emerald-400;
+    color: var(--success-bright);
   }
   :is(.lucide-trash-2, .lucide-octagon-x, .lucide-circle-alert, .lucide-ban) {
     @apply text-rose-600 dark:text-rose-400;
