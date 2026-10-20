@@ -22,6 +22,9 @@ test("entries added, edited and deleted offline reach the server once the connec
   await page.goto("/dashboard/today");
   await expect(page.getByLabel("Time to add")).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-local-first", "ready"); // the copy is open and answering
+  // Clients and projects are not kept on the device yet, so they must have loaded before the connection goes.
+  await expect(page.getByText("Offline Co").first()).toBeVisible();
+  await page.waitForLoadState("networkidle");
   await page.context().setOffline(true);
 
   const add = async (time: string, note: string) => {
