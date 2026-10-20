@@ -2,7 +2,7 @@
 
 A Trusted Web Activity: a thin Android shell that opens https://usehourly.app full screen. No app code lives here; the website is the app, so every deploy reaches Android users at once.
 
-- `twa-manifest.json` is the Bubblewrap project description (package `app.usehourly.twa`).
+- `twa-manifest.json` is the Bubblewrap project description (package `com.zontak.usehourly`, the name the Play Console app was created with: a Play app's package can never change).
 - `public/.well-known/assetlinks.json` proves the app and the site belong together (without it the app shows a browser bar). It lists the SHA-256 fingerprints of the signing keys: the upload key, and, once the app is in Play Console, the **Play app signing key** (Play Console > Test and release > App integrity > App signing). Add that second fingerprint or the Play Store build shows the bar.
 - The upload keystore and its password are NOT in the repo (`~/.config/usehourly-android/`). Losing the keystore is recoverable through Play (upload key reset), but keep a backup.
 
