@@ -12,9 +12,11 @@ import { ProjectPicker } from "@/components/project-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate, monthBounds } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
+import { pendingEntry } from "@/lib/optimistic-entries";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -47,6 +49,7 @@ export function QuickAdd({
   const userId = useCurrentUserId();
   const online = useOnline();
   const create = trpc.entry.create.useMutation();
+  const optimistic = useOptimisticEntries();
   const start = trpc.entry.start.useMutation();
 
   const [projectId, setProjectId] = useState("");
@@ -109,13 +112,27 @@ export function QuickAdd({
       durationRef.current?.focus();
     };
     if (!online) return saveOnDevice(clientId, parsed, finish);
+    // Show the entry in the list and clear the form NOW; the server's answer only confirms it (or takes it back).
+    const owner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
+    const row =
+      owner && userId
+        ? pendingEntry({ clientId, userId, client: owner, projectId, date, minutes: parsed, note, nonBillable: false })
+        : null;
+    const undo = row ? await optimistic.add(row) : null;
+    const typed = { duration, note };
+    if (row) finish();
     try {
       await create.mutateAsync({ projectId, date, minutes: parsed, note, clientId });
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
-      finish();
+      if (!row) finish();
     } catch (err) {
+      undo?.();
       // No connection (or the server is unreachable): keep the entry on this device and send it later.
       if (isNetworkError(err)) return saveOnDevice(clientId, parsed, finish);
+      if (row) {
+        setDuration(typed.duration); // give back what was typed so nothing is lost
+        setNote(typed.note);
+      }
       toastError(err, "Couldn't save that entry.");
     }
   }
