@@ -76,7 +76,12 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("fix a mistake: change the first entry from 1:30 to 2:00", async () => {
     await page.getByText("Logo concepts for the homepage").hover(); // desktop shows the controls on hover
-    const edit = page.getByRole("button", { name: "Edit", exact: true }).first();
+    // The entry is found by what it says (the newest entry is listed first, and one just added cannot be edited until
+    // the server has confirmed it), not by its place in the list.
+    const edit = page
+      .getByRole("listitem")
+      .filter({ hasText: "Logo concepts for the homepage" })
+      .getByRole("button", { name: "Edit", exact: true });
     // On a phone there is no hover, so the controls have to be showing already. A miss here is a finding, not a crash.
     if (isPhone) await expect.soft(edit, "entry actions must be visible without hover on a phone").toBeVisible();
     await edit.click({ force: true });

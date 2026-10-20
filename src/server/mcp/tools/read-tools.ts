@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { currencyOrDefault } from "@/lib/money";
+import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 
 import { defineTool, type McpTool } from "./core";
 import { type EntryRow, shapeEntry, summarize } from "./entry-shape";
@@ -67,12 +67,13 @@ export const READ_TOOLS: McpTool[] = [
   defineTool({
     name: "list_clients",
     title: "List clients",
-    description: "Active clients, each with its active projects.",
+    description:
+      "Active clients, each with its currency and its active projects. Rates are in the client's currency (its own, else the account's).",
     access: "read",
     idempotent: true,
     input: z.object({}),
     run: async (c) => {
-      const clients = await c.clients.list();
+      const [clients, me] = await Promise.all([c.clients.list(), c.account.me()]);
       return {
         clients: clients.map((cl) => ({
           id: cl.id,
@@ -80,6 +81,7 @@ export const READ_TOOLS: McpTool[] = [
           color: cl.color,
           legal_name: cl.legal_name,
           address: cl.address,
+          currency: effectiveCurrency(cl.currency, me.currency),
           projects: cl.projects.map((p) => ({
             id: p.id,
             name: p.name,
@@ -100,12 +102,13 @@ export const READ_TOOLS: McpTool[] = [
     input: z.object({ client: clientRef }),
     run: async (c, a) => {
       const cl = await resolveClient(c, a.client);
-      const full = await c.clients.get({ id: cl.id });
+      const [full, me] = await Promise.all([c.clients.get({ id: cl.id }), c.account.me()]);
       return {
         id: full.id,
         name: full.name,
         legal_name: full.legal_name,
         address: full.address,
+        currency: effectiveCurrency(full.currency, me.currency),
         has_logo: Boolean(full.logo),
       };
     },

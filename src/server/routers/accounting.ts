@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AccountingInvoice } from "@/lib/accounting-export";
 import { DATE_RE, isRealDate } from "@/lib/dates";
 import type { InvoiceSnapshot } from "@/lib/invoice";
+import { CURRENCY_CODES, currencyOrDefault } from "@/lib/money";
 
 import { protectedProcedure, router } from "../trpc";
 
@@ -11,6 +12,12 @@ const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate
 const MAX_INVOICES = 200;
 
 export const accountingRouter = router({
+  /** The currencies this account has invoices in (usually one), so the export can ask which to write. */
+  currencies: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.prisma.invoice.groupBy({ by: ["currency"], where: { user_id: ctx.userId } });
+    return rows.map((r) => currencyOrDefault(r.currency)).sort();
+  }),
+
   /**
    * The caller's invoices issued in [from, to], oldest first, with their lines, for the files an accounting app
    * imports (built in the browser, see lib/accounting-export.ts). `more` is true when the range held more than fit.
@@ -18,12 +25,21 @@ export const accountingRouter = router({
   invoices: protectedProcedure
     .input(
       z
-        .object({ from: dateSchema, to: dateSchema })
+        .object({
+          from: dateSchema,
+          to: dateSchema,
+          // The files carry plain numbers, so one currency per file: two currencies are never mixed in one.
+          currency: z.enum(CURRENCY_CODES).optional(),
+        })
         .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." }),
     )
     .query(async ({ ctx, input }) => {
       const rows = await ctx.prisma.invoice.findMany({
-        where: { user_id: ctx.userId, issue_date: { gte: input.from, lte: input.to } },
+        where: {
+          user_id: ctx.userId,
+          issue_date: { gte: input.from, lte: input.to },
+          ...(input.currency ? { currency: input.currency } : {}),
+        },
         select: {
           number: true,
           issue_date: true,

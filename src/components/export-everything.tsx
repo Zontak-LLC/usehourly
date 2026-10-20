@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Archive } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAccountCurrency } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
 import { toISODate } from "@/lib/dates";
 import { downloadExportZip, planExport } from "@/lib/export-all";
@@ -18,6 +19,7 @@ export function ExportEverything({
   variant?: "outline" | "ghost" | "secondary";
   className?: string;
 }) {
+  const accountCurrency = useAccountCurrency();
   const utils = trpc.useUtils();
   const [busy, setBusy] = useState(false);
 
@@ -39,7 +41,7 @@ export function ExportEverything({
     try {
       const [entries, invoices] = await Promise.all([fetchAllEntries(), utils.invoice.list.fetch()]);
       const today = toISODate(new Date());
-      const plan = await planExport({ entries, invoices, today });
+      const plan = await planExport({ entries, invoices, today, accountCurrency });
       if (plan.entryCount === 0) {
         toast.info("You haven't logged any time yet, so there is nothing to export.");
         return;

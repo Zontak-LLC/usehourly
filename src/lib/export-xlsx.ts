@@ -1,5 +1,6 @@
 import { fromISODate } from "@/lib/dates";
 import { WEEKLY_AFTER_WORKED_DAYS, weekStart } from "@/lib/export-range";
+import { effectiveCurrency } from "@/lib/money";
 import { buildSheet, type SheetEntry } from "@/lib/timesheet";
 
 const dayHeader = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric" });
@@ -33,6 +34,8 @@ export async function buildTimesheetWorkbook(opts: {
    * worked day, "Mon 5").
    */
   range?: boolean;
+  /** The account's currency: entries of clients without a currency of their own are written in it. */
+  accountCurrency?: string;
 }) {
   const { default: ExcelJS } = await import("exceljs");
   // Leave out zero-hour entries, and any day with no logged time (weekends, days off), so the
@@ -120,7 +123,7 @@ export async function buildTimesheetWorkbook(opts: {
 
   // ── Entries detail ──────────────────────────────────────────────
   const es = wb.addWorksheet("Entries", { views: [{ state: "frozen", ySplit: 1 }] });
-  es.addRow(["Date", "Client", "Project", "Note", "Hours", "Billable", "Rate ($/h)", "Amount ($)"]);
+  es.addRow(["Date", "Client", "Project", "Note", "Hours", "Billable", "Rate (per hour)", "Amount", "Currency"]);
   const sorted = [...entries].sort(
     (a, b) => a.date.localeCompare(b.date) || a.project.client.name.localeCompare(b.project.client.name),
   );
@@ -136,8 +139,12 @@ export async function buildTimesheetWorkbook(opts: {
       e.project.billable ? "Yes" : "No",
       rate || null,
       e.project.billable && rate ? { formula: `E${n}*G${n}`, result: hours(e.minutes) * rate } : null,
+      effectiveCurrency(e.project.client.currency, opts.accountCurrency),
     ]);
   });
+  // Amounts in different currencies are never added together: the total is left out when the entries mix them.
+  const oneCurrency =
+    new Set(sorted.map((e) => effectiveCurrency(e.project.client.currency, opts.accountCurrency))).size <= 1;
   const amountTotal = sorted.reduce(
     (a, e) => a + (e.project.billable ? hours(e.minutes) * (e.project.hourly_rate / 100) : 0),
     0,
@@ -151,7 +158,7 @@ export async function buildTimesheetWorkbook(opts: {
       { formula: `SUM(E2:E${sorted.length + 1})`, result: hours(sheet.total) },
       "",
       "",
-      { formula: `SUM(H2:H${sorted.length + 1})`, result: amountTotal },
+      oneCurrency ? { formula: `SUM(H2:H${sorted.length + 1})`, result: amountTotal } : "",
     ]);
     t.font = { bold: true };
     t.border = { top: { style: "thin" } };
@@ -175,6 +182,7 @@ export async function downloadTimesheetXlsx(opts: {
   days: string[];
   filename: string;
   range?: boolean;
+  accountCurrency?: string;
 }) {
   const wb = await buildTimesheetWorkbook(opts);
   const buffer = await wb.xlsx.writeBuffer();

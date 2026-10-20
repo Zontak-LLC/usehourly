@@ -23,8 +23,8 @@ export function CurrencyCard({ me }: { me: AccountMe }) {
       title="Currency"
       description={
         locked
-          ? "Your currency is fixed because you have made an invoice, so your invoices and totals stay in one currency."
-          : "Used for rates, budgets, invoices and totals. You can change it until you make your first invoice."
+          ? "Your currency is fixed because you have made an invoice. A client can still be billed in another currency: see Billing details on Clients & Projects."
+          : "Your usual currency, used for rates, budgets, invoices and totals. You can change it until you make your first invoice, and any client can be billed in a different one under Billing details."
       }
     >
       <div className="flex flex-wrap items-center gap-3">

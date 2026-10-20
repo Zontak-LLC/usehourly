@@ -38,6 +38,10 @@ export function AccountingExport() {
   const [taxType, setTaxType] = useState(DEFAULT_ACCOUNTING_OPTIONS.taxType);
   const [itemName, setItemName] = useState(DEFAULT_ACCOUNTING_OPTIONS.itemName);
   const [busy, setBusy] = useState(false);
+  // Files carry plain numbers, so when invoices exist in several currencies one is chosen for the file.
+  const currencies = trpc.accounting.currencies.useQuery().data ?? [];
+  const [currency, setCurrency] = useState("");
+  const chosenCurrency = currencies.length > 1 ? (currencies.find((c) => c === currency) ?? currencies[0]) : undefined;
   const picked = ACCOUNTING_KINDS.find((k) => k.kind === kind) ?? ACCOUNTING_KINDS[0];
 
   const years = [thisYear, thisYear - 1, thisYear - 2];
@@ -51,7 +55,7 @@ export function AccountingExport() {
     setBusy(true);
     try {
       const { from, to } = range();
-      const { invoices, more } = await utils.accounting.invoices.fetch({ from, to });
+      const { invoices, more } = await utils.accounting.invoices.fetch({ from, to, currency: chosenCurrency });
       if (invoices.length === 0) {
         toast.info("No invoices were issued in that period, so there is nothing to export.");
         return;
@@ -97,6 +101,23 @@ export function AccountingExport() {
             <option value="all">All time</option>
           </select>
         </div>
+        {chosenCurrency && (
+          <div className="grid gap-1.5">
+            <Label htmlFor="acct-currency">Currency</Label>
+            <select
+              id="acct-currency"
+              className={selectClass}
+              value={chosenCurrency}
+              onChange={(e) => setCurrency(e.target.value)}
+            >
+              {currencies.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="grid gap-1.5">
           <Label htmlFor="acct-dates">Date format</Label>
           <select

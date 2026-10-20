@@ -86,6 +86,7 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
         color: z.string().nullable(),
         legal_name: z.string().nullable(),
         address: z.string().nullable(),
+        currency: z.string().describe("The currency this client's rates and invoices are in"),
         projects: z.array(obj({ id: z.string(), name: z.string(), hourly_rate: z.number(), billable: z.boolean() })),
       }),
     ),
@@ -95,6 +96,7 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     name: z.string(),
     legal_name: z.string().nullable(),
     address: z.string().nullable(),
+    currency: z.string().describe("The currency this client's rates and invoices are in"),
     has_logo: z.boolean(),
   }),
   list_entries: obj({
@@ -153,7 +155,11 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
   }),
   list_invoices: obj({
     count: z.number(),
-    unpaid_total: z.number().describe("Dollars still unpaid across the matches"),
+    unpaid_total: z
+      .number()
+      .nullable()
+      .describe("Still unpaid across the matches, in their currency; null when the matches use more than one currency"),
+    unpaid_totals: z.record(z.string(), z.number()).describe("Still unpaid per currency code, e.g. { USD: 150 }"),
     invoices: z.array(
       obj({
         id: z.string(),

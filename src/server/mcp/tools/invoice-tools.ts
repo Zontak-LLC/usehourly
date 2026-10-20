@@ -10,7 +10,8 @@ export const INVOICE_READ_TOOLS: McpTool[] = [
   defineTool({
     name: "list_invoices",
     title: "List invoices",
-    description: "Invoice history (newest 200 at most). Filter by text, client, paid status or issue-date range.",
+    description:
+      "Invoice history (newest 200 at most), each with the currency it was issued in. Filter by text, client, paid status or issue-date range. unpaid_totals has one figure per currency; unpaid_total is only set when every match is in one currency.",
     access: "read",
     idempotent: true,
     input: z.object({
@@ -39,10 +40,17 @@ export const INVOICE_READ_TOOLS: McpTool[] = [
         to: a.issued_to,
         sort: a.sort,
       });
-      const unpaid = rows.filter((r) => !r.paid_date);
+      // Amounts in different currencies are never added: one total per currency, and the single figure only when
+      // every match is in the same one.
+      const unpaidTotals: Record<string, number> = {};
+      for (const r of rows.filter((r) => !r.paid_date))
+        unpaidTotals[r.currency] = (unpaidTotals[r.currency] ?? 0) + r.total_cents;
+      const unpaidByCurrency = Object.fromEntries(Object.entries(unpaidTotals).map(([k, v]) => [k, round2(v / 100)]));
+      const currencies = new Set(rows.map((r) => r.currency));
       return {
         count: rows.length,
-        unpaid_total: round2(unpaid.reduce((n, r) => n + r.total_cents, 0) / 100),
+        unpaid_total: currencies.size <= 1 ? (Object.values(unpaidByCurrency)[0] ?? 0) : null,
+        unpaid_totals: unpaidByCurrency,
         invoices: rows.map(shapeInvoiceSummary),
       };
     },

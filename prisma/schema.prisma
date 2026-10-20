@@ -75,6 +75,8 @@ model Client {
   round_step Int      @default(0)
   round_mode String   @default("up") // "up" | "nearest"
   round_min  Int      @default(0)    // minimum billed minutes per entry (0 = none)
+  // ISO 4217; null = the account's currency (lib/money.ts effectiveCurrency). Locked once the client has an invoice.
+  currency   String?
   archived   Boolean  @default(false)
   created_at DateTime @default(now())
 
@@ -177,6 +179,8 @@ model Invoice {
   period_to     String
   total_minutes Int
   total_cents   Int
+  // The currency the invoice was issued in (also frozen in the snapshot); totals never add two currencies together.
+  currency      String   @default("USD")
   notes         String   @default("")
   snapshot      String
   search_text   String

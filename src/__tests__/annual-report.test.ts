@@ -163,9 +163,12 @@ describe("annual report procedure", () => {
       },
       invoice: {
         findMany: vi.fn(async () =>
-          invoices.filter((i) => i.issue_date.startsWith("2026") || i.paid_date?.startsWith("2026")),
+          invoices
+            .filter((i) => i.issue_date.startsWith("2026") || i.paid_date?.startsWith("2026"))
+            .map((i) => ({ ...i, currency: "USD" })),
         ),
       },
+      authUser: { findUnique: vi.fn(async () => ({ currency: "USD" })) },
     };
     const caller = createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
     return { prisma, caller };

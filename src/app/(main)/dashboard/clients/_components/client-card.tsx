@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Archive, Pencil, Plus, X } from "lucide-react";
 
 import { ClientLogoSlot } from "@/components/client-logo";
+import { ClientCurrency } from "@/components/currency-provider";
 import { IconAction } from "@/components/icon-action";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
@@ -106,71 +107,73 @@ export function ClientCard({
           </IconAction>
         </div>
       </header>
-      <div className="flex flex-col gap-3 p-3">
-        {billingOpen && (
-          <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
-            <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
-          </div>
-        )}
-        {c.projects.length === 0 && !adding && (
-          <p className="text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
-        )}
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {c.projects.map((p) =>
-            editing.editingId === p.id ? (
-              <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
+      <ClientCurrency currency={c.currency}>
+        <div className="flex flex-col gap-3 p-3">
+          {billingOpen && (
+            <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
+              <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
+            </div>
+          )}
+          {c.projects.length === 0 && !adding && (
+            <p className="text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
+          )}
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {c.projects.map((p) =>
+              editing.editingId === p.id ? (
+                <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
+              ) : (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  clientColor={c.color}
+                  logos={logos}
+                  totals={totals}
+                  budget={budgets?.[p.id]}
+                  onEdit={() => editing.startEditing(p.id)}
+                  onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
+                />
+              ),
+            )}
+            {adding ? (
+              <li className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10 sm:col-span-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">
+                      <Plus className="size-3.5" aria-hidden />
+                    </span>
+                    <span className="truncate">Add a project for {c.name}</span>
+                  </p>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-10 shrink-0"
+                    onClick={() => setAdding(false)}
+                    aria-label="Cancel"
+                  >
+                    <X />
+                  </Button>
+                </div>
+                <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
+              </li>
             ) : (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                clientColor={c.color}
-                logos={logos}
-                totals={totals}
-                budget={budgets?.[p.id]}
-                onEdit={() => editing.startEditing(p.id)}
-                onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
-              />
-            ),
-          )}
-          {adding ? (
-            <li className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10 sm:col-span-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">
-                    <Plus className="size-3.5" aria-hidden />
-                  </span>
-                  <span className="truncate">Add a project for {c.name}</span>
-                </p>
-                <Button
+              <li className={c.projects.length % 2 === 0 ? "sm:col-span-2" : undefined}>
+                <button
                   type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-10 shrink-0"
-                  onClick={() => setAdding(false)}
-                  aria-label="Cancel"
+                  onClick={() => setAdding(true)}
+                  aria-label={`Add a project for ${c.name}`}
+                  className="flex h-full min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-foreground/30 border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
                 >
-                  <X />
-                </Button>
-              </div>
-              <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
-            </li>
-          ) : (
-            <li className={c.projects.length % 2 === 0 ? "sm:col-span-2" : undefined}>
-              <button
-                type="button"
-                onClick={() => setAdding(true)}
-                aria-label={`Add a project for ${c.name}`}
-                className="flex h-full min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-foreground/30 border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
-              >
-                <span className="flex size-8 items-center justify-center rounded-full bg-muted">
-                  <Plus className="size-4" aria-hidden />
-                </span>
-                Add a project
-              </button>
-            </li>
-          )}
-        </ul>
-      </div>
+                  <span className="flex size-8 items-center justify-center rounded-full bg-muted">
+                    <Plus className="size-4" aria-hidden />
+                  </span>
+                  Add a project
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      </ClientCurrency>
     </section>
   );
 }

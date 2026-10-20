@@ -10,7 +10,12 @@ export type SheetEntry = {
   /** The team member who logged it (null or absent for the account's own entries). */
   author_id?: string | null;
   author?: { name: string | null } | null;
-  project: { name: string; hourly_rate: number; billable: boolean; client: { name: string; color: string } };
+  project: {
+    name: string;
+    hourly_rate: number;
+    billable: boolean;
+    client: { name: string; color: string; currency?: string | null };
+  };
 };
 
 export type Cell = { minutes: number; count: number; running: boolean };
