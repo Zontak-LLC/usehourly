@@ -82,6 +82,8 @@ Your rates, invoices, other clients, or anyone else's time. Their time becomes p
     keywords: ["claude", "mcp", "cursor", "chatgpt", "token", "assistant", "automation", "oauth", "api"],
     body: `UseHourly has a built-in connection for AI assistants that speak MCP (Claude, Cursor and others). You can say "log 2 hours on Acme for yesterday" and it happens.
 
+If you work in an AI assistant all day, this lets you manage your timesheets right from there, without opening UseHourly.
+
 ## Connect
 
 - **Claude Code:** run \`claude mcp add --transport http usehourly https://usehourly.app/api/mcp\`, then type \`/mcp\`, choose usehourly and approve in your browser.
