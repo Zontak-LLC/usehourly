@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
+import { useClientLogos } from "@/components/client-logo";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,7 @@ export function ClientsView() {
   const [newOpen, setNewOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const logos = useProjectLogos();
+  useClientLogos(); // starts with the first batch; the client cards read it a moment later
   const editing = useProjectEditing();
   const [search, setSearch] = useState("");
   const [confirming, setConfirming] = useState<ArchiveTarget | null>(null);

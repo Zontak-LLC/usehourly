@@ -16,14 +16,20 @@ export function NonBillableToggle({
   date,
   compact = false,
   labelled = false,
+  seed,
 }: {
   date: string;
   compact?: boolean;
   /** Show the words "Non-billable day" beside the icon (the Week page's day card). */
   labelled?: boolean;
+  /** The marked days of a longer range already loaded (the week): used instead of asking again for this one day. */
+  seed?: { days: string[]; updatedAt: number };
 }) {
   const utils = trpc.useUtils();
-  const days = trpc.entry.nonBillableDays.useQuery({ from: date, to: date });
+  const days = trpc.entry.nonBillableDays.useQuery(
+    { from: date, to: date },
+    seed ? { initialData: seed.days.filter((d) => d === date), initialDataUpdatedAt: seed.updatedAt } : undefined,
+  );
   const set = trpc.entry.setNonBillable.useMutation();
   const on = days.data?.includes(date) ?? false;
 

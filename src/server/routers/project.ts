@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -9,6 +10,30 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { projectLogoSchema } from "../logo-schema";
 import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
+
+/**
+ * The entries of some projects that fall on any of the given days. D1 allows only 100 bound values in one query, so
+ * the days go in groups (the account, the projects and the days all count as values).
+ */
+async function entriesOnDays(
+  prisma: PrismaClient,
+  userId: string,
+  projectIds: string[],
+  days: string[],
+): Promise<{ project_id: string; minutes: number }[]> {
+  const perQuery = Math.max(1, 90 - projectIds.length);
+  const groups: string[][] = [];
+  for (let i = 0; i < days.length; i += perQuery) groups.push(days.slice(i, i + perQuery));
+  const rows = await Promise.all(
+    groups.map((group) =>
+      prisma.timeEntry.findMany({
+        where: { user_id: userId, project_id: { in: projectIds }, date: { in: group } },
+        select: { project_id: true, minutes: true },
+      }),
+    ),
+  );
+  return rows.flat();
+}
 
 export const projectRouter = router({
   create: protectedProcedure
@@ -185,26 +210,43 @@ export const projectRouter = router({
         },
       });
       if (projects.length === 0) return {};
-      const [entries, skipDays] = await Promise.all([
-        ctx.prisma.timeEntry.findMany({
-          where: { user_id: ctx.userId, project_id: { in: projects.map((p) => p.id) } },
-          select: { project_id: true, date: true, minutes: true },
-        }),
-        nonBillableDates(ctx.prisma, ctx.userId),
+      // Read as little as possible (this runs on most screens): a month budget needs only that month's entries; a
+      // whole-project budget needs one SUM per project plus the few entries that fall on non-billable days, to take
+      // them back out. Neither loads the account's whole history.
+      const monthIds = projects.filter((p) => p.budget_period !== "total").map((p) => p.id);
+      const totalIds = projects.filter((p) => p.budget_period === "total").map((p) => p.id);
+      const skipDays = await nonBillableDates(ctx.prisma, ctx.userId);
+      const [monthEntries, totalSums, skippedEntries] = await Promise.all([
+        monthIds.length
+          ? ctx.prisma.timeEntry.findMany({
+              where: { user_id: ctx.userId, project_id: { in: monthIds }, date: { gte: input.from, lte: input.to } },
+              select: { project_id: true, date: true, minutes: true },
+            })
+          : [],
+        totalIds.length
+          ? ctx.prisma.timeEntry.groupBy({
+              by: ["project_id"],
+              where: { user_id: ctx.userId, project_id: { in: totalIds } },
+              _sum: { minutes: true },
+            })
+          : [],
+        totalIds.length && skipDays.size > 0 ? entriesOnDays(ctx.prisma, ctx.userId, totalIds, [...skipDays]) : [],
       ]);
+      const minutesByProject = new Map<string, number>();
+      for (const e of monthEntries) {
+        if (skipDays.has(e.date)) continue;
+        minutesByProject.set(e.project_id, (minutesByProject.get(e.project_id) ?? 0) + e.minutes);
+      }
+      for (const r of totalSums) minutesByProject.set(r.project_id, r._sum.minutes ?? 0);
+      for (const e of skippedEntries) {
+        minutesByProject.set(e.project_id, (minutesByProject.get(e.project_id) ?? 0) - e.minutes);
+      }
       const out: Record<string, ReturnType<typeof budgetStatus>> = {};
       for (const p of projects) {
         if (p.budget_amount === null || (p.budget_unit !== "hours" && p.budget_unit !== "dollars")) continue;
         const unit: BudgetUnit = p.budget_unit;
         const period: BudgetPeriod = p.budget_period === "total" ? "total" : "month";
-        const minutes = entries
-          .filter(
-            (e) =>
-              e.project_id === p.id &&
-              !skipDays.has(e.date) &&
-              (period === "total" || (e.date >= input.from && e.date <= input.to)),
-          )
-          .reduce((sum, e) => sum + e.minutes, 0);
+        const minutes = Math.max(0, minutesByProject.get(p.id) ?? 0);
         out[p.id] = budgetStatus({
           amount: p.budget_amount,
           unit,

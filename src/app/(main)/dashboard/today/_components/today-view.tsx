@@ -8,9 +8,10 @@ import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
+import { useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
+import { addDays, DATE_RE, fromISODate, monthBounds, startOfWeek } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
@@ -36,6 +37,10 @@ export function TodayView() {
 
   const clients = trpc.clients.list.useQuery();
   const running = trpc.entry.running.useQuery();
+  // Started here, with the first batch, so the quick-add form and the entry rows find them already loaded (they would
+  // otherwise start them only after the client list arrives: a second round trip). Same keys, so nothing is fetched twice.
+  trpc.project.budgets.useQuery(date ? monthBounds(date) : { from: "", to: "" }, { enabled: !!date });
+  useProjectLogos();
   const week = trpc.entry.list.useQuery(
     { from: weekStart ?? "", to: weekStart ? addDays(weekStart, 6) : "" },
     { enabled: !!weekStart },

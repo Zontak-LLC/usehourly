@@ -6,15 +6,22 @@ import { DayEditorPanel } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
+import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
-import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
+import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 import { dayDots } from "@/lib/week-dots";
 
 import { DayTiles, longDayLabel, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
+
+/** The chosen day, else today when it is in this week, else Monday. */
+function chooseDay(start: string, picked: string | null, today: string | null): string {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  return picked && days.includes(picked) ? picked : today && days.includes(today) ? today : days[0];
+}
 
 const rangeLabel = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 
@@ -34,6 +41,14 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
   const end = start ? addDays(start, 6) : "";
   const entries = trpc.entry.list.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
 
+  // The day panel below asks for these only once it is on screen, which would be a second round trip. Started here with
+  // the first batch (same keys, so nothing is fetched twice). The picked day's own entries are not asked for at all: the
+  // panel is handed them from the week's (see weekSeed).
+  const day = start && today ? chooseDay(start, picked, today) : "";
+  trpc.entry.running.useQuery();
+  trpc.project.budgets.useQuery(day ? monthBounds(day) : { from: "", to: "" }, { enabled: !!day });
+  useProjectLogos();
+
   const nonBillableDays = trpc.entry.nonBillableDays.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
   const nonBillable = useMemo(() => new Set(nonBillableDays.data ?? []), [nonBillableDays.data]);
 
@@ -47,8 +62,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   if (!start) return <Skeleton className="h-64 w-full" />;
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  // The chosen day, else today when it is in this week, else Monday.
-  const selected = picked && days.includes(picked) ? picked : today && days.includes(today) ? today : days[0];
+  const selected = chooseDay(start, picked, today);
   // The address always says which day (or week) is showing, so a refresh or a shared link comes back to it.
   const writeDate = (d: string | null) => {
     const url = new URL(window.location.href);
@@ -113,7 +127,22 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
           <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
             {/* The day strip above already says which day this is, so the date is not repeated here. */}
-            <DayEditorPanel key={selected} date={selected} projectFilter={projectId} inPage />
+            <DayEditorPanel
+              key={selected}
+              date={selected}
+              projectFilter={projectId}
+              inPage
+              weekSeed={
+                entries.data && nonBillableDays.data
+                  ? {
+                      entries: entries.data,
+                      days: nonBillableDays.data,
+                      updatedAt: entries.dataUpdatedAt,
+                      daysUpdatedAt: nonBillableDays.dataUpdatedAt,
+                    }
+                  : undefined
+              }
+            />
           </section>
 
           <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
