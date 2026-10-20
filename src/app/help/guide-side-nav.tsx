@@ -10,7 +10,7 @@ type Group = { id: string; title: string; topics: { slug: string; title: string 
 /**
  * The guide's own contents list: every topic under its group, the page you are on marked like the app's side menu (a
  * bar in the accent colour and bolder text). Down the left on a wide screen and sticky; on a phone a folded "All topics"
- * list at the top. It is the guide's menu, not the app's: this frame has no app menu.
+ * list at the top. With the app's left menu switched on, the wide column gives way to the folded list, so there is never a second left menu.
  */
 export function GuideSideNav({ groups }: { groups: Group[] }) {
   const pathname = usePathname();
@@ -50,11 +50,11 @@ export function GuideSideNav({ groups }: { groups: Group[] }) {
     <>
       <nav
         aria-label="Guide topics"
-        className="sticky top-6 hidden max-h-[calc(100dvh-3rem)] self-start overflow-y-auto pb-6 lg:block"
+        className="sticky top-6 hidden max-h-[calc(100dvh-3rem)] self-start overflow-y-auto pb-6 lg:block lg:[html[data-nav-position=left]_&]:hidden"
       >
         {list}
       </nav>
-      <details className="mb-6 rounded-xl border bg-card lg:hidden">
+      <details className="mb-6 rounded-xl border bg-card lg:hidden lg:[html[data-nav-position=left]_&]:block">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 font-medium text-sm [&::-webkit-details-marker]:hidden">
           Browse all topics <ChevronDown className="size-4" aria-hidden />
         </summary>

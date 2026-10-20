@@ -29,7 +29,14 @@ const ROOMY: Record<string, { tab: string; menu: string }> = {
  * The pages used most: a tab bar at the bottom of a phone (where a thumb reaches) and a strip under the top bar from `sm` up. Every tab has an icon and a word, and
  * "More" is a real menu: the rarely used pages, the signed-in address and Log out.
  */
-export function MobileNav({ user, isAdmin = false }: { user: { name: string; email: string }; isAdmin?: boolean }) {
+export function MobileNav({
+  user,
+  isAdmin = false,
+}: {
+  /** Left out on pages that must hold nothing personal (the public guide): then no name, address or Log out. */
+  user?: { name: string; email: string } | null;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const items = MAIN.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
   const more = [...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])];
@@ -67,11 +74,15 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-56">
-            <DropdownMenuLabel className="font-normal">
-              <span className="block truncate font-medium text-foreground text-sm">{user.name}</span>
-              <span className="block truncate text-muted-foreground text-xs">{user.email}</span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            {user && (
+              <>
+                <DropdownMenuLabel className="font-normal">
+                  <span className="block truncate font-medium text-foreground text-sm">{user.name}</span>
+                  <span className="block truncate text-muted-foreground text-xs">{user.email}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {more.map((item) => (
               <DropdownMenuItem key={item.id} asChild className={ROOMY[item.id]?.menu}>
                 <Link href={item.url} prefetch={false}>
@@ -79,10 +90,14 @@ export function MobileNav({ user, isAdmin = false }: { user: { name: string; ema
                 </Link>
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
-              <LogOut /> Log out
-            </DropdownMenuItem>
+            {user && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
+                  <LogOut /> Log out
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
