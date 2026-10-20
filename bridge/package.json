@@ -1,6 +1,6 @@
 {
   "name": "usehourly-mcp",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "mcpName": "app.usehourly/usehourly",
   "description": "stdio bridge to the UseHourly MCP server (https://usehourly.app/api/mcp) for MCP clients that cannot use remote HTTP",
   "type": "module",
