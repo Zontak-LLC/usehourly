@@ -24,7 +24,6 @@ function lastThursday(): string {
 }
 
 const SCREENS: [name: string, url: string][] = [
-  ["today", `/dashboard/today?date=${lastThursday()}`],
   ["week", `/dashboard/week?date=${lastThursday()}`],
   ["month", "/dashboard/month"],
   ["report", "/dashboard/report"],
