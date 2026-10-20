@@ -226,6 +226,12 @@ type Fixtures = {
 };
 
 export const test = base.extend<Fixtures>({
+  // The app starts with the navigation down the left on a wide screen; most journeys were written against the tab strip
+  // along the top, so they start with that saved choice. `left-nav.spec.ts` removes it to test the real default.
+  context: async ({ context, baseURL }, use) => {
+    if (baseURL) await context.addCookies([{ name: "nav_position", value: "top", url: baseURL }]);
+    await use(context);
+  },
   // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring pattern even when no fixture is used
   isPhone: async ({}, use, testInfo) => use(testInfo.project.name === "phone"),
   page: async ({ page }, use) => {
