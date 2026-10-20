@@ -1286,6 +1286,120 @@
       }
     },
     {
+      "name": "get_timesheet",
+      "title": "Get a timesheet",
+      "description": "The timesheet for a date range as a grid: one row per project, hours per day, totals per project and per day, and the weekdays with nothing logged. Optionally for one client or one project. Use this to 'show me my timesheet for last week' or to check a sheet before sharing it. Days marked non-billable still count here.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "First day to include, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last day to include (inclusive), YYYY-MM-DD"
+          },
+          "client": {
+            "description": "Only this client: id or exact name",
+            "type": "string",
+            "minLength": 1
+          },
+          "project": {
+            "description": "Only this project: id or \"Client / Project\"",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["from", "to"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "description": "The client or project the sheet is for, or All clients"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The dates that have time logged, oldest first"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "client": {
+                  "type": "string"
+                },
+                "project": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "hours_by_day": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "number"
+                  },
+                  "description": "Hours per date, only dates with time"
+                },
+                "total_hours": {
+                  "type": "number"
+                }
+              },
+              "required": ["client", "project", "label", "hours_by_day", "total_hours"],
+              "additionalProperties": {}
+            }
+          },
+          "day_totals": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Hours per date across the rows"
+          },
+          "total_hours": {
+            "type": "number"
+          },
+          "weekdays_without_time": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Monday to Friday dates in the range with nothing logged"
+          }
+        },
+        "required": ["from", "to", "scope", "days", "rows", "day_totals", "total_hours", "weekdays_without_time"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Get a timesheet",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
       "name": "parse_duration",
       "title": "Parse a duration",
       "description": "Turn text like \"1h30\", \"1:30\" or \"2.5\" into whole minutes, the way UseHourly reads it.",
@@ -2545,6 +2659,85 @@
         "idempotentHint": false,
         "openWorldHint": false
       }
+    },
+    {
+      "name": "share_timesheet",
+      "title": "Create a timesheet link for a client",
+      "description": "Freeze the hours of a date range (optionally one client or project) into a private link a client can open without an account, read, print and approve. The link shows hours and, unless include_notes is false, the work descriptions; never rates or amounts. Anyone with the link can read it until it expires, so confirm the range, the client and whether to include notes with the user before calling. The link is returned only once: pass it on to the user. Not available on demo accounts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "First day to include, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last day to include (inclusive), YYYY-MM-DD"
+          },
+          "client": {
+            "description": "Only this client: id or exact name",
+            "type": "string",
+            "minLength": 1
+          },
+          "project": {
+            "description": "Only this project: id or \"Client / Project\"",
+            "type": "string",
+            "minLength": 1
+          },
+          "include_notes": {
+            "default": true,
+            "description": "Show the work descriptions to the client (default true)",
+            "type": "boolean"
+          },
+          "expires_in_days": {
+            "default": 30,
+            "description": "How long the link works: 7, 30, 90 days (default 30)",
+            "type": "number"
+          },
+          "title": {
+            "description": "A heading for the sheet (default: client and dates)",
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": ["from", "to"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The private link to send to the client. Shown only once"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "includes_notes": {
+            "type": "boolean"
+          },
+          "expires_in_days": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": ["url", "from", "to", "includes_notes", "expires_in_days", "note"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Create a timesheet link for a client",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
     }
   ],
   "resources": [
@@ -2608,6 +2801,28 @@
         {
           "name": "week_start",
           "description": "The Monday, YYYY-MM-DD",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "client_timesheet",
+      "title": "Prepare a timesheet for a client",
+      "description": "Build a client's timesheet for a date range, flag gaps, and create a link to send for sign-off after confirmation.",
+      "arguments": [
+        {
+          "name": "client",
+          "description": "Client name",
+          "required": true
+        },
+        {
+          "name": "from",
+          "description": "First day, YYYY-MM-DD",
+          "required": true
+        },
+        {
+          "name": "to",
+          "description": "Last day, YYYY-MM-DD",
           "required": true
         }
       ]

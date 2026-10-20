@@ -84,6 +84,14 @@ Your rates, invoices, other clients, or anyone else's time. Their time becomes p
 
 If you work in an AI assistant all day, this lets you manage your timesheets right from there, without opening UseHourly.
 
+## Things you can say
+
+- "Log 1h30 on Acme / Website for fixing the checkout bug."
+- "What did I log last week? Anything missing?"
+- "Show my timesheet for Acme for last week" (a grid of projects and days, with the weekdays that have nothing logged).
+- "Make a link for Acme's client to sign off last week's timesheet." It asks whether to include your descriptions and how long the link should work, then creates a private page your client can read, print and approve. The link is shown once, so copy it.
+- "Prepare an invoice for Acme for September." It lists the time and the amounts first, and waits for your OK before it makes the invoice.
+
 ## Connect
 
 - **Claude Code:** run \`claude mcp add --transport http usehourly https://usehourly.app/api/mcp\`, then type \`/mcp\`, choose usehourly and approve in your browser.

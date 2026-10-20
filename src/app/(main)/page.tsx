@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ArrowRight, Bot, KeyRound, MessageSquare, Server, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bot, FileText, KeyRound, MessageSquare, Server, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 
 import { LogoMark } from "@/components/logo";
@@ -17,7 +17,7 @@ const JSON_LD = {
   name: "UseHourly",
   url: "https://usehourly.app",
   description:
-    "A free time tracking app for freelancers: quick daily entry, a start/stop timer, a weekly timesheet, invoices and exports.",
+    "A free time tracking app for freelancers that works with your AI assistant: a built-in MCP server lets Claude, ChatGPT, Cursor and others log time, build timesheets and prepare invoices. Also quick daily entry, a timer, invoices and exports.",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -27,14 +27,14 @@ const JSON_LD = {
     "Weekly timesheet and month calendar",
     "Invoices as PDF",
     "Year-end report and Excel export",
-    "MCP server for AI assistants such as Claude",
+    "MCP server: your AI assistant can log time, build timesheets for clients and prepare invoices",
   ],
 };
 
 export const metadata: Metadata = {
-  title: "UseHourly: free time tracking app for freelancers",
+  title: "UseHourly: free time tracking for freelancers, built for AI assistants",
   description:
-    "UseHourly is a free time tracking app for freelancers. Log your day in seconds, use a start/stop timer, and get a weekly timesheet, invoices and a year-end report. No cost, no ads.",
+    "UseHourly is a free time tracker with a built-in MCP server. Connect Claude, ChatGPT or Cursor and ask it to log time, build a timesheet for a client and prepare invoices. Or log your day in seconds yourself. No cost, no ads.",
   alternates: { canonical: "/" },
 };
 
@@ -50,9 +50,14 @@ const AI_POINTS = [
     body: "Log 1h30 on a project, move an entry, or get hours per project for the month.",
   },
   {
+    Icon: FileText,
+    title: "Timesheets and invoices, not just entries",
+    body: "Ask for the week as a grid, have gaps pointed out, get a link your client can read and approve, or have an invoice prepared. It asks before it shares, sends or deletes.",
+  },
+  {
     Icon: KeyRound,
     title: "You hold the key",
-    body: "Make an access token on your Account page. Choose read only or read and change, and revoke it any time.",
+    body: "Log in and approve, or make an access token on your Account page. Choose read only or read and change, and revoke it any time.",
   },
   {
     Icon: ShieldCheck,
@@ -215,16 +220,27 @@ export default function LandingPage() {
 
       <main>
         <section className="mx-auto max-w-6xl px-6 pt-10 pb-16 text-center md:pt-20">
-          <h1 className="mx-auto max-w-3xl font-semibold text-4xl tracking-tight md:text-6xl">
-            Log your day in seconds.
+          <p className="mx-auto inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 font-medium text-sm">
+            <Bot className="size-4" aria-hidden />
+            Free, open source, with a built-in MCP server
+          </p>
+          <h1 className="mx-auto mt-5 max-w-3xl font-semibold text-4xl tracking-tight md:text-6xl">
+            Your timesheet, run by your AI assistant.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            UseHourly is a free time tracking app and simple timesheet for freelancers. Type{" "}
-            <strong className="text-foreground">1.5</strong>, <strong className="text-foreground">1:30</strong> or{" "}
-            <strong className="text-foreground">90m</strong>, press Enter, and you&rsquo;re done.
+            Connect Claude, ChatGPT, Cursor or any MCP assistant and say{" "}
+            <strong className="text-foreground">
+              &ldquo;log 3 hours on Acme, then make this week&rsquo;s timesheet for sign-off.&rdquo;
+            </strong>{" "}
+            UseHourly keeps the time, the timesheets and the invoices. Prefer typing? Press{" "}
+            <strong className="text-foreground">1.5</strong> or <strong className="text-foreground">90m</strong> and
+            Enter and you&rsquo;re done.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/auth/v2/register" className={primary}>
+            <a href="#ai-assistants" className={primary}>
+              Connect your assistant
+            </a>
+            <Link href="/auth/v2/register" className={secondary}>
               Create a free account
             </Link>
             <TryDemoButton className={secondary}>Try the demo, no sign-up</TryDemoButton>
@@ -241,6 +257,103 @@ export default function LandingPage() {
               height={1762}
               priority
             />
+          </div>
+        </section>
+
+        <section id="ai-assistants" className="border-t">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2">
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 font-medium text-sm">
+                <Bot className="size-4" aria-hidden />
+                AI first
+              </p>
+              <h2 className="mt-4 font-semibold text-3xl tracking-tight md:text-4xl">
+                Ask your assistant. It&rsquo;s in your timesheet.
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                UseHourly has a built-in server for <strong className="text-foreground">MCP</strong>, the open standard
+                that lets AI assistants such as Claude, ChatGPT and Cursor work with your apps. If you spend your day in
+                an assistant, you can log time, run the timer, build a client&rsquo;s timesheet and prepare an invoice
+                without opening UseHourly at all.
+              </p>
+              <ul className="mt-6 grid gap-4">
+                {AI_POINTS.map(({ Icon, title, body }) => (
+                  <li key={title} className="flex gap-3">
+                    <Icon className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
+                    <div>
+                      <p className="font-semibold">{title}</p>
+                      <p className="text-muted-foreground">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 rounded-xl border bg-card p-4 text-sm">
+                <p className="font-semibold">Connect in a minute</p>
+                <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
+                  <li>
+                    Add this server to your assistant:{" "}
+                    <code className="break-all rounded bg-muted px-1.5 py-0.5 text-foreground">
+                      https://usehourly.app/api/mcp
+                    </code>
+                  </li>
+                  <li>Log in to UseHourly and approve. Choose read only or read and change.</li>
+                  <li>Ask it to log your time or prepare this week&rsquo;s timesheet.</li>
+                </ol>
+                <p className="mt-3 text-muted-foreground">
+                  Claude Code:{" "}
+                  <code className="break-all rounded bg-muted px-1.5 py-0.5 text-foreground">
+                    claude mcp add --transport http usehourly https://usehourly.app/api/mcp
+                  </code>
+                </p>
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link href="/auth/v2/register" className={primary}>
+                  Create a free account
+                </Link>
+                <Link href="/help/ai-assistants" className={secondary}>
+                  Setup guide
+                </Link>
+              </div>
+              <p className="mt-3 text-muted-foreground text-sm">
+                Works with Claude, ChatGPT, Cursor and other MCP-compatible assistants. Free, like the rest of
+                UseHourly.
+              </p>
+            </div>
+
+            <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
+              <McpFlow />
+              <figure className="w-full">
+                <div
+                  className="grid gap-3 rounded-2xl border bg-card p-4 shadow-sm"
+                  role="img"
+                  aria-label="Example conversation: a freelancer asks an AI assistant to log 1 hour 30 minutes on the Acme website project, then to build this week's timesheet for Acme. The assistant shows 12.5 hours, points out that Tuesday has nothing logged, adds 2 hours on request, and creates a private link the client can approve."
+                >
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
+                    Log 1h30 on Acme / Website for fixing the checkout bug.
+                  </div>
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
+                    Done. I logged <strong>1.5 hours</strong> on Acme / Website for today.
+                  </div>
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
+                    Make this week&rsquo;s timesheet for Acme.
+                  </div>
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
+                    Acme, Mon to Sun: <strong>12.5 hours</strong> across 2 projects. Tuesday has nothing logged. Want me
+                    to add something?
+                  </div>
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
+                    Add 2h on Tuesday for support, then make a link for the client.
+                  </div>
+                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
+                    Added. Here&rsquo;s the private link for the sheet (14.5 hours). Your client can read and approve it
+                    without an account.
+                  </div>
+                </div>
+                <figcaption className="mt-3 text-center text-muted-foreground text-xs">
+                  An example conversation. Your assistant&rsquo;s wording will differ.
+                </figcaption>
+              </figure>
+            </div>
           </div>
         </section>
 
@@ -275,76 +388,6 @@ export default function LandingPage() {
             </section>
           ))}
         </div>
-
-        <section id="ai-assistants" className="border-t">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2">
-            <div className="min-w-0">
-              <p className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 font-medium text-sm">
-                <Bot className="size-4" aria-hidden />
-                New: works with your AI assistant
-              </p>
-              <h2 className="mt-4 font-semibold text-3xl tracking-tight md:text-4xl">
-                Tell your assistant. It&rsquo;s logged.
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                UseHourly supports <strong className="text-foreground">MCP</strong>, the open standard that lets AI
-                assistants such as Claude work with your apps. Connect one and you can log time, run the timer and check
-                your week just by asking.
-              </p>
-              <p className="mt-3 text-lg text-muted-foreground">
-                If you work in an AI assistant all day, connect it to UseHourly&rsquo;s MCP server and manage your
-                timesheets right from there.
-              </p>
-              <ul className="mt-6 grid gap-4">
-                {AI_POINTS.map(({ Icon, title, body }) => (
-                  <li key={title} className="flex gap-3">
-                    <Icon className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
-                    <div>
-                      <p className="font-semibold">{title}</p>
-                      <p className="text-muted-foreground">{body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/auth/v2/register" className={primary}>
-                  Create a free account
-                </Link>
-              </div>
-              <p className="mt-3 text-muted-foreground text-sm">
-                Works with Claude and other MCP-compatible assistants. Free, like the rest of UseHourly.
-              </p>
-            </div>
-
-            <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
-              <McpFlow />
-              <figure className="w-full">
-                <div
-                  className="grid gap-3 rounded-2xl border bg-card p-4 shadow-sm"
-                  role="img"
-                  aria-label="Example conversation: a freelancer asks an AI assistant to log 1 hour 30 minutes on the Acme website project, and the assistant confirms it was logged."
-                >
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
-                    Log 1h30 on Acme / Website for fixing the checkout bug.
-                  </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
-                    Done. I logged <strong>1.5 hours</strong> on Acme / Website for today: &ldquo;Fixed the checkout
-                    bug.&rdquo; That brings this week to <strong>12.5 hours</strong>.
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
-                    Great. Start the timer on Support.
-                  </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
-                    Timer started on Acme / Support.
-                  </div>
-                </div>
-                <figcaption className="mt-3 text-center text-muted-foreground text-xs">
-                  An example conversation. Your assistant&rsquo;s wording will differ.
-                </figcaption>
-              </figure>
-            </div>
-          </div>
-        </section>
 
         <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
           <h2 className="text-center font-semibold text-3xl tracking-tight md:text-4xl">
