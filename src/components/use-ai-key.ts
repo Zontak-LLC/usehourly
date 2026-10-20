@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useCurrentUserId } from "@/components/offline-guard";
-import { AI_KEY_EVENT, clearAiKey, readAiKey, saveAiKey } from "@/lib/ai-key";
+import { AI_KEY_EVENT, type AiSetup, clearAiKey, readAiSetup, saveAiSetup } from "@/lib/ai-key";
 
 const storage = () => {
   try {
@@ -13,11 +13,11 @@ const storage = () => {
   }
 };
 
-/** The signed-in account's saved Anthropic key (this browser only), kept in step across tabs and components. */
-export function useAiKey() {
+/** The signed-in account's saved AI setup (service, key and model; this browser only), kept in step across tabs and components. */
+export function useAiSetup() {
   const userId = useCurrentUserId();
-  const [key, setKey] = useState<string | null>(null);
-  const refresh = useCallback(() => setKey(readAiKey(storage(), userId)), [userId]);
+  const [setup, setSetup] = useState<AiSetup | null>(null);
+  const refresh = useCallback(() => setSetup(readAiSetup(storage(), userId)), [userId]);
   useEffect(() => {
     refresh();
     window.addEventListener("storage", refresh);
@@ -28,8 +28,8 @@ export function useAiKey() {
     };
   }, [refresh]);
   const save = useCallback(
-    (value: string) => {
-      const ok = userId ? saveAiKey(storage(), userId, value) : false;
+    (value: AiSetup) => {
+      const ok = userId ? saveAiSetup(storage(), userId, value) : false;
       window.dispatchEvent(new Event(AI_KEY_EVENT));
       return ok;
     },
@@ -39,5 +39,5 @@ export function useAiKey() {
     clearAiKey(storage());
     window.dispatchEvent(new Event(AI_KEY_EVENT));
   }, []);
-  return { key, save, clear };
+  return { setup, save, clear };
 }

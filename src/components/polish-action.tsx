@@ -6,7 +6,7 @@ import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { useAiKey } from "@/components/use-ai-key";
+import { useAiSetup } from "@/components/use-ai-key";
 import { AiError, polishNote } from "@/lib/ai-polish";
 
 /**
@@ -23,22 +23,22 @@ export function PolishAction({
   onUse: (text: string) => void;
   context: { project: string; client: string };
 }) {
-  const { key } = useAiKey();
+  const { setup } = useAiSetup();
   const [busy, setBusy] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   useEffect(() => () => abort.current?.abort(), []);
-  if (!key) return null;
+  if (!setup) return null;
 
   async function run() {
-    if (!key) return;
+    if (!setup) return;
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
     setBusy(true);
     setSuggestion(null);
     try {
-      setSuggestion(await polishNote(fetch.bind(globalThis), key, { note: value, ...context }, controller.signal));
+      setSuggestion(await polishNote(fetch.bind(globalThis), setup, { note: value, ...context }, controller.signal));
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       toast.error(err instanceof AiError ? err.message : "Couldn't polish that. Try again.");

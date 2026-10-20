@@ -33,8 +33,8 @@ export default function PrivacyPage() {
         </li>
         <li>
           If you choose to polish descriptions with your own AI key, the key stays in your browser and is never sent to
-          us. Your browser sends that one description and the project and client names to Anthropic, under your own
-          account with them, and only when you press Polish.
+          us. Your browser sends that one description and the project and client names to the service you chose
+          (Anthropic or OpenAI), under your own account with them, and only when you press Polish.
         </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>
