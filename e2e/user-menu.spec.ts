@@ -31,10 +31,25 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
     await expect(side.getByText(user.email)).toHaveCount(0);
   });
 
+  await test.step("a picture can be added straight from the menu, and removed from it", async () => {
+    await trigger.click();
+    await expect(page.getByRole("menuitem", { name: "Add a picture" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page
+      .getByLabel("Choose your picture file")
+      .setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PIXEL });
+    await expect(page.getByText("Picture saved.")).toBeVisible();
+    await expect(trigger.locator("img")).toBeVisible();
+    await trigger.click();
+    await expect(page.getByRole("menuitem", { name: "Change your picture" })).toBeVisible();
+    await page.getByRole("menuitem", { name: "Remove your picture" }).click();
+    await expect(page.getByText("Picture removed.")).toBeVisible();
+    await expect(trigger.locator("img")).toHaveCount(0);
+  });
+
   await test.step("the menu names the person and links to Account", async () => {
     await trigger.click();
     await expect(page.getByRole("menu").getByText(user.email)).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: "Add a picture" })).toBeVisible(); // a way in to uploading your own
     await page.getByRole("menuitem", { name: "Account", exact: true }).click();
     await expect(page).toHaveURL(/dashboard\/account/);
   });
