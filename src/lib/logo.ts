@@ -33,3 +33,41 @@ export async function fileToLogo(
     URL.revokeObjectURL(url);
   }
 }
+
+const AVATAR_SIZE = 128;
+
+/** A square picture for the top bar: the middle of the image, 128x128, as a small JPEG (a few KB). */
+export async function fileToAvatar(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file (PNG or JPEG).");
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("Couldn't read that image."));
+      i.src = url;
+    });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const canvas = document.createElement("canvas");
+    canvas.width = AVATAR_SIZE;
+    canvas.height = AVATAR_SIZE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Couldn't process that image in this browser.");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE);
+    ctx.drawImage(
+      img,
+      (img.naturalWidth - side) / 2,
+      (img.naturalHeight - side) / 2,
+      side,
+      side,
+      0,
+      0,
+      AVATAR_SIZE,
+      AVATAR_SIZE,
+    );
+    return canvas.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}

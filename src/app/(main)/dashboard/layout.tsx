@@ -27,6 +27,7 @@ import { LayoutControls } from "./_components/header/layout-controls";
 import { MobileNav } from "./_components/header/mobile-nav";
 import { SideNav } from "./_components/header/side-nav";
 import { ThemeSwitcher } from "./_components/header/theme-switcher";
+import { UserMenu } from "./_components/header/user-menu";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   const session = await auth();
@@ -45,6 +46,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           email_verified_at: true,
           is_demo: true,
           currency: true,
+          avatar: true,
         },
       })
     : null;
@@ -53,7 +55,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   if (session?.user?.id && !sessionStillValid(session.user.tv, dbUser?.token_version)) {
     redirect("/api/session-expired");
   }
-  const user = { name: dbUser?.name ?? "You", email: dbUser?.email ?? "" };
+  const user = { name: dbUser?.name ?? "You", email: dbUser?.email ?? "", avatar: dbUser?.avatar ?? null };
   const savedTheme = readSavedTheme(dbUser ?? {});
   const isAdmin = isAdminUser(dbUser);
   return (
@@ -66,7 +68,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             } as React.CSSProperties
           }
         >
-          <SideNav user={user} isAdmin={isAdmin} />
+          <SideNav isAdmin={isAdmin} />
           <SidebarInset
             className={cn(
               "[html[data-content-layout=centered]_&>*]:mx-auto",
@@ -103,10 +105,11 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                   <GuideButton />
                   <LayoutControls />
                   <ThemeSwitcher />
+                  <UserMenu user={user} />
                 </div>
               </div>
             </header>
-            <MobileNav user={user} isAdmin={isAdmin} />
+            <MobileNav isAdmin={isAdmin} />
             {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
             <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-2 has-data-[content-padding=false]:p-0 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:has-data-[content-padding=false]:p-0">
               <OfflineSync />

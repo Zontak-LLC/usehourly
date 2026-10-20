@@ -33,6 +33,8 @@ model AuthUser {
   theme_preset  String?
   currency      String    @default("USD") // ISO 4217, one per account (lib/money.ts); locked once an invoice exists
   theme_mode    String?
+  // The person's picture for the top bar: a small png/jpeg data URL (resized in the browser), null = initials.
+  avatar        String?
   timezone      String?   // IANA name from the browser, e.g. America/New_York; says when "Friday afternoon" is
   reminder_sent_week String? // the week (e.g. 2026-W42) the last reminder went out, so each week sends once
   // The GitHub account this one signs in with ("Sign in with GitHub"); null for password-only accounts.
