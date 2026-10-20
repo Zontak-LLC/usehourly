@@ -46,11 +46,7 @@ test("when the server refuses a new entry, it disappears and what was typed come
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([
-        {
-          error: {
-            json: { message: "Refused on purpose.", code: -32600, data: { code: "BAD_REQUEST", httpStatus: 400 } },
-          },
-        },
+        { error: { message: "Refused on purpose.", code: -32600, data: { code: "BAD_REQUEST", httpStatus: 400 } } },
       ]),
     }),
   );
