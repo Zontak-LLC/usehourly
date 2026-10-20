@@ -323,32 +323,19 @@ export default function LandingPage() {
             <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
               <McpFlow />
               <figure className="w-full">
-                <div
-                  className="grid gap-3 rounded-2xl border bg-card p-4 shadow-sm"
-                  role="img"
+                {/* A looping, silent clip of the conversation (scripts/social/render.mjs makes it); the words are below for everyone else. */}
+                <video
+                  className="w-full rounded-2xl border bg-card shadow-sm"
+                  poster="/landing/assistant-demo-poster.webp"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
                   aria-label="Example conversation: a freelancer asks an AI assistant to log 1 hour 30 minutes on the Acme website project, then to build this week's timesheet for Acme. The assistant shows 12.5 hours, points out that Tuesday has nothing logged, adds 2 hours on request, and creates a private link the client can approve."
                 >
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
-                    Log 1h30 on Acme / Website for fixing the checkout bug.
-                  </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
-                    Done. I logged <strong>1.5 hours</strong> on Acme / Website for today.
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
-                    Make this week&rsquo;s timesheet for Acme.
-                  </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
-                    Acme, Mon to Sun: <strong>12.5 hours</strong> across 2 projects. Tuesday has nothing logged. Want me
-                    to add something?
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-primary-foreground text-sm">
-                    Add 2h on Tuesday for support, then make a link for the client.
-                  </div>
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-muted px-4 py-3 text-sm">
-                    Added. Here&rsquo;s the private link for the sheet (14.5 hours). Your client can read and approve it
-                    without an account.
-                  </div>
-                </div>
+                  <source src="/landing/assistant-demo.mp4" type="video/mp4" />
+                </video>
                 <figcaption className="mt-3 text-center text-muted-foreground text-xs">
                   An example conversation. Your assistant&rsquo;s wording will differ.
                 </figcaption>

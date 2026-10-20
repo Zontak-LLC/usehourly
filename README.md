@@ -6,6 +6,8 @@
 
 [![smithery badge](https://smithery.ai/badge/dzontak/usehourly)](https://smithery.ai/servers/dzontak/usehourly)
 
+https://github.com/Zontak-LLC/usehourly/raw/main/public/landing/assistant-demo.mp4
+
 ![The weekly timesheet](public/landing/week-v2.webp)
 
 ## What it does

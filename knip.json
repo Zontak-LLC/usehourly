@@ -1,6 +1,14 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["e2e/*.ts", "scripts/*.mjs", "bridge/index.mjs", "open-next.config.ts", "custom-worker.ts", "public/sw.js"],
+  "entry": [
+    "e2e/*.ts",
+    "scripts/*.mjs",
+    "scripts/social/render.mjs",
+    "bridge/index.mjs",
+    "open-next.config.ts",
+    "custom-worker.ts",
+    "public/sw.js"
+  ],
   "ignore": ["src/components/ui/**"],
   "ignoreDependencies": ["postcss-load-config", "jscpd"]
 }

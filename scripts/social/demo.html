@@ -1,0 +1,50 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>UseHourly assistant demo</title>
+<style>
+  :root { --ink:#111; --muted:#5b5b5f; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; }
+  body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: var(--ink);
+         background: #f7f7f8; display: grid; grid-template-columns: 470px 1fr; gap: 56px; align-items: center; padding: 0 72px; }
+  .brand { display:flex; align-items:center; gap:14px; font-weight:700; font-size:30px; letter-spacing:-0.02em; }
+  .brand svg { width: 44px; height: 44px; }
+  h1 { margin-top: 32px; font-size: 52px; line-height: 1.06; letter-spacing: -0.04em; font-weight: 800; }
+  p.sub { margin-top: 18px; font-size: 22px; line-height: 1.35; color: var(--muted); }
+  .chat { background:#fff; border:1px solid #e3e3e6; border-radius: 22px; padding: 26px; box-shadow: 0 30px 60px -30px rgba(0,0,0,.25);
+          display:grid; gap: 14px; align-content:start; height: 640px; overflow: hidden; gap: 12px; }
+  .b { max-width: 88%; padding: 11px 16px; border-radius: 20px; font-size: 18px; line-height: 1.3; opacity: 0; transform: translateY(10px);
+       animation: in .45s ease forwards; }
+  .me { margin-left:auto; background:#111; color:#fff; border-bottom-right-radius: 6px; }
+  .ai { background:#f1f1f3; border-bottom-left-radius: 6px; }
+  .link { display:inline-block; margin-top:6px; padding:4px 10px; border-radius:8px; background:#fff; border:1px solid #d9d9dd; font-size:16px; }
+  .dots { display:inline-flex; gap:5px; } .dots i { width:8px; height:8px; border-radius:50%; background:#9a9aa0; animation: pulse 1s infinite; }
+  .dots i:nth-child(2){animation-delay:.15s} .dots i:nth-child(3){animation-delay:.3s}
+  @keyframes in { to { opacity: 1; transform: none; } }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @keyframes out { to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: -12px; } }
+  .typing { max-height: 60px; overflow: hidden; animation: in .3s ease forwards, out .2s ease forwards; }
+  /* timeline (seconds): message n appears at --t; typing dots show just before each assistant reply */
+  .t1{animation-delay:.6s} .t2{animation-delay:2.4s} .t3{animation-delay:4.4s} .t4{animation-delay:6.4s}
+  .t5{animation-delay:8.6s} .t6{animation-delay:10.6s}
+  .d1{animation-delay:1.3s, 2.3s} .d2{animation-delay:5.1s, 6.3s} .d3{animation-delay:9.3s, 10.5s}
+  .end { animation: in 0s 14s forwards; }
+</style>
+<body>
+  <div>
+    <div class="brand"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#111"/><circle cx="32" cy="33" r="19" fill="none" stroke="#fff" stroke-width="4.5"/><path d="M32 6v7" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/><path d="M25.5 26v14M38.5 26v14" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/><path d="M25.5 33h13" stroke="#f5a524" stroke-width="4.5" stroke-linecap="round"/></svg>UseHourly</div>
+    <h1>Your timesheet, run by your AI assistant.</h1>
+    <p class="sub">Connect Claude, ChatGPT or Cursor over MCP. usehourly.app</p>
+  </div>
+  <div class="chat" aria-label="Example conversation with an AI assistant using UseHourly">
+    <div class="b me t1">Log 1h30 on Acme / Website for the checkout bug.</div>
+    <div class="b ai typing d1"><span class="dots"><i></i><i></i><i></i></span></div>
+    <div class="b ai t2">Done. I logged <b>1.5 hours</b> on Acme / Website for today.</div>
+    <div class="b me t3">Make this week's timesheet for Acme.</div>
+    <div class="b ai typing d2"><span class="dots"><i></i><i></i><i></i></span></div>
+    <div class="b ai t4">Acme, Mon to Sun: <b>12.5 hours</b>. Tuesday has nothing logged. Want me to add something?</div>
+    <div class="b me t5">Add 2h on Tuesday for support, then make a link for the client.</div>
+    <div class="b ai typing d3"><span class="dots"><i></i><i></i><i></i></span></div>
+    <div class="b ai t6">Added. Here's the private link for the sheet (14.5 hours). Your client can read and approve it without an account.<br><span class="link">usehourly.app/timesheet/…</span></div>
+  </div>
+</body>
