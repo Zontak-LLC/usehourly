@@ -65,6 +65,7 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     email: z.string(),
     member_since: z.string().describe("ISO time the account was made"),
     token_access: z.enum(["read", "write"]).describe("What this token may do"),
+    currency: z.string().describe("ISO 4217 code every amount is in, e.g. USD or EUR"),
     business: obj({
       name: z.string().nullable(),
       ein: z.string().nullable(),

@@ -1,6 +1,7 @@
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
-import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
+import type { InvoiceSnapshot } from "@/lib/invoice";
+import { formatMoneyForPdf as formatMoney } from "@/lib/money";
 import { shortNote } from "@/lib/notes";
 import { describeRounding } from "@/lib/rounding";
 
@@ -176,7 +177,12 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
       seen.add(n.toLowerCase());
       notes.push(n);
     }
-    body.push([l.project, formatDecimalHours(l.minutes), `${formatMoney(l.rateCents)}/h`, formatMoney(l.amountCents)]);
+    body.push([
+      l.project,
+      formatDecimalHours(l.minutes),
+      `${formatMoney(l.rateCents, s.currency)}/h`,
+      formatMoney(l.amountCents, s.currency),
+    ]);
     kinds.push({ kind: "project", last: notes.length === 0 });
     notes.forEach((n, k) => {
       body.push([n, "", "", ""]);
@@ -189,7 +195,7 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
     margin: { left: MARGIN, right: MARGIN },
     head: [["Description", "Hours", "Rate", "Amount"]],
     body,
-    foot: [["Total", formatDecimalHours(s.totalMinutes), "", formatMoney(s.totalCents)]],
+    foot: [["Total", formatDecimalHours(s.totalMinutes), "", formatMoney(s.totalCents, s.currency)]],
     theme: "plain",
     styles: tableStyles,
     headStyles: head,

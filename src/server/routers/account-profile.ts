@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { isDemoSession } from "@/lib/demo";
+import { CURRENCY_CODES } from "@/lib/money";
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
 import { isThemeMode, isThemePreset } from "@/lib/theme-sync";
@@ -30,6 +31,29 @@ export const profileProcedures = {
       return { saved: true };
     }),
 
+  /**
+   * The account's currency (issue #71, step 1). It changes how amounts are written, never the numbers (nothing is
+   * converted), and it is locked once the account has an invoice: an invoice keeps its currency, and totals, the year
+   * summary and the accounting export never mix two. Choosing the current one again is always fine.
+   */
+  setCurrency: protectedProcedure
+    .input(z.object({ currency: z.enum(CURRENCY_CODES) }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { currency: true } });
+      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
+      if (user.currency === input.currency) return { currency: user.currency };
+      const invoices = await ctx.prisma.invoice.count({ where: { user_id: ctx.userId } });
+      if (invoices > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Your currency is fixed once you have made an invoice, so your invoices and totals stay in one currency.",
+        });
+      }
+      await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { currency: input.currency } });
+      return { currency: input.currency };
+    }),
+
   me: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.authUser.findUnique({
       where: { id: ctx.userId },
@@ -47,13 +71,17 @@ export const profileProcedures = {
         invoice_branding: true,
         is_demo: true,
         weekly_reminder: true,
+        currency: true,
         password_hash: true,
       },
     });
     if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
     // Accounts made with GitHub have no password until they choose one through "Forgot password".
+    // The currency can be changed until the first invoice exists (see setCurrency).
+    const currency_locked = (await ctx.prisma.invoice.count({ where: { user_id: ctx.userId } })) > 0;
     return {
       ...user,
+      currency_locked,
       has_password: user.password_hash !== NO_PASSWORD_HASH && !user.is_demo,
       password_hash: undefined,
     };

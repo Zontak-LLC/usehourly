@@ -38,6 +38,7 @@ export function ReportView() {
       await downloadAnnualXlsx(data, {
         name: me.data?.business_name ?? me.data?.name ?? null,
         ein: me.data?.ein ?? null,
+        currency: me.data?.currency,
       });
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");

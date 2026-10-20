@@ -138,8 +138,8 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
               <tr key={l.projectId} className="border-b last:border-0">
                 <td className="px-3 py-2 font-medium">{l.project}</td>
                 <td className="px-3 py-2 text-right">{formatDecimalHours(l.minutes)}</td>
-                <td className="px-3 py-2 text-right">{formatMoney(l.rateCents)}/h</td>
-                <td className="px-3 py-2 text-right">{formatMoney(l.amountCents)}</td>
+                <td className="px-3 py-2 text-right">{formatMoney(l.rateCents, s.currency)}/h</td>
+                <td className="px-3 py-2 text-right">{formatMoney(l.amountCents, s.currency)}</td>
               </tr>
             ))}
           </tbody>
@@ -148,7 +148,7 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
               <td className="px-3 py-3">Total</td>
               <td className="px-3 py-3 text-right">{formatDecimalHours(s.totalMinutes)}</td>
               <td />
-              <td className="px-3 py-3 text-right text-base">{formatMoney(s.totalCents)}</td>
+              <td className="px-3 py-3 text-right text-base">{formatMoney(s.totalCents, s.currency)}</td>
             </tr>
           </tfoot>
         </table>

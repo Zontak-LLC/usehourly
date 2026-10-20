@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 
+import { useMoney } from "@/components/currency-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimalHours } from "@/lib/duration";
-import { type buildInvoice, formatMoney } from "@/lib/invoice";
+import type { buildInvoice } from "@/lib/invoice";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
 
 export type InvoiceTotals = ReturnType<typeof buildInvoice>;
@@ -22,6 +23,7 @@ export function InvoicePreviewCard({
   totals: InvoiceTotals;
   clientName: string | undefined;
 }) {
+  const money = useMoney();
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <h2 className="border-b bg-band-2 px-4 py-3 font-semibold text-base">Preview</h2>
@@ -44,11 +46,9 @@ export function InvoicePreviewCard({
               <tr key={l.projectId} className="border-b">
                 <td className="px-4 py-2">{l.project}</td>
                 <td className="px-4 py-2 text-right font-mono text-muted-foreground tabular-nums">
-                  {formatDecimalHours(l.minutes)} h × {formatMoney(l.rateCents)}
+                  {formatDecimalHours(l.minutes)} h × {money(l.rateCents)}
                 </td>
-                <td className="px-4 py-2 text-right font-medium font-mono tabular-nums">
-                  {formatMoney(l.amountCents)}
-                </td>
+                <td className="px-4 py-2 text-right font-medium font-mono tabular-nums">{money(l.amountCents)}</td>
               </tr>
             ))}
             <tr className="bg-muted/40 font-semibold">
@@ -56,7 +56,7 @@ export function InvoicePreviewCard({
               <td className="px-4 py-3 text-right font-mono tabular-nums">
                 {formatDecimalHours(totals.totalMinutes)} h
               </td>
-              <td className="px-4 py-3 text-right font-mono tabular-nums">{formatMoney(totals.totalCents)}</td>
+              <td className="px-4 py-3 text-right font-mono tabular-nums">{money(totals.totalCents)}</td>
             </tr>
           </tbody>
         </table>
@@ -74,6 +74,7 @@ export function InvoiceNotices({
   rounding: Rounding;
   nothingToBill: boolean;
 }) {
+  const money = useMoney();
   return (
     <>
       {isRounding(rounding) && totals.lines.length > 0 && (
@@ -91,7 +92,7 @@ export function InvoiceNotices({
         <ul className="flex flex-col gap-1 text-muted-foreground text-sm">
           {totals.zeroRateProjects.length > 0 && (
             <li>
-              ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at $0.00. Set it under{" "}
+              ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at {money(0)}. Set it under{" "}
               <Link href="/dashboard/clients" className="underline">
                 Clients & Projects
               </Link>
@@ -107,7 +108,8 @@ export function InvoiceNotices({
 
       {nothingToBill && (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-          Every project in this period has a $0.00 rate, so this invoice would be $0.00. Set the hourly rates under{" "}
+          Every project in this period has a {money(0)} rate, so this invoice would be {money(0)}. Set the hourly rates
+          under{" "}
           <Link href="/dashboard/clients" className="font-medium underline">
             Clients & Projects
           </Link>{" "}

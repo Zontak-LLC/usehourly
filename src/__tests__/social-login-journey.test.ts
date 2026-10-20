@@ -335,7 +335,10 @@ describe("accounts that have no password", () => {
       is_demo: false,
       weekly_reminder: false,
     };
-    const prisma = { authUser: { findUnique: vi.fn(async () => ({ ...row, password_hash: NO_PASSWORD_HASH })) } };
+    const prisma = {
+      authUser: { findUnique: vi.fn(async () => ({ ...row, password_hash: NO_PASSWORD_HASH })) },
+      invoice: { count: vi.fn(async () => 0) }, // me() also asks whether the currency is locked
+    };
     const caller = createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
     const me = await caller.account.me();
     expect(me.has_password).toBe(false);

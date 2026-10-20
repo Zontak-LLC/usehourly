@@ -1,5 +1,7 @@
 import type { AnnualReport } from "@/lib/annual-report";
 
+import { excelMoneyFormat } from "./money";
+
 const MONTH_NAMES = [
   "January",
   "February",
@@ -18,7 +20,7 @@ const MONTH_NAMES = [
 const hours = (m: number) => Math.round((m / 60) * 100) / 100;
 const dollars = (c: number) => c / 100;
 
-export type ReportBusiness = { name: string | null; ein: string | null };
+export type ReportBusiness = { name: string | null; ein: string | null; currency?: string };
 
 /**
  * Build the annual-report workbook. exceljs is imported on demand so it stays out of the main
@@ -30,7 +32,7 @@ export async function buildAnnualWorkbook(report: AnnualReport, business: Report
   const wb = new ExcelJS.Workbook();
   wb.creator = "UseHourly";
   wb.created = new Date();
-  const money = '"$"#,##0.00';
+  const money = excelMoneyFormat(business.currency);
 
   // ── Summary ───────────────────────────────────────────────────────
   const sum = wb.addWorksheet("Summary");
