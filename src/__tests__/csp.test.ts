@@ -24,7 +24,7 @@ describe("content security policy", () => {
     expect(prod).toContain("base-uri 'self'");
     expect(prod).toContain("form-action 'self'");
     expect(directive(prod, "connect-src")).toBe(
-      "connect-src 'self' https://api.anthropic.com https://cloudflareinsights.com",
+      "connect-src 'self' https://api.anthropic.com https://api.openai.com https://cloudflareinsights.com",
     );
     expect(prod).toContain("upgrade-insecure-requests");
     expect(buildCsp("n", false)).not.toContain("upgrade-insecure-requests");

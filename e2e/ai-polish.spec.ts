@@ -1,6 +1,7 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
 const KEY = "sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789";
+const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz0123456789_-ABC";
 const reply = (text: string) => ({
   status: 200,
   contentType: "application/json",
@@ -8,14 +9,18 @@ const reply = (text: string) => ({
 });
 
 /** Issue #98: with the person's own Anthropic key, a Polish button tidies a description; nothing changes until Use this. */
-test("polish a description with your own AI key: save the key, polish, use or discard, remove the key", async ({
+test("polish a description with your own AI key (Anthropic or OpenAI): save the key, choose a model, polish, use or discard, remove the key", async ({
   page,
 }) => {
   await startFreshAccount(page, "Fernhill");
-  const calls: { headers: Record<string, string>; body: { messages: { content: string }[] } }[] = [];
+  const calls: { headers: Record<string, string>; body: { model: string; messages: { content: string }[] } }[] = [];
   await page.route("https://api.anthropic.com/**", async (route) => {
     const req = route.request();
     calls.push({ headers: req.headers(), body: req.postDataJSON() });
+    if (req.postDataJSON().model === "nonexistent-model") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: "{}" }); // (a 404 would log a browser error and fail the run)
+      return;
+    }
     const note = String(req.postDataJSON().messages[0].content);
     await route.fulfill(
       note.includes("Note: fixed bug")
@@ -26,6 +31,20 @@ test("polish a description with your own AI key: save the key, polish, use or di
     );
   });
 
+  const openaiCalls: {
+    headers: Record<string, string>;
+    body: { model: string; messages: { role: string; content: string }[] };
+  }[] = [];
+  await page.route("https://api.openai.com/**", async (route) => {
+    const req = route.request();
+    openaiCalls.push({ headers: req.headers(), body: req.postDataJSON() });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ choices: [{ message: { role: "assistant", content: "Polished by ChatGPT." } }] }),
+    });
+  });
+
   await test.step("without a key there is no Polish button", async () => {
     await page.getByLabel("Description").fill("homepage layout, fixed nav bug on mobile");
     await expect(page.getByRole("button", { name: /Polish/ })).toHaveCount(0);
@@ -33,20 +52,20 @@ test("polish a description with your own AI key: save the key, polish, use or di
 
   await test.step("a key that is not an Anthropic key is refused before any call", async () => {
     await page.goto("/dashboard/account");
-    await page.getByLabel("Anthropic API key").fill("hunter2");
+    await page.getByLabel("API key", { exact: true }).fill("hunter2");
     await page.getByRole("button", { name: "Check and save" }).click();
     await expect(page.getByText(/doesn't look like an Anthropic API key/)).toBeVisible();
     expect(calls).toHaveLength(0);
   });
 
   await test.step("a good key is checked with one call, then saved on this device", async () => {
-    await page.getByLabel("Anthropic API key").fill(KEY);
+    await page.getByLabel("API key", { exact: true }).fill(KEY);
     await page.getByRole("button", { name: "Check and save" }).click();
     await expect(page.getByText(/Key saved on this device/)).toBeVisible();
     expect(calls).toHaveLength(1);
     expect(calls[0].headers["x-api-key"]).toBe(KEY);
-    await expect(page.getByText(/A key is saved on this device/)).toBeVisible();
-    await expect(page.getByLabel("Anthropic API key")).toHaveCount(0); // the key is not shown again
+    await expect(page.getByText(/Using Anthropic \(Claude\) with a key saved on this device/)).toBeVisible();
+    await expect(page.getByLabel("API key", { exact: true })).toHaveCount(0); // the key is not shown again
   });
 
   await test.step("Polish shows a suggestion; Discard leaves the note as it was", async () => {
@@ -83,21 +102,67 @@ test("polish a description with your own AI key: save the key, polish, use or di
       .getByText(/Reworked the homepage layout/)
       .first()
       .hover();
-    await page
-      .getByRole("listitem")
-      .filter({ hasText: "Reworked the homepage layout" })
-      .getByRole("button", { name: "Edit", exact: true })
-      .click({ force: true });
+    const row = page.getByRole("listitem").filter({ hasText: "Reworked the homepage layout" });
+    await expect(row).not.toHaveAttribute("aria-busy", "true"); // a row the server has not confirmed yet cannot be edited
+    await row.getByRole("button", { name: "Edit", exact: true }).click({ force: true });
     // one in the add form and one in the entry's own edit form
     await expect(
       page.getByRole("region", { name: "Today's timesheet" }).getByRole("button", { name: /Polish/ }),
     ).toBeVisible();
   });
 
+  await test.step("the model can be changed without entering the key again", async () => {
+    await page.goto("/dashboard/account");
+    await expect(page.getByLabel("Model", { exact: true })).toHaveValue("claude-haiku-5-5"); // the cheapest is the default
+    const before = calls.length;
+    await page.getByLabel("Model", { exact: true }).selectOption("claude-sonnet-5-5");
+    await expect(page.getByText(/Checked: Polish now uses claude-sonnet-5-5/)).toBeVisible(); // proven with one call first
+    expect(calls.length).toBe(before + 1);
+    expect(calls.at(-1)?.body.model).toBe("claude-sonnet-5-5");
+    await page.goto("/dashboard/today");
+    await page.getByLabel("Description").fill("sonnet please");
+    await page.getByRole("button", { name: /Polish/ }).click();
+    await expect(page.getByTestId("polish-suggestion")).toBeVisible();
+    expect(calls.at(-1)?.body.model).toBe("claude-sonnet-5-5");
+  });
+
+  await test.step("a model that fails the check is refused, and the old one stays", async () => {
+    await page.goto("/dashboard/account");
+    await page.getByLabel("Model", { exact: true }).selectOption({ label: "Other model…" });
+    await page.getByLabel("Model name").fill("nonexistent-model");
+    await page.getByLabel("Model name").press("Enter");
+    await expect(page.getByText(/Anthropic refused that key/).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel("Model", { exact: true })).toHaveValue("claude-sonnet-5-5"); // unchanged
+  });
+
+  await test.step("an OpenAI key works the same way, on its own default model", async () => {
+    await page.goto("/dashboard/account");
+    await page.getByRole("button", { name: "Remove key" }).click();
+    await page.getByLabel("AI service").selectOption("openai");
+    await expect(page.getByLabel("Model", { exact: true })).toHaveValue("gpt-4.1-nano");
+    await page.getByLabel("API key", { exact: true }).fill(KEY); // an Anthropic key under OpenAI is refused first
+    await page.getByRole("button", { name: "Check and save" }).click();
+    await expect(page.getByText(/doesn't look like an OpenAI API key/)).toBeVisible();
+    await page.getByLabel("API key", { exact: true }).fill(OPENAI_KEY);
+    await page.getByRole("button", { name: "Check and save" }).click();
+    await expect(page.getByText(/Key saved on this device/)).toBeVisible();
+    await expect(page.getByText(/Using OpenAI \(ChatGPT\)/)).toBeVisible();
+    await page.goto("/dashboard/today");
+    await page.getByLabel("Description").fill("chatgpt please");
+    await page.getByRole("button", { name: /Polish/ }).click();
+    await expect(page.getByTestId("polish-suggestion")).toHaveText("Polished by ChatGPT.");
+    const sent = openaiCalls.at(-1);
+    expect(sent?.headers.authorization).toBe(`Bearer ${OPENAI_KEY}`);
+    expect(sent?.body.model).toBe("gpt-4.1-nano");
+    const user = sent?.body.messages.find((m) => m.role === "user")?.content;
+    expect(user).toBe("Client: Fernhill\nProject: General\nNote: chatgpt please");
+  });
+
   await test.step("removing the key takes Polish away again", async () => {
     await page.goto("/dashboard/account");
     await page.getByRole("button", { name: "Remove key" }).click();
-    await expect(page.getByLabel("Anthropic API key")).toBeVisible();
+    await expect(page.getByLabel("API key", { exact: true })).toBeVisible();
     await page.goto("/dashboard/today");
     await page.getByLabel("Description").fill("anything");
     await expect(page.getByRole("button", { name: /Polish/ })).toHaveCount(0);

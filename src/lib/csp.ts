@@ -16,8 +16,8 @@ export function buildCsp(nonce: string, isProd: boolean): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    // api.anthropic.com: "Polish" calls Anthropic straight from the browser with the person's own key (issue #98).
-    `connect-src 'self' https://api.anthropic.com${isProd ? " https://cloudflareinsights.com" : " ws: wss:"}`,
+    // api.anthropic.com and api.openai.com: "Polish" calls the AI service straight from the browser with the person's own key (issue #98).
+    `connect-src 'self' https://api.anthropic.com https://api.openai.com${isProd ? " https://cloudflareinsights.com" : " ws: wss:"}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",

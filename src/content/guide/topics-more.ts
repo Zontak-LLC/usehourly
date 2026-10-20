@@ -100,20 +100,39 @@ Tokens can expire. A token stops working when you change your password or choose
     slug: "ai-polish",
     title: "Polishing descriptions with your own AI key",
     group: "team",
-    summary: "Turn a rough note into a clear line with your own Anthropic key, and what is sent.",
-    keywords: ["ai", "anthropic", "claude", "polish", "rewrite", "description", "note", "key", "api key", "privacy"],
-    body: `If you have an **Anthropic API key**, UseHourly can tidy the descriptions you type. Type a rough note, press **Polish**, and you see a suggestion. Nothing changes until you press **Use this**.
+    summary: "Turn a rough note into a clear line with your own Anthropic or OpenAI key, and what is sent.",
+    keywords: [
+      "ai",
+      "anthropic",
+      "claude",
+      "openai",
+      "chatgpt",
+      "gpt",
+      "polish",
+      "rewrite",
+      "description",
+      "note",
+      "key",
+      "api key",
+      "model",
+      "privacy",
+    ],
+    body: `If you have an **Anthropic (Claude)** or **OpenAI (ChatGPT)** API key, UseHourly can tidy the descriptions you type. Type a rough note, press **Polish**, and you see a suggestion. Nothing changes until you press **Use this**.
 
 ## Set it up
 
-1. Get an API key from the Anthropic console (console.anthropic.com). It is billed separately from a Claude chat plan: **Claude Pro or Max cannot be used**. A polish costs a fraction of a cent, so a few dollars of credit goes a long way.
-2. Open **Account, AI assistants, Polish descriptions with your own AI key**, paste the key and choose **Check and save**.
+1. Get an API key from [Anthropic](https://console.anthropic.com) or [OpenAI](https://platform.openai.com). It is billed separately from a chat plan: **Claude Pro, Claude Max and ChatGPT Plus cannot be used**. A polish costs a fraction of a cent, so a few dollars of credit goes a long way.
+2. Open **Account, AI assistants, Polish descriptions with your own AI key**. Choose the **AI service**, check the **model**, paste the key and choose **Check and save**.
 
 The **Polish** button then appears under description boxes: when you add time and when you edit an entry.
 
+## Choosing a model
+
+The first model in each list is the cheapest, and it is plenty for tidying a sentence. A bigger one is slower and costs more without making this job better. You can change the model later on the same Account card without entering the key again, or choose **Other model…** and type a model name as the service lists it. A key is checked with one tiny call when you save it, and a new model is checked the same way before it is used, so you see "Checked" or a plain reason it failed.
+
 ## What is sent, and where the key lives
 
-- The key stays **in this browser only**. UseHourly never sees it: your browser talks to Anthropic directly. It is forgotten when you sign out, and you can remove it any time on the same Account card. On another device, save it again.
+- The key stays **in this browser only**. UseHourly never sees it: your browser talks to the service directly. It is forgotten when you sign out, and you can remove it any time on the same Account card. On another device, save it again.
 - Only the **description** and the **project and client names** are sent. Never rates, amounts, invoices or other entries.
 - The polished line is a suggestion in your own words, kept short and told to add nothing. Read it before you use it.
 
