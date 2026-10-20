@@ -33,6 +33,7 @@ async function world() {
     invoiceLink: [{ user_id: "u1" }, { user_id: "u2" }],
     invoiceEmail: [{ user_id: "u1" }, { user_id: "u2" }],
     nonBillableDay: [{ user_id: "u1" }, { user_id: "u2" }],
+    entryChange: [{ user_id: "u1" }, { user_id: "u2" }],
     // u1 owns a team, u2 owns a team, and u1 is a member of u2's team: deleting u1 removes the first and the last.
     teamMember: [{ owner_id: "u1" }, { owner_id: "u2" }, { owner_id: "u2", member_id: "u1" }],
   };
@@ -56,6 +57,7 @@ async function world() {
     oauthCode: model("oauthCode"),
     timesheetShare: model("timesheetShare"),
     invoiceLink: model("invoiceLink"),
+    entryChange: model("entryChange"),
     invoiceEmail: model("invoiceEmail"),
     nonBillableDay: model("nonBillableDay"),
     teamMember: {
@@ -103,6 +105,7 @@ describe("deleting your own account", () => {
       "timesheetShare",
       "invoiceLink",
       "invoiceEmail",
+      "entryChange",
     ]) {
       expect(w.count(t, "u1"), t).toBe(0);
     }

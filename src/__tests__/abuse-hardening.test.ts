@@ -238,15 +238,25 @@ describe("old throttle counters and expired links are swept", () => {
       oauthCode: { deleteMany: vi.fn(async () => ({ count: 4 })) },
       timesheetShare: { deleteMany: vi.fn(async () => ({ count: 2 })) },
       invoiceLink: { deleteMany: vi.fn(async () => ({ count: 5 })) },
+      entryChange: { deleteMany: vi.fn(async () => ({ count: 9 })) },
     };
     const quiet = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const done = await runHousekeeping(prisma as never, now);
     quiet.mockRestore();
-    expect(done).toEqual({ rateLimits: 11, emailTokens: 0, oauthCodes: 4, timesheetShares: 2, invoiceLinks: 5 });
+    expect(done).toEqual({
+      rateLimits: 11,
+      emailTokens: 0,
+      oauthCodes: 4,
+      timesheetShares: 2,
+      invoiceLinks: 5,
+      entryChanges: 9,
+    });
     expect(prisma.rateLimit.deleteMany).toHaveBeenCalledWith({ where: { reset_at: { lt: now - 3600 } } });
     expect(prisma.emailToken.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 7 * 86400 } } });
     expect(prisma.oauthCode.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 86400 } } });
     expect(prisma.timesheetShare.deleteMany).toHaveBeenCalledWith({ where: { expires_at: { lt: now - 90 * 86400 } } });
+    // The sync log is kept for 30 days: a device away longer starts again from a full copy.
+    expect(prisma.entryChange.deleteMany).toHaveBeenCalledWith({ where: { at: { lt: now - 30 * 86400 } } });
   });
 });
 

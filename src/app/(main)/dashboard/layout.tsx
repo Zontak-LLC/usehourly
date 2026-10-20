@@ -8,6 +8,7 @@ import { cn } from "cn";
 import { CurrencyProvider } from "@/components/currency-provider";
 import { DemoBanner } from "@/components/demo-banner";
 import { GuideKeeper } from "@/components/guide-keeper";
+import { LocalFirst } from "@/components/local-first";
 import { LogoMark } from "@/components/logo";
 import { OfflineGuard } from "@/components/offline-guard";
 import { OfflineSync } from "@/components/offline-sync";
@@ -60,6 +61,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   const isAdmin = isAdminUser(dbUser);
   return (
     <OfflineGuard userId={session.user.id}>
+      <LocalFirst userId={session.user.id} isDemo={Boolean(dbUser?.is_demo)} />
       <CurrencyProvider currency={dbUser?.currency ?? "USD"}>
         <SidebarProvider
           style={
