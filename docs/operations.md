@@ -38,7 +38,7 @@ Events you may see (all `level: "error"`), and what they mean:
 |---|---|---|
 | `trpc_internal_error` | A tRPC call failed with an unexpected error (`path`, `requestId`) | Find the `requestId`, read the `error`; reproduce with the path's scenario test |
 | `health_check_failed` | The database did not answer | Check Cloudflare status; D1 dashboard |
-| `invoice_email_failed`, `approval_email_failed`, `verification_email_failed`, `password_reset_email_failed` | The email service refused or was unreachable; the user action itself still worked | Check Resend status and the API key; users can retry |
+| `invoice_email_failed`, `report_email_failed`, `approval_email_failed`, `verification_email_failed`, `password_reset_email_failed` | The email service refused or was unreachable; the user action itself still worked | Check Resend status and the API key; users can retry |
 | `weekly_reminder_failed`, `invoice_reminder_failed` | One reminder in the hourly cron failed; it is retried the next hour where that is safe | Look for a pattern (one bad address vs all) |
 | `housekeeping_sweep_failed` | The hourly clean-up of spent rate limits, email links and OAuth codes failed | Harmless for a while; fix before tables grow |
 | `invoice_logo_cleanup_failed` | A leftover logo row after deleting an invoice | Harmless |

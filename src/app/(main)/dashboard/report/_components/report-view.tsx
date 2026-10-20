@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { ClientCurrency } from "@/components/currency-provider";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadAnnualXlsx } from "@/lib/export-annual-xlsx";
 import { isCurrency } from "@/lib/money";
+import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { ReportBody } from "./report-body";
@@ -34,6 +35,7 @@ export function ReportView() {
     { enabled: year !== null },
   );
   const [exporting, setExporting] = useState(false);
+  const emailIt = trpc.report.email.useMutation();
 
   if (year === null) return <Skeleton className="mx-auto h-96 w-full max-w-5xl" />;
   const data = report.data;
@@ -51,6 +53,16 @@ export function ReportView() {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function sendByEmail() {
+    if (!data) return;
+    try {
+      const { to } = await emailIt.mutateAsync({ year: year ?? data.year, currency: data.currency });
+      toast.success(`Sent to ${to}.`);
+    } catch (err) {
+      toastError(err, "Couldn't send the email.");
     }
   }
 
@@ -110,6 +122,14 @@ export function ReportView() {
             disabled={!data || exporting}
           >
             <Download /> {exporting ? "Exporting…" : "Export Excel"}
+          </Button>
+          <Button
+            variant="outline"
+            className="h-10 w-full sm:order-first sm:w-auto"
+            onClick={sendByEmail}
+            disabled={!data || emailIt.isPending}
+          >
+            <Mail /> {emailIt.isPending ? "Sending…" : "Email me this"}
           </Button>
         </div>
       }

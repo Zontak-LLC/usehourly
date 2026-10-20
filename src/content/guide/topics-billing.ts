@@ -74,7 +74,7 @@ Your own records are **never** changed: entries, the week and month totals, and 
     title: "Marking paid and the year summary",
     group: "billing",
     summary: 'What "earned", "invoiced" and "received" mean on the Year summary.',
-    keywords: ["tax", "income", "cash", "outstanding", "accountant", "taxes", "paid date", "quarter"],
+    keywords: ["tax", "income", "cash", "outstanding", "accountant", "taxes", "paid date", "quarter", "email", "send"],
     body: `On the Invoices list, use the **$** button to mark an invoice paid and pick the **date the money arrived**. The same button edits or clears it. The date matters for cash-basis taxes, so use the real one.
 
 The **Year summary** shows, for the year you pick:
@@ -84,7 +84,7 @@ The **Year summary** shows, for the year you pick:
 - **Received**: invoices **by the date they were paid**, including ones issued in an earlier year.
 - **Outstanding**: invoices still unpaid at the end of the year.
 
-There are tables by quarter, month, client and project, and **Export Excel** downloads it all. It is a summary of your own records, not tax advice: check it against your bank deposits before filing.`,
+There are tables by quarter, month, client and project, and **Export Excel** downloads it all. **Email me this** sends the figures to your own email address (once it is confirmed on Account), for example to forward to your accountant. It only ever goes to you, and up to five times a day. It is a summary of your own records, not tax advice: check it against your bank deposits before filing.`,
   },
   {
     slug: "emailing-invoices",
