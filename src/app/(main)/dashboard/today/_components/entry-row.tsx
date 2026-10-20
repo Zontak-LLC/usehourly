@@ -11,7 +11,9 @@ import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { formatDuration, parseDuration } from "@/lib/duration";
+import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -48,6 +50,9 @@ export function EntryRow({
   const utils = trpc.useUtils();
   const logos = useProjectLogos();
   const update = trpc.entry.update.useMutation();
+  const optimistic = useOptimisticEntries();
+  // An entry shown before the server has confirmed it cannot be changed yet (it has no real id to change).
+  const unconfirmed = isPendingId(entry.id);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditingState] = useState(initialEditing);
   const setEditing = (on: boolean) => {
@@ -68,11 +73,21 @@ export function EntryRow({
   async function save() {
     const minutes = parseDuration(duration);
     if (minutes === null || minutes < 1) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    // Show the change and close the form at once; the server's answer confirms it, or the form opens again.
+    const project = projectWithClient(clients.data, projectId);
+    const undo = await optimistic.patch(entry.id, {
+      minutes,
+      note,
+      project_id: projectId,
+      ...(project ? { project } : {}),
+    });
+    setEditing(false);
     try {
       await update.mutateAsync({ id: entry.id, minutes, note, projectId });
       await refresh();
-      setEditing(false);
     } catch (err) {
+      undo();
+      setEditing(true);
       toastError(err, "Couldn't save changes.");
     }
   }
@@ -81,12 +96,15 @@ export function EntryRow({
   async function moveTo(newProjectId: string) {
     if (newProjectId === entry.project_id) return;
     const name = clients.data?.flatMap((c) => c.projects).find((p) => p.id === newProjectId)?.name;
+    const project = projectWithClient(clients.data, newProjectId);
+    const undo = await optimistic.patch(entry.id, { project_id: newProjectId, ...(project ? { project } : {}) });
     try {
       await update.mutateAsync({ id: entry.id, projectId: newProjectId });
       setProjectId(newProjectId); // keep the edit form's copy from reverting this on its next save
       await refresh();
       toast.success(name ? `Moved to ${name}.` : "Entry moved.");
     } catch (err) {
+      undo();
       toastError(err, "Couldn't move that entry.");
     }
   }
@@ -103,11 +121,12 @@ export function EntryRow({
 
   return (
     <li
-      className={
+      aria-busy={unconfirmed || undefined}
+      className={`${
         bare
           ? "overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10"
           : "overflow-hidden rounded-xl border bg-card"
-      }
+      } ${unconfirmed ? "opacity-70" : ""}`}
     >
       {/* Header: which project this entry is for, and its controls, always visible. */}
       <header
@@ -126,7 +145,7 @@ export function EntryRow({
               <select
                 value={entry.project_id}
                 onChange={(e) => moveTo(e.target.value)}
-                disabled={update.isPending || !clients.data}
+                disabled={update.isPending || !clients.data || unconfirmed}
                 aria-label="Move to another project"
                 title="Move to another project"
                 className="peer absolute inset-0 size-full cursor-pointer opacity-0"
@@ -153,7 +172,9 @@ export function EntryRow({
           )}
         </div>
         <div className="flex shrink-0 gap-1">
-          {!editing && <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning} onMoved={refresh} />}
+          {!editing && (
+            <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning || unconfirmed} onMoved={refresh} />
+          )}
           {/* The pencil opens the edit form and, while it is open, closes it again (and says so to a screen reader). */}
           <Button
             size="icon"
@@ -162,12 +183,18 @@ export function EntryRow({
             aria-label="Edit"
             aria-expanded={editing}
             title={editing ? "Close the edit form" : "Edit"}
-            disabled={isRunning}
+            disabled={isRunning || unconfirmed}
           >
             <Pencil />
           </Button>
           {!editing && (
-            <Button size="icon" variant="outline" onClick={() => setConfirmingDelete(true)} aria-label="Delete">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setConfirmingDelete(true)}
+              aria-label="Delete"
+              disabled={unconfirmed}
+            >
               <Trash2 />
             </Button>
           )}
@@ -252,7 +279,7 @@ export function EntryRow({
           <button
             type="button"
             onClick={() => setEditing(true)}
-            disabled={isRunning}
+            disabled={isRunning || unconfirmed}
             title={isRunning ? "Stop the timer to edit" : "Click to edit"}
             className="shrink-0 rounded px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
           >

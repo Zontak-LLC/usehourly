@@ -104,6 +104,18 @@ check `/api/health` and a sign-in, then deploy `main` again and record the time 
    everyone out and invalidates one-click email links, which is the correct outcome.
 5. Write down what happened and the fix in the issue tracker.
 
+## Why is a page slow?
+D1 charges a network round trip for every query, so look at how many queries a page runs one after another, not at how
+big they are.
+1. `PRISMA_QUERY_LOG=1 npm run dev` prints a `QRY <ms> <sql>` line for every query (local only; never set it on the
+   Worker). Load the page with an account that has a few thousand entries and count the lines.
+2. In the browser's network tab a page should make ONE request to `/api/trpc/...` when it opens (`e2e/request-batches.spec.ts`
+   checks this). A second request means a component asked for something late.
+3. `npx wrangler d1 execute DB --local --command "EXPLAIN QUERY PLAN <sql>"` shows whether an index is used; the sums
+   should say COVERING INDEX.
+4. In production, Smart Placement runs the Worker next to the database; the Cloudflare dashboard's D1 metrics show query
+   duration and rows read.
+
 ## Dependency audit policy
 
 CI runs `npm run audit:prod` (`npm audit --omit=dev --audit-level=high`) weekly and on pull requests. It must pass.

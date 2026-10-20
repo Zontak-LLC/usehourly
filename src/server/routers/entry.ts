@@ -55,16 +55,34 @@ export const entryRouter = router({
    * carries `non_billable`: true when its day is marked non-billable (exports, reports and invoices skip those).
    */
   list: protectedProcedure.input(rangeSchema).query(async ({ ctx, input }) => {
-    const [rows, days] = await Promise.all([
+    // Four independent reads started together (one round trip, not a chain): the entries, the non-billable days and
+    // the account's projects with their clients. Letting Prisma join them itself would run entries, then projects,
+    // then clients, one after another, and D1 charges a round trip for each. The projects are always the caller's own.
+    const [rows, days, projects] = await Promise.all([
       ctx.prisma.timeEntry.findMany({
         where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
-        // `author` is the team member who typed the entry (null for the owner's own).
-        include: { ...withProject, author: { select: { name: true } } },
         orderBy: [{ date: "desc" }, { created_at: "desc" }],
       }),
       nonBillableDates(ctx.prisma, ctx.userId, input),
+      ctx.prisma.project.findMany({
+        where: { user_id: ctx.userId },
+        omit: { logo: true },
+        include: { client: { omit: { logo: true } } },
+      }),
     ]);
-    return rows.map((e) => ({ ...e, non_billable: days.has(e.date) }));
+    const byId = new Map(projects.map((p) => [p.id, p]));
+    // `author` is the team member who typed the entry (null for the owner's own): looked up only when there is one.
+    const authorIds = [...new Set(rows.flatMap((e) => (e.author_id ? [e.author_id] : [])))];
+    const authors = authorIds.length
+      ? await ctx.prisma.authUser.findMany({ where: { id: { in: authorIds } }, select: { id: true, name: true } })
+      : [];
+    const authorName = new Map(authors.map((a) => [a.id, a.name]));
+    return rows.flatMap((e) => {
+      const project = byId.get(e.project_id);
+      if (!project) return []; // cannot happen (an entry's project is deleted with it); never show a half-built row
+      const author = e.author_id ? { name: authorName.get(e.author_id) ?? null } : null;
+      return [{ ...e, project, author, non_billable: days.has(e.date) }];
+    });
   }),
 
   /** The dates in [from, to] the account has marked non-billable, oldest first. */

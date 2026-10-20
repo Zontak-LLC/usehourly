@@ -13,7 +13,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: { staleTime: 15_000, retry: 1 },
+          // A minute: switching between pages (the tabs, the swipe) shows what was just loaded at once instead of asking
+          // the server again for the same lists. Anything this person changes is refreshed immediately by its mutation.
+          queries: { staleTime: 60_000, retry: 1 },
           // Without a connection an action should fail at once with a clear message, not wait silently and run later.
           mutations: { networkMode: "always" },
         },

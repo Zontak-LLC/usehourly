@@ -10,17 +10,23 @@ export const QUERY_CACHE_KEY = "hourly:queryCache";
 export const OWNER_KEY = "hourly:cacheOwner";
 const VERSION = 1;
 
-/** Only these queries are kept. Anything big or private (logos, the account, invoices, a running timer) is not. */
+/**
+ * Only these queries are kept: the lists and totals each page opens with, so a returning visit (or a visit with no
+ * connection) shows its last data at once while fresh data loads. Anything big or private (logos, the account, one
+ * invoice's full copy, a running timer) is not.
+ */
 export const PERSISTED_QUERIES = [
   "entry.list",
   "entry.nonBillableDays",
   "clients.list",
   "project.totals",
   "project.budgets",
+  "invoice.list",
+  "report.annual",
 ] as const;
 
-export const MAX_QUERIES = 15;
-export const MAX_BYTES = 1_000_000;
+export const MAX_QUERIES = 40;
+export const MAX_BYTES = 1_500_000;
 /** A copy older than this is not shown: it would mislead more than help. */
 export const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 

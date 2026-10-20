@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -36,6 +37,7 @@ export function MovePopover({
   onMoved: () => void | Promise<void>;
 }) {
   const update = trpc.entry.update.useMutation();
+  const optimistic = useOptimisticEntries();
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState(date);
 
@@ -51,12 +53,15 @@ export function MovePopover({
   async function move(to: string) {
     if (!DATE_RE.test(to)) return toast.error("Pick a valid date.");
     if (to === date) return setOpen(false);
+    // The entry leaves (or changes day in) the lists on screen at once; the server's answer confirms or undoes it.
+    const undo = await optimistic.patch(entryId, { date: to });
+    setOpen(false);
     try {
       await update.mutateAsync({ id: entryId, date: to });
       await onMoved();
       toast.success(`Moved to ${longDate.format(fromISODate(to))}.`);
-      setOpen(false);
     } catch (err) {
+      undo();
       toastError(err, "Couldn't move that entry.");
     }
   }

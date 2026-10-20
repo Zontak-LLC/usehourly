@@ -135,7 +135,10 @@ model TimeEntry {
   project Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@index([author_id])
-  @@index([user_id, date])
+  // Both cover the per-project sums (totals, budgets), so they are answered from the index alone, without reading any
+  // entry row: all time (by project) and inside a date range (by date). The date one also serves every date-range read.
+  @@index([user_id, date, project_id, minutes])
+  @@index([user_id, project_id, date, minutes])
   @@index([user_id, started_at])
   // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
   // account. Prisma cannot express a partial index, so it lives only in the SQL.

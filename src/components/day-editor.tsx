@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import type { inferRouterOutputs } from "@trpc/server";
+
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { QuickAdd } from "@/app/(main)/dashboard/today/_components/quick-add";
 import { EntryList } from "@/components/entry-list";
@@ -14,6 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
+import type { AppRouter } from "@/server/routers/_app";
+
+type DayEntries = inferRouterOutputs<AppRouter>["entry"]["list"];
 
 const longDate = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -31,6 +36,7 @@ export function DayEditorPanel({
   date,
   projectFilter = "",
   inPage = false,
+  weekSeed,
 }: {
   date: string;
   projectFilter?: string;
@@ -40,8 +46,23 @@ export function DayEditorPanel({
    * In the Month dialog (false) the dialog's own title carries the date and the non-billable button.
    */
   inPage?: boolean;
+  /**
+   * What the Week page has already loaded for the whole week (its entries and marked days, and when they arrived): this
+   * day is taken from it instead of being asked for again, which would be a second copy of the same rows.
+   */
+  weekSeed?: {
+    entries: DayEntries;
+    days: string[];
+    updatedAt: number;
+    daysUpdatedAt: number;
+  };
 }) {
-  const entries = trpc.entry.list.useQuery({ from: date, to: date });
+  const entries = trpc.entry.list.useQuery(
+    { from: date, to: date },
+    weekSeed
+      ? { initialData: weekSeed.entries.filter((e) => e.date === date), initialDataUpdatedAt: weekSeed.updatedAt }
+      : undefined,
+  );
   const running = trpc.entry.running.useQuery();
   const clients = trpc.clients.list.useQuery();
 
@@ -73,7 +94,11 @@ export function DayEditorPanel({
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {total > 0 && <HoursChip label="Total">{formatDuration(total)}</HoursChip>}
-                <NonBillableToggle date={date} labelled />
+                <NonBillableToggle
+                  date={date}
+                  labelled
+                  seed={weekSeed && { days: weekSeed.days, updatedAt: weekSeed.daysUpdatedAt }}
+                />
               </div>
             </div>
           }

@@ -27,8 +27,19 @@ export async function getPrisma(): Promise<PrismaClient> {
     import("@opennextjs/cloudflare"),
   ]);
   const { env } = await getCloudflareContext({ async: true });
-  // check-rules-ok: the Cloudflare env type does not declare the D1 binding name
-  const built = new PrismaClient({ adapter: new PrismaD1((env as unknown as { DB: D1Database }).DB) });
+  // PRISMA_QUERY_LOG=1 (local diagnosis only, never set in production) writes one line per query with its duration.
+  const logQueries = process.env.PRISMA_QUERY_LOG === "1";
+  const built = new PrismaClient({
+    // check-rules-ok: the Cloudflare env type does not declare the D1 binding name
+    adapter: new PrismaD1((env as unknown as { DB: D1Database }).DB),
+    ...(logQueries ? { log: [{ emit: "event" as const, level: "query" as const }] } : {}),
+  });
+  if (logQueries) {
+    // biome-ignore lint/suspicious/noExplicitAny: the event type is only declared for a client built with log options
+    (built as any).$on("query", (e: { query: string; duration: number }) =>
+      console.error(`QRY ${e.duration}ms ${e.query.replace(/\s+/g, " ").slice(0, 140)}`),
+    );
+  }
   // Prisma sets itself up on the first query and keeps that work in a promise of its own. Do it here, in
   // the request that made the client, so no later request waits on a promise another request started.
   try {
