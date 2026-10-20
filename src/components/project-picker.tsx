@@ -101,7 +101,7 @@ export function ProjectPicker({
               aria-checked={on}
               variant="outline"
               onClick={() => choose(p.id)}
-              className={`h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:max-w-full max-sm:min-w-0 max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12 ${on ? "border-foreground/60 bg-card ring-1 ring-foreground/30" : ""}`}
+              className={`h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:max-w-full max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12 ${on ? "border-foreground/60 bg-card ring-1 ring-foreground/30" : ""}`}
             >
               <span
                 aria-hidden="true"
