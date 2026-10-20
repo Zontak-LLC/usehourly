@@ -135,7 +135,7 @@ function PersonCard({ person }: { person: Person }) {
         )}
         {live &&
           (confirming ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-card ring-1 ring-foreground/10 p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-card p-3 text-sm ring-1 ring-foreground/10">
               Remove {person.label}?
               <Button type="button" onClick={takeOut} disabled={remove.isPending}>
                 Yes, remove

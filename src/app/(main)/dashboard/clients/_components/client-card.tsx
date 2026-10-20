@@ -133,7 +133,7 @@ export function ClientCard({
             ),
           )}
           {adding ? (
-            <li className="flex flex-col gap-2 rounded-lg bg-card ring-1 ring-foreground/10 p-3 sm:col-span-2">
+            <li className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10 sm:col-span-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">

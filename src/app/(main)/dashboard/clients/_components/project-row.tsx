@@ -106,7 +106,7 @@ export function ProjectEditCard({
 }) {
   const currency = useCurrency();
   return (
-    <li className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 px-4 py-3 sm:col-span-2">
+    <li className="overflow-hidden rounded-lg bg-card px-4 py-3 ring-1 ring-foreground/10 sm:col-span-2">
       <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
         <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
         <select

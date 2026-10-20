@@ -142,7 +142,7 @@ function TeamLog({ team }: { team: Team }) {
           {mine.data?.map((e) => (
             <li
               key={e.id}
-              className="flex items-center justify-between gap-2 rounded-lg bg-card ring-1 ring-foreground/10 px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-2 text-sm ring-1 ring-foreground/10"
             >
               <span className="min-w-0">
                 <span className="font-medium">{formatDuration(e.minutes)}</span> · {e.client} · {e.project} · {e.date}
