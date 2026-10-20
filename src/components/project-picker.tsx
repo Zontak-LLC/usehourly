@@ -10,14 +10,18 @@ import { Input } from "@/components/ui/input";
 import { ALL_AS_CHIPS, chipProjects, type PickerProject, pushRecentId, searchProjects } from "@/lib/project-picker";
 
 const RECENT_KEY = "hourly:recentProjects";
-/** One row, never wrapped, when every project is a chip; full class names so Tailwind keeps them. */
+/**
+ * From `sm` up, one row of equal columns when every project is a chip. On a phone the chips keep their natural width
+ * and wrap onto a second row, so a name is never cut short (only one longer than the whole row is). Full class names
+ * so Tailwind keeps them.
+ */
 const CHIP_COLUMNS: Record<number, string> = {
-  2: "grid grid-cols-2",
-  3: "grid grid-cols-3",
-  4: "grid grid-cols-4",
+  2: "sm:grid sm:grid-cols-2",
+  3: "sm:grid sm:grid-cols-3",
+  4: "sm:grid sm:grid-cols-4",
 };
 /** With more projects: the three chips share the row equally and the search button takes only what it needs. */
-const MANY_COLUMNS = "grid grid-cols-[repeat(3,minmax(0,1fr))_auto]";
+const MANY_COLUMNS = "sm:grid sm:grid-cols-[repeat(3,minmax(0,1fr))_auto]";
 
 const many_ = (projects: PickerProject[]) => projects.length > ALL_AS_CHIPS;
 
@@ -97,7 +101,7 @@ export function ProjectPicker({
               aria-checked={on}
               variant="outline"
               onClick={() => choose(p.id)}
-              className={`h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12 ${on ? "border-foreground/60 bg-card ring-1 ring-foreground/30" : ""}`}
+              className={`h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:max-w-full max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12 ${on ? "border-foreground/60 bg-card ring-1 ring-foreground/30" : ""}`}
             >
               <span
                 aria-hidden="true"
