@@ -14,6 +14,7 @@ import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+import { totalsByCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
@@ -64,8 +65,7 @@ export function InvoicesView() {
   const { filtering } = filters;
   // Nothing to search or filter until the first invoice exists.
   const showFilters = invoices.isLoading || filtering || filters.sort !== "newest" || (invoices.data?.length ?? 0) > 0;
-  const total = (invoices.data ?? []).reduce((a, i) => a + i.total_cents, 0);
-  const unpaid = (invoices.data ?? []).filter((i) => !i.paid_date).reduce((a, i) => a + i.total_cents, 0);
+  const groups = totalsByCurrency(invoices.data ?? []);
 
   const handlers = {
     busyId,
@@ -91,9 +91,7 @@ export function InvoicesView() {
     >
       {showFilters && (
         <>
-          {(invoices.data?.length ?? 0) > 0 && (
-            <InvoiceTotals count={invoices.data?.length ?? 0} total={total} unpaid={unpaid} filtering={filtering} />
-          )}
+          {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
           <div className="rounded-xl border bg-card p-3 sm:p-4">
             <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
           </div>

@@ -6,7 +6,7 @@ import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { summarizeInvoice } from "@/lib/invoice-summary";
 import { logError } from "@/lib/log";
-import { currencyOrDefault, formatMoney } from "@/lib/money";
+import { effectiveCurrency, formatMoney } from "@/lib/money";
 import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
 
@@ -31,6 +31,7 @@ const summary = {
   period_to: true,
   total_minutes: true,
   total_cents: true,
+  currency: true,
   notes: true,
   summary: true,
   created_at: true,
@@ -208,7 +209,7 @@ export const invoiceRouter = router({
       };
       const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId } });
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
-      const currency = currencyOrDefault(user.currency);
+      const currency = effectiveCurrency(client.currency, user.currency); // the client's own, else the account's
       const totals = buildInvoice(entries, rounding);
       if (totals.lines.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "No billable time for this client in that period." });
@@ -278,6 +279,7 @@ export const invoiceRouter = router({
           period_to: input.to,
           total_minutes: totals.totalMinutes,
           total_cents: totals.totalCents,
+          currency,
           notes: input.notes,
           snapshot: snapshotText,
           search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),

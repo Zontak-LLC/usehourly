@@ -6,6 +6,7 @@ import { Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
+import { ClientCurrency } from "@/components/currency-provider";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
@@ -201,7 +202,11 @@ export function QuickAdd({
             </div>
           )}
 
-          {budget && <BudgetBar status={budget} />}
+          {budget && (
+            <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
+              <BudgetBar status={budget} />
+            </ClientCurrency>
+          )}
 
           <div className="flex flex-col gap-2">
             <Input

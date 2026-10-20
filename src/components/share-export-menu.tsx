@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ChevronDown, CircleHelp, Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAccountCurrency } from "@/components/currency-provider";
 import { RangeExport } from "@/components/range-export";
 import { ShareTimesheet } from "@/components/share-timesheet";
 import { Button } from "@/components/ui/button";
@@ -43,12 +44,13 @@ export function ShareExportMenu({
   /** Layout classes for the button (the toolbars make it fill the row on a phone). */
   className?: string;
 }) {
+  const accountCurrency = useAccountCurrency();
   const [panel, setPanel] = useState<"range" | "share" | null>(null);
 
   async function download() {
     if (!entries) return;
     try {
-      await downloadTimesheetXlsx({ entries, days, filename });
+      await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     }

@@ -1,5 +1,6 @@
 import { addDays } from "@/lib/dates";
 import { buildTimesheetWorkbook } from "@/lib/export-xlsx";
+import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 import type { SheetEntry } from "@/lib/timesheet";
 import { dateRange } from "@/lib/timesheet";
 
@@ -26,6 +27,7 @@ export type InvoiceRow = {
   period_to: string;
   total_minutes: number;
   total_cents: number;
+  currency: string;
 };
 
 export type ExportFile = { path: string; content: string | Uint8Array };
@@ -67,9 +69,9 @@ export function fileNameFor(name: string, taken: Set<string>): string {
   return candidate;
 }
 
-export function entriesCsv(entries: SheetEntry[]): string {
+export function entriesCsv(entries: SheetEntry[], accountCurrency?: string): string {
   const rows: (string | number | null)[][] = [
-    ["Date", "Client", "Project", "Note", "Hours", "Minutes", "Billable", "Rate ($/h)", "Amount ($)"],
+    ["Date", "Client", "Project", "Note", "Hours", "Minutes", "Billable", "Rate (per hour)", "Amount", "Currency"],
   ];
   const sorted = [...entries].sort(
     (a, b) =>
@@ -90,6 +92,7 @@ export function entriesCsv(entries: SheetEntry[]): string {
       e.project.billable ? "Yes" : "No",
       rate || null,
       amount,
+      effectiveCurrency(e.project.client.currency, accountCurrency),
     ]);
   }
   return toCsv(rows);
@@ -97,7 +100,7 @@ export function entriesCsv(entries: SheetEntry[]): string {
 
 export function invoicesCsv(invoices: InvoiceRow[]): string {
   const rows: (string | number | null)[][] = [
-    ["Number", "Client", "Issued", "Due", "Paid", "Period from", "Period to", "Hours", "Total ($)", "Status"],
+    ["Number", "Client", "Issued", "Due", "Paid", "Period from", "Period to", "Hours", "Total", "Currency", "Status"],
   ];
   for (const i of invoices) {
     rows.push([
@@ -110,6 +113,7 @@ export function invoicesCsv(invoices: InvoiceRow[]): string {
       i.period_to,
       hours(i.total_minutes),
       i.total_cents / 100,
+      currencyOrDefault(i.currency),
       i.paid_date ? "Paid" : "Unpaid",
     ]);
   }
@@ -122,8 +126,8 @@ function span(entries: SheetEntry[]): string[] {
   return dates.length ? dateRange(dates[0], dates[dates.length - 1], addDays) : [];
 }
 
-async function workbookBytes(entries: SheetEntry[]): Promise<Uint8Array> {
-  const wb = await buildTimesheetWorkbook({ entries, days: span(entries), range: true });
+async function workbookBytes(entries: SheetEntry[], accountCurrency?: string): Promise<Uint8Array> {
+  const wb = await buildTimesheetWorkbook({ entries, days: span(entries), range: true, accountCurrency });
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }
 
@@ -142,6 +146,8 @@ export async function planExport(opts: {
   entries: SheetEntry[];
   invoices: InvoiceRow[];
   today: string;
+  /** The account's currency, for clients that do not have one of their own. */
+  accountCurrency?: string;
 }): Promise<ExportPlan> {
   // Entries on days marked non-billable are left out of every file, and the README says how many.
   const entries = opts.entries.filter((e) => e.minutes > 0 && !e.non_billable);
@@ -155,14 +161,17 @@ export async function planExport(opts: {
   }
   const clients = [...byClient.keys()].sort((a, b) => a.localeCompare(b));
 
-  files.push({ path: "all-time.xlsx", content: await workbookBytes(entries) });
-  files.push({ path: "all-entries.csv", content: entriesCsv(entries) });
+  files.push({ path: "all-time.xlsx", content: await workbookBytes(entries, opts.accountCurrency) });
+  files.push({ path: "all-entries.csv", content: entriesCsv(entries, opts.accountCurrency) });
   if (opts.invoices.length) files.push({ path: "invoices.csv", content: invoicesCsv(opts.invoices) });
 
   const taken = new Set<string>();
   for (const client of clients) {
     const name = fileNameFor(client, taken);
-    files.push({ path: `by-client/${name}.xlsx`, content: await workbookBytes(byClient.get(client) ?? []) });
+    files.push({
+      path: `by-client/${name}.xlsx`,
+      content: await workbookBytes(byClient.get(client) ?? [], opts.accountCurrency),
+    });
   }
 
   const totalMinutes = entries.reduce((a, e) => a + e.minutes, 0);
@@ -186,7 +195,7 @@ export async function planExport(opts: {
       : []),
     ...(clients.length ? ["  by-client/         One workbook per client, with the same two sheets."] : []),
     "",
-    "Hours are decimal (1.5 = one hour thirty). Amounts use each project's hourly rate.",
+    "Hours are decimal (1.5 = one hour thirty). Amounts use each project's hourly rate, in the currency named on the row.",
     ...(leftOut
       ? [
           `${leftOut} ${leftOut === 1 ? "entry" : "entries"} on days marked non-billable ${leftOut === 1 ? "was" : "were"} left out.`,

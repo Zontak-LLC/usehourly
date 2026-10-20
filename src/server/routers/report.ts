@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { buildAnnualReport } from "@/lib/annual-report";
+import { CURRENCY_CODES, type CurrencyCode, effectiveCurrency } from "@/lib/money";
 
 import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
@@ -8,11 +9,18 @@ import { protectedProcedure, router } from "../trpc";
 export const reportRouter = router({
   /** One calendar year of the caller's time and invoices, summarized for tax time. */
   annual: protectedProcedure
-    .input(z.object({ year: z.number().int().min(2000).max(2100) }))
+    .input(
+      z.object({
+        year: z.number().int().min(2000).max(2100),
+        // Which currency to summarize. Clients can be billed in different currencies and amounts in different
+        // currencies are never added together, so one currency is shown at a time (default: the account's).
+        currency: z.enum(CURRENCY_CODES).optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const from = `${input.year}-01-01`;
       const to = `${input.year}-12-31`;
-      const [allEntries, skipDays, projects, invoices] = await Promise.all([
+      const [allEntries, skipDays, projects, invoices, user] = await Promise.all([
         ctx.prisma.timeEntry.findMany({
           where: { user_id: ctx.userId, date: { gte: from, lte: to } },
           select: { date: true, minutes: true, project_id: true },
@@ -22,7 +30,7 @@ export const reportRouter = router({
         ctx.prisma.project.findMany({
           where: { user_id: ctx.userId },
           omit: { logo: true },
-          include: { client: { select: { id: true, name: true } } },
+          include: { client: { select: { id: true, name: true, currency: true } } },
         }),
         ctx.prisma.invoice.findMany({
           // Issued in the year (accrual) or paid in it (cash), whichever year it was issued.
@@ -37,25 +45,45 @@ export const reportRouter = router({
             paid_date: true,
             total_cents: true,
             total_minutes: true,
+            currency: true,
           },
         }),
+        ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { currency: true } }),
       ]);
+      const accountCurrency = effectiveCurrency(null, user?.currency);
+      const projectCurrency = new Map(
+        projects.map((p) => [p.id, effectiveCurrency(p.client.currency, accountCurrency)]),
+      );
+
+      // The currencies this year actually has money in: those of projects with time, and of invoices.
+      const used = new Set<CurrencyCode>();
+      for (const e of allEntries) {
+        const c = projectCurrency.get(e.project_id);
+        if (c) used.add(c);
+      }
+      for (const i of invoices) used.add(effectiveCurrency(i.currency, accountCurrency));
+      const currencies = CURRENCY_CODES.filter((c) => used.has(c));
+      const currency: CurrencyCode =
+        input.currency ?? (used.size === 0 || used.has(accountCurrency) ? accountCurrency : currencies[0]);
 
       // Days marked non-billable are left out of the year summary entirely.
-      const entries = allEntries.filter((e) => !skipDays.has(e.date));
+      const entries = allEntries.filter((e) => !skipDays.has(e.date) && projectCurrency.get(e.project_id) === currency);
 
-      return buildAnnualReport({
+      const report = buildAnnualReport({
         year: input.year,
         entries,
-        projects: projects.map((p) => ({
-          id: p.id,
-          name: p.name,
-          hourly_rate: p.hourly_rate,
-          billable: p.billable,
-          client_id: p.client.id,
-          client_name: p.client.name,
-        })),
-        invoices,
+        projects: projects
+          .filter((p) => projectCurrency.get(p.id) === currency)
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            hourly_rate: p.hourly_rate,
+            billable: p.billable,
+            client_id: p.client.id,
+            client_name: p.client.name,
+          })),
+        invoices: invoices.filter((i) => effectiveCurrency(i.currency, accountCurrency) === currency),
       });
+      return { ...report, currency, currencies: currencies.length > 0 ? currencies : [currency] };
     }),
 });

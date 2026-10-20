@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+import { ClientCurrency } from "@/components/currency-provider";
 import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -175,15 +176,18 @@ export function NewInvoiceView() {
               onCompactNotes={setCompactNotes}
             />
 
-            <InvoicePreviewCard
-              validRange={validRange}
-              loading={entries.isLoading}
-              error={entries.error?.message ?? null}
-              totals={totals}
-              clientName={client?.name}
-            />
+            {/* The preview and its notices are in the chosen client's currency (its own, else the account's). */}
+            <ClientCurrency currency={client?.currency}>
+              <InvoicePreviewCard
+                validRange={validRange}
+                loading={entries.isLoading}
+                error={entries.error?.message ?? null}
+                totals={totals}
+                clientName={client?.name}
+              />
 
-            <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
+              <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
+            </ClientCurrency>
 
             <div className="flex gap-2">
               <Button

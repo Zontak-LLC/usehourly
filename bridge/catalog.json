@@ -214,7 +214,7 @@
     {
       "name": "list_clients",
       "title": "List clients",
-      "description": "Active clients, each with its active projects.",
+      "description": "Active clients, each with its currency and its active projects. Rates are in the client's currency (its own, else the account's).",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -242,6 +242,10 @@
                 "address": {
                   "type": ["string", "null"]
                 },
+                "currency": {
+                  "type": "string",
+                  "description": "The currency this client's rates and invoices are in"
+                },
                 "projects": {
                   "type": "array",
                   "items": {
@@ -265,7 +269,7 @@
                   }
                 }
               },
-              "required": ["id", "name", "color", "legal_name", "address", "projects"],
+              "required": ["id", "name", "color", "legal_name", "address", "currency", "projects"],
               "additionalProperties": {}
             }
           }
@@ -311,11 +315,15 @@
           "address": {
             "type": ["string", "null"]
           },
+          "currency": {
+            "type": "string",
+            "description": "The currency this client's rates and invoices are in"
+          },
           "has_logo": {
             "type": "boolean"
           }
         },
-        "required": ["id", "name", "legal_name", "address", "has_logo"],
+        "required": ["id", "name", "legal_name", "address", "currency", "has_logo"],
         "additionalProperties": {}
       },
       "annotations": {
@@ -959,7 +967,7 @@
     {
       "name": "list_invoices",
       "title": "List invoices",
-      "description": "Invoice history (newest 200 at most). Filter by text, client, paid status or issue-date range.",
+      "description": "Invoice history (newest 200 at most), each with the currency it was issued in. Filter by text, client, paid status or issue-date range. unpaid_totals has one figure per currency; unpaid_total is only set when every match is in one currency.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1004,8 +1012,18 @@
             "type": "number"
           },
           "unpaid_total": {
-            "type": "number",
-            "description": "Dollars still unpaid across the matches"
+            "description": "Still unpaid across the matches, in their currency; null when the matches use more than one currency",
+            "type": ["number", "null"]
+          },
+          "unpaid_totals": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Still unpaid per currency code, e.g. { USD: 150 }"
           },
           "invoices": {
             "type": "array",
@@ -1073,7 +1091,7 @@
             }
           }
         },
-        "required": ["count", "unpaid_total", "invoices"],
+        "required": ["count", "unpaid_total", "unpaid_totals", "invoices"],
         "additionalProperties": {}
       },
       "annotations": {
@@ -2107,7 +2125,7 @@
     {
       "name": "create_project",
       "title": "Create a project",
-      "description": "Add a project under a client, with an hourly rate in the account's currency and whether it is billable.",
+      "description": "Add a project under a client, with an hourly rate in the client's currency (its own, else the account's) and whether it is billable.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2124,7 +2142,7 @@
           },
           "hourly_rate": {
             "default": 0,
-            "description": "Amount per hour in the account's currency, e.g. 85 or 62.5 (default 0)",
+            "description": "Amount per hour in the client's currency (its own, else the account's), e.g. 85 or 62.5 (default 0)",
             "type": "number",
             "minimum": 0,
             "maximum": 10000
@@ -2195,7 +2213,7 @@
             "minLength": 1
           },
           "hourly_rate": {
-            "description": "New amount per hour in the account's currency, e.g. 85 or 62.5",
+            "description": "New amount per hour in the client's currency (its own, else the account's), e.g. 85 or 62.5",
             "type": "number",
             "minimum": 0,
             "maximum": 10000

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 
+import { useAccountCurrency } from "@/components/currency-provider";
 import { GuideLink } from "@/components/guide-link";
 import { LogoPicker } from "@/components/logo-picker";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { fileToLogo } from "@/lib/logo";
+import { CURRENCIES, type CurrencyCode, currencySymbol, isCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -63,6 +65,39 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
   );
 }
 
+const currencyChoice = (value: FormDataEntryValue | null): CurrencyCode | null => (isCurrency(value) ? value : null);
+
+/** The client's billing currency: "same as the account" or one of the supported ones. Fixed once it has an invoice. */
+function CurrencyField({ value, locked }: { value: string | null; locked: boolean }) {
+  const account = useAccountCurrency();
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor="client-currency" className="flex items-center gap-1">
+        Currency
+      </Label>
+      <select
+        id="client-currency"
+        name="currency"
+        defaultValue={isCurrency(value) ? value : ""}
+        disabled={locked}
+        className="h-9 w-full max-w-72 rounded-lg border border-input bg-card px-2 disabled:opacity-60 dark:bg-input/30"
+      >
+        <option value="">Same as my account ({account})</option>
+        {CURRENCIES.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.code} · {c.name} ({currencySymbol(c.code)})
+          </option>
+        ))}
+      </select>
+      <p className="text-muted-foreground text-xs">
+        {locked
+          ? "Fixed, because you have made an invoice for this client."
+          : "The currency of this client's rates, budgets and invoices. Nothing is converted if you change it."}
+      </p>
+    </div>
+  );
+}
+
 /** Name, billing address and logo for one client — what its invoices' "bill to" block shows. */
 export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => void }) {
   const utils = trpc.useUtils();
@@ -92,6 +127,8 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         legalName: String(fd.get("legalName") ?? ""),
         address: String(fd.get("address") ?? ""),
         email: String(fd.get("email") ?? "").trim(),
+        // A locked select is disabled and sends nothing: leave the currency as it is.
+        ...(fd.has("currency") ? { currency: currencyChoice(fd.get("currency")) } : {}),
         rounding: {
           step: Number(fd.get("roundStep")),
           mode: fd.get("roundMode") === "nearest" ? "nearest" : "up",
@@ -155,6 +192,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         />
         <p className="text-muted-foreground text-xs">Kept private. Nothing is sent to it unless you send something.</p>
       </div>
+      <CurrencyField value={client.data.currency} locked={client.data.currency_locked} />
       <RoundingFields step={client.data.round_step} mode={client.data.round_mode} min={client.data.round_min} />
       <div className="grid gap-1.5">
         <Label>Logo</Label>
