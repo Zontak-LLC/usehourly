@@ -14,3 +14,6 @@ const logoOfMax = (max: number) =>
  */
 export const logoSchema = logoOfMax(300_000);
 export const projectLogoSchema = logoOfMax(100_000);
+
+/** The person's picture: the browser makes it 128x128, a few KB; the ceiling is for the PNG of a busy photo. */
+export const avatarSchema = logoOfMax(60_000);

@@ -70,7 +70,7 @@ test("signing out leaves no kept pages or saved data on the device", async ({ pa
   const kept = await page.evaluate(async () => (await caches.keys()).filter((n) => n.startsWith("hourly-pages")));
   expect(kept.length).toBeGreaterThan(0); // pages really were kept
 
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: /Account menu for/ }).click();
   await page.getByRole("menuitem", { name: "Log out" }).click();
   await expect(page).toHaveURL(/auth\/v2\/login/);
 

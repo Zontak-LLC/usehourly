@@ -65,14 +65,14 @@ test("navigation can sit down the left, collapse to icons, and survives a reload
   });
 
   await test.step("double-clicking empty space in the menu unfolds it, and again folds it (links and buttons are not affected)", async () => {
-    // empty space: between the last link and the Log out button
+    // empty space: between the last link and the Collapse menu button
     const lastLink = (await side.getByRole("link", { name: "Guide" }).boundingBox()) ?? {
       x: 0,
       y: 0,
       width: 0,
       height: 0,
     };
-    const logOut = (await side.getByRole("button", { name: "Log out" }).boundingBox()) ?? {
+    const logOut = (await side.getByRole("button", { name: "Collapse menu" }).boundingBox()) ?? {
       x: 0,
       y: 0,
       width: 0,
