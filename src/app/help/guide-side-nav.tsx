@@ -12,7 +12,7 @@ type Group = { id: string; title: string; topics: { slug: string; title: string 
  * bar in the accent colour and bolder text). Down the left on a wide screen and sticky; on a phone a folded "All topics"
  * list at the top. With the app's left menu switched on, the wide column gives way to the folded list, so there is never a second left menu.
  */
-export function GuideSideNav({ groups }: { groups: Group[] }) {
+export function GuideSideNav({ groups, followAppMenu = true }: { groups: Group[]; followAppMenu?: boolean }) {
   const pathname = usePathname();
   const link = (href: string, label: string) => {
     const active = pathname === href;
@@ -50,11 +50,13 @@ export function GuideSideNav({ groups }: { groups: Group[] }) {
     <>
       <nav
         aria-label="Guide topics"
-        className="sticky top-6 hidden max-h-[calc(100dvh-3rem)] self-start overflow-y-auto pb-6 lg:block lg:[html[data-nav-position=left]_&]:hidden"
+        className={`sticky top-6 hidden max-h-[calc(100dvh-3rem)] self-start overflow-y-auto pb-6 lg:block ${followAppMenu ? "lg:[html[data-nav-position=left]_&]:hidden" : ""}`}
       >
         {list}
       </nav>
-      <details className="mb-6 rounded-xl border bg-card lg:hidden lg:[html[data-nav-position=left]_&]:block">
+      <details
+        className={`mb-6 rounded-xl border bg-card lg:hidden ${followAppMenu ? "lg:[html[data-nav-position=left]_&]:block" : ""}`}
+      >
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 font-medium text-sm [&::-webkit-details-marker]:hidden">
           Browse all topics <ChevronDown className="size-4" aria-hidden />
         </summary>
