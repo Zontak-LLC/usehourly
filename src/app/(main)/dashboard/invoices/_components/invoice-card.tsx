@@ -145,7 +145,7 @@ export function InvoiceCard({
         </div>
       </div>
       {/* On a phone the actions get words and a full-width row; tooltips do not exist on touch. */}
-      <div className="border-t bg-muted/20 p-2 sm:hidden">
+      <div className="border-t p-2 sm:hidden">
         <InvoiceActions invoice={i} words handlers={handlers} />
       </div>
     </li>

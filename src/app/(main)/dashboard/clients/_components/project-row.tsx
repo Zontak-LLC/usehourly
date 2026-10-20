@@ -37,8 +37,8 @@ export function ProjectCard({
 }) {
   const money = useMoney();
   return (
-    <li className="flex flex-col overflow-hidden rounded-lg bg-foreground/[0.03]">
-      <div className="flex items-center justify-between gap-2 bg-band-3 py-2 pr-2 pl-3">
+    <li className="flex flex-col overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
+      <div className="flex items-center justify-between gap-2 bg-card py-2 pr-2 pl-3">
         <span className="flex min-w-0 items-center gap-2">
           <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
           <h3 className="truncate font-semibold text-sm">{p.name}</h3>
@@ -106,7 +106,7 @@ export function ProjectEditCard({
 }) {
   const currency = useCurrency();
   return (
-    <li className="overflow-hidden rounded-lg bg-foreground/[0.03] px-4 py-3 sm:col-span-2">
+    <li className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 px-4 py-3 sm:col-span-2">
       <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
         <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
         <select
