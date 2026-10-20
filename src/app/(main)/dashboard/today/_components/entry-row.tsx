@@ -245,6 +245,7 @@ export function EntryRow({
               id={`${uid}-note`}
               value={note}
               onChange={setNote}
+              polish={{ project: entry.project.name, client: entry.project.client.name }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();

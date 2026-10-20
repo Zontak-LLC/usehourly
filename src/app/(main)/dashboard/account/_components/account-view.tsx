@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountingExport } from "@/components/accounting-export";
+import { AiPolishCard } from "@/components/ai-polish-card";
 import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
 import { DeleteAccountCard } from "@/components/delete-account-card";
@@ -93,7 +94,7 @@ export function AccountView() {
         <Section
           id="ai"
           title="AI assistants"
-          description="Let an assistant such as Claude read your time, log new entries and prepare invoices."
+          description="Let an assistant such as Claude read your time, log new entries and prepare invoices, or use your own AI key to polish descriptions."
         >
           {account.is_demo ? (
             <SectionCard
@@ -101,7 +102,10 @@ export function AccountView() {
               description="Create a free account to connect an AI assistant such as Claude."
             />
           ) : (
-            <ApiTokensCard />
+            <>
+              <ApiTokensCard />
+              <AiPolishCard />
+            </>
           )}
         </Section>
 

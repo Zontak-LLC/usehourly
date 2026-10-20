@@ -163,6 +163,12 @@ export function QuickAdd({
     }
   }
 
+  const polishOwner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
+  const polishContext = {
+    project: polishOwner?.projects.find((p) => p.id === projectId)?.name ?? "",
+    client: polishOwner?.name ?? "",
+  };
+
   const dayLabel = fromISODate(date).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
@@ -253,6 +259,7 @@ export function QuickAdd({
           <NoteTextarea
             value={note}
             onChange={setNote}
+            polish={polishContext}
             onKeyDown={(e) => {
               // Enter saves when a time is typed, otherwise goes back to the time field.
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {

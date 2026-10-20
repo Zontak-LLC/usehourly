@@ -97,6 +97,29 @@ If you work in an AI assistant all day, this lets you manage your timesheets rig
 Tokens can expire. A token stops working when you change your password or choose **Log out on all devices**, and you can revoke any of them under Account. The assistant only ever sees **your** data, and never your password, tokens or email address.`,
   },
   {
+    slug: "ai-polish",
+    title: "Polishing descriptions with your own AI key",
+    group: "team",
+    summary: "Turn a rough note into a clear line with your own Anthropic key, and what is sent.",
+    keywords: ["ai", "anthropic", "claude", "polish", "rewrite", "description", "note", "key", "api key", "privacy"],
+    body: `If you have an **Anthropic API key**, UseHourly can tidy the descriptions you type. Type a rough note, press **Polish**, and you see a suggestion. Nothing changes until you press **Use this**.
+
+## Set it up
+
+1. Get an API key from the Anthropic console (console.anthropic.com). It is billed separately from a Claude chat plan: **Claude Pro or Max cannot be used**. A polish costs a fraction of a cent, so a few dollars of credit goes a long way.
+2. Open **Account, AI assistants, Polish descriptions with your own AI key**, paste the key and choose **Check and save**.
+
+The **Polish** button then appears under description boxes: when you add time and when you edit an entry.
+
+## What is sent, and where the key lives
+
+- The key stays **in this browser only**. UseHourly never sees it: your browser talks to Anthropic directly. It is forgotten when you sign out, and you can remove it any time on the same Account card. On another device, save it again.
+- Only the **description** and the **project and client names** are sent. Never rates, amounts, invoices or other entries.
+- The polished line is a suggestion in your own words, kept short and told to add nothing. Read it before you use it.
+
+If you would rather drive UseHourly from an assistant you already use, see [Connecting an AI assistant](/help/ai-assistants): that needs no key.`,
+  },
+  {
     slug: "archive",
     title: "Archiving clients and projects",
     group: "account",

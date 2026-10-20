@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { readAiKey, saveAiKey } from "@/lib/ai-key";
 import { addPending, PENDING_KEY } from "@/lib/offline-queue";
 
 // The hooks are thin wrappers over useSyncExternalStore: run it by hand so the subscribe / snapshot pair is exercised.
@@ -134,10 +135,12 @@ describe("the offline helpers a person meets in the browser", () => {
     const { signOutOfDevice } = await import("@/lib/sign-out");
 
     addPending(localStorage, ENTRY);
+    saveAiKey(localStorage, "u1", "sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789");
     await expect(signOutOfDevice({ redirectTo: "/auth/v2/login" })).resolves.toEqual({
       signedOut: { redirectTo: "/auth/v2/login" },
     });
     expect(localStorage.getItem(PENDING_KEY)).not.toBeNull(); // typed but unsent entries survive a normal sign-out
+    expect(readAiKey(localStorage, "u1")).toBeNull(); // the person's own AI key never stays on the device
 
     await signOutOfDevice({ redirectTo: "/" }, true);
     expect(localStorage.getItem(PENDING_KEY)).toBeNull();

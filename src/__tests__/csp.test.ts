@@ -23,7 +23,9 @@ describe("content security policy", () => {
     expect(prod).toContain("frame-ancestors 'none'");
     expect(prod).toContain("base-uri 'self'");
     expect(prod).toContain("form-action 'self'");
-    expect(directive(prod, "connect-src")).toBe("connect-src 'self' https://cloudflareinsights.com");
+    expect(directive(prod, "connect-src")).toBe(
+      "connect-src 'self' https://api.anthropic.com https://cloudflareinsights.com",
+    );
     expect(prod).toContain("upgrade-insecure-requests");
     expect(buildCsp("n", false)).not.toContain("upgrade-insecure-requests");
     // the robot check and web analytics are the only outside script hosts
