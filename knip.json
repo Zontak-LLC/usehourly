@@ -4,6 +4,7 @@
     "e2e/*.ts",
     "scripts/*.mjs",
     "scripts/social/render.mjs",
+    "scripts/social/screens.mjs",
     "bridge/index.mjs",
     "open-next.config.ts",
     "custom-worker.ts",
