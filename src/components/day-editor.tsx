@@ -60,6 +60,7 @@ export function DayEditorPanel({
         <Skeleton className="h-24 w-full" />
       ) : inPage ? (
         <HeaderCard
+          light
           header={
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <div>
