@@ -59,7 +59,7 @@ test("photograph the main screens", async ({ page }, info) => {
     )
   ) {
     await more.click();
-    await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Move to another day" })).toBeVisible();
     await page.screenshot({
       path: `e2e/report/ui/${label}-menu-${info.project.name}.png`,
       fullPage: true,

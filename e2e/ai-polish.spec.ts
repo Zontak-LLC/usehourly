@@ -1,4 +1,4 @@
-import { entryAction, expect, startFreshAccount, test } from "./helpers";
+import { expect, startFreshAccount, test } from "./helpers";
 
 const KEY = "sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789";
 const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz0123456789_-ABC";
@@ -122,7 +122,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
       .hover();
     const row = page.getByRole("listitem").filter({ hasText: "Reworked the homepage layout" });
     await expect(row).not.toHaveAttribute("aria-busy", "true"); // a row the server has not confirmed yet cannot be edited
-    await entryAction(row, "Edit");
+    await row.getByRole("button", { name: "Edit", exact: true }).click({ force: true });
     // one in the add form and one in the entry's own edit form
     await expect(
       page.getByRole("region", { name: "Today's timesheet" }).getByRole("button", { name: /Polish/ }),

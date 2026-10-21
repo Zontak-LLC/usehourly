@@ -174,25 +174,24 @@ export function EntryRow({
           )}
         </div>
         <div className="flex shrink-0 gap-1">
-          {editing ? (
-            // While the form is open, one button closes it again (and says so to a screen reader).
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setEditing(false)}
-              aria-label="Edit"
-              aria-expanded
-              title="Close the edit form"
-            >
-              <Pencil />
-            </Button>
-          ) : (
+          {/* Edit is the common action and stays a button; it opens the form and, while open, closes it again (and says so to a screen reader). */}
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setEditing(!editing)}
+            aria-label="Edit"
+            aria-expanded={editing}
+            title={editing ? "Close the edit form" : "Edit"}
+            disabled={isRunning || unconfirmed}
+          >
+            <Pencil />
+          </Button>
+          {!editing && (
             <MovePopover entryId={entry.id} date={entry.date} open={moving} onOpenChange={setMoving} onMoved={refresh}>
               <span className="inline-flex">
                 <EntryMenu
                   disabled={isRunning || unconfirmed}
                   deleteDisabled={unconfirmed}
-                  onEdit={() => setEditing(true)}
                   onMove={() => setMoving(true)}
                   onDelete={() => setConfirmingDelete(true)}
                 />

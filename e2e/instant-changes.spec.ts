@@ -77,7 +77,7 @@ test("deleting an entry removes it at once, and an edit shows its new time at on
   await page.keyboard.press("Escape");
 
   await hold(page, "entry.update");
-  await entryAction(page, "Edit");
+  await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await page.getByLabel("Time", { exact: true }).fill("3h");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("button", { name: "3:00" })).toBeVisible({ timeout: 1500 }); // new time, form closed

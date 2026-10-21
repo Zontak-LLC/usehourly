@@ -16,10 +16,10 @@ export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
 
 /**
- * Runs one of an entry card's actions from its "More actions" menu. `scope` is the card (or the page, for its first card).
+ * Runs one of an entry card's rarer actions (Move to another day, Delete) from its "More actions" menu; Edit is a visible button. `scope` is the card (or the page, for its first card).
  * The menu opens in a layer of its own, so the item is looked up on the page.
  */
-export async function entryAction(scope: Page | Locator, action: "Edit" | "Move to another day" | "Delete") {
+export async function entryAction(scope: Page | Locator, action: "Move to another day" | "Delete") {
   const page = await openEntryMenu(scope);
   await page.getByRole("menuitem", { name: action }).click();
 }

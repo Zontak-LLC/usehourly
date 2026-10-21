@@ -44,7 +44,7 @@ test("entries added, edited and deleted offline reach the server once the connec
   // Edits and deletes work with no connection too.
   const row = (note: string) => page.getByRole("listitem").filter({ hasText: note });
   await row("kept offline").hover();
-  await entryAction(row("kept offline"), "Edit");
+  await row("kept offline").getByRole("button", { name: "Edit", exact: true }).click({ force: true });
   await page.getByLabel("Time", { exact: true }).fill("3:00");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("3:00").first()).toBeVisible();

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarArrowUp, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { CalendarArrowUp, MoreHorizontal, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,20 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 /**
- * An entry's actions behind one "More actions" button (UI simplification, ticket #135): Edit, Move to another day and
- * Delete used to be three icon buttons in every card header. The menu only lists them; the card owns what they do.
+ * The entry card's rarer actions behind one "More actions" button (UI simplification, ticket #135): Move to another day
+ * and Delete. Edit is the common action and stays a visible button in the card's header. The menu only lists them; the
+ * card owns what they do.
  */
 export function EntryMenu({
   disabled,
   deleteDisabled,
-  onEdit,
   onMove,
   onDelete,
 }: {
-  /** Edit and Move need a confirmed, not-running entry. */
+  /** Move needs a confirmed, not-running entry. */
   disabled?: boolean;
   deleteDisabled?: boolean;
-  onEdit: () => void;
   onMove: () => void;
   onDelete: () => void;
 }) {
@@ -36,9 +35,6 @@ export function EntryMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">
-        <DropdownMenuItem disabled={disabled} onSelect={onEdit}>
-          <Pencil /> Edit
-        </DropdownMenuItem>
         <DropdownMenuItem disabled={disabled} onSelect={onMove}>
           <CalendarArrowUp /> Move to another day
         </DropdownMenuItem>

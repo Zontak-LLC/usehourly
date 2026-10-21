@@ -89,7 +89,7 @@ test("a day's total says it is the total, and the day has a labelled Edit day bu
   const list = page.getByRole("region", { name: "What you worked on" });
   await expect(list.getByText("Total", { exact: true })).toBeVisible();
   await expect(list.getByRole("button", { name: /^Edit .*\d/ })).toContainText("Edit day"); // words on the day's button
-  await expect(list.getByRole("button", { name: "More actions" })).toHaveCount(1); // the entry's actions sit behind one icon-only menu button
+  await expect(list.getByRole("button", { name: "Edit", exact: true })).toHaveCount(1); // the entry's own pencil is icon-only
   await expect(page.getByText("Total hours this week", { exact: true })).toBeVisible();
 });
 
