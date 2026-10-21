@@ -38,7 +38,12 @@ export function FirstRun() {
   }
 
   return (
-    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:p-6">
+    <form
+      method="post"
+      onSubmit={onSubmit}
+      data-headerless="the one welcome question, a card of its own"
+      className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:p-6"
+    >
       <div>
         <h2 className="font-semibold text-xl">Welcome! Let's get your first hours logged.</h2>
         <p className="mt-1 text-base text-muted-foreground">
