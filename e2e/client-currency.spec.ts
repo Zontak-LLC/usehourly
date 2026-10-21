@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, menuAction, startFreshAccount, test } from "./helpers";
 
 /** Localisation step 2: one client is billed in its own currency while the account stays in dollars. */
 test("a client can be billed in euros while the account is in dollars, until it has an invoice", async ({ page }) => {
@@ -6,7 +6,7 @@ test("a client can be billed in euros while the account is in dollars, until it 
 
   await test.step("the client's billing details have a currency that starts as the account's", async () => {
     await page.goto("/dashboard/clients");
-    await page.getByRole("button", { name: "Edit Fernhill billing details" }).click();
+    await menuAction(page, "More actions for Fernhill", "Billing details");
     const select = page.getByLabel("Currency", { exact: true });
     await expect(select).toHaveValue("");
     await expect(select).toContainText("Same as my account (USD)");
@@ -38,7 +38,7 @@ test("a client can be billed in euros while the account is in dollars, until it 
 
   await test.step("the client's currency is then fixed", async () => {
     await page.goto("/dashboard/clients");
-    await page.getByRole("button", { name: "Edit Fernhill billing details" }).click();
+    await menuAction(page, "More actions for Fernhill", "Billing details");
     const select = page.getByLabel("Currency", { exact: true });
     await expect(select).toBeDisabled();
     await expect(page.getByText(/Fixed, because you have made an invoice for this client/)).toBeVisible();

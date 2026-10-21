@@ -116,9 +116,10 @@ test("the app links to the guide: the menu, and a ? beside the settings that are
   await test.step("the ? beside rounding opens the matching topic in a new tab", async () => {
     await page.goto("/dashboard/clients");
     await page
-      .getByRole("button", { name: /billing details/i })
+      .getByRole("button", { name: /More actions for/ })
       .first()
       .click();
+    await page.getByRole("menuitem", { name: "Billing details" }).click();
     const help = page.getByRole("link", { name: "Guide: rounding time on invoices" });
     await expect(help).toHaveAttribute("href", "/help/rounding");
     await expect(help).toHaveAttribute("target", "_blank");

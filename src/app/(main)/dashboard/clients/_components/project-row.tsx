@@ -7,6 +7,7 @@ import { useCurrency, useMoney } from "@/components/currency-provider";
 import { GuideLink } from "@/components/guide-link";
 import { IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
+import { MoreMenu } from "@/components/more-menu";
 import { ProjectMark } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,14 +47,15 @@ export function ProjectCard({
             <span className="shrink-0 rounded-full border px-2 py-0.5 text-foreground/70 text-xs">non-billable</span>
           )}
         </span>
-        {/* Wide screens: icons with a tooltip (as on Invoices). Phones: the labelled row at the foot of the card. */}
-        <span className="flex gap-1 max-sm:hidden">
+        {/* Edit is the common action and stays visible; archiving is rare, so it sits behind the ··· menu. */}
+        <span className="flex gap-1">
           <IconAction label={`Edit ${p.name}`} tip="Edit project" onClick={onEdit}>
             <Pencil />
           </IconAction>
-          <IconAction label={`Archive ${p.name}`} tip="Archive project" onClick={onArchive}>
-            <Archive />
-          </IconAction>
+          <MoreMenu
+            label={`More actions for ${p.name}`}
+            items={[{ label: "Archive project", icon: <Archive />, onSelect: onArchive, destructive: true }]}
+          />
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-3 p-3 text-sm">
@@ -79,14 +81,6 @@ export function ProjectCard({
           </div>
         </dl>
         {budget && <BudgetBar status={budget} />}
-        <div className="flex gap-1.5 sm:hidden">
-          <IconAction label={`Edit ${p.name}`} tip="Edit project" text="Edit" onClick={onEdit}>
-            <Pencil />
-          </IconAction>
-          <IconAction label={`Archive ${p.name}`} tip="Archive project" text="Archive" onClick={onArchive}>
-            <Archive />
-          </IconAction>
-        </div>
       </div>
     </li>
   );

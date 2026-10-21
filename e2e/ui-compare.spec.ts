@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 /**
  * Not part of a normal run. Photographs the main screens of the sample-data demo so a UI change can be shown as a
@@ -35,6 +35,33 @@ test("photograph the main screens", async ({ page }, info) => {
     await page.waitForLoadState("networkidle");
     await page.screenshot({
       path: `e2e/report/ui/${label}-${name}-${info.project.name}.png`,
+      fullPage: true,
+      caret: "initial",
+    });
+    if (name === "week") {
+      // Where the entry list sits on the page, so a before and an after can be cropped to the same region.
+      const box = await page.getByRole("region", { name: "What you worked on" }).boundingBox();
+      const scroll = await page.evaluate(() => window.scrollY);
+      if (box)
+        writeFileSync(
+          `e2e/report/ui/${label}-week-list-${info.project.name}.json`,
+          JSON.stringify({ ...box, y: box.y + scroll }),
+        );
+    }
+  }
+  // The "More actions" menu, opened, when the code has one (the "before" run of an older change has none).
+  await page.goto("/dashboard/week");
+  const more = page.getByRole("button", { name: "More actions" }).first();
+  if (
+    await more.waitFor({ state: "visible", timeout: 5000 }).then(
+      () => true,
+      () => false,
+    )
+  ) {
+    await more.click();
+    await expect(page.getByRole("menuitem", { name: "Move to another day" })).toBeVisible();
+    await page.screenshot({
+      path: `e2e/report/ui/${label}-menu-${info.project.name}.png`,
       fullPage: true,
       caret: "initial",
     });
