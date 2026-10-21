@@ -41,6 +41,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - `Notice` (`components/notice.tsx`): a short message set apart; `tone="danger"` for failures **[checked]**.
 - Stat cards: a `dl` of small white cards (label above, figure below), three across on Clients, Invoices and Year summary, four on Insights.
 - **Controls look pressable, labels do not.** A control (button, chip you can click, field) is white with a border. Information is flat: the hours (`HoursChip`) are plain text with a small clock, and status pills are a light tint with no outline, so nobody taps them expecting something to happen.
+- **Entry cards** read as ONE row (colour dot, project · client, the description under it, the hours, Edit, ···), about half the height they were; the tinted header only appears while the entry is being edited.
 - Chips and pills: `rounded-full`, no shadow; a selected project is a white card with a dark outline and a tick.
 - **A summary is not a card:** the Week page's "This week" is a frameless darker strip with a big figure, then the projects that made it up. Day tiles carry a dot per client that has time that day, none when empty.
 - Icon buttons: 40px in headers (`h-10`), 32px inside a card header, tooltip on wide screens, a labelled row on phones (`IconAction`).
