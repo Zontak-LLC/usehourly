@@ -1,4 +1,17 @@
-import { anonymous, clearMail, clientEmail, expect, linkIn, mailTo, newUser, seen, sql, test, today } from "./helpers";
+import {
+  anonymous,
+  clearMail,
+  clientEmail,
+  expect,
+  linkIn,
+  mailTo,
+  menuAction,
+  newUser,
+  seen,
+  sql,
+  test,
+  today,
+} from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -292,7 +305,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
       `UPDATE auth_users SET created_at = strftime('%Y-%m-%dT%H:%M:%f+00:00','now','-3 days') WHERE email='${user.email}'`,
     );
     await page.goto("/dashboard/clients");
-    await page.getByRole("button", { name: "Edit Acme Studio billing details" }).click();
+    await menuAction(page, "More actions for Acme Studio", "Billing details");
     await page.getByLabel(/Email \(where you send invoices\)/).fill(client);
     await page.getByRole("button", { name: "Save client" }).click();
     await expect(page.getByText("Client updated.")).toBeVisible(); // wait for the save before leaving the page

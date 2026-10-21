@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, menuAction, startFreshAccount, test } from "./helpers";
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
@@ -57,12 +57,9 @@ test("buttons that open a form close it on the second click; the day's list is h
     await expect(page.getByRole("button", { name: "Add a project for Acme Studio" })).toHaveCount(1); // only the + in the header: a client that has a project no longer shows a dashed add card
     await expect(page.getByRole("button", { name: "Cancel" })).toHaveCount(0);
 
-    const billing = page.getByRole("button", { name: "Edit Acme Studio billing details" });
-    await expect(billing).toHaveAttribute("aria-expanded", "false");
-    await billing.click();
-    await expect(billing).toHaveAttribute("aria-expanded", "true");
+    await menuAction(page, "More actions for Acme Studio", "Billing details"); // the ··· menu opens the form
     await expect(page.getByText("Round the time on invoices")).toBeVisible();
-    await billing.click();
+    await menuAction(page, "More actions for Acme Studio", "Close billing details"); // and the same item closes it
     await expect(page.getByText("Round the time on invoices")).toHaveCount(0);
   });
 });
