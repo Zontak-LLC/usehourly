@@ -94,15 +94,17 @@ test("on Today a swipe in the page body moves a day; the header still changes ta
   await startFreshAccount(page);
   const w = page.viewportSize()?.width ?? 412;
   await page.goto("/dashboard/today");
-  const tile = page.getByText("This day", { exact: true });
-  const { y } = await centreOf(page, tile);
+  const tile = page.getByRole("heading", { name: "Add to the day" });
 
+  let { y } = await centreOf(page, tile);
   await swipe(page, [w - 40, y], [40, y]); // left: the next day
   await expect(page).toHaveURL(new RegExp(`date=${await localISO(page, 1)}`));
   await settle(page);
+  ({ y } = await centreOf(page, tile)); // the header line changed, so the page may have moved a little
   await swipe(page, [40, y], [w - 40, y]); // right: back to today
   await expect(page).toHaveURL(/\/dashboard\/today$/);
   await settle(page);
+  ({ y } = await centreOf(page, tile));
   await swipe(page, [40, y], [w - 40, y]); // right again: yesterday
   await expect(page).toHaveURL(new RegExp(`date=${await localISO(page, -1)}`));
   // the page did not change tab at any point

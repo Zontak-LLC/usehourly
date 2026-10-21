@@ -44,7 +44,7 @@ describe("brand-new user: one question, then one tap logs time", () => {
   });
 
   it("offers the five one-tap durations in minutes", () => {
-    expect(DURATION_CHIPS.map((c) => c.minutes)).toEqual([15, 30, 60, 120, 240]);
+    expect(DURATION_CHIPS.map((c) => c.minutes)).toEqual([30, 60, 120]);
   });
 
   it("creates the client and a default project, then a chip logs 1 hour and Undo removes it", async () => {
@@ -63,7 +63,7 @@ describe("brand-new user: one question, then one tap logs time", () => {
     });
 
     prisma.project.findFirst.mockResolvedValue({ id: "p1" } as never);
-    const chip = DURATION_CHIPS[2];
+    const chip = DURATION_CHIPS[1];
     const entry = await c.entry.create({ projectId: "p1", date: "2026-10-15", minutes: chip.minutes, note: "" });
     expect(prisma.timeEntry.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: { user_id: "u1", project_id: "p1", date: "2026-10-15", minutes: 60, note: "" } }),
