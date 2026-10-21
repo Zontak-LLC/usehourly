@@ -9,6 +9,7 @@ import { TRPCProvider } from "@/components/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { APP_CONFIG } from "@/config/app-config";
+import { isStaging } from "@/lib/app-env";
 import { fontVars } from "@/lib/fonts/registry";
 import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
 import { ThemeBootScript } from "@/scripts/theme-boot";
@@ -72,6 +73,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <ThemeBootScript nonce={nonce} />
       </head>
       <body className={`${fontVars} min-h-dvh antialiased`}>
+        {isStaging() && (
+          <p role="note" className="bg-amber-200 px-3 py-1 text-center font-medium text-amber-950 text-xs">
+            Staging copy: test data only. This is not the real site.
+          </p>
+        )}
         <TooltipProvider>
           <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
             <TRPCProvider>{children}</TRPCProvider>

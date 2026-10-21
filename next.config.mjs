@@ -39,6 +39,10 @@ const nextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          // The staging copy (npm run staging:deploy) must never be indexed.
+          ...(process.env.NEXT_PUBLIC_APP_ENV === "staging"
+            ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
+            : []),
         ],
       },
     ];

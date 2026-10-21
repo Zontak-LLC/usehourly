@@ -50,6 +50,8 @@ supabase/.temp/
 .dev.vars
 # your own Cloudflare account and database ids (copy wrangler.example.jsonc)
 wrangler.jsonc
+wrangler.staging.jsonc
+.staging-parked/
 
 # typescript
 *.tsbuildinfo
