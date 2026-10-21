@@ -74,7 +74,7 @@ Plain, short, no jargon, no blame. Name things the way the menu does ("Clients",
 - **Invoices:** total cards, filters in one card, an invoice card per invoice with four icon buttons.
 - **Clients:** one **card per client** (header: its logo if it has one, name, summary, the visible + to add a project and a ··· menu with Billing details and Archive client) holding **project tiles** (header row: name, a visible Edit pencil and a ··· menu with Archive project). No stat cards; the search box appears from six clients up; the dashed "Add a project" tile only for a client with no project yet (UI simplification, 2026-10-21, ticket #135).
 - **Year summary:** stat cards, then one card per table.
-- **Team:** count cards, one card per person, ending in the dashed "Invite someone" card.
+- **Team:** count cards, one card per person, ending in the dashed "Invite someone" card. On a phone the cards are a swipe row (`SLIDE` in `people-list.tsx`): each as wide as the screen, with dots under them that show and change the position; `data-no-swipe` keeps the page swipe out of the way. A person's clients are toggle buttons (`ClientChecks`, `aria-pressed`) in a wrapping row, not tick boxes.
 - **Account:** one page card with section cards.
 - **Public pages** (sign-in, calculator, guide): the same cards and notices on the neutral page; the sign-in forms sit in one card.
 

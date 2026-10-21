@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
+import { ClientChecks } from "./client-checks";
+
 /**
  * The invitation form as a card: pick a name and the clients, get a private link to send (shown once: only its hash is
  * stored). It opens in place of the "Invite someone" card and closes back into it.
@@ -102,21 +104,13 @@ export function InviteCard({ onClose, compact = false }: { onClose: () => void; 
           />
         </div>
       </div>
-      <fieldset className="flex flex-col gap-1">
-        <legend className="mb-1 font-medium text-sm">Clients they can log time on</legend>
-        {list.length === 0 && <p className="text-muted-foreground text-sm">Add a client first, on the Clients page.</p>}
-        {list.map((c) => (
-          <label key={c.id} className="flex min-h-8 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4"
-              checked={picked.includes(c.id)}
-              onChange={(e) => setPicked((p) => (e.target.checked ? [...p, c.id] : p.filter((x) => x !== c.id)))}
-            />
-            {c.name}
-          </label>
-        ))}
-      </fieldset>
+      <ClientChecks
+        legend="Clients they can log time on"
+        clients={list}
+        checked={picked}
+        onToggle={(id, on) => setPicked((p) => (on ? [...p, id] : p.filter((x) => x !== id)))}
+        empty="Add a client first, on the Clients page."
+      />
       <div>
         <Button type="submit" disabled={invite.isPending || !email.includes("@") || picked.length === 0}>
           Send the invitation
