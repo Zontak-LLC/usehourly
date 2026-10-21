@@ -36,7 +36,7 @@ export function TeamView() {
       {people.isLoading ? (
         <Skeleton className="h-40 w-full rounded-xl" />
       ) : (
-        <PeopleList people={people.data ?? []} footer={<InviteSlot empty={shown.length === 0} />} />
+        <PeopleList people={people.data ?? []} footer={<InviteSlot people={shown.length} />} />
       )}
       {(teams.data?.length ?? 0) > 0 && <MemberSection teams={teams.data ?? []} />}
     </PageShell>
