@@ -37,11 +37,15 @@ export function ClientChecks({
               onClick={() => onToggle(c.id, !on)}
               className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors ${
                 on
-                  ? "border-foreground bg-foreground font-medium text-background"
+                  ? "border-tint-edge bg-tint font-medium text-foreground hover:bg-tint-hover"
                   : "border-dashed bg-card text-muted-foreground hover:border-foreground/50 hover:text-foreground"
               }`}
             >
-              {on ? <Check className="size-3.5" aria-hidden /> : <Circle className="size-3.5" aria-hidden />}
+              {on ? (
+                <Check className="size-3.5 text-current" aria-hidden />
+              ) : (
+                <Circle className="size-3.5 text-current" aria-hidden />
+              )}
               {c.name}
             </button>
           );

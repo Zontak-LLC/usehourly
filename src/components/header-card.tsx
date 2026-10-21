@@ -20,7 +20,7 @@ export function HeaderCard({
   className?: string;
   /** A white header like the page card's own header, instead of the light tint (the Week page's day card). */
   light?: boolean;
-  /** For a card that sits inside another card (a person inside "Your team"): a hairline ring instead of a border, and the darkest header shade. */
+  /** For a card that sits inside another card (a person inside "Your team"): a clearly visible ring (a ring, not a border, so the nesting check ignores it), and the darkest header shade. */
   tile?: boolean;
   children?: ReactNode;
 }) {
@@ -29,7 +29,7 @@ export function HeaderCard({
     <section
       className={cn(
         "overflow-hidden bg-card",
-        tile ? "rounded-lg ring-1 ring-foreground/10" : "rounded-xl border",
+        tile ? "rounded-lg ring-1 ring-foreground/25" : "rounded-xl border",
         className,
       )}
     >
