@@ -22,7 +22,7 @@ import { GUIDE_PATHS, GUIDE_VERSION } from "@/content/guide";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { donateUrl } from "@/lib/donate";
-import { googleCalendarClientId } from "@/lib/google-calendar-config";
+import { googleCalendarClientIdFor } from "@/lib/google-calendar-config";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
@@ -70,7 +70,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   return (
     <OfflineGuard userId={session.user.id}>
       <LocalFirst userId={session.user.id} isDemo={Boolean(dbUser?.is_demo)} />
-      <GoogleCalendarProvider clientId={dbUser?.is_demo ? null : googleCalendarClientId()}>
+      <GoogleCalendarProvider clientId={googleCalendarClientIdFor({ isAdmin, isDemo: Boolean(dbUser?.is_demo) })}>
         <CurrencyProvider currency={dbUser?.currency ?? "USD"}>
           <SidebarProvider
             style={
