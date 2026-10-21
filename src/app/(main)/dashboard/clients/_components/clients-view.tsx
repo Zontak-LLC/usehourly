@@ -136,8 +136,8 @@ export function ClientsView() {
   return (
     <PageShell
       nav="clients"
-      title="Clients & Projects"
-      description="Your clients, and the projects you do for each. Hourly rates live here."
+      title="Clients"
+      description="Your clients and the projects you log time on. Hourly rates live here."
       actions={
         <Button
           type="button"

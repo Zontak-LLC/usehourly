@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 
 /**
  * The very first screen: one question, one button. The client and a default project are created
- * behind the scenes; rates and extra projects live on the "Clients & Projects" page for later.
+ * behind the scenes; rates and extra projects live on the "Clients" page for later.
  */
 export function FirstRun() {
   const utils = trpc.useUtils();

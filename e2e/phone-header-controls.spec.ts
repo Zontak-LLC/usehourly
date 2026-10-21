@@ -12,11 +12,9 @@ async function gapToHeaderEdge(control: Locator) {
 
 /**
  * On a phone the page card's header controls sit on their own row under the title and must fill it (a short row of
- * buttons stuck at the left with empty space beside it looked broken on Today and Clients & Projects).
+ * buttons stuck at the left with empty space beside it looked broken on Today and Clients).
  */
-test("on a phone the header controls share the title's line on Today and on Clients & Projects", async ({
-  page,
-}, info) => {
+test("on a phone the header controls share the title's line on Today and on Clients", async ({ page }, info) => {
   test.skip(info.project.name !== "phone", "the wrapped header row only exists on a phone");
   await startFreshAccount(page);
 

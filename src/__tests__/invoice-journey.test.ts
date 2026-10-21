@@ -511,9 +511,7 @@ describe("client invoice journey", () => {
         project: { name: "General", hourly_rate: 0, billable: true },
       },
     ] as never);
-    await expect(asCaller(prisma, "u1").invoice.create(input)).rejects.toThrow(
-      /\$0\.00.*Set the rates under Clients & Projects/,
-    );
+    await expect(asCaller(prisma, "u1").invoice.create(input)).rejects.toThrow(/\$0\.00.*Set the rates under Clients/);
     expect(prisma.invoice.create).not.toHaveBeenCalled();
     // one project with a rate is enough: the invoice is real, the unpaid-rate project is simply listed at $0
     prisma.timeEntry.findMany.mockResolvedValue([

@@ -82,7 +82,7 @@ export function InvoiceNotices({
           {describeRounding(rounding)} You logged {formatDecimalHours(totals.loggedMinutes)} h and will bill{" "}
           {formatDecimalHours(totals.totalMinutes)} h. Change it under{" "}
           <Link href="/dashboard/clients" className="underline">
-            Clients & Projects
+            Clients
           </Link>
           .
         </p>
@@ -94,7 +94,7 @@ export function InvoiceNotices({
             <li>
               ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at {money(0)}. Set it under{" "}
               <Link href="/dashboard/clients" className="underline">
-                Clients & Projects
+                Clients
               </Link>
               .
             </li>
@@ -111,7 +111,7 @@ export function InvoiceNotices({
           Every project in this period has a {money(0)} rate, so this invoice would be {money(0)}. Set the hourly rates
           under{" "}
           <Link href="/dashboard/clients" className="font-medium underline">
-            Clients & Projects
+            Clients
           </Link>{" "}
           first, then come back.
         </p>

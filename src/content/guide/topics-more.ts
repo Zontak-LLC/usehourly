@@ -152,7 +152,7 @@ If you would rather drive UseHourly from an assistant you already use, see [Conn
     group: "account",
     summary: "Hide finished work from the pickers without losing its history.",
     keywords: ["archive", "hide", "finished", "old client", "unarchive", "restore"],
-    body: `On Clients & Projects, the archive button on a client or project hides it from the project pickers so your day stays tidy. Its history stays: old entries, invoices and the year summary still include it.
+    body: `On the Clients page, the archive button on a client or project hides it from the project pickers so your day stays tidy. Its history stays: old entries, invoices and the year summary still include it.
 
 Open **Archived clients and projects** at the bottom of the page to bring one back.`,
   },

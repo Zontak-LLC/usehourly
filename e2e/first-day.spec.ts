@@ -108,13 +108,15 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.goto("/dashboard/invoices/new");
     await expect(page.getByText(/would be \$0\.00/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Create invoice/ })).toBeDisabled();
-    await expect(page.getByRole("link", { name: "Clients & Projects" }).first()).toBeVisible();
+    // The way out is the link inside the warning itself, not the Clients tab in the menu.
+    const wayOut = page.getByText(/would be \$0\.00/).getByRole("link", { name: "Clients" });
+    await expect(wayOut).toHaveAttribute("href", "/dashboard/clients");
     await shot("invoice-blocked-at-zero");
   });
 
-  await test.step("set the project's hourly rate under Clients & Projects", async () => {
+  await test.step("set the project's hourly rate under Clients", async () => {
     await page.goto("/dashboard/clients");
-    await expect(page.getByRole("heading", { name: "Clients & Projects", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clients", level: 1 })).toBeVisible();
     await expect(page.getByText("No hourly rate yet")).toBeVisible(); // a missing rate is visible, not silent
     await shot("my-work-before");
     await page.getByRole("button", { name: "Edit General" }).click();
@@ -172,7 +174,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.goto("/dashboard/today");
     const pages: [menu: string, heading: RegExp, title: RegExp][] = [
       ["Invoices", /^Invoices$/, /^Invoices/],
-      ["Clients & Projects", /^Clients & Projects$/, /^Clients & Projects/],
+      ["Clients", /^Clients$/, /^Clients/],
       ["Year summary (taxes)", /^Year summary/, /^Year summary/],
       ["Account", /^Account$/, /^Account/],
     ];
@@ -182,11 +184,10 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
         await page.getByRole("button", { name: "More", exact: true }).click();
         await page.getByRole("menuitem", { name: menu, exact: true }).click();
       } else {
-        // Invoices, Clients and Account are tabs in the top strip (it says "Clients" for the long name).
-        const label = menu === "Clients & Projects" ? "Clients" : menu;
+        // Invoices, Clients and Account are tabs in the top strip.
         await page
           .getByRole("navigation", { name: "Main pages" })
-          .getByRole("link", { name: label, exact: true })
+          .getByRole("link", { name: menu, exact: true })
           .click();
       }
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
