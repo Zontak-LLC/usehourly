@@ -47,7 +47,7 @@ First release of UseHourly for Android.
 
 ## Graphics
 - App icon 512x512: `app-icon-512.png`
-- Feature graphic 1024x500: `feature-graphic.png`
+- Feature graphic 1024x500: `feature-graphic.png` (drawn by `node scripts/social/feature-graphic.mjs` from the logo and the phone screenshots)
 - Phone screenshots (1080x1919): `screenshots/2-week.png`, `3-month.png`, `4-invoices.png`, `5-clients.png`, `6-year.png`. `1-today.png` is left out on purpose: on a phone its project chips cut the names off ("Mo...").
 
 ## Answers for "Set up your app"
