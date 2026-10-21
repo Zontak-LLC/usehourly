@@ -229,7 +229,7 @@ export function QuickAdd({
               enterKeyHint="next"
               className="h-11 text-base"
             />
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {DURATION_CHIPS.map((c) => (
                 <Button
                   key={c.minutes}
@@ -249,13 +249,13 @@ export function QuickAdd({
                 </Button>
               ))}
             </div>
-            {(invalid || parsed) && (
-              <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
-                {invalid
-                  ? "Try 1.5, 1:30 or 90m"
-                  : `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`}
-              </p>
-            )}
+            <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
+              {invalid
+                ? "Try 1.5, 1:30 or 90m"
+                : parsed
+                  ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`
+                  : "Type a time or tap one, then add it."}
+            </p>
           </div>
 
           <NoteTextarea
@@ -282,7 +282,8 @@ export function QuickAdd({
               size="lg"
               variant="primary"
               disabled={create.isPending || parsed === null}
-              className="h-12 w-full text-base sm:flex-1"
+              // Until a time is typed it is a quiet outline (not a grey slab that looks broken); the line above says what to do.
+              className="h-12 w-full text-base disabled:border disabled:bg-transparent disabled:text-muted-foreground disabled:opacity-100 sm:flex-1"
             >
               Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
             </Button>
