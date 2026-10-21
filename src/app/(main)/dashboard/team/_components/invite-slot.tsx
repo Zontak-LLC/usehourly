@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Plus, UsersRound } from "lucide-react";
 
 import { type InviteSlotShape, inviteSlotShape } from "@/lib/team-layout";
 
 import { InviteCard } from "./invite-form";
+import { SLIDE } from "./people-list";
 
 /**
  * The "Invite someone" card at the end of the team grid. With nobody on the team yet it is the big empty-state card;
@@ -20,11 +21,19 @@ export function InviteSlot({ people }: { people: number }) {
   const [openShape, setOpenShape] = useState<InviteSlotShape | null>(null);
   const shape = openShape ?? inviteSlotShape(people);
   const empty = shape === "empty-state";
-  const span = shape === "beside" ? undefined : "sm:col-span-2";
+  // On a phone it is the last slide of the swipe row, as wide as the screen; from sm up it fills the grid.
+  const span = `${shape === "beside" ? "" : "sm:col-span-2"} ${SLIDE}`;
+  const cell = useRef<HTMLLIElement>(null);
+  // On a phone the cards are a swipe row. Sending an invitation adds a person card before this one, which would leave the
+  // "We emailed ..." message one swipe away; keep the form in view while it is open.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `people` is the trigger (a new card was added before this one)
+  useEffect(() => {
+    if (openShape) cell.current?.scrollIntoView({ inline: "start", block: "nearest" });
+  }, [openShape, people]);
   if (openShape) {
     // The form takes the card's own place (same cell), so nothing jumps to a new row. In a half-width cell its fields stack.
     return (
-      <li className={span}>
+      <li ref={cell} className={span}>
         <InviteCard onClose={() => setOpenShape(null)} compact={shape === "beside"} />
       </li>
     );

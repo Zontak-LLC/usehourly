@@ -3,13 +3,14 @@
 // A rule that fails prints file:line and why, then the script exits 1.
 // A line is exempt when it, or the line above it, carries `biome-ignore` or `check-rules-ok: <reason>`.
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const files = execFileSync("git", ["ls-files", "src", "e2e", "scripts", "bridge", "custom-worker.ts"], {
   encoding: "utf8",
 })
   .split("\n")
-  .filter((f) => /\.(ts|tsx|mjs)$/.test(f) && f !== "scripts/check-rules.mjs");
+  // A file git still lists but that was deleted from disk (a deletion not yet staged) is skipped, not a crash.
+  .filter((f) => /\.(ts|tsx|mjs)$/.test(f) && f !== "scripts/check-rules.mjs" && existsSync(f));
 
 const rules = [
   { name: "no @ts-ignore / @ts-nocheck (use @ts-expect-error with a reason)", re: /@ts-(ignore|nocheck)/ },

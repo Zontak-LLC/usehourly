@@ -1,0 +1,49 @@
+"use client";
+
+/**
+ * Which clients a person may log time on: a row of toggle buttons that wraps and fills the width, instead of one tick
+ * box per line. A pressed button is one the person may use. Used by the invitation form and by each person's card.
+ */
+export function ClientChecks({
+  legend,
+  legendClassName = "mb-1 font-medium text-sm",
+  clients,
+  checked,
+  onToggle,
+  empty,
+}: {
+  legend: string;
+  legendClassName?: string;
+  clients: { id: string; name: string }[];
+  checked: string[];
+  onToggle: (id: string, on: boolean) => void;
+  /** Shown when there are no clients to pick from. */
+  empty?: string;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-1">
+      <legend className={legendClassName}>{legend}</legend>
+      {clients.length === 0 && empty && <p className="text-muted-foreground text-sm">{empty}</p>}
+      <div className="flex flex-wrap gap-2">
+        {clients.map((c) => {
+          const on = checked.includes(c.id);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onToggle(c.id, !on)}
+              className={`inline-flex min-h-9 items-center rounded-lg border px-3 text-sm transition-colors ${
+                on
+                  ? "border-foreground/50 bg-muted font-medium text-foreground"
+                  : "bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`}
+            >
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
