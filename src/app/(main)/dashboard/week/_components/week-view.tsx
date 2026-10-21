@@ -78,6 +78,12 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     pickDay(d);
     panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  // Swipe left for the next day, right for the previous one; past the week's edge the next or previous week opens.
+  const moveDay = (delta: number) => {
+    const d = addDays(selected, delta);
+    if (d < start || d > end) setStart(startOfWeek(d));
+    pickDay(d);
+  };
   const goWeek = (s: string) => {
     setStart(s);
     setPicked(null);
@@ -95,6 +101,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
         </>
       }
       descriptionOnPhone
+      onSwipe={(direction) => moveDay(direction === "left" ? 1 : -1)}
     >
       <WeekToolbar
         start={start}

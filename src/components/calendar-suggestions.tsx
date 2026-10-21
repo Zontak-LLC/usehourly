@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useGoogleCalendarClientId } from "@/components/google-calendar-config";
 import { GuideLink } from "@/components/guide-link";
+import { SwipeArea } from "@/components/swipe-area";
 import { Button } from "@/components/ui/button";
 import { useSavedCalendar } from "@/components/use-calendar";
 import { type SuggestProject, suggestionsForDay } from "@/lib/calendar-suggest";
@@ -293,7 +294,8 @@ function SuggestionRow({
   const [projectId, setProjectId] = useState(s.projectId ?? "");
 
   async function add() {
-    if (!projectId) return;
+    // Shared by the Add button and the swipe: a second swipe while the first is still being saved must not log it twice.
+    if (!projectId || create.isPending) return;
     try {
       await create.mutateAsync({
         projectId,
@@ -309,47 +311,57 @@ function SuggestionRow({
   }
 
   return (
-    <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-sm" title={s.title}>
-          {s.title}
-        </p>
-        <p className="text-muted-foreground text-xs tabular-nums">
-          {time.format(s.start)} · {formatDuration(s.minutes)}
-        </p>
-      </div>
-      <select
-        aria-label={`Project for ${s.title}`}
-        value={projectId}
-        onChange={(e) => setProjectId(e.target.value)}
-        className="h-10 rounded-lg border bg-card px-2 text-sm sm:max-w-48"
+    <li className="py-3 first:pt-0 last:pb-0">
+      {/* Swipe right to add the meeting (once a project is picked), left to skip it; the buttons do the same. */}
+      <SwipeArea
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        onSwipe={(direction) => {
+          if (direction === "left") return onSkip();
+          if (!projectId) return toast.info("Pick a project first, then swipe right to add it.");
+          void add();
+        }}
       >
-        <option value="">Pick a project</option>
-        {clients.map((c) => (
-          <optgroup key={c.id} label={c.name}>
-            {c.projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-      <div className="flex gap-2">
-        <Button type="button" size="sm" className="h-10" disabled={!projectId || create.isPending} onClick={add}>
-          Add
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-10"
-          onClick={onSkip}
-          aria-label={`Skip ${s.title}`}
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium text-sm" title={s.title}>
+            {s.title}
+          </p>
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {time.format(s.start)} · {formatDuration(s.minutes)}
+          </p>
+        </div>
+        <select
+          aria-label={`Project for ${s.title}`}
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          className="h-10 rounded-lg border bg-card px-2 text-sm sm:max-w-48"
         >
-          <X aria-hidden /> Skip
-        </Button>
-      </div>
+          <option value="">Pick a project</option>
+          {clients.map((c) => (
+            <optgroup key={c.id} label={c.name}>
+              {c.projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" className="h-10" disabled={!projectId || create.isPending} onClick={add}>
+            Add
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-10"
+            onClick={onSkip}
+            aria-label={`Skip ${s.title}`}
+          >
+            <X aria-hidden /> Skip
+          </Button>
+        </div>
+      </SwipeArea>
     </li>
   );
 }

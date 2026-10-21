@@ -9,7 +9,7 @@ import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
-import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
+import { addDays, addMonths, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
@@ -69,6 +69,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   return (
     <PageShell
       nav="month"
+      // Swipe left for the next month, right for the previous one (the arrows in the toolbar do the same).
+      onSwipe={(direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1))}
       inlineDescription
       title={monthTitle.format(fromISODate(first))}
       description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}

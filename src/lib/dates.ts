@@ -49,3 +49,9 @@ export function startOfWeek(s: string): string {
   const dow = (d.getDay() + 6) % 7; // Mon=0
   return addDays(s, -dow);
 }
+
+/** The first of the month as YYYY-MM-DD, shifted by `n` months (negative goes back). */
+export function addMonths(first: string, n: number): string {
+  const d = fromISODate(first);
+  return toISODate(new Date(d.getFullYear(), d.getMonth() + n, 1));
+}
