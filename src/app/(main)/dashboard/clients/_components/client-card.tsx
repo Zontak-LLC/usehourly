@@ -156,8 +156,9 @@ export function ClientCard({
                 </div>
                 <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
               </li>
-            ) : (
-              <li className={c.projects.length % 2 === 0 ? "sm:col-span-2" : undefined}>
+            ) : c.projects.length === 0 ? (
+              // Only a client with no project yet gets the big dashed card; once it has one, the + in the header is enough.
+              <li className="sm:col-span-2">
                 <button
                   type="button"
                   onClick={() => setAdding(true)}
@@ -170,7 +171,7 @@ export function ClientCard({
                   Add a project
                 </button>
               </li>
-            )}
+            ) : null}
           </ul>
         </div>
       </ClientCurrency>

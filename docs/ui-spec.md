@@ -36,7 +36,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - `PageShell` (`components/page-shell.tsx`): the page card; title, one line, the page's main controls.
 - `HeaderCard` (`components/header-card.tsx`): card with a `band-2` header and a padded body; optional form.
 - `SectionCard`: the Account page's sections.
-- `EmptyState` (`components/empty-state.tsx`): the dashed "nothing here yet" card **[checked: `check-rules` forbids hand-made dashed paragraphs]**. An empty list that can be filled becomes an **actionable dashed card with a +** that turns into the form in place (Clients "Add a project", Team "Invite someone").
+- `EmptyState` (`components/empty-state.tsx`): the dashed "nothing here yet" card **[checked: `check-rules` forbids hand-made dashed paragraphs]**. An empty list that can be filled becomes an **actionable dashed card with a +** that turns into the form in place (Clients "Add a project" for a client with no project yet, Team "Invite someone"). Once a list has items, a small + in the header is enough: no big dashed card beside real ones (Clients), unless it would otherwise leave a gap in a grid row (Team).
 - `Notice` (`components/notice.tsx`): a short message set apart; `tone="danger"` for failures **[checked]**.
 - Stat cards: a `dl` of small white cards (label above, figure below), three across on Clients, Invoices and Year summary, four on Insights.
 - **Controls look pressable, labels do not.** A control (button, chip you can click, field) is white with a border. Information is flat: the hours (`HoursChip`) are plain text with a small clock, and status pills are a light tint with no outline, so nobody taps them expecting something to happen.
@@ -71,7 +71,7 @@ Plain, short, no jargon, no blame. Name things the way the menu does ("Clients",
 - **Today:** the add form card, two total cards, the day's entry cards (or the dashed empty state).
 - **Week / Month:** toolbar (project filter, Share & export, date arrows), the day strip or calendar card, the Week summary strip, and "What you worked on": one card (header: title, count, search) holding day headings with an entry tile each. **That card is not shown at all when the period has no entries.** The Week page's address carries the picked day (`?date=`), so a refresh returns to it.
 - **Invoices:** total cards, filters in one card, an invoice card per invoice with four icon buttons.
-- **Clients:** stat cards, search, then one **card per client** (header: logo, name, summary, buttons) holding **project tiles** (header row: name and buttons), ending in the dashed "Add a project" tile.
+- **Clients:** one **card per client** (header: its logo if it has one, name, summary, buttons) holding **project tiles** (header row: name and buttons). No stat cards; the search box appears from six clients up; the dashed "Add a project" tile only for a client with no project yet (UI simplification, 2026-10-21, ticket #135).
 - **Year summary:** stat cards, then one card per table.
 - **Team:** count cards, one card per person, ending in the dashed "Invite someone" card.
 - **Account:** one page card with section cards.

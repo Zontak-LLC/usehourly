@@ -12,40 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toISODate } from "@/lib/dates";
-import { formatDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { ArchiveConfirmDialog, type ArchiveTarget } from "./archive-confirm-dialog";
 import { ArchivedSection } from "./archived-section";
 import { ClientCard } from "./client-card";
-import type { ClientRow, ProjectTotals } from "./client-types";
+import type { ClientRow } from "./client-types";
 import { NewClientDialog } from "./new-client-dialog";
 import { useProjectEditing } from "./use-project-editing";
 
-/** The three figures under the page title. */
-function ClientStats({ clients, totals }: { clients: ClientRow[]; totals: ProjectTotals | undefined }) {
-  return (
-    <dl className="grid grid-cols-3 gap-2 sm:gap-3">
-      <div className="rounded-xl border bg-card px-3 py-3">
-        <dt className="text-muted-foreground text-xs">Clients</dt>
-        <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{clients.length}</dd>
-      </div>
-      <div className="rounded-xl border bg-card px-3 py-3">
-        <dt className="text-muted-foreground text-xs">Projects</dt>
-        <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
-          {clients.reduce((a, c) => a + c.projects.length, 0)}
-        </dd>
-      </div>
-      <div className="rounded-xl border bg-card px-3 py-3">
-        <dt className="text-muted-foreground text-xs">Logged this month</dt>
-        <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">
-          {formatDuration(Object.values(totals ?? {}).reduce((a, t) => a + t.range, 0))}
-        </dd>
-      </div>
-    </dl>
-  );
-}
+/** The search box shows from this many clients up. */
+const SEARCH_FROM = 5;
 
 function ClientSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
@@ -151,12 +129,8 @@ export function ClientsView() {
         </Button>
       }
     >
-      {(clients.data?.length ?? 0) > 0 && (
-        <>
-          <ClientStats clients={clients.data ?? []} totals={totals.data} />
-          <ClientSearch value={search} onChange={setSearch} />
-        </>
-      )}
+      {/* Search only earns its place once there are more clients than fit in a glance. */}
+      {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
       <ArchiveConfirmDialog target={confirming} onCancel={() => setConfirming(null)} onConfirm={archive} />
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}

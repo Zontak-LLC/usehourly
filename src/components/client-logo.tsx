@@ -39,6 +39,8 @@ export function ClientLogoSlot({ clientId, name }: { clientId: string; name: str
     }
   }
 
+  // No logo yet: nothing is drawn (an empty "Logo" box on every card is clutter). A logo is added under Billing details.
+  if (!logo) return null;
   return (
     <>
       <input ref={input} type="file" accept="image/png,image/jpeg" className="hidden" onChange={pick} />
