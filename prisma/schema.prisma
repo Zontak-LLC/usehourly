@@ -326,6 +326,15 @@ model UsageDaily {
   @@map("usage_daily")
 }
 
+// Settings for the whole app, set by the owner (see lib/support-notice.ts). Never holds anything about a person.
+model AppSetting {
+  key        String   @id
+  value      String
+  updated_at DateTime @default(now())
+
+  @@map("app_settings")
+}
+
 // A timesheet a freelancer sends a client for sign-off (issue #34). The link is a random token (only its SHA-256
 // is kept); `snapshot` is frozen JSON of the hours, shown without rates or money. Approval is one conditional update.
 model TimesheetShare {
