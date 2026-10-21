@@ -39,12 +39,15 @@ export function QuickAdd({
   timerRunning,
   dayMinutes,
   showDate = true,
+  bare = false,
 }: {
   date: string;
   timerRunning: boolean;
   dayMinutes: number;
   /** The Today page already shows the date in its header, so it turns this off; the day dialog keeps it. */
   showDate?: boolean;
+  /** Without its own card and header: the Week page puts the form inside the day's card. */
+  bare?: boolean;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -179,6 +182,124 @@ export function QuickAdd({
   const onlyProject = projects.length === 1 ? projects[0] : null;
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
+  const body = (
+    <div className={bare ? "flex flex-col gap-3" : "flex flex-col gap-3 p-3 sm:p-4"}>
+      <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
+        {onlyProject ? (
+          <p className="text-base">
+            {onlyClient?.name} · {onlyProject.name}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p id="quick-project-label" className="font-medium text-sm">
+              Pick your project
+            </p>
+            <ProjectPicker
+              projects={(clients.data ?? []).flatMap((c) =>
+                c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name })),
+              )}
+              value={projectId}
+              onChange={remember}
+            />
+          </div>
+        )}
+
+        {budget && (
+          <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
+            <BudgetBar status={budget} />
+          </ClientCurrency>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <Input
+            id="quick-duration"
+            ref={durationRef}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            placeholder="Time: 1.5, 1:30 or 90m"
+            aria-label="Time to add"
+            aria-invalid={invalid}
+            inputMode="decimal"
+            enterKeyHint="next"
+            className="h-11 text-base"
+          />
+          <div className="grid grid-cols-3 gap-2">
+            {DURATION_CHIPS.map((c) => (
+              <Button
+                key={c.minutes}
+                type="button"
+                variant={parsed === c.minutes ? "secondary" : "outline"}
+                aria-pressed={parsed === c.minutes}
+                className="h-9 px-1 text-sm sm:h-10 sm:text-base"
+                onClick={() => {
+                  setDuration(`${c.minutes}m`);
+                  durationRef.current?.focus();
+                }}
+              >
+                <span className="sm:hidden" aria-hidden="true">
+                  {c.short}
+                </span>
+                <span className="max-sm:sr-only">{c.label}</span>
+              </Button>
+            ))}
+          </div>
+          <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
+            {invalid
+              ? "Try 1.5, 1:30 or 90m"
+              : parsed
+                ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`
+                : "Type a time or tap one, then add it."}
+          </p>
+        </div>
+
+        <NoteTextarea
+          value={note}
+          onChange={setNote}
+          polish={polishContext}
+          onKeyDown={(e) => {
+            // Enter saves when a time is typed, otherwise goes back to the time field.
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              if (parsed !== null) void submit();
+              else durationRef.current?.focus();
+            }
+          }}
+          placeholder="What did you work on? (optional)"
+          aria-label="Description"
+          rows={2}
+          className="min-h-[4.5rem] resize-none py-3 text-base"
+        />
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="submit"
+            size="lg"
+            variant="primary"
+            disabled={create.isPending || parsed === null}
+            // Until a time is typed it is a quiet outline (not a grey slab that looks broken); the line above says what to do.
+            className="h-12 w-full text-base disabled:border disabled:bg-transparent disabled:text-muted-foreground disabled:opacity-100 sm:flex-1"
+          >
+            Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
+          </Button>
+          {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
+          {isToday && (
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              onClick={startTimer}
+              disabled={start.isPending || !online}
+              title={online ? undefined : "A timer needs a connection"}
+              className="h-12 w-full text-base sm:w-auto sm:px-6"
+            >
+              <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
+            </Button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+  if (bare) return body;
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
@@ -188,122 +309,7 @@ export function QuickAdd({
           {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
         </h2>
       </div>
-
-      <div className="flex flex-col gap-3 p-3 sm:p-4">
-        <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
-          {onlyProject ? (
-            <p className="text-base">
-              {onlyClient?.name} · {onlyProject.name}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p id="quick-project-label" className="font-medium text-sm">
-                Pick your project
-              </p>
-              <ProjectPicker
-                projects={(clients.data ?? []).flatMap((c) =>
-                  c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name })),
-                )}
-                value={projectId}
-                onChange={remember}
-              />
-            </div>
-          )}
-
-          {budget && (
-            <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
-              <BudgetBar status={budget} />
-            </ClientCurrency>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <Input
-              id="quick-duration"
-              ref={durationRef}
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              placeholder="Time: 1.5, 1:30 or 90m"
-              aria-label="Time to add"
-              aria-invalid={invalid}
-              inputMode="decimal"
-              enterKeyHint="next"
-              className="h-11 text-base"
-            />
-            <div className="grid grid-cols-3 gap-2">
-              {DURATION_CHIPS.map((c) => (
-                <Button
-                  key={c.minutes}
-                  type="button"
-                  variant={parsed === c.minutes ? "secondary" : "outline"}
-                  aria-pressed={parsed === c.minutes}
-                  className="h-9 px-1 text-sm sm:h-10 sm:text-base"
-                  onClick={() => {
-                    setDuration(`${c.minutes}m`);
-                    durationRef.current?.focus();
-                  }}
-                >
-                  <span className="sm:hidden" aria-hidden="true">
-                    {c.short}
-                  </span>
-                  <span className="max-sm:sr-only">{c.label}</span>
-                </Button>
-              ))}
-            </div>
-            <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`}>
-              {invalid
-                ? "Try 1.5, 1:30 or 90m"
-                : parsed
-                  ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`
-                  : "Type a time or tap one, then add it."}
-            </p>
-          </div>
-
-          <NoteTextarea
-            value={note}
-            onChange={setNote}
-            polish={polishContext}
-            onKeyDown={(e) => {
-              // Enter saves when a time is typed, otherwise goes back to the time field.
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                if (parsed !== null) void submit();
-                else durationRef.current?.focus();
-              }
-            }}
-            placeholder="What did you work on? (optional)"
-            aria-label="Description"
-            rows={2}
-            className="min-h-[4.5rem] resize-none py-3 text-base"
-          />
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="submit"
-              size="lg"
-              variant="primary"
-              disabled={create.isPending || parsed === null}
-              // Until a time is typed it is a quiet outline (not a grey slab that looks broken); the line above says what to do.
-              className="h-12 w-full text-base disabled:border disabled:bg-transparent disabled:text-muted-foreground disabled:opacity-100 sm:flex-1"
-            >
-              Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
-            </Button>
-            {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
-            {isToday && (
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                onClick={startTimer}
-                disabled={start.isPending || !online}
-                title={online ? undefined : "A timer needs a connection"}
-                className="h-12 w-full text-base sm:w-auto sm:px-6"
-              >
-                <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
-              </Button>
-            )}
-          </div>
-        </form>
-      </div>
+      {body}
     </div>
   );
 }

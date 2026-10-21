@@ -132,6 +132,9 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             onPick={pickDay}
           />
 
+          {/* The week's total sits right under the strip of days it adds up. */}
+          <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
+
           <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
             {/* The day strip above already says which day this is, so the date is not repeated here. */}
             <DayEditorPanel
@@ -151,8 +154,6 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
               }
             />
           </section>
-
-          <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
 
           {/* The picked day has its own Merge button in the editor above, so this card covers the other days. */}
           <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
