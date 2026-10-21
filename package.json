@@ -42,7 +42,7 @@
   "dependencies": {
     "@prisma/adapter-d1": "^7.10.1",
     "@prisma/client": "^7.10.1",
-    "@tanstack/react-query": "^5.104.3",
+    "@tanstack/react-query": "^5.104.4",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
@@ -55,7 +55,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
     "jszip": "^3.10.2",
-    "lucide-react": "^1.58.0",
+    "lucide-react": "^1.59.0",
     "next": "16.4.2",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
