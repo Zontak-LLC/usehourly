@@ -61,8 +61,11 @@ test("a swipe that starts in a text field or a dialog does not change the page",
   await stays(page, /\/dashboard\/today$/);
 
   await page.goto("/dashboard/clients");
-  await page.getByRole("button", { name: "New client" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await swipe(page, [w - 60, 400], [60, 400]);
+  await page.getByRole("button", { name: "New client" }).click(); // the form opens in place
+  const name = page.getByLabel("New client name");
+  await expect(name).toBeVisible();
+  const field2 = await name.boundingBox();
+  if (!field2) throw new Error("the new client field is not on screen");
+  await swipe(page, [w - 60, field2.y + field2.height / 2], [60, field2.y + field2.height / 2]); // across a text field
   await stays(page, /\/dashboard\/clients$/);
 });
