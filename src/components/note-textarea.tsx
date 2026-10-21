@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "cn";
 import { toast } from "sonner";
 
-import { PolishAction } from "@/components/polish-action";
+import { PolishButtons, usePolish } from "@/components/polish-action";
 import { Textarea } from "@/components/ui/textarea";
 import { fitPaste, NOTE_MAX, noteCounter } from "@/lib/notes";
 
@@ -18,10 +18,12 @@ type Props = Omit<React.ComponentProps<typeof Textarea>, "value" | "onChange" | 
 
 /**
  * The description box used everywhere a time entry's note is typed. It grows with the text (up
- * to a scrollable maximum), shows a counter as the limit gets close, and — instead of letting the
+ * to a scrollable maximum), carries the Polish button inside its right edge when the person has an AI key (see
+ * polish-action.tsx), shows a counter as the limit gets close, and — instead of letting the
  * browser silently chop a long paste — keeps what fits and says how much was left out.
  */
 export function NoteTextarea({ value, onChange, className, onPaste, polish, ...rest }: Props) {
+  const polisher = usePolish(value, onChange, polish);
   const counter = noteCounter(value.length);
   const atLimit = value.length >= NOTE_MAX;
 
@@ -42,14 +44,25 @@ export function NoteTextarea({ value, onChange, className, onPaste, polish, ...r
 
   return (
     <div className="space-y-1">
-      <Textarea
-        {...rest}
-        value={value}
-        maxLength={NOTE_MAX}
-        onChange={(e) => onChange(e.target.value)}
-        onPaste={handlePaste}
-        className={cn("max-h-48 overflow-y-auto", className)}
-      />
+      {/* Polish sits inside the right edge of the box; the text keeps clear of it */}
+      <div className="relative">
+        <Textarea
+          {...rest}
+          value={value}
+          maxLength={NOTE_MAX}
+          readOnly={polisher.busy || rest.readOnly}
+          onChange={(e) => onChange(e.target.value)}
+          onPaste={handlePaste}
+          className={cn(
+            "max-h-48 overflow-y-auto",
+            polisher.enabled && "pr-32",
+            polisher.pending && "border-primary/60 bg-primary/5",
+            polisher.busy && "opacity-70",
+            className,
+          )}
+        />
+        <PolishButtons polish={polisher} />
+      </div>
       {counter && (
         <p
           className={cn("text-right text-xs", atLimit ? "font-medium text-destructive" : "text-muted-foreground")}
@@ -58,7 +71,6 @@ export function NoteTextarea({ value, onChange, className, onPaste, polish, ...r
           {atLimit ? `${counter} · limit reached` : counter}
         </p>
       )}
-      {polish && <PolishAction value={value} onUse={onChange} context={polish} />}
     </div>
   );
 }

@@ -125,14 +125,14 @@ Tokens can expire. A token stops working when you change your password or choose
       "model",
       "privacy",
     ],
-    body: `If you have an **Anthropic (Claude)** or **OpenAI (ChatGPT)** API key, UseHourly can tidy the descriptions you type. Type a rough note, press **Polish**, and you see a suggestion. Nothing changes until you press **Use this**.
+    body: `If you have an **Anthropic (Claude)** or **OpenAI (ChatGPT)** API key, UseHourly can tidy the descriptions you type. Type a rough note and press **Polish**, on the right of the description box. The tidier version fills the box right there, and you choose **Keep** or **Undo** to put your own words back.
 
 ## Set it up
 
 1. Get an API key from [Anthropic](https://console.anthropic.com) or [OpenAI](https://platform.openai.com). It is billed separately from a chat plan: **Claude Pro, Claude Max and ChatGPT Plus cannot be used**. A polish costs a fraction of a cent, so a few dollars of credit goes a long way.
 2. Open **Account, AI assistants, Polish descriptions with your own AI key**. Choose the **AI service**, check the **model**, paste the key and choose **Check and save**.
 
-The **Polish** button then appears under description boxes: when you add time and when you edit an entry.
+The **Polish** button then appears inside the right edge of description boxes: when you add time and when you edit an entry.
 
 ## Choosing a model
 
@@ -142,7 +142,7 @@ The first model in each list is the cheapest, and it is plenty for tidying a sen
 
 - The key stays **in this browser only**. UseHourly never sees it: your browser talks to the service directly. It is forgotten when you sign out, and you can remove it any time on the same Account card. On another device, save it again.
 - Only the **description** and the **project and client names** are sent. Never rates, amounts, invoices or other entries.
-- The polished line is a suggestion in your own words, kept short and told to add nothing. Read it before you use it.
+- The polished line stays in your own words, kept short and told to add nothing. Read it before you keep it; typing in the box also keeps it, and nothing is saved until you add or save the entry.
 
 If you would rather drive UseHourly from an assistant you already use, see [Connecting an AI assistant](/help/ai-assistants): that needs no key.`,
   },

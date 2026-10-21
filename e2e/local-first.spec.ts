@@ -1,11 +1,15 @@
-import { expect, startFreshAccount, test, today } from "./helpers";
+import { expect, startFreshAccount, test } from "./helpers";
 
 /**
  * Local-first spike (issue #95). With the switch on, entries are kept in this browser and shown from there; changes
  * made with no connection are sent when it returns, and a second device sees them.
  */
 const serverEntries = async (page: import("@playwright/test").Page) => {
-  const day = today();
+  // The day the app shows is the BROWSER's local date, which differs from the UTC date for part of every day.
+  const day = await page.evaluate(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const input = encodeURIComponent(JSON.stringify({ 0: { from: day, to: day } }));
   const res = await page.request.get(`/api/trpc/entry.list?batch=1&input=${input}`);
   const body = (await res.json()) as { result: { data: { note: string; minutes: number }[] } }[];

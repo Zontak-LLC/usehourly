@@ -272,8 +272,8 @@ export function QuickAdd({
             }}
             placeholder="What did you work on? (optional)"
             aria-label="Description"
-            rows={1}
-            className="min-h-12 resize-none py-3 text-base"
+            rows={2}
+            className="min-h-[4.5rem] resize-none py-3 text-base"
           />
 
           <div className="flex flex-col gap-2 sm:flex-row">
