@@ -26,6 +26,7 @@ export default function globalTeardown() {
     `DELETE FROM team_members WHERE owner_id IN ${mine} OR member_id IN ${mine};`,
     ...tables.map((t) => `DELETE FROM ${t} WHERE user_id IN ${mine};`),
     "DELETE FROM email_suppressions WHERE email LIKE 'e2e-%@example.test';",
+    "DELETE FROM app_settings WHERE key = 'support_notice';", // the browser test for the "chip in" note switches it on
     "DELETE FROM auth_users WHERE email LIKE 'e2e-%@example.test';",
   ].join(" ");
   try {

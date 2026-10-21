@@ -12,6 +12,7 @@ import { LocalFirst } from "@/components/local-first";
 import { LogoMark } from "@/components/logo";
 import { OfflineGuard } from "@/components/offline-guard";
 import { OfflineSync } from "@/components/offline-sync";
+import { SupportNotice } from "@/components/support-notice";
 import { SwipeNav } from "@/components/swipe-nav";
 import { ThemeSync } from "@/components/theme-sync";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -19,9 +20,11 @@ import { UsageBeacon } from "@/components/usage-beacon";
 import { GUIDE_PATHS, GUIDE_VERSION } from "@/content/guide";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
+import { donateUrl } from "@/lib/donate";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
+import { readSupportNotice } from "@/server/support-notice";
 
 import { GuideButton } from "./_components/header/guide-button";
 import { LayoutControls } from "./_components/header/layout-controls";
@@ -35,22 +38,25 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   // The proxy already sends signed-out visitors away; this is the second lock on the same door.
   if (!session?.user?.id) redirect("/auth/v2/login");
   // Read the name from the DB, not the JWT, so profile edits show up immediately.
-  const dbUser = session?.user?.id
-    ? await (await getPrisma()).authUser.findUnique({
-        where: { id: session.user.id },
-        select: {
-          name: true,
-          email: true,
-          token_version: true,
-          theme_preset: true,
-          theme_mode: true,
-          email_verified_at: true,
-          is_demo: true,
-          currency: true,
-          avatar: true,
-        },
-      })
-    : null;
+  const prisma = await getPrisma();
+  // The owner's "chip in" note is read in the same round trip as the person, so it adds no waiting.
+  const [dbUser, supportNotice] = await Promise.all([
+    prisma.authUser.findUnique({
+      where: { id: session.user.id },
+      select: {
+        name: true,
+        email: true,
+        token_version: true,
+        theme_preset: true,
+        theme_mode: true,
+        email_verified_at: true,
+        is_demo: true,
+        currency: true,
+        avatar: true,
+      },
+    }),
+    readSupportNotice(prisma),
+  ]);
   // Signed in with an old token (password changed, signed out everywhere, or the account is gone):
   // clear the cookie through a route handler, then land on the login page.
   if (session?.user?.id && !sessionStillValid(session.user.tv, dbUser?.token_version)) {
@@ -115,6 +121,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
             <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-2 has-data-[content-padding=false]:p-0 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:has-data-[content-padding=false]:p-0">
               <OfflineSync />
+              <SupportNotice cost={dbUser?.is_demo ? null : (supportNotice?.cost ?? null)} url={donateUrl()} />
               {children}
             </div>
           </SidebarInset>

@@ -5,6 +5,8 @@ import { PageShell } from "@/components/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
+import { SupportNoticeCard } from "./support-notice-card";
+
 const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : "–");
 
 function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
@@ -127,6 +129,7 @@ export function InsightsView() {
           ))}
         </div>
       </Card>
+      <SupportNoticeCard />
     </PageShell>
   );
 }
