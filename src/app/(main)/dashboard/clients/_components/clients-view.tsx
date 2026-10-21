@@ -20,6 +20,7 @@ import { ArchivedSection } from "./archived-section";
 import { ClientCard } from "./client-card";
 import type { ClientRow } from "./client-types";
 import { NewClientCard } from "./new-client-card";
+import { useOpenClients } from "./use-open-clients";
 import { useProjectEditing } from "./use-project-editing";
 
 /** The search box shows from this many clients up. */
@@ -121,6 +122,7 @@ export function ClientsView() {
     }
   }
 
+  const openClients = useOpenClients();
   return (
     <PageShell nav="clients" title="Clients" description={description} descriptionOnPhone>
       {/* Search only earns its place once there are more clients than fit in a glance. */}
@@ -146,6 +148,9 @@ export function ClientsView() {
           budgets={budgets.data}
           editing={editing}
           billingOpen={editingClientId === c.id}
+          // While searching, every match is shown open so the project that matched is visible.
+          open={words.length > 0 || openClients.isOpen(c.id, c.projects.length)}
+          onOpenChange={(open) => openClients.setOpen(c.id, open)}
           onToggleBilling={() => setEditingClientId(editingClientId === c.id ? null : c.id)}
           onCloseBilling={() => setEditingClientId(null)}
           onArchiveClient={() => setConfirming({ kind: "client", id: c.id, name: c.name })}
