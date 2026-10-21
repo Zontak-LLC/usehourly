@@ -13,12 +13,16 @@ import {
   forgetCalendar,
   keepWindow,
   loadCalendar,
+  loadGoogle,
   loadLink,
   loadSkipped,
   type SavedCalendar,
   saveCalendar,
+  saveGoogle,
   saveLink,
 } from "@/lib/calendar-store";
+import { fetchGoogleEvents, GoogleCalendarError } from "@/lib/google-calendar";
+import { requestGoogleToken, revokeGoogleToken } from "@/lib/google-identity";
 
 /** Files over this are refused before reading (a calendar of many years is a few MB). */
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
@@ -37,12 +41,14 @@ export function useSavedCalendar() {
   const [calendar, setCalendar] = useState<SavedCalendar | null>(null);
   const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
   const [link, setLink] = useState<string | null>(null);
+  const [google, setGoogle] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
     setCalendar(loadCalendar(storage(), userId));
     setSkipped(loadSkipped(storage(), userId));
     setLink(loadLink(storage(), userId));
+    setGoogle(loadGoogle(storage(), userId));
   }, [userId]);
   useEffect(() => {
     refresh();
@@ -67,6 +73,7 @@ export function useSavedCalendar() {
       const ok = saveCalendar(storage(), userId, { name: file.name, events, importedAt: Date.now() });
       if (!ok) throw new Error("Couldn't keep that calendar on this device. Try a shorter range.");
       saveLink(storage(), userId, null); // a file replaces a connected address
+      saveGoogle(storage(), userId, false);
       window.dispatchEvent(new Event(CALENDAR_EVENT));
       return { count: events.length, truncated };
     } catch (err) {
@@ -109,6 +116,7 @@ export function useSavedCalendar() {
         throw new Error("Couldn't keep that calendar on this device.");
       }
       saveLink(storage(), userId, checked.url);
+      saveGoogle(storage(), userId, false);
       window.dispatchEvent(new Event(CALENDAR_EVENT));
       return { count: events.length, truncated };
     } finally {
@@ -116,8 +124,43 @@ export function useSavedCalendar() {
     }
   }
 
+  /**
+   * Opens Google's popup (this must follow a tap), then reads the recent meetings straight from the person's Google
+   * Calendar in this browser. Nothing goes through UseHourly's servers. Throws a plain-words Error when it cannot, and
+   * returns null (having saved nothing) when the calendar was removed or replaced while it was being read.
+   */
+  async function connectGoogle(clientId: string) {
+    if (!userId) throw new Error("Sign in again to use your calendar.");
+    cancelCalendarReads(); // a connected address still being read must not overwrite this
+    const started = calendarGeneration();
+    setBusy(true);
+    try {
+      const token = await requestGoogleToken(clientId);
+      if (started !== calendarGeneration()) {
+        revokeGoogleToken(); // disconnected while Google's window was open: drop the access it just gave
+        return null;
+      }
+      const { events, truncated } = await fetchGoogleEvents(token, keepWindow(new Date()));
+      if (started !== calendarGeneration()) return null;
+      if (!saveCalendar(storage(), userId, { name: "Google Calendar", events, importedAt: Date.now() })) {
+        throw new Error("Couldn't keep that calendar on this device.");
+      }
+      saveLink(storage(), userId, null); // Google replaces a connected address
+      saveGoogle(storage(), userId, true);
+      window.dispatchEvent(new Event(CALENDAR_EVENT));
+      return { count: events.length, truncated };
+    } catch (err) {
+      if (err instanceof GoogleCalendarError || err instanceof Error) throw err;
+      throw new Error("Couldn't read your Google Calendar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return {
     calendar,
+    google,
+    connectGoogle,
     skipped,
     link,
     busy,
@@ -128,6 +171,7 @@ export function useSavedCalendar() {
       window.dispatchEvent(new Event(CALENDAR_EVENT));
     },
     remove: () => {
+      revokeGoogleToken();
       forgetCalendar(storage());
       window.dispatchEvent(new Event(CALENDAR_EVENT));
     },

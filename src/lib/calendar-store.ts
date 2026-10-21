@@ -12,6 +12,8 @@ export const CALENDAR_KEY = "hourly:calendar";
 export const CALENDAR_SKIPPED_KEY = "hourly:calendarSkipped";
 /** The private calendar address, when the calendar is connected by link instead of a file (slice 2). It is a secret. */
 export const CALENDAR_LINK_KEY = "hourly:calendarLink";
+/** Set when the calendar was read straight from Google Calendar (slice 4): there is no secret, only "connected". */
+export const CALENDAR_GOOGLE_KEY = "hourly:calendarGoogle";
 export const CALENDAR_EVENT = "hourly:calendar-changed";
 /** How far back an import keeps meetings, and how many "skipped" marks are remembered. */
 export const KEEP_DAYS = 90;
@@ -103,6 +105,30 @@ export function saveLink(storage: StorageLike | null, userId: string, url: strin
   }
 }
 
+/** Whether this account's calendar came from Google Calendar (so Refresh opens Google's popup, not a file box). */
+export function loadGoogle(storage: StorageLike | null, userId: string | null | undefined): boolean {
+  if (!storage || !userId) return false;
+  try {
+    const parsed = z
+      .object({ userId: z.string() })
+      .safeParse(JSON.parse(storage.getItem(CALENDAR_GOOGLE_KEY) ?? "null"));
+    return parsed.success && parsed.data.userId === userId;
+  } catch {
+    return false;
+  }
+}
+
+export function saveGoogle(storage: StorageLike | null, userId: string, on: boolean): boolean {
+  if (!storage || !userId) return false;
+  try {
+    if (on) storage.setItem(CALENDAR_GOOGLE_KEY, JSON.stringify({ userId }));
+    else storage.removeItem(CALENDAR_GOOGLE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Forgets the calendar, its address and the "skipped" marks. */
 export function forgetCalendar(storage: StorageLike | null): void {
   cancelCalendarReads();
@@ -110,6 +136,7 @@ export function forgetCalendar(storage: StorageLike | null): void {
     storage?.removeItem(CALENDAR_KEY);
     storage?.removeItem(CALENDAR_SKIPPED_KEY);
     storage?.removeItem(CALENDAR_LINK_KEY);
+    storage?.removeItem(CALENDAR_GOOGLE_KEY);
   } catch {
     // storage blocked
   }

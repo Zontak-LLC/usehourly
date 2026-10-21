@@ -42,7 +42,12 @@ export default function PrivacyPage() {
           file itself and the meetings are never sent to us. If you connect a calendar by its private address instead,
           the address is kept only in your browser, and each time the calendar is read the address passes through our
           server once, to fetch it from Google, Outlook or iCloud (they do not let a web page read it directly). We do
-          not store or log the address or the calendar.
+          not store or log the address or the calendar. If you press Connect Google Calendar, Google's own sign-in
+          window asks you to allow UseHourly to read your calendar events (read-only). Your browser then reads your
+          events straight from Google; the access Google gives lasts about an hour, is kept only in your browser's
+          memory, and never reaches our servers. Only the title, start and end of recent meetings are kept, in your
+          browser, until you log out or press Disconnect. You can also remove UseHourly's access any time at
+          myaccount.google.com/permissions.
         </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>

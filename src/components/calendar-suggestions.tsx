@@ -5,11 +5,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { useGoogleCalendarClientId } from "@/components/google-calendar-config";
 import { GuideLink } from "@/components/guide-link";
 import { Button } from "@/components/ui/button";
 import { useSavedCalendar } from "@/components/use-calendar";
 import { type SuggestProject, suggestionsForDay } from "@/lib/calendar-suggest";
 import { formatDuration } from "@/lib/duration";
+import { preloadGoogleIdentity } from "@/lib/google-identity";
 import type { ClientWithProjects } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -35,6 +37,7 @@ export function CalendarSuggestions({
 }) {
   const utils = trpc.useUtils();
   const cal = useSavedCalendar();
+  const googleClientId = useGoogleCalendarClientId();
   const file = useRef<HTMLInputElement>(null);
 
   const projects: SuggestProject[] = useMemo(
@@ -45,6 +48,11 @@ export function CalendarSuggestions({
     () => (cal.calendar ? suggestionsForDay(cal.calendar.events, date, projects, entries, cal.skipped) : []),
     [cal.calendar, date, projects, entries, cal.skipped],
   );
+
+  // Google's popup must open straight from the tap, so its script is fetched as soon as the card is shown.
+  useEffect(() => {
+    if (googleClientId) preloadGoogleIdentity();
+  }, [googleClientId]);
 
   const [typing, setTyping] = useState(false);
   const [address, setAddress] = useState("");
@@ -70,6 +78,22 @@ export function CalendarSuggestions({
       );
     } catch (err) {
       toastError(err, "Couldn't read that calendar.");
+    }
+  }
+
+  async function connectGoogle() {
+    if (!googleClientId) return;
+    try {
+      const read = await cal.connectGoogle(googleClientId);
+      if (!read) return;
+      const { count, truncated } = read;
+      toast.success(
+        count === 0
+          ? "Connected, but found no meetings in the last 3 months."
+          : `Connected. Read ${count} meeting${count === 1 ? "" : "s"}${truncated ? " (the newest ones)" : ""}.`,
+      );
+    } catch (err) {
+      toastError(err, "Couldn't connect Google Calendar.");
     }
   }
 
@@ -170,21 +194,44 @@ export function CalendarSuggestions({
           <h2 className="font-medium text-sm">Turn meetings into time entries</h2>
           <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
         </div>
-        <p className="text-muted-foreground text-sm">
-          Add a calendar file (.ics) from Google, Apple or Outlook Calendar and each day shows its meetings ready to log
-          in one tap. It is read on this device. Only recent meetings' titles and times are kept, here, and nothing is
-          added unless you tap Add.
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="self-start"
-          disabled={cal.busy}
-          onClick={() => file.current?.click()}
-        >
-          <CalendarPlus aria-hidden /> {cal.busy ? "Reading…" : "Add a calendar file"}
-        </Button>
+        {googleClientId ? (
+          <>
+            <p className="text-muted-foreground text-sm">
+              Connect your Google Calendar and each day shows its meetings ready to log in one tap. Your browser reads
+              it straight from Google, read-only; UseHourly's servers never see it. Only recent meetings' titles and
+              times are kept, on this device, and nothing is added unless you tap Add.
+            </p>
+            <Button type="button" className="h-11 self-start" disabled={cal.busy} onClick={connectGoogle}>
+              <CalendarPlus aria-hidden /> {cal.busy ? "Connecting…" : "Connect Google Calendar"}
+            </Button>
+            <button
+              type="button"
+              className="self-start py-1 text-muted-foreground text-xs underline"
+              disabled={cal.busy}
+              onClick={() => file.current?.click()}
+            >
+              Or add a calendar file (.ics) from Apple, Outlook or another calendar
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-sm">
+              Add a calendar file (.ics) from Google, Apple or Outlook Calendar and each day shows its meetings ready to
+              log in one tap. It is read on this device. Only recent meetings' titles and times are kept, here, and
+              nothing is added unless you tap Add.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              disabled={cal.busy}
+              onClick={() => file.current?.click()}
+            >
+              <CalendarPlus aria-hidden /> {cal.busy ? "Reading…" : "Add a calendar file"}
+            </Button>
+          </>
+        )}
         {linkForm}
       </section>
     );
@@ -216,12 +263,14 @@ export function CalendarSuggestions({
           type="button"
           className="py-1 underline"
           disabled={cal.busy}
-          onClick={() => (cal.link ? refreshLink(false) : file.current?.click())}
+          onClick={() =>
+            cal.google && googleClientId ? connectGoogle() : cal.link ? refreshLink(false) : file.current?.click()
+          }
         >
-          {cal.busy ? "Reading…" : cal.link ? "Refresh" : "Update"}
+          {cal.busy ? "Reading…" : cal.link || (cal.google && googleClientId) ? "Refresh" : "Update"}
         </button>
         <button type="button" className="py-1 underline" onClick={cal.remove}>
-          Remove calendar
+          {cal.google ? "Disconnect" : "Remove calendar"}
         </button>
       </p>
     </section>
