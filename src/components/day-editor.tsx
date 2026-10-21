@@ -80,40 +80,15 @@ export function DayEditorPanel({
       ) : entries.isLoading ? (
         <Skeleton className="h-24 w-full" />
       ) : inPage ? (
-        <HeaderCard
-          light
-          header={
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div>
-                <h2 className="font-semibold text-base">This day's timesheet</h2>
-                <p className="text-foreground/75 text-sm">
-                  {rows.length === 0
-                    ? "Nothing logged yet"
-                    : `${rows.length} ${rows.length === 1 ? "entry" : "entries"}`}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                {total > 0 && <HoursChip label="Total">{formatDuration(total)}</HoursChip>}
-                <NonBillableToggle
-                  date={date}
-                  labelled
-                  seed={weekSeed && { days: weekSeed.days, updatedAt: weekSeed.daysUpdatedAt }}
-                />
-              </div>
-            </div>
-          }
-        >
-          {rows.length > 0 && (
-            <>
-              <ul className="flex flex-col gap-2">
-                {rows.map((e) => (
-                  <EntryRow key={e.id} entry={e} bare />
-                ))}
-              </ul>
-              <MergeEntriesBar entries={rows} />
-            </>
-          )}
-        </HeaderCard>
+        <DayCard
+          date={date}
+          rows={rows}
+          total={total}
+          weekSeed={weekSeed}
+          hasProjects={hasProjects}
+          projectsLoading={clients.isLoading}
+          timerRunning={!!running.data}
+        />
       ) : rows.length > 0 ? (
         <>
           <EntryList entries={rows} date={date} showTotal={false} />
@@ -121,20 +96,84 @@ export function DayEditorPanel({
         </>
       ) : null}
 
-      {hasProjects ? (
-        <QuickAdd date={date} timerRunning={!!running.data} dayMinutes={total} showDate={!inPage} />
-      ) : (
-        !clients.isLoading && (
-          <p className="text-muted-foreground text-sm">
-            Add a client and project under{" "}
-            <Link href="/dashboard/clients" className="underline">
-              Clients
-            </Link>{" "}
-            to log time.
-          </p>
-        )
-      )}
+      {!inPage &&
+        (hasProjects ? (
+          <QuickAdd date={date} timerRunning={!!running.data} dayMinutes={total} showDate />
+        ) : (
+          !clients.isLoading && <NoProjects />
+        ))}
     </div>
+  );
+}
+
+/** The Week page's day: ONE card (header with the entry count, the total and the non-billable button; the entries; the add form). */
+function DayCard({
+  date,
+  rows,
+  total,
+  weekSeed,
+  hasProjects,
+  projectsLoading,
+  timerRunning,
+}: {
+  date: string;
+  rows: DayEntries;
+  total: number;
+  weekSeed?: { entries: DayEntries; days: string[]; updatedAt: number; daysUpdatedAt: number };
+  hasProjects: boolean;
+  projectsLoading: boolean;
+  timerRunning: boolean;
+}) {
+  return (
+    <HeaderCard
+      header={
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div>
+            <h2 className="font-semibold text-base">This day's timesheet</h2>
+            <p className="text-foreground/75 text-sm">
+              {rows.length === 0 ? "Nothing logged yet" : `${rows.length} ${rows.length === 1 ? "entry" : "entries"}`}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {total > 0 && <HoursChip label="Total">{formatDuration(total)}</HoursChip>}
+            <NonBillableToggle
+              date={date}
+              labelled
+              seed={weekSeed && { days: weekSeed.days, updatedAt: weekSeed.daysUpdatedAt }}
+            />
+          </div>
+        </div>
+      }
+    >
+      {rows.length > 0 && (
+        <>
+          <ul className="flex flex-col gap-2">
+            {rows.map((e) => (
+              <EntryRow key={e.id} entry={e} bare />
+            ))}
+          </ul>
+          <MergeEntriesBar entries={rows} />
+        </>
+      )}
+      {/* The add form lives in the same card (one card for the day, not two). */}
+      {hasProjects ? (
+        <QuickAdd date={date} timerRunning={timerRunning} dayMinutes={total} showDate={false} bare />
+      ) : (
+        !projectsLoading && <NoProjects />
+      )}
+    </HeaderCard>
+  );
+}
+
+function NoProjects() {
+  return (
+    <p className="text-muted-foreground text-sm">
+      Add a client and project under{" "}
+      <Link href="/dashboard/clients" className="underline">
+        Clients
+      </Link>{" "}
+      to log time.
+    </p>
   );
 }
 
