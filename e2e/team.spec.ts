@@ -34,7 +34,7 @@ test("an owner invites someone by email, they join and log time, and the owner r
     await expect(page.getByText("Nobody on your team yet")).toBeHidden();
     await page.getByLabel("Their email address").fill(member.email);
     await page.getByLabel("Their name (optional)").fill("Pat");
-    await page.getByLabel("Acme Studio").check();
+    await page.getByRole("button", { name: "Acme Studio", pressed: false }).click(); // a toggle button, not a tick box
     await page.getByRole("button", { name: "Send the invitation" }).click();
     await expect(page.getByText(`We emailed ${member.email}.`)).toBeVisible();
     await expect(page.getByText(/Invitation sent, not accepted yet/)).toBeVisible();
@@ -48,20 +48,44 @@ test("an owner invites someone by email, they join and log time, and the owner r
   await test.step("the Invite someone card sits beside one person and spans the row under two, so there is never empty space", async () => {
     await page.getByRole("button", { name: "Done" }).click(); // closes the sent-invitation message and shows the card again
     const people = page.getByRole("region", { name: "Your team" });
-    const cell = () => people.getByRole("button", { name: "Invite someone" }).locator("xpath=ancestor::li[1]");
+    const cell = () =>
+      people.getByRole("button", { name: "Invite someone", exact: true }).locator("xpath=ancestor::li[1]");
     await expect(cell()).not.toHaveClass(/sm:col-span-2/); // one person: the card shares the row with them
+    await expect(people.getByRole("button", { name: "Acme Studio", pressed: true })).toHaveCount(1); // the person's clients are toggle buttons, pressed when allowed
     await shot("team-one-person");
-    await people.getByRole("button", { name: "Invite someone" }).click();
+    await people.getByRole("button", { name: "Invite someone", exact: true }).click();
     const form = page.locator("form", { has: page.getByLabel("Their email address") });
     await expect(form.locator("xpath=ancestor::li[1]")).not.toHaveClass(/sm:col-span-2/); // the form opens in the card's own cell
     await form.getByLabel("Their email address").fill(newUser().email);
-    await form.getByLabel("Acme Studio").check();
+    await form.getByRole("button", { name: "Acme Studio", pressed: false }).click();
     await page.getByRole("button", { name: "Send the invitation" }).click();
     await expect(page.getByText(/Invitation sent, not accepted yet/)).toHaveCount(2);
     await expect(form.locator("xpath=ancestor::li[1]")).not.toHaveClass(/sm:col-span-2/); // sending did not make the cell jump wider
     await page.getByRole("button", { name: "Done" }).click();
     await expect(cell()).toHaveClass(/sm:col-span-2/); // two people: the slim card spans both columns
     await shot("team-two-people");
+    if (info.project.name === "phone") {
+      // On a phone the people are a row to swipe through, one card at a time with the next one peeking in.
+      const row = people.getByRole("list").first();
+      expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+      const first = await people.getByRole("listitem").first().boundingBox();
+      const viewport = page.viewportSize()?.width ?? 400;
+      const rowBox = await row.boundingBox();
+      expect((first?.width ?? 0) >= (rowBox?.width ?? 999) - 2).toBe(true); // a card fills the whole width, no piece of the next one
+      expect((first?.width ?? 0) <= viewport).toBe(true);
+      await row.evaluate((el) => el.scrollTo({ left: 0 })); // back to the first card, as a visitor first sees it
+      await shot("team-swipe-row-start");
+      // Dots show where you are and jump to a card: the last one is the invite card.
+      await expect(people.getByRole("button", { name: "Go to person 1 of 2" })).toHaveAttribute("aria-current", "true");
+      await people.getByRole("button", { name: "Go to Invite someone" }).click();
+      await expect(people.getByRole("button", { name: "Invite someone", exact: true })).toBeInViewport();
+      await expect(people.getByRole("button", { name: "Go to Invite someone" })).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+      await expect(page).toHaveURL(/\/dashboard\/team$/);
+      await shot("team-swipe-row");
+    }
   });
 
   await test.step("someone not signed in who opens the link is sent to log in and brought back", async () => {
