@@ -14,13 +14,14 @@ export function TeamView() {
   const teams = trpc.member.teams.useQuery();
   const shown = (people.data ?? []).filter((p) => p.status !== "removed");
   const active = shown.filter((p) => p.status === "active").length;
+  const waiting = shown.filter((p) => p.status === "pending").length; // an expired invitation is not "waiting"
   return (
     <PageShell
       nav="team"
       title="Team"
       description={
         shown.length > 0
-          ? `${active} on your team · ${shown.length - active} invitation${shown.length - active === 1 ? "" : "s"} waiting`
+          ? `${active} on your team · ${waiting} invitation${waiting === 1 ? "" : "s"} waiting`
           : "Let someone log time on your clients, without giving them your invoices or rates."
       }
       descriptionOnPhone
