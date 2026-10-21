@@ -7,6 +7,7 @@ import { cn } from "cn";
 
 import { CurrencyProvider } from "@/components/currency-provider";
 import { DemoBanner } from "@/components/demo-banner";
+import { GoogleCalendarProvider } from "@/components/google-calendar-config";
 import { GuideKeeper } from "@/components/guide-keeper";
 import { LocalFirst } from "@/components/local-first";
 import { LogoMark } from "@/components/logo";
@@ -21,6 +22,7 @@ import { GUIDE_PATHS, GUIDE_VERSION } from "@/content/guide";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { donateUrl } from "@/lib/donate";
+import { googleCalendarClientId } from "@/lib/google-calendar-config";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
@@ -68,65 +70,67 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   return (
     <OfflineGuard userId={session.user.id}>
       <LocalFirst userId={session.user.id} isDemo={Boolean(dbUser?.is_demo)} />
-      <CurrencyProvider currency={dbUser?.currency ?? "USD"}>
-        <SidebarProvider
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 68)",
-            } as React.CSSProperties
-          }
-        >
-          <SideNav isAdmin={isAdmin} />
-          <SidebarInset
-            className={cn(
-              "[html[data-content-layout=centered]_&>*]:mx-auto",
-              "[html[data-content-layout=centered]_&>*]:w-full",
-              "[html[data-content-layout=centered]_&>*]:max-w-screen-2xl",
-              "peer-data-[variant=inset]:border",
-              "[--dashboard-header-height:--spacing(12)]",
-              "min-w-0 overflow-x-clip",
-            )}
+      <GoogleCalendarProvider clientId={dbUser?.is_demo ? null : googleCalendarClientId()}>
+        <CurrencyProvider currency={dbUser?.currency ?? "USD"}>
+          <SidebarProvider
+            style={
+              {
+                "--sidebar-width": "calc(var(--spacing) * 68)",
+              } as React.CSSProperties
+            }
           >
-            <UsageBeacon />
-            <SwipeNav />
-            <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
-            <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
-            {session?.user?.demo === true && <DemoBanner />}
-            <header
+            <SideNav isAdmin={isAdmin} />
+            <SidebarInset
               className={cn(
-                "flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
-                // Handle sticky navbar style with conditional classes so blur, background, z-index, and rounded corners remain consistent across all SidebarVariant layouts.
-                "[html[data-navbar-style=sticky]_&]:sticky [html[data-navbar-style=sticky]_&]:top-0 [html[data-navbar-style=sticky]_&]:z-50 [html[data-navbar-style=sticky]_&]:overflow-hidden [html[data-navbar-style=sticky]_&]:rounded-t-[inherit] [html[data-navbar-style=sticky]_&]:bg-background/50 [html[data-navbar-style=sticky]_&]:backdrop-blur-md",
+                "[html[data-content-layout=centered]_&>*]:mx-auto",
+                "[html[data-content-layout=centered]_&>*]:w-full",
+                "[html[data-content-layout=centered]_&>*]:max-w-screen-2xl",
+                "peer-data-[variant=inset]:border",
+                "[--dashboard-header-height:--spacing(12)]",
+                "min-w-0 overflow-x-clip",
               )}
             >
-              <div className="flex w-full items-center justify-between px-4 lg:px-6">
-                <div className="flex items-center gap-1 lg:gap-2">
-                  <Link
-                    href="/dashboard/today"
-                    className="flex items-center gap-2 font-semibold text-base lg:[html[data-nav-position=left]_&]:hidden"
-                  >
-                    <LogoMark className="size-6 shrink-0" aria-hidden />
-                    UseHourly
-                  </Link>
+              <UsageBeacon />
+              <SwipeNav />
+              <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
+              <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
+              {session?.user?.demo === true && <DemoBanner />}
+              <header
+                className={cn(
+                  "flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
+                  // Handle sticky navbar style with conditional classes so blur, background, z-index, and rounded corners remain consistent across all SidebarVariant layouts.
+                  "[html[data-navbar-style=sticky]_&]:sticky [html[data-navbar-style=sticky]_&]:top-0 [html[data-navbar-style=sticky]_&]:z-50 [html[data-navbar-style=sticky]_&]:overflow-hidden [html[data-navbar-style=sticky]_&]:rounded-t-[inherit] [html[data-navbar-style=sticky]_&]:bg-background/50 [html[data-navbar-style=sticky]_&]:backdrop-blur-md",
+                )}
+              >
+                <div className="flex w-full items-center justify-between px-4 lg:px-6">
+                  <div className="flex items-center gap-1 lg:gap-2">
+                    <Link
+                      href="/dashboard/today"
+                      className="flex items-center gap-2 font-semibold text-base lg:[html[data-nav-position=left]_&]:hidden"
+                    >
+                      <LogoMark className="size-6 shrink-0" aria-hidden />
+                      UseHourly
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <GuideButton />
+                    <LayoutControls />
+                    <ThemeSwitcher />
+                    <UserMenu user={user} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <GuideButton />
-                  <LayoutControls />
-                  <ThemeSwitcher />
-                  <UserMenu user={user} />
-                </div>
+              </header>
+              <MobileNav isAdmin={isAdmin} />
+              {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
+              <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-2 has-data-[content-padding=false]:p-0 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:has-data-[content-padding=false]:p-0">
+                <OfflineSync />
+                <SupportNotice cost={dbUser?.is_demo ? null : (supportNotice?.cost ?? null)} url={donateUrl()} />
+                {children}
               </div>
-            </header>
-            <MobileNav isAdmin={isAdmin} />
-            {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
-            <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-2 has-data-[content-padding=false]:p-0 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:has-data-[content-padding=false]:p-0">
-              <OfflineSync />
-              <SupportNotice cost={dbUser?.is_demo ? null : (supportNotice?.cost ?? null)} url={donateUrl()} />
-              {children}
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
-      </CurrencyProvider>
+            </SidebarInset>
+          </SidebarProvider>
+        </CurrencyProvider>
+      </GoogleCalendarProvider>
     </OfflineGuard>
   );
 }

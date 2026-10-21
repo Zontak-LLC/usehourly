@@ -93,7 +93,7 @@ A bar appears under the project and above the time box when you add time. It tur
     title: "Time entries from your calendar",
     group: "time",
     summary:
-      "Import a calendar file or connect a private calendar address, and each day shows its meetings ready to log in one tap.",
+      "Connect Google Calendar, import a calendar file or connect a private calendar address, and each day shows its meetings ready to log in one tap.",
     keywords: [
       "calendar",
       "meetings",
@@ -108,7 +108,9 @@ A bar appears under the project and above the time box when you add time. It tur
       "link",
       "sync",
     ],
-    body: `On **Today**, press **Add a calendar file** and choose a calendar file (**.ics**). Each day then shows **From your calendar**: the day's meetings, each with its length and a project. Press **Add** to log it (the meeting's title becomes the description), or **Skip** to hide it for good. Nothing is added unless you press Add.
+    body: `The quickest way is **Connect Google Calendar** on **Today** (when it is switched on for this site): Google's own window asks you to allow UseHourly to read your events, read-only, and your browser then reads them straight from Google, so nothing passes through UseHourly's servers. The permission lasts about an hour, so press **Refresh** to read newer meetings (a Google window opens again, usually just to confirm). **Disconnect** forgets the meetings, and you can remove the access any time at myaccount.google.com/permissions. The file and private-address options below work with any calendar.
+
+With a file instead: on **Today**, press **Add a calendar file** and choose a calendar file (**.ics**). Each day then shows **From your calendar**: the day's meetings, each with its length and a project. Press **Add** to log it (the meeting's title becomes the description), or **Skip** to hide it for good. Nothing is added unless you press Add.
 
 ## Getting the file
 - **Google Calendar:** on a computer, Settings, **Import & export**, **Export**. You get a zip; open it and use the .ics file for your calendar.

@@ -24,13 +24,13 @@ describe("content security policy", () => {
     expect(prod).toContain("base-uri 'self'");
     expect(prod).toContain("form-action 'self'");
     expect(directive(prod, "connect-src")).toBe(
-      "connect-src 'self' https://api.anthropic.com https://api.openai.com https://cloudflareinsights.com",
+      "connect-src 'self' https://api.anthropic.com https://api.openai.com https://accounts.google.com https://www.googleapis.com https://cloudflareinsights.com",
     );
     expect(prod).toContain("upgrade-insecure-requests");
     expect(buildCsp("n", false)).not.toContain("upgrade-insecure-requests");
-    // the robot check and web analytics are the only outside script hosts
+    // the robot check, web analytics and Google sign-in (Connect Google Calendar) are the only outside script hosts
     expect(directive(prod, "script-src")).toBe(
-      "script-src 'self' 'nonce-n' https://static.cloudflareinsights.com https://challenges.cloudflare.com",
+      "script-src 'self' 'nonce-n' https://static.cloudflareinsights.com https://challenges.cloudflare.com https://accounts.google.com",
     );
   });
 

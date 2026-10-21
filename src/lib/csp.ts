@@ -9,7 +9,8 @@ export function buildCsp(nonce: string, isProd: boolean): string {
     "default-src 'self'",
     // The nonce covers Next.js's own inline scripts and the theme boot script. static.cloudflareinsights.com is
     // Cloudflare Web Analytics (injected at the edge in production); challenges.cloudflare.com is the sign-up robot check.
-    `script-src 'self' 'nonce-${nonce}'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"} https://challenges.cloudflare.com`,
+    `script-src 'self' 'nonce-${nonce}'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"} https://challenges.cloudflare.com https://accounts.google.com`,
+    // accounts.google.com is Google's sign-in script for "Connect Google Calendar" (issue #99), loaded when the Today calendar card is shown.
     // Turnstile draws its widget in an iframe from Cloudflare.
     "frame-src https://challenges.cloudflare.com",
     // Styles stay inline: React sets style attributes and Tailwind emits small inline blocks.
@@ -17,7 +18,7 @@ export function buildCsp(nonce: string, isProd: boolean): string {
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     // api.anthropic.com and api.openai.com: "Polish" calls the AI service straight from the browser with the person's own key (issue #98).
-    `connect-src 'self' https://api.anthropic.com https://api.openai.com${isProd ? " https://cloudflareinsights.com" : " ws: wss:"}`,
+    `connect-src 'self' https://api.anthropic.com https://api.openai.com https://accounts.google.com https://www.googleapis.com${isProd ? " https://cloudflareinsights.com" : " ws: wss:"}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
