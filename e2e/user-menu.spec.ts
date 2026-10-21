@@ -38,6 +38,7 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
     await page
       .getByLabel("Choose your picture file")
       .setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PIXEL });
+    await page.getByRole("button", { name: "Save picture" }).click(); // the position editor opens first
     await expect(page.getByText("Picture saved.")).toBeVisible();
     await expect(trigger.locator("img")).toBeVisible();
     await trigger.click();
@@ -58,6 +59,7 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
     await page
       .getByLabel("Choose picture file")
       .setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PIXEL });
+    await page.getByRole("button", { name: "Save picture" }).click();
     await expect(page.getByText("Picture saved.")).toBeVisible();
     await expect(trigger.locator("img")).toBeVisible();
     await page.reload();
