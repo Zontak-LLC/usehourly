@@ -52,6 +52,19 @@ test("an owner invites someone by email, they join and log time, and the owner r
       people.getByRole("button", { name: "Invite someone", exact: true }).locator("xpath=ancestor::li[1]");
     await expect(cell()).not.toHaveClass(/sm:col-span-2/); // one person: the card shares the row with them
     await expect(people.getByRole("button", { name: "Acme Studio", pressed: true })).toHaveCount(1); // the person's clients are toggle buttons, pressed when allowed
+    // The pressed pill follows the theme: its check mark has the pill's own text colour (not the global green), and the
+    // pill is filled with the soft tint rather than solid black.
+    const pill = people.getByRole("button", { name: "Acme Studio", pressed: true });
+    const colours = await pill.evaluate((el) => {
+      const icon = el.querySelector("svg");
+      return {
+        text: getComputedStyle(el).color,
+        icon: icon ? getComputedStyle(icon).color : null,
+        fill: getComputedStyle(el).backgroundColor,
+      };
+    });
+    expect(colours.icon).toBe(colours.text);
+    expect(colours.fill).not.toBe("rgb(24, 24, 27)");
     await shot("team-one-person");
     await people.getByRole("button", { name: "Invite someone", exact: true }).click();
     const form = page.locator("form", { has: page.getByLabel("Their email address") });
