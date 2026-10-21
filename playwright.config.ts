@@ -56,6 +56,7 @@ export default defineConfig({
             NEXT_DIST_DIR: ".next-e2e",
             E2E_PERSIST: process.env.E2E_PERSIST ?? "",
             GOOGLE_CALENDAR_CLIENT_ID: "e2e-test.apps.googleusercontent.com", // switches the Google Calendar button on (Google itself is faked)
+            GOOGLE_CALENDAR_PUBLIC: "1", // shows it to every test account (in production it is for the owner until Google verifies the app)
             NEXT_PUBLIC_ENABLE_SW: "1", // the offline worker is off in development unless a test asks for it
             AUTH_URL: BASE,
             NEXT_PUBLIC_APP_URL: BASE,
