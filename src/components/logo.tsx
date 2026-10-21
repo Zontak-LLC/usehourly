@@ -1,17 +1,23 @@
 import type { SVGProps } from "react";
 
 /**
- * The UseHourly mark: an "H" inside a stopwatch, its crossbar in amber. The tile is always dark, so it
- * reads the same on light and dark pages. Keep the geometry in step with src/app/icon.svg.
+ * The UseHourly mark: a bold ink "U" on an amber tile with a white bar across it, so it reads as the U of "Use" and
+ * the H of "Hourly" at once. The tile is always amber, so it reads the same on light and dark pages. Keep the geometry
+ * in step with src/app/icon.svg (scripts/logo/render-icons.mjs draws every icon from it).
  */
 export function LogoMark(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 64 64" role="img" aria-label="UseHourly" {...props}>
-      <rect width="64" height="64" rx="15" fill="#111" />
-      <circle cx="32" cy="33" r="19" fill="none" stroke="#fff" strokeWidth="4" />
-      <path d="M32 6v7" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
-      <path d="M25.5 26v14M38.5 26v14" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
-      <path d="M25.5 33h13" stroke="#f5a524" strokeWidth="4" strokeLinecap="round" />
+      <rect width="64" height="64" rx="15" fill="#f5a524" />
+      <path
+        d="M20 13v23a12 12 0 0 0 24 0v-23"
+        fill="none"
+        stroke="#111"
+        strokeWidth="9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M20 26h24" fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" />
     </svg>
   );
 }
