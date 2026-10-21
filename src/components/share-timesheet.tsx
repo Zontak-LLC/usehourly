@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { Check, Copy, Send } from "lucide-react";
+import { Check, Copy, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { checkRange, describeRange } from "@/lib/export-range";
@@ -27,14 +26,12 @@ const STATUS_LABEL: Record<ShareStatus, string> = {
  * check, print and approve. Lives next to the export buttons on Week and Month and starts on what the screen shows.
  */
 export function ShareTimesheet({
-  open,
-  onOpenChange,
+  onClose,
   defaultFrom,
   defaultTo,
   projectId: initialProject = "",
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
   defaultFrom: string;
   defaultTo: string;
   projectId?: string;
@@ -51,19 +48,9 @@ export function ShareTimesheet({
   const [expiresInDays, setExpiresInDays] = useState<number>(DEFAULT_SHARE_EXPIRY_DAYS);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const shares = trpc.timesheetShare.list.useQuery(undefined, { enabled: open });
+  const shares = trpc.timesheetShare.list.useQuery();
 
   const check = checkRange(from, to);
-
-  // Start from what the screen is showing each time the panel opens.
-  useEffect(() => {
-    if (!open) return;
-    setFrom(defaultFrom);
-    setTo(defaultTo);
-    setScope(initialProject ? `p:${initialProject}` : "");
-    setLink(null);
-    setCopied(false);
-  }, [open, defaultFrom, defaultTo, initialProject]);
 
   async function make() {
     if (!check.ok) return;
@@ -105,124 +92,134 @@ export function ShareTimesheet({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-4 overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Send hours to a client</DialogTitle>
-          <DialogDescription>
+    <section aria-label="Send hours to a client" className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="font-semibold text-base">Send hours to a client</h2>
+          <p className="text-foreground/75 text-sm">
             Makes a private link to a frozen copy of these hours (no rates or money). Your client can print it and
             approve it.
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-10 shrink-0"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X />
+        </Button>
+      </div>
 
-        {link ? (
-          <Notice className="flex flex-col gap-2">
-            <p className="font-medium text-sm">Your link is ready. Copy it now: it is shown only once.</p>
-            <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Timesheet link" />
-            <div className="flex gap-2">
-              <Button type="button" onClick={copy}>
-                {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy link"}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setLink(null)}>
-                Make another
-              </Button>
-            </div>
-          </Notice>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="share-from">From</Label>
-                <Input id="share-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="share-to">To</Label>
-                <Input id="share-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="share-scope">Which work</Label>
-              <select
-                id="share-scope"
-                value={scope}
-                onChange={(e) => setScope(e.target.value)}
-                className="h-9 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              >
-                <option value="">Everything</option>
-                {clients.data?.map((c) => (
-                  <optgroup key={c.id} label={c.name}>
-                    <option value={`c:${c.id}`}>All of {c.name}</option>
-                    {c.projects.map((p) => (
-                      <option key={p.id} value={`p:${p.id}`}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={includeNotes} onChange={(e) => setIncludeNotes(e.target.checked)} />
-              Include my descriptions of what I did
-            </label>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="share-expiry">Link works for</Label>
-              <select
-                id="share-expiry"
-                value={expiresInDays}
-                onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                className="h-9 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              >
-                {SHARE_EXPIRY_DAYS.map((d) => (
-                  <option key={d} value={d}>
-                    {d} days
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <p className={`text-sm ${check.ok ? "text-muted-foreground" : "text-destructive"}`} aria-live="polite">
-              {check.ok ? describeRange(from, to) : check.message}
-            </p>
-
-            <Button onClick={make} disabled={!check.ok || create.isPending}>
-              <Send /> {create.isPending ? "Making the link…" : "Make a link"}
+      {link ? (
+        <Notice className="flex flex-col gap-2">
+          <p className="font-medium text-sm">Your link is ready. Copy it now: it is shown only once.</p>
+          <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Timesheet link" />
+          <div className="flex gap-2">
+            <Button type="button" onClick={copy}>
+              {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy link"}
             </Button>
-          </>
-        )}
-
-        {shares.data && shares.data.length > 0 && (
-          <div className="flex flex-col gap-2 border-t pt-3">
-            <p className="font-medium text-sm">Links you've made</p>
-            <ul className="flex flex-col gap-2">
-              {shares.data.map((s) => (
-                <li key={s.id} className="flex items-start justify-between gap-2 text-sm">
-                  <div className="min-w-0">
-                    <p className="break-words font-medium">{s.title}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {s.status === "approved" ? `Approved by ${s.approved_name}` : STATUS_LABEL[s.status]}
-                    </p>
-                  </div>
-                  {s.status === "waiting" && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => turnOff(s.id)}
-                      disabled={revoke.isPending}
-                    >
-                      Turn off
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <Button type="button" variant="outline" onClick={() => setLink(null)}>
+              Make another
+            </Button>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </Notice>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="share-from">From</Label>
+              <Input id="share-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="share-to">To</Label>
+              <Input id="share-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="share-scope">Which work</Label>
+            <select
+              id="share-scope"
+              value={scope}
+              onChange={(e) => setScope(e.target.value)}
+              className="h-9 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            >
+              <option value="">Everything</option>
+              {clients.data?.map((c) => (
+                <optgroup key={c.id} label={c.name}>
+                  <option value={`c:${c.id}`}>All of {c.name}</option>
+                  {c.projects.map((p) => (
+                    <option key={p.id} value={`p:${p.id}`}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={includeNotes} onChange={(e) => setIncludeNotes(e.target.checked)} />
+            Include my descriptions of what I did
+          </label>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="share-expiry">Link works for</Label>
+            <select
+              id="share-expiry"
+              value={expiresInDays}
+              onChange={(e) => setExpiresInDays(Number(e.target.value))}
+              className="h-9 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            >
+              {SHARE_EXPIRY_DAYS.map((d) => (
+                <option key={d} value={d}>
+                  {d} days
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className={`text-sm ${check.ok ? "text-muted-foreground" : "text-destructive"}`} aria-live="polite">
+            {check.ok ? describeRange(from, to) : check.message}
+          </p>
+
+          <Button onClick={make} disabled={!check.ok || create.isPending}>
+            <Send /> {create.isPending ? "Making the link…" : "Make a link"}
+          </Button>
+        </>
+      )}
+
+      {shares.data && shares.data.length > 0 && (
+        <div className="flex flex-col gap-2 border-t pt-3">
+          <p className="font-medium text-sm">Links you've made</p>
+          <ul className="flex flex-col gap-2">
+            {shares.data.map((s) => (
+              <li key={s.id} className="flex items-start justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <p className="break-words font-medium">{s.title}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {s.status === "approved" ? `Approved by ${s.approved_name}` : STATUS_LABEL[s.status]}
+                  </p>
+                </div>
+                {s.status === "waiting" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => turnOff(s.id)}
+                    disabled={revoke.isPending}
+                  >
+                    Turn off
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }

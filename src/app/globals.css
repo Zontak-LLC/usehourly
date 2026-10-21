@@ -108,11 +108,11 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-border: oklch(0.92 0.004 286);
   --sidebar-ring: oklch(0.21 0.006 286);
 
-  /* Header shades. Since 2026-10-20 every card header is the card's own colour (white): the grey bands looked heavy.
-     The tokens stay so a header can be tinted again in one place, and the checks that name them keep working. */
-  --band-1: var(--card);
-  --band-2: var(--card);
-  --band-3: var(--card);
+  /* Header shades. A card's header is a light tint of its text colour over the card colour (2026-10-21: white headers
+     made a project tile's header look like its body). Subtle on purpose (the 8-12% greys looked heavy). One place. */
+  --band-1: color-mix(in oklab, var(--foreground) 4%, var(--card));
+  --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
+  --band-3: color-mix(in oklab, var(--foreground) 5%, var(--card));
 
   /* A soft tint of the accent (default buttons, a selected day or chip). A coloured accent can carry a strong tint; a
      near-black or black one turns it heavy grey, so the neutral palettes use a much weaker mix (set just below). */

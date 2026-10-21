@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { cn } from "cn";
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,11 +26,11 @@ export type MoreMenuItem = {
  * The ··· button that holds an item's secondary actions (docs/ui-spec.md: three or more, or two on a card that repeats
  * in a list). `label` names the button for a screen reader and says whose actions they are ("More actions for Acme").
  */
-export function MoreMenu({ label, items }: { label: string; items: MoreMenuItem[] }) {
+export function MoreMenu({ label, items, className }: { label: string; items: MoreMenuItem[]; className?: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="outline" aria-label={label} title="More actions">
+        <Button size="icon" variant="outline" aria-label={label} title="More actions" className={cn(className)}>
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>

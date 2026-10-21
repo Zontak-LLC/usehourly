@@ -39,7 +39,7 @@ export function ProjectCard({
   const money = useMoney();
   return (
     <li className="flex flex-col overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
-      <div className="flex items-center justify-between gap-2 bg-card py-2 pr-2 pl-3">
+      <div className="flex items-center justify-between gap-2 bg-band-3 py-2 pr-2 pl-3">
         <span className="flex min-w-0 items-center gap-2">
           <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
           <h3 className="truncate font-semibold text-sm">{p.name}</h3>

@@ -11,7 +11,7 @@ const root = resolve(import.meta.dirname, "../..");
 const shot = (name) =>
   `data:image/png;base64,${readFileSync(resolve(root, "android/store/screenshots", name)).toString("base64")}`;
 // The mark: the same geometry as src/app/icon.svg.
-const MARK = `<svg viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#f5a524"/><circle cx="32" cy="32" r="22" fill="none" stroke="#111" stroke-width="5"/><path d="M32 32L21.6 26M32 32L45.9 24" fill="none" stroke="#111" stroke-width="6" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#111"/></svg>`;
+const MARK = `<svg viewBox="0 0 64 64" fill="none" stroke="#18181b" stroke-linecap="round"><circle cx="32" cy="32" r="24" stroke-width="5"/><path d="M32 32L23 27M32 32L43 25" stroke-width="6"/><circle cx="32" cy="32" r="3" fill="#18181b" stroke="none"/></svg>`;
 
 const html = `<!doctype html><meta charset="utf-8"><style>
   * { box-sizing: border-box; margin: 0; }

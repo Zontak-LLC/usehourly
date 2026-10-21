@@ -9,14 +9,14 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
-const AMBER = "#f5a524";
-const INK = "#111";
-// The mark: a clock face ring with the hands at ten past ten (the same geometry as src/app/icon.svg).
+const PAPER = "#ffffff";
+const INK = "#18181b";
+// The mark: a thin clock (white tile only where an icon needs a background) with the hands at ten past ten (the same geometry as src/app/icon.svg).
 const H = (scale) =>
-  `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)"><circle cx="32" cy="32" r="22" fill="none" stroke="${INK}" stroke-width="5"/><path d="M32 32L21.6 26M32 32L45.9 24" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="${INK}"/></g>`;
+  `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)"><circle cx="32" cy="32" r="24" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M32 32L23 27M32 32L43 25" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><circle cx="32" cy="32" r="3" fill="${INK}"/></g>`;
 /** `radius` rounds the tile (0 = a full square, for icons the system rounds itself); `scale` shrinks the mark. */
 const svg = ({ radius, scale = 1 }) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${radius}" fill="${AMBER}"/>${H(scale)}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${radius}" fill="${PAPER}"/>${H(scale)}</svg>`;
 
 const png = (spec, size) =>
   sharp(Buffer.from(svg(spec)), { density: 384 })

@@ -9,11 +9,13 @@ test("a dialog on a phone stays above the keyboard, and the field being typed in
 }, info) => {
   test.skip(info.project.name !== "phone", "only phones have an on-screen keyboard");
   await startFreshAccount(page);
-  await page.goto("/dashboard/week");
-  await page.getByRole("button", { name: /Share & export/ }).click();
-  await page.getByRole("menuitem", { name: /Export a date range/ }).click();
+  await page.goto("/dashboard/month");
+  await page
+    .getByRole("button", { name: /^\d{4}-\d\d-\d\d: / })
+    .nth(10)
+    .click();
   const dialog = page.getByRole("dialog");
-  const field = dialog.getByLabel("From");
+  const field = dialog.getByRole("textbox").first();
   await expect(field).toBeVisible();
 
   const full = page.viewportSize()?.height ?? 800;
@@ -24,7 +26,6 @@ test("a dialog on a phone stays above the keyboard, and the field being typed in
   await page.setViewportSize({ width: page.viewportSize()?.width ?? 412, height: Math.round(full * 0.55) });
   const field2 = await field.boundingBox();
   expect((field2?.y ?? 999) + (field2?.height ?? 0)).toBeLessThan(Math.round(full * 0.55)); // the field is above the keyboard
-  await field.fill("2026-03-03");
-  await expect(field).toHaveValue("2026-03-03");
-  await expect(dialog.getByRole("button", { name: /Export Excel/ })).toBeInViewport(); // and so is the button
+  await field.fill("2h");
+  await expect(field).toHaveValue("2h");
 });

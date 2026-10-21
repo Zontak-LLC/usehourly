@@ -75,7 +75,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.getByRole("button", { name: /Add to the day/ }).click();
     count("firstEntry", 3);
     await expect(page.getByText("Logo concepts for the homepage")).toBeVisible();
-    await expect(page.getByText(/Ready to get paid/)).toBeVisible();
+    await expect(page.getByText(/Ready to get paid/)).toHaveCount(0); // no invoice nudge on Today
     await shot("first-entry");
     await audit("today with an entry");
     await a11y("today");
@@ -280,7 +280,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.getByRole("button", { name: /Share & export/ }).click();
     await shot("share-and-export-menu");
     await page.getByRole("menuitem", { name: /Send to a client for sign-off/ }).click();
-    await shot("share-dialog");
+    await shot("share-panel");
     await page.getByRole("button", { name: "Make a link" }).click();
     const url = await page.getByLabel("Timesheet link").inputValue();
     const anon = await anonymous(browser, info);

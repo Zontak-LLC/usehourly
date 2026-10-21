@@ -17,13 +17,13 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - **Green** (Bright Optimistic Green `#50B83C`, 2026-10-20) is only for good news. It is too pale for words on white (2.5:1), so `bg-success-bright` / `text-success-bright` and the check icons use it for icons, bars and fills, while `text-success` is the same hue darker (7:1) and `bg-success-soft` the pale tint behind it.
 - **Contrast:** WCAG AA (4.5:1) for text in every preset, light and dark, both layouts **[checked: `THEME_AUDIT=1 npx playwright test e2e/theme-audit.spec.ts`, also with `THEME_AUDIT_NAV=left`]**. Text on a tinted band uses `text-foreground/75`, never `text-muted-foreground` on the darker bands, and never `text-primary` for small text.
 
-## Surfaces: three levels (all headers are white since 2026-10-20: `--band-1/2/3` are the card colour)
+## Surfaces: three levels (headers are a light tint of the text colour over the card colour, 4 to 5%, since 2026-10-21; they were white for a day and a tile's header then looked like its body)
 | Level | What | Header shade |
 |---|---|---|
 | Page | the page background: a quiet neutral off-white | none |
 | 1. Page card | `PageShell`: one main card per dashboard page | white (`bg-card`) header, the same title size on every page, `clamp(1.375rem, 6.5vw, 2.25rem)` with a 40px line so it is as tall as the 40px controls beside it and grows to fill the free space, icon tile with a thin border; a short description (a date) can sit on the title's line with `inlineDescription` |
 | 2. Card | cards directly inside it (`HeaderCard`, `SectionCard`, entry cards, client cards, invoice cards) | `bg-band-2` (the same shade as band-1) |
-| 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (1.5%, a notch lighter), body white with a hairline ring (`ring-1 ring-foreground/10`, not a border, so the nesting check ignores it) |
+| 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (5%), body white with a hairline ring (`ring-1 ring-foreground/10`, not a border, so the nesting check ignores it) |
 
 - `--band-1/2/3` are mixed from the theme's own text and page colours (`globals.css`), so presets and dark mode follow. **Never use `bg-muted/40` for a header band** **[checked: `check-rules`]**.
 - **Cards go one level deep** **[checked: `auditPage` fails a bordered, rounded box nested 3 deep]**. A card never holds another framed card: inside a card use plain sections, borderless tiles, spacing or a heading.
@@ -70,7 +70,7 @@ Plain, short, no jargon, no blame. Name things the way the menu does ("Clients",
 
 ## Per page (what to expect)
 - **Today:** the add form card, two total cards, the day's entry cards (or the dashed empty state).
-- **Week / Month:** toolbar (project filter, Share & export, date arrows), the day strip or calendar card, the Week summary strip, and "What you worked on": one card (header: title, count, search) holding day headings with an entry tile each. **That card is not shown at all when the period has no entries.** The Week page's address carries the picked day (`?date=`), so a refresh returns to it.
+- **Week / Month:** toolbar (project filter, Share & export, date arrows; the export and share forms open as a card under the toolbar, not a pop-up), the day strip or calendar card, the Week summary strip, and "What you worked on": one card (header: title, count, search) holding day headings with an entry tile each. **That card is not shown at all when the period has no entries.** The Week page's address carries the picked day (`?date=`), so a refresh returns to it.
 - **Invoices:** total cards, filters in one card, an invoice card per invoice with two visible buttons (money, send) and a ··· menu (PDF, delete); Mark as paid and Send open inside the card, not in a popup.
 - **Clients:** one **card per client** (header: its logo if it has one, name, summary, the visible + to add a project and a ··· menu with Billing details and Archive client) holding **project tiles** (header row: name, a visible Edit pencil and a ··· menu with Archive project). No stat cards: their numbers are one line under the title ("3 clients · 4 projects · 31:45 logged this month"); the search box appears from six clients up; the page ends with a dashed **New client** card that turns into the form in place (no header button, no popup); the dashed "Add a project" tile only for a client with no project yet (UI simplification, 2026-10-21, ticket #135).
 - **Year summary:** stat cards, then one card per table.
