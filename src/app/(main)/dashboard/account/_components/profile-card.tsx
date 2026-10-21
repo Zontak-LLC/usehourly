@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { toast } from "sonner";
 
+import { AvatarCropper } from "@/components/avatar-cropper";
 import { LogoPicker } from "@/components/logo-picker";
 import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
           compact
           addLabel="Add a picture"
         />
+        <AvatarCropper crop={avatar.crop} />
         <p className="text-muted-foreground text-xs">Shown beside your name at the top right. Only you see it.</p>
       </div>
       <Button type="submit" className="self-start" disabled={updateProfile.isPending}>

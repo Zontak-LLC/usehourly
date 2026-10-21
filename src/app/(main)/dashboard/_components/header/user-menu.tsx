@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { ChevronDown, ImagePlus, LogOut, Trash2, User } from "lucide-react";
 
+import { AvatarCropper } from "@/components/avatar-cropper";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
         aria-label="Choose your picture file"
         onChange={avatar.pick}
       />
+      <AvatarCropper crop={avatar.crop} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
