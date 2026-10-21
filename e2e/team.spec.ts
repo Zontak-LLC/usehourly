@@ -91,13 +91,21 @@ test("an owner invites someone by email, they join and log time, and the owner r
     const p2 = await again.newPage();
     await p2.goto("/auth/v2/register");
     await p2.getByLabel("Name", { exact: true }).fill("Late Comer");
-    await p2.getByLabel("Email", { exact: true }).fill(newUser().email);
+    const lateEmail = newUser().email;
+    await p2.getByLabel("Email", { exact: true }).fill(lateEmail);
     await p2.getByLabel("Password", { exact: true }).fill(member.password);
     await p2.getByRole("button", { name: "Create account" }).click();
     await expect(p2).toHaveURL(/dashboard\/today/);
     await p2.goto(joinPath);
+    await expect(p2.getByText(`Signed in as ${lateEmail}`)).toBeVisible(); // the page says who is signed in
     await p2.getByRole("button", { name: "Join the team" }).click();
     await expect(p2.getByText(/This invitation isn't available/)).toBeVisible();
+    // ...and offers the way out: log out and come straight back to the same invitation to sign in as someone else
+    await p2.getByRole("button", { name: "Use a different account" }).click();
+    await expect(p2).toHaveURL(
+      new RegExp(`/auth/v2/login\\?next=${encodeURIComponent(joinPath).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`),
+    );
+    await expect(p2.getByRole("button", { name: /Log in/ })).toBeVisible();
     await again.close();
   });
 
