@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { entryAction, expect, startFreshAccount, test } from "./helpers";
 
 /**
  * Local-first spike (issue #95). With the switch on, entries are kept in this browser and shown from there; changes
@@ -44,12 +44,12 @@ test("entries added, edited and deleted offline reach the server once the connec
   // Edits and deletes work with no connection too.
   const row = (note: string) => page.getByRole("listitem").filter({ hasText: note });
   await row("kept offline").hover();
-  await row("kept offline").getByRole("button", { name: "Edit", exact: true }).click({ force: true });
+  await entryAction(row("kept offline"), "Edit");
   await page.getByLabel("Time", { exact: true }).fill("3:00");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("3:00").first()).toBeVisible();
   await row("to be deleted").hover();
-  await row("to be deleted").getByRole("button", { name: "Delete", exact: true }).click({ force: true });
+  await entryAction(row("to be deleted"), "Delete");
   await page.getByRole("button", { name: "Delete entry" }).click();
   await expect(page.getByText("to be deleted")).toHaveCount(0);
   await expect(page.getByLabel("Offline status")).not.toContainText(/\d+ saved/); // the old queue is not involved

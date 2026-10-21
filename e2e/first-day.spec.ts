@@ -1,4 +1,17 @@
-import { anonymous, clearMail, clientEmail, expect, linkIn, mailTo, newUser, seen, sql, test, today } from "./helpers";
+import {
+  anonymous,
+  clearMail,
+  clientEmail,
+  entryAction,
+  expect,
+  linkIn,
+  mailTo,
+  newUser,
+  seen,
+  sql,
+  test,
+  today,
+} from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -78,13 +91,11 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.getByText("Logo concepts for the homepage").hover(); // desktop shows the controls on hover
     // The entry is found by what it says (the newest entry is listed first, and one just added cannot be edited until
     // the server has confirmed it), not by its place in the list.
-    const edit = page
-      .getByRole("listitem")
-      .filter({ hasText: "Logo concepts for the homepage" })
-      .getByRole("button", { name: "Edit", exact: true });
+    const card = page.getByRole("listitem").filter({ hasText: "Logo concepts for the homepage" });
+    const menu = card.getByRole("button", { name: "More actions" });
     // On a phone there is no hover, so the controls have to be showing already. A miss here is a finding, not a crash.
-    if (isPhone) await expect.soft(edit, "entry actions must be visible without hover on a phone").toBeVisible();
-    await edit.click({ force: true });
+    if (isPhone) await expect.soft(menu, "entry actions must be visible without hover on a phone").toBeVisible();
+    await entryAction(card, "Edit");
     await page.getByLabel("Time", { exact: true }).fill("2:00");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(seen(page, "3:00")).toBeVisible(); // 1:00 + the 1:30 entry changed to 2:00

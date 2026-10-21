@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { entryAction, expect, startFreshAccount, test } from "./helpers";
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
@@ -20,14 +20,13 @@ test("buttons that open a form close it on the second click; the day's list is h
   });
 
   await test.step("an entry's pencil opens its form and closes it on the second click", async () => {
-    const edit = page.getByRole("button", { name: "Edit", exact: true });
-    await expect(edit).toHaveAttribute("aria-expanded", "false");
-    await edit.click();
-    await expect(edit).toHaveAttribute("aria-expanded", "true");
+    await entryAction(page, "Edit"); // from the entry's "More actions" menu
+    const pencil = page.getByRole("button", { name: "Edit", exact: true }); // while the form is open, the card shows one button that closes it
+    await expect(pencil).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByRole("button", { name: "Save" })).toBeVisible();
-    await edit.click();
+    await pencil.click();
     await expect(page.getByRole("button", { name: "Save" })).toHaveCount(0);
-    await expect(edit).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByRole("button", { name: "More actions" })).toBeVisible(); // the menu is back
   });
 
   await test.step("on Week the day's Edit day button opens every entry's form and Done editing closes them", async () => {

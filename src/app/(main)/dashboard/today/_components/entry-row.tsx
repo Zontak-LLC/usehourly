@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteEntryDialog } from "@/components/delete-entry-dialog";
@@ -17,6 +17,7 @@ import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
+import { EntryMenu } from "./entry-menu";
 import { MovePopover } from "./move-popover";
 
 export type EntryData = {
@@ -54,6 +55,7 @@ export function EntryRow({
   // An entry shown before the server has confirmed it cannot be changed yet (it has no real id to change).
   const unconfirmed = isPendingId(entry.id);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [editing, setEditingState] = useState(initialEditing);
   const setEditing = (on: boolean) => {
     setEditingState(on);
@@ -172,31 +174,30 @@ export function EntryRow({
           )}
         </div>
         <div className="flex shrink-0 gap-1">
-          {!editing && (
-            <MovePopover entryId={entry.id} date={entry.date} disabled={isRunning || unconfirmed} onMoved={refresh} />
-          )}
-          {/* The pencil opens the edit form and, while it is open, closes it again (and says so to a screen reader). */}
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => setEditing(!editing)}
-            aria-label="Edit"
-            aria-expanded={editing}
-            title={editing ? "Close the edit form" : "Edit"}
-            disabled={isRunning || unconfirmed}
-          >
-            <Pencil />
-          </Button>
-          {!editing && (
+          {editing ? (
+            // While the form is open, one button closes it again (and says so to a screen reader).
             <Button
               size="icon"
               variant="outline"
-              onClick={() => setConfirmingDelete(true)}
-              aria-label="Delete"
-              disabled={unconfirmed}
+              onClick={() => setEditing(false)}
+              aria-label="Edit"
+              aria-expanded
+              title="Close the edit form"
             >
-              <Trash2 />
+              <Pencil />
             </Button>
+          ) : (
+            <MovePopover entryId={entry.id} date={entry.date} open={moving} onOpenChange={setMoving} onMoved={refresh}>
+              <span className="inline-flex">
+                <EntryMenu
+                  disabled={isRunning || unconfirmed}
+                  deleteDisabled={unconfirmed}
+                  onEdit={() => setEditing(true)}
+                  onMove={() => setMoving(true)}
+                  onDelete={() => setConfirmingDelete(true)}
+                />
+              </span>
+            </MovePopover>
           )}
         </div>
       </header>
