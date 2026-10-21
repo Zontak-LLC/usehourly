@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { SwipeArea, type SwipeDirection } from "@/components/swipe-area";
 import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
 
 /**
@@ -16,6 +17,7 @@ export function PageShell({
   descriptionOnPhone = false,
   inlineDescription = false,
   actions,
+  onSwipe,
   children,
 }: {
   /** The page's id in the menu (sidebar-items.ts): its icon is shown before the title, so the header always matches the navigation. */
@@ -27,6 +29,8 @@ export function PageShell({
   /** Put the description on the title's line (baseline-aligned) instead of under it. */
   inlineDescription?: boolean;
   actions?: ReactNode;
+  /** A sideways swipe on the page body (phones): left = next, right = previous (a day, a month). Without it the swipe changes tab. */
+  onSwipe?: (direction: SwipeDirection) => void;
   children?: ReactNode;
 }) {
   const Icon = nav ? [...navLinks, ...adminLinks].find((l) => l.id === nav)?.icon : undefined;
@@ -56,7 +60,13 @@ export function PageShell({
         </div>
         {actions}
       </header>
-      <div className="flex flex-col gap-3 p-1 sm:gap-4 sm:p-4">{children}</div>
+      {onSwipe ? (
+        <SwipeArea onSwipe={onSwipe} className="flex flex-1 flex-col gap-3 p-1 sm:gap-4 sm:p-4">
+          {children}
+        </SwipeArea>
+      ) : (
+        <div className="flex flex-col gap-3 p-1 sm:gap-4 sm:p-4">{children}</div>
+      )}
     </div>
   );
 }
