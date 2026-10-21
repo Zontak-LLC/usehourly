@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { Check, Copy, Link2, Mail } from "lucide-react";
+import { Check, Copy, Link2, Mail, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -268,29 +267,37 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
   );
 }
 
-/** Everything about getting an invoice to a client, behind one Send button. */
-export function SendInvoiceDialog({
+/**
+ * Everything about getting an invoice to a client, opened inside the invoice's own card (not in a popup): email it from
+ * here, or copy a link and send it your own way. The card owns whether it is open.
+ */
+export function SendInvoicePanel({
   invoice,
   onClose,
 }: {
-  invoice: { id: string; number: string } | null;
+  invoice: { id: string; number: string };
   onClose: () => void;
 }) {
-  const open = invoice !== null;
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-4 overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Send invoice {invoice?.number}</DialogTitle>
-          <DialogDescription>Email it from here, or copy a link and send it your own way.</DialogDescription>
-        </DialogHeader>
-        {invoice && (
-          <>
-            <EmailSection invoiceId={invoice.id} open={open} />
-            <LinkSection invoiceId={invoice.id} open={open} />
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+    <section aria-label={`Send invoice ${invoice.number}`} className="flex flex-col gap-4 border-t bg-band-3 px-4 py-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-base">Send invoice {invoice.number}</h3>
+          <p className="text-foreground/75 text-sm">Email it from here, or copy a link and send it your own way.</p>
+        </div>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-10 shrink-0"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X />
+        </Button>
+      </div>
+      <EmailSection invoiceId={invoice.id} open />
+      <LinkSection invoiceId={invoice.id} open />
+    </section>
   );
 }

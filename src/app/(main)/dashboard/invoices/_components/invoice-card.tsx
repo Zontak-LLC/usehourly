@@ -1,13 +1,18 @@
 "use client";
 
+import { useState } from "react";
+
 import { CircleAlert, CircleCheck, CircleDollarSign, Download, Send, Trash2 } from "lucide-react";
 
 import { IconAction } from "@/components/icon-action";
+import { MoreMenu } from "@/components/more-menu";
+import { SendInvoicePanel } from "@/components/send-invoice-panel";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
 import { formatMoney } from "@/lib/money";
 
 import type { InvoiceRow } from "./invoice-types";
+import { PaidPanel } from "./paid-panel";
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
 const fmt = (iso: string) => dateFmt.format(fromISODate(iso));
@@ -45,22 +50,33 @@ function InvoiceStatus({ invoice: i, today }: { invoice: InvoiceRow; today: stri
 
 export type InvoiceActionHandlers = {
   busyId: string | null;
-  onMarkPaid: (i: InvoiceRow) => void;
-  onSend: (i: InvoiceRow) => void;
+  /** Saving a payment date (null = mark unpaid) is in flight. */
+  paidBusy: boolean;
+  onSavePaid: (i: InvoiceRow, date: string | null) => Promise<void>;
   onDownload: (i: InvoiceRow) => void;
   onDelete: (i: InvoiceRow) => void;
 };
 
-/** Four icon buttons with tooltips: money (mark paid / edit payment), send, download, delete. */
+type Panel = "paid" | "send" | null;
+
+/**
+ * The two actions people use (money, send) stay visible and open a panel inside the card; the rarer ones (PDF, delete)
+ * are behind the ··· menu (docs/ui-spec.md). On a phone the two visible ones carry words.
+ */
 function InvoiceActions({
   invoice: i,
   words = false,
+  panel,
+  onPanel,
   handlers,
 }: {
   invoice: InvoiceRow;
   words?: boolean;
+  panel: Panel;
+  onPanel: (next: Panel) => void;
   handlers: InvoiceActionHandlers;
 }) {
+  const toggle = (next: Exclude<Panel, null>) => onPanel(panel === next ? null : next);
   return (
     <div
       data-testid="invoice-actions"
@@ -71,11 +87,12 @@ function InvoiceActions({
         label={i.paid_date ? `Edit payment for ${i.number}` : `Mark ${i.number} as paid`}
         tip={i.paid_date ? "Edit payment" : "Mark as paid"}
         text={words ? (i.paid_date ? "Payment" : "Mark paid") : undefined}
+        expanded={panel === "paid"}
         // Green means "this invoice is paid": only the paid state is green; marking it paid is a plain action.
         className={
           i.paid_date ? "border-success-bright/60 text-success hover:bg-success-soft hover:text-success" : undefined
         }
-        onClick={() => handlers.onMarkPaid(i)}
+        onClick={() => toggle("paid")}
       >
         {i.paid_date ? <CircleCheck /> : <CircleDollarSign />}
       </IconAction>
@@ -83,28 +100,23 @@ function InvoiceActions({
         label={`Send ${i.number}`}
         tip="Send to client"
         text={words ? "Send" : undefined}
-        onClick={() => handlers.onSend(i)}
+        expanded={panel === "send"}
+        onClick={() => toggle("send")}
       >
         <Send />
       </IconAction>
-      <IconAction
-        label={`Download PDF for ${i.number}`}
-        tip="Download PDF"
-        text={words ? "PDF" : undefined}
-        disabled={handlers.busyId === i.id}
-        onClick={() => handlers.onDownload(i)}
-      >
-        <Download />
-      </IconAction>
-      <IconAction
-        label={`Delete ${i.number}`}
-        tip="Delete invoice"
-        text={words ? "Delete" : undefined}
-        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={() => handlers.onDelete(i)}
-      >
-        <Trash2 />
-      </IconAction>
+      <MoreMenu
+        label={`More actions for ${i.number}`}
+        items={[
+          {
+            label: handlers.busyId === i.id ? "Making the PDF…" : "Download PDF",
+            icon: <Download />,
+            onSelect: () => handlers.onDownload(i),
+            disabled: handlers.busyId === i.id,
+          },
+          { label: "Delete invoice", icon: <Trash2 />, onSelect: () => handlers.onDelete(i), destructive: true },
+        ]}
+      />
     </div>
   );
 }
@@ -118,6 +130,7 @@ export function InvoiceCard({
   today: string | null;
   handlers: InvoiceActionHandlers;
 }) {
+  const [panel, setPanel] = useState<Panel>(null);
   return (
     <li className="overflow-hidden rounded-xl border bg-card">
       {/* Header: which invoice, and the actions pinned on the right (same shape as the entry cards). */}
@@ -127,7 +140,7 @@ export function InvoiceCard({
           <span className="text-muted-foreground"> · {i.client_name}</span>
         </p>
         <div className="flex shrink-0 max-sm:hidden">
-          <InvoiceActions invoice={i} handlers={handlers} />
+          <InvoiceActions invoice={i} panel={panel} onPanel={setPanel} handlers={handlers} />
         </div>
       </div>
       <div className="flex flex-col gap-2 px-4 py-3">
@@ -147,9 +160,20 @@ export function InvoiceCard({
           </p>
         </div>
       </div>
+      {/* The forms open here, in the card, not in a popup. */}
+      {panel === "paid" && (
+        <PaidPanel
+          invoice={i}
+          today={today ?? ""}
+          busy={handlers.paidBusy}
+          onSave={(date) => handlers.onSavePaid(i, date)}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === "send" && <SendInvoicePanel invoice={i} onClose={() => setPanel(null)} />}
       {/* On a phone the actions get words and a full-width row; tooltips do not exist on touch. */}
       <div className="border-t p-2 sm:hidden">
-        <InvoiceActions invoice={i} words handlers={handlers} />
+        <InvoiceActions invoice={i} words panel={panel} onPanel={setPanel} handlers={handlers} />
       </div>
     </li>
   );

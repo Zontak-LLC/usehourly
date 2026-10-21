@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
-import { SendInvoiceDialog } from "@/components/send-invoice-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
@@ -23,7 +22,6 @@ import { DeleteInvoiceDialog } from "./delete-invoice-dialog";
 import { InvoiceCard } from "./invoice-card";
 import { InvoiceFilterBar } from "./invoice-filter-bar";
 import { InvoiceTotals } from "./invoice-totals";
-import { PaidDialog } from "./paid-dialog";
 import { useInvoiceFilters } from "./use-invoice-filters";
 
 export function InvoicesView() {
@@ -36,8 +34,6 @@ export function InvoicesView() {
   const invoices = trpc.invoice.list.useQuery(filters.listInput);
   const markPaid = trpc.invoice.markPaid.useMutation();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [sendFor, setSendFor] = useState<{ id: string; number: string } | null>(null);
-  const [paidFor, setPaidFor] = useState<{ id: string; number: string; paid_date: string | null } | null>(null);
   const [deleteFor, setDeleteFor] = useState<{ id: string; number: string } | null>(null);
 
   async function download(id: string) {
@@ -69,9 +65,8 @@ export function InvoicesView() {
 
   const handlers = {
     busyId,
-    onMarkPaid: (i: { id: string; number: string; paid_date: string | null }) =>
-      setPaidFor({ id: i.id, number: i.number, paid_date: i.paid_date }),
-    onSend: (i: { id: string; number: string }) => setSendFor({ id: i.id, number: i.number }),
+    paidBusy: markPaid.isPending,
+    onSavePaid: (i: { id: string; number: string }, date: string | null) => setPaid(i.id, i.number, date),
     onDownload: (i: { id: string }) => void download(i.id),
     onDelete: (i: { id: string; number: string }) => setDeleteFor({ id: i.id, number: i.number }),
   };
@@ -119,14 +114,6 @@ export function InvoicesView() {
       )}
 
       <DeleteInvoiceDialog invoice={deleteFor} onClose={() => setDeleteFor(null)} />
-      <SendInvoiceDialog invoice={sendFor} onClose={() => setSendFor(null)} />
-      <PaidDialog
-        invoice={paidFor}
-        today={today ?? ""}
-        busy={markPaid.isPending}
-        onSave={(date) => (paidFor ? setPaid(paidFor.id, paidFor.number, date) : Promise.resolve())}
-        onClose={() => setPaidFor(null)}
-      />
     </PageShell>
   );
 }
