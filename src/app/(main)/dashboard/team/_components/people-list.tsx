@@ -36,44 +36,46 @@ export function PeopleList({ people, footer }: { people: Person[]; footer: React
   const slides = shown.length + 1; // the people and the invite card
   const goTo = (i: number) => row.current?.scrollTo({ left: i * (row.current?.clientWidth ?? 0), behavior: "smooth" });
   return (
-    <section aria-label="Your team" className="flex flex-col gap-3">
-      {shown.length > 0 && (
-        <div>
-          <h2 className="font-semibold text-base">Your team</h2>
-          <p className="text-foreground/75 text-sm">
-            Their time shows up on your Today, Week and Month pages, marked with their name.
-          </p>
-        </div>
-      )}
-      {/* On a phone the cards are a row you swipe through, each filling the screen, with dots to show where you are; from sm up they are the usual two-column grid. */}
-      <ul
-        ref={row}
-        data-no-swipe
-        onScroll={(e) => setCurrent(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto sm:grid sm:grid-cols-2 sm:overflow-visible"
-      >
-        {shown.map((p) => (
-          <PersonCard key={p.id} person={p} />
-        ))}
-        {footer}
-      </ul>
-      {slides > 1 && (
-        <div className="flex justify-center gap-2 sm:hidden">
-          {Array.from({ length: slides }, (_, i) => (
-            <button
-              // biome-ignore lint/suspicious/noArrayIndexKey: a fixed count of dots
-              key={i}
-              type="button"
-              onClick={() => goTo(i)}
-              aria-label={i === slides - 1 ? "Go to Invite someone" : `Go to person ${i + 1} of ${shown.length}`}
-              aria-current={i === current ? "true" : undefined}
-              className="flex size-8 items-center justify-center"
-            >
-              <span className={`size-2.5 rounded-full ${i === current ? "bg-foreground" : "bg-foreground/25"}`} />
-            </button>
+    <section aria-label="Your team" className="overflow-hidden rounded-xl border bg-card">
+      <header className="bg-band-2 px-3 py-3 sm:px-4">
+        <h2 className="font-semibold text-base">Your team</h2>
+        <p className="text-foreground/75 text-sm">
+          Their time shows up on your Today, Week and Month pages, marked with their name.
+        </p>
+      </header>
+      <div className="flex flex-col gap-3 p-3 sm:p-4">
+        {/* On a phone the cards are a row you swipe through, each filling the screen, with dots to show where you are; from sm up they are the usual two-column grid. */}
+        <ul
+          ref={row}
+          data-no-swipe
+          onScroll={(e) =>
+            setCurrent(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))
+          }
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto sm:grid sm:grid-cols-2 sm:overflow-visible"
+        >
+          {shown.map((p) => (
+            <PersonCard key={p.id} person={p} />
           ))}
-        </div>
-      )}
+          {footer}
+        </ul>
+        {slides > 1 && (
+          <div className="flex justify-center gap-2 sm:hidden">
+            {Array.from({ length: slides }, (_, i) => (
+              <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: a fixed count of dots
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={i === slides - 1 ? "Go to Invite someone" : `Go to person ${i + 1} of ${shown.length}`}
+                aria-current={i === current ? "true" : undefined}
+                className="flex size-8 items-center justify-center"
+              >
+                <span className={`size-2.5 rounded-full ${i === current ? "bg-foreground" : "bg-foreground/25"}`} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
@@ -124,6 +126,7 @@ function PersonCard({ person }: { person: Person }) {
   return (
     <li className={SLIDE}>
       <HeaderCard
+        tile
         className="h-full"
         header={
           <div className="flex items-start gap-3">

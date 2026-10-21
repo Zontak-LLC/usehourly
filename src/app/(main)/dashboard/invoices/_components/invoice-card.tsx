@@ -107,6 +107,8 @@ function InvoiceActions({
       </IconAction>
       <MoreMenu
         label={`More actions for ${i.number}`}
+        // On a phone the other two buttons carry words and are 48px tall; the ··· matches them.
+        className={words ? "h-auto min-h-12 w-12 self-stretch" : undefined}
         items={[
           {
             label: handlers.busyId === i.id ? "Making the PDF…" : "Download PDF",

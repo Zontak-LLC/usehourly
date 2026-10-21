@@ -57,6 +57,7 @@ export function InviteCard({ onClose, compact = false }: { onClose: () => void; 
   const list = clients.data ?? [];
   return (
     <HeaderCard
+      tile
       header={
         <div className="flex items-start justify-between gap-2">
           <div>

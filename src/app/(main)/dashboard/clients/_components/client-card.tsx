@@ -51,7 +51,7 @@ export function ClientCard({
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
   return (
     <section aria-label={c.name} className="overflow-hidden rounded-xl border bg-card">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-card px-3 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-band-2 px-3 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <ClientLogoSlot clientId={c.id} name={c.name} />
           <div className="min-w-0">

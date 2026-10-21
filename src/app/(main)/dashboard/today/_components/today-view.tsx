@@ -17,7 +17,6 @@ import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
-import { BillHint } from "./bill-hint";
 import { FirstRun } from "./first-run";
 import { QuickAdd } from "./quick-add";
 import { TimerBanner } from "./timer-banner";
@@ -118,8 +117,6 @@ export function TodayView() {
           <Stat label="This week" value={formatDuration(sum(week.data ?? []))} />
         </div>
       )}
-
-      {hasProjects && sum(week.data ?? []) > 0 && <BillHint />}
 
       {week.error ? (
         <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>

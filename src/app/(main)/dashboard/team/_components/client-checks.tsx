@@ -1,5 +1,7 @@
 "use client";
 
+import { Check, Circle } from "lucide-react";
+
 /**
  * Which clients a person may log time on: a row of toggle buttons that wraps and fills the width, instead of one tick
  * box per line. A pressed button is one the person may use. Used by the invitation form and by each person's card.
@@ -33,12 +35,13 @@ export function ClientChecks({
               type="button"
               aria-pressed={on}
               onClick={() => onToggle(c.id, !on)}
-              className={`inline-flex min-h-9 items-center rounded-lg border px-3 text-sm transition-colors ${
+              className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors ${
                 on
-                  ? "border-foreground/50 bg-muted font-medium text-foreground"
-                  : "bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  ? "border-foreground bg-foreground font-medium text-background"
+                  : "border-dashed bg-card text-muted-foreground hover:border-foreground/50 hover:text-foreground"
               }`}
             >
+              {on ? <Check className="size-3.5" aria-hidden /> : <Circle className="size-3.5" aria-hidden />}
               {c.name}
             </button>
           );
