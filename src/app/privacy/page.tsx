@@ -39,7 +39,10 @@ export default function PrivacyPage() {
         <li>
           If you import a calendar file on the Today page, it is read in your browser. Only the title, start and end of
           recent meetings are kept, in your browser, and they are removed when you log out or remove the calendar. The
-          file itself and the meetings are never sent to us.
+          file itself and the meetings are never sent to us. If you connect a calendar by its private address instead,
+          the address is kept only in your browser, and each time the calendar is read the address passes through our
+          server once, to fetch it from Google, Outlook or iCloud (they do not let a web page read it directly). We do
+          not store or log the address or the calendar.
         </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>
