@@ -9,7 +9,7 @@ import { describeWait, hitRateLimit, REGISTER_PER_IP } from "@/lib/rate-limit";
 import { turnstileEnabled, turnstileSiteKey, verifyTurnstile } from "@/lib/turnstile";
 
 import { protectedProcedure, publicProcedure } from "../trpc";
-import { findLiveToken, issueEmailToken, LINK_PROBLEM, nowSeconds } from "./account-shared";
+import { claimLiveToken, issueEmailToken, LINK_PROBLEM } from "./account-shared";
 
 export const signupProcedures = {
   /** Whether this installation can send email. Pages use it to say so plainly when it cannot. */
@@ -178,10 +178,9 @@ export const signupProcedures = {
   verifyEmail: publicProcedure
     .input(z.object({ token: z.string().min(20).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      const row = await findLiveToken(ctx, input.token, "verify");
+      const row = await claimLiveToken(ctx, input.token, "verify");
       if (!row) throw new TRPCError({ code: "BAD_REQUEST", message: LINK_PROBLEM });
       await ctx.prisma.authUser.update({ where: { id: row.user_id }, data: { email_verified_at: new Date() } });
-      await ctx.prisma.emailToken.update({ where: { id: row.id }, data: { used_at: nowSeconds() } });
       return { ok: true };
     }),
 };

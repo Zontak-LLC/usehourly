@@ -16,7 +16,7 @@ import {
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
 
 import { protectedProcedure, publicProcedure } from "../trpc";
-import { findLiveToken, issueEmailToken, LINK_PROBLEM, nowSeconds } from "./account-shared";
+import { claimLiveToken, issueEmailToken, LINK_PROBLEM } from "./account-shared";
 
 export const passwordProcedures = {
   changePassword: protectedProcedure
@@ -119,7 +119,8 @@ export const passwordProcedures = {
           throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many attempts. Please try again later." });
         }
       }
-      const row = await findLiveToken(ctx, input.token, "reset");
+      // The link is used up FIRST, in one step, so two requests with the same link cannot both change the password.
+      const row = await claimLiveToken(ctx, input.token, "reset");
       if (!row) throw new TRPCError({ code: "BAD_REQUEST", message: LINK_PROBLEM });
       await ctx.prisma.authUser.update({
         where: { id: row.user_id },
@@ -130,7 +131,6 @@ export const passwordProcedures = {
           email_verified_at: new Date(),
         },
       });
-      await ctx.prisma.emailToken.update({ where: { id: row.id }, data: { used_at: nowSeconds() } });
       return { ok: true };
     }),
 };

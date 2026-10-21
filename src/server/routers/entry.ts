@@ -380,7 +380,7 @@ export const entryRouter = router({
       if (running?.started_at) {
         await ctx.prisma.timeEntry.update({
           where: { id: running.id, user_id: ctx.userId },
-          data: { minutes: running.minutes + elapsedMinutes(running.started_at, now), started_at: null },
+          data: { minutes: stoppedMinutes(running.minutes, running.started_at, now), started_at: null },
         });
       }
       try {
@@ -405,12 +405,20 @@ export const entryRouter = router({
     if (!running?.started_at) throw new TRPCError({ code: "NOT_FOUND", message: "No timer is running." });
     return ctx.prisma.timeEntry.update({
       where: { id: running.id, user_id: ctx.userId },
-      data: { minutes: running.minutes + elapsedMinutes(running.started_at, new Date()), started_at: null },
+      data: { minutes: stoppedMinutes(running.minutes, running.started_at, new Date()), started_at: null },
       include: withProject,
     });
   }),
 });
 
+/** A day is the most one entry can hold (the same limit every other way of adding time has). */
+const MAX_ENTRY_MINUTES = 24 * 60;
+
 function elapsedMinutes(from: Date, to: Date): number {
   return Math.max(1, Math.ceil((to.getTime() - from.getTime()) / 60_000));
+}
+
+/** What a stopped timer leaves in its entry: the minutes already there plus the elapsed time, never over a day. */
+function stoppedMinutes(banked: number, from: Date, to: Date): number {
+  return Math.min(MAX_ENTRY_MINUTES, banked + elapsedMinutes(from, to));
 }

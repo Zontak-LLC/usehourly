@@ -273,11 +273,14 @@ model ApiToken {
   expires_at    Int? // epoch seconds, null = never
   last_used_at  Int? // epoch seconds
   revoked_at    Int? // epoch seconds, null until revoked
+  // The OAuth app this token was made for (null for tokens made by hand); a re-connect replaces by this id.
+  oauth_client_id String?
   created_at    DateTime  @default(now())
 
   user AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+  @@index([user_id, oauth_client_id])
   @@map("api_tokens")
 }
 

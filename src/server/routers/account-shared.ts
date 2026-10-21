@@ -33,11 +33,20 @@ export async function issueEmailToken(
   return true;
 }
 
-/** An unused, unexpired token of this kind, or null. */
-export async function findLiveToken(ctx: Pick<Context, "prisma">, token: string, kind: "verify" | "reset") {
+/**
+ * Uses a link up: returns its row only to the ONE caller that marks it used. The mark is a single conditional update
+ * (still unused, still unexpired), so two requests opening the same link at the same moment cannot both succeed; a
+ * read followed by a separate write would let both through.
+ */
+export async function claimLiveToken(ctx: Pick<Context, "prisma">, token: string, kind: "verify" | "reset") {
   const row = await ctx.prisma.emailToken.findUnique({ where: { token_hash: await hashToken(token) } });
-  if (!row || row.kind !== kind || row.used_at !== null || row.expires_at <= nowSeconds()) return null;
-  return row;
+  if (!row || row.kind !== kind) return null;
+  const now = nowSeconds();
+  const claimed = await ctx.prisma.emailToken.updateMany({
+    where: { id: row.id, used_at: null, expires_at: { gt: now } },
+    data: { used_at: now },
+  });
+  return claimed.count === 1 ? row : null;
 }
 
 export const LINK_PROBLEM = "This link has expired or was already used. Please request a new one.";
