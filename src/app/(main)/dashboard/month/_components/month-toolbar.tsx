@@ -7,14 +7,8 @@ import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProjectFilter } from "@/components/project-filter";
 import { ShareExportMenu, SharePanel, type SharePanelKind } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
-import { fromISODate, toISODate } from "@/lib/dates";
+import { addMonths } from "@/lib/dates";
 import type { SheetEntry } from "@/lib/timesheet";
-
-/** First of the month as YYYY-MM-DD, shifted by `n` months. */
-function shiftMonth(first: string, n: number): string {
-  const d = fromISODate(first);
-  return toISODate(new Date(d.getFullYear(), d.getMonth() + n, 1));
-}
 
 export function MonthToolbar({
   first,
@@ -71,7 +65,7 @@ export function MonthToolbar({
             size="icon"
             variant="ghost"
             className="size-10 rounded-none"
-            onClick={() => onFirst(shiftMonth(first, -1))}
+            onClick={() => onFirst(addMonths(first, -1))}
             aria-label="Previous month"
           >
             <ChevronLeft />
@@ -89,7 +83,7 @@ export function MonthToolbar({
             size="icon"
             variant="ghost"
             className="size-10 rounded-none"
-            onClick={() => onFirst(shiftMonth(first, 1))}
+            onClick={() => onFirst(addMonths(first, 1))}
             aria-label="Next month"
           >
             <ChevronRight />

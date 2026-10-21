@@ -73,6 +73,8 @@ export function TodayView() {
       }
       descriptionOnPhone
       inlineDescription
+      // Swipe left for the next day, right for the previous one (the arrows in the header do the same).
+      onSwipe={(direction) => go(addDays(date, direction === "left" ? 1 : -1))}
       actions={
         hasProjects && (
           <div className="flex items-center gap-1">

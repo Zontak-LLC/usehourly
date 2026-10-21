@@ -54,6 +54,16 @@ D1 migrations (`wrangler d1 migrations apply DB --remote`), then deploys. Run `n
 workflows run on GitHub: the same `npm run ci` for pull requests, a weekly dependency audit and CodeQL, and a nightly
 browser-test run (`e2e.yml`).
 
+## Staging and daily releases (2026-10-21)
+
+**Staging** is a second copy of the site at https://staging.usehourly.app: its own Worker `hourly-staging`, its own D1 database `hourly-staging-db`, its own `AUTH_SECRET`, no cron, and none of the email, robot-check, Google or GitHub settings (so it cannot send mail and cannot sign in with them). It shows a yellow "Staging copy" banner and answers `X-Robots-Tag: noindex`. It holds test data only.
+- **Set up once:** `npx wrangler d1 create hourly-staging-db`, copy `wrangler.staging.example.jsonc` to `wrangler.staging.jsonc` (git-ignored) with the real ids, `npm run staging:migrate`, `npm run staging:deploy`, then `openssl rand -base64 32 | npx wrangler secret put AUTH_SECRET --config wrangler.staging.jsonc`.
+- **Deploy a build:** `npm run staging:migrate` (migrations run here first, so a bad one shows up before production), then `npm run staging:deploy`, then `npm run staging:smoke`. `scripts/staging-deploy.mjs` builds with `.env.local`, `.dev.vars` and the other env files moved aside, because the build copies their values INTO the bundle, and refuses to deploy if any secret value is found in the server bundle. (This was found on the first deploy, which had carried the real email key; it was replaced within the hour. Never build staging with a plain `opennextjs-cloudflare build`.)
+- **Test against it:** `E2E_BASE_URL=https://staging.usehourly.app npx playwright test <files>` (sign-up is limited to 5 per hour per connection, so run a few files at a time; tests that read mail from the stand-in mailbox cannot run there). The full suite runs on the release pull request in GitHub.
+- Not yet: a Cloudflare Access lock in front of it (dashboard: Zero Trust, Access, Applications), and deploying it from CI.
+
+**Daily release** (when the owner says "daily release"): tickets merge into the `next` branch one after another (each cut from `next`, `npm run ci`, targeted e2e, cold review, approval of the before/after page). Deploy `next` to staging and look at it. On "ship": one pull request `next` to `main`, full CI and e2e green, record the rollback points first (`wrangler deployments list` for the current Worker version id, and for a migration the D1 Time Travel timestamp), merge, watch the CircleCI deploy, confirm `/api/health`, check the Worker logs for new errors for 15 minutes, and list what went out. If health fails or errors spike, roll back first (`wrangler rollback <version-id>`), investigate after. At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
+
 ## Going back when a deploy goes wrong
 
 There are two separate things to undo, and they undo differently.

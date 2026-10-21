@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
@@ -10,18 +10,22 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
+import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePageSize } from "@/components/use-page-size";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import { totalsByCurrency } from "@/lib/money";
+import { paginate } from "@/lib/paginate";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
 import { DeleteInvoiceDialog } from "./delete-invoice-dialog";
-import { InvoiceCard } from "./invoice-card";
+import { type InvoiceActionHandlers, InvoiceCard } from "./invoice-card";
 import { InvoiceFilterBar } from "./invoice-filter-bar";
 import { InvoiceTotals } from "./invoice-totals";
+import type { InvoiceRow } from "./invoice-types";
 import { useInvoiceFilters } from "./use-invoice-filters";
 
 export function InvoicesView() {
@@ -33,6 +37,12 @@ export function InvoicesView() {
   const clients = trpc.clients.list.useQuery();
   const invoices = trpc.invoice.list.useQuery(filters.listInput);
   const markPaid = trpc.invoice.markPaid.useMutation();
+  const pageSize = usePageSize();
+  const [pageNo, setPageNo] = useState(1);
+  // A new search or filter starts again from the first page.
+  const filterKey = JSON.stringify(filters.listInput);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the key is the trigger
+  useEffect(() => setPageNo(1), [filterKey]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteFor, setDeleteFor] = useState<{ id: string; number: string } | null>(null);
 
@@ -106,14 +116,65 @@ export function InvoicesView() {
           )}
         </EmptyState>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {invoices.data?.map((i) => (
-            <InvoiceCard key={i.id} invoice={i} today={today} handlers={handlers} />
-          ))}
-        </ul>
+        <InvoiceList
+          invoices={invoices.data ?? []}
+          pageNo={pageNo}
+          pageSize={pageSize}
+          onPage={(n) => {
+            setPageNo(n);
+            // Landing on the new page at its top, not wherever the buttons were.
+            document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
+          }}
+          today={today}
+          handlers={handlers}
+        />
       )}
 
       <DeleteInvoiceDialog invoice={deleteFor} onClose={() => setDeleteFor(null)} />
     </PageShell>
+  );
+}
+
+/**
+ * All the invoices in ONE card with a header, like every other page's sections: the invoices are tiles inside it, a few
+ * per page (3 on a phone, 10 on a wide screen) with Previous and Next underneath.
+ */
+function InvoiceList({
+  invoices,
+  pageNo,
+  pageSize,
+  onPage,
+  today,
+  handlers,
+}: {
+  invoices: InvoiceRow[];
+  pageNo: number;
+  pageSize: number;
+  onPage: (n: number) => void;
+  today: string | null;
+  handlers: InvoiceActionHandlers;
+}) {
+  const page = paginate(invoices, pageNo, pageSize);
+  return (
+    <section
+      id="invoice-list"
+      aria-label="Your invoices"
+      className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
+    >
+      <header className="bg-band-2 px-3 py-3 sm:px-4">
+        <h2 className="font-semibold text-base">Your invoices</h2>
+        <p className="text-foreground/75 text-sm">
+          {invoices.length} invoice{invoices.length === 1 ? "" : "s"}, newest first unless you sort otherwise.
+        </p>
+      </header>
+      <div className="flex flex-col gap-3 p-3 sm:p-4">
+        <ul className="flex flex-col gap-3">
+          {page.items.map((i) => (
+            <InvoiceCard key={i.id} invoice={i} today={today} handlers={handlers} />
+          ))}
+        </ul>
+        <Pagination page={page} noun="invoices" onPage={onPage} />
+      </div>
+    </section>
   );
 }

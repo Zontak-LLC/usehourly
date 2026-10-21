@@ -25,6 +25,15 @@ export type Swipe = {
   width: number;
 };
 
+/** A swipe's direction when it passes the gate (far enough, mostly sideways, quick, not from a screen edge), else null. */
+export function swipeDirection({ dx, dy, ms, startX, width }: Omit<Swipe, "pathname">): "left" | "right" | null {
+  if (Math.abs(dx) < MIN_DISTANCE) return null;
+  if (Math.abs(dx) < 2 * Math.abs(dy)) return null; // mostly vertical: the person is scrolling
+  if (ms > MAX_MS) return null;
+  if (startX < EDGE || startX > width - EDGE) return null;
+  return dx < 0 ? "left" : "right";
+}
+
 export function swipePages(width: number): string[] {
   return width >= 480 ? [...SWIPE_PAGES, ACCOUNT_PAGE] : [...SWIPE_PAGES];
 }
@@ -34,13 +43,11 @@ export function swipePages(width: number): string[] {
  * previous one, and nothing happens past either end, on a page that is not a tab, or when the gesture is a scroll, a
  * slow drag or a start at the screen's edge.
  */
-export function swipeTarget({ pathname, dx, dy, ms, startX, width }: Swipe): string | null {
-  if (Math.abs(dx) < MIN_DISTANCE) return null;
-  if (Math.abs(dx) < 2 * Math.abs(dy)) return null; // mostly vertical: the person is scrolling
-  if (ms > MAX_MS) return null;
-  if (startX < EDGE || startX > width - EDGE) return null;
-  const pages = swipePages(width);
+export function swipeTarget({ pathname, ...swipe }: Swipe): string | null {
+  const direction = swipeDirection(swipe);
+  if (!direction) return null;
+  const pages = swipePages(swipe.width);
   const here = pages.indexOf(pathname.replace(/\/$/, ""));
   if (here === -1) return null;
-  return pages[here + (dx < 0 ? 1 : -1)] ?? null;
+  return pages[here + (direction === "left" ? 1 : -1)] ?? null;
 }

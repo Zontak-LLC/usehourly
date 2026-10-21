@@ -9,7 +9,7 @@ import {
   googleEventsToCalendar,
   MAX_PAGES,
 } from "@/lib/google-calendar";
-import { googleCalendarClientId } from "@/lib/google-calendar-config";
+import { googleCalendarClientId, googleCalendarClientIdFor } from "@/lib/google-calendar-config";
 
 const ev = (over: Record<string, unknown> = {}) => ({
   id: "e1",
@@ -154,5 +154,47 @@ describe("the connected flag and the switch", () => {
       if (before === undefined) delete process.env.GOOGLE_CALENDAR_CLIENT_ID;
       else process.env.GOOGLE_CALENDAR_CLIENT_ID = before;
     }
+  });
+});
+
+describe("who sees the Connect Google Calendar button", () => {
+  const withEnv = (env: Record<string, string | undefined>, run: () => void) => {
+    const before = { id: process.env.GOOGLE_CALENDAR_CLIENT_ID, pub: process.env.GOOGLE_CALENDAR_PUBLIC };
+    try {
+      for (const [k, v] of Object.entries(env)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+      run();
+    } finally {
+      for (const [k, v] of [
+        ["GOOGLE_CALENDAR_CLIENT_ID", before.id],
+        ["GOOGLE_CALENDAR_PUBLIC", before.pub],
+      ] as const) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  };
+  const ID = "123-abc.apps.googleusercontent.com";
+
+  it("is for the owner only until Google has verified the app", () => {
+    withEnv({ GOOGLE_CALENDAR_CLIENT_ID: ID, GOOGLE_CALENDAR_PUBLIC: undefined }, () => {
+      expect(googleCalendarClientIdFor({ isAdmin: true, isDemo: false })).toBe(ID);
+      expect(googleCalendarClientIdFor({ isAdmin: false, isDemo: false })).toBeNull();
+    });
+  });
+
+  it("is for everyone once GOOGLE_CALENDAR_PUBLIC=1, except sample accounts", () => {
+    withEnv({ GOOGLE_CALENDAR_CLIENT_ID: ID, GOOGLE_CALENDAR_PUBLIC: "1" }, () => {
+      expect(googleCalendarClientIdFor({ isAdmin: false, isDemo: false })).toBe(ID);
+      expect(googleCalendarClientIdFor({ isAdmin: true, isDemo: true })).toBeNull();
+    });
+  });
+
+  it("is hidden for everyone while no client id is set", () => {
+    withEnv({ GOOGLE_CALENDAR_CLIENT_ID: undefined, GOOGLE_CALENDAR_PUBLIC: "1" }, () => {
+      expect(googleCalendarClientIdFor({ isAdmin: true, isDemo: false })).toBeNull();
+    });
   });
 });

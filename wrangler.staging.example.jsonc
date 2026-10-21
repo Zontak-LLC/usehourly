@@ -1,0 +1,24 @@
+{
+  // The STAGING copy of the site: its own Worker, its own D1 database, its own secrets and address, so a release can be
+  // tried here before it goes to production. Copy this file to wrangler.staging.jsonc (git-ignored) and fill it in.
+  // Create the database with `npx wrangler d1 create hourly-staging-db`. See docs/operations.md ("Staging").
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hourly-staging",
+  "account_id": "<your-cloudflare-account-id>",
+  "main": "custom-worker.ts",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "placement": { "mode": "smart" },
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "hourly-staging-db", "database_id": "<your-staging-d1-database-id>" }
+  ],
+  "routes": [{ "pattern": "staging.example.com", "custom_domain": true }],
+  "vars": {
+    "AUTH_URL": "https://staging.example.com",
+    "NEXT_PUBLIC_APP_URL": "https://staging.example.com"
+  },
+  // No cron here: staging never sends reminder emails. Email, Turnstile, Google and GitHub sign-in stay unset.
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "workers_dev": false
+}
