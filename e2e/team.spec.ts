@@ -8,6 +8,7 @@ import { anonymous, clearMail, expect, linkIn, mailTo, newUser, seen, sql, start
 test("an owner invites someone by email, they join and log time, and the owner removes them", async ({
   page,
   browser,
+  shot,
 }, info) => {
   const member = { ...newUser(), name: "Pat Assistant" };
   await clearMail();
@@ -42,6 +43,25 @@ test("an owner invites someone by email, they join and log time, and the owner r
     expect(mail.html).toContain("Join the team"); // the button; the plain-text part carries the bare link
     expect(mail.text).not.toMatch(/\$\d/); // no rates or money in it
     joinPath = new URL(linkIn(mail.text, "/team/join/")).pathname;
+  });
+
+  await test.step("the Invite someone card sits beside one person and spans the row under two, so there is never empty space", async () => {
+    await page.getByRole("button", { name: "Done" }).click(); // closes the sent-invitation message and shows the card again
+    const people = page.getByRole("region", { name: "Your team" });
+    const cell = () => people.getByRole("button", { name: "Invite someone" }).locator("xpath=ancestor::li[1]");
+    await expect(cell()).not.toHaveClass(/sm:col-span-2/); // one person: the card shares the row with them
+    await shot("team-one-person");
+    await people.getByRole("button", { name: "Invite someone" }).click();
+    const form = page.locator("form", { has: page.getByLabel("Their email address") });
+    await expect(form.locator("xpath=ancestor::li[1]")).not.toHaveClass(/sm:col-span-2/); // the form opens in the card's own cell
+    await form.getByLabel("Their email address").fill(newUser().email);
+    await form.getByLabel("Acme Studio").check();
+    await page.getByRole("button", { name: "Send the invitation" }).click();
+    await expect(page.getByText(/Invitation sent, not accepted yet/)).toHaveCount(2);
+    await expect(form.locator("xpath=ancestor::li[1]")).not.toHaveClass(/sm:col-span-2/); // sending did not make the cell jump wider
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(cell()).toHaveClass(/sm:col-span-2/); // two people: the slim card spans both columns
+    await shot("team-two-people");
   });
 
   await test.step("someone not signed in who opens the link is sent to log in and brought back", async () => {
@@ -107,9 +127,10 @@ test("an owner invites someone by email, they join and log time, and the owner r
 
   await test.step("the owner removes Pat, who can no longer log time; the entry stays", async () => {
     await page.goto("/dashboard/team");
-    await page.getByRole("button", { name: "Remove", exact: true }).click();
-    await page.getByRole("button", { name: "Yes, remove" }).click();
-    await expect(page.getByText(/Invitation sent|On your team/)).toHaveCount(0);
+    const pat = page.locator("li", { has: page.getByRole("heading", { name: /^Pat/ }) });
+    await pat.getByRole("button", { name: "Remove", exact: true }).click();
+    await pat.getByRole("button", { name: "Yes, remove" }).click();
+    await expect(page.getByRole("heading", { name: /^Pat/ })).toHaveCount(0); // the other invitation (still pending) stays
     await patPage.reload();
     await expect(patPage.getByText(/Log time for/)).toHaveCount(0);
     await page.goto("/dashboard/today");

@@ -43,7 +43,11 @@ export const memberRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: NOT_AVAILABLE });
       }
       if (invite.owner_id === ctx.userId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "You can't join your own team." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "You can't join your own team. To try an invitation, open the link signed in as a different person (a private window works).",
+        });
       }
       const joined = await ctx.prisma.teamMember.count({ where: { member_id: ctx.userId, revoked_at: null } });
       if (joined >= MAX_TEAMS_JOINED) {
