@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CalendarPlus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ import { trpc } from "@/lib/trpc";
 
 const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
 const day = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+/** A connected calendar is read again when Today opens and the last read is older than this. */
+const STALE_MS = 30 * 60 * 1000;
 
 /**
  * "From your calendar" on Today (issue #99): the meetings of the day shown, each with a project (guessed from its title
@@ -44,17 +46,60 @@ export function CalendarSuggestions({
     [cal.calendar, date, projects, entries, cal.skipped],
   );
 
+  const [typing, setTyping] = useState(false);
+  const [address, setAddress] = useState("");
+  // The person's own address (to leave out meetings they declined) is asked for only when a calendar is read, so opening Today stays one request.
+  const myEmail = () =>
+    utils.account.me.fetch().then(
+      (me) => me.email,
+      () => null,
+    );
+
+  async function connect(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const read = await cal.readLink(address, await myEmail());
+      if (!read) return;
+      const { count, truncated } = read;
+      setAddress("");
+      setTyping(false);
+      toast.success(
+        count === 0
+          ? "Connected, but found no meetings in the last 3 months."
+          : `Connected. Read ${count} meeting${count === 1 ? "" : "s"}${truncated ? " (the newest ones)" : ""}.`,
+      );
+    } catch (err) {
+      toastError(err, "Couldn't read that calendar.");
+    }
+  }
+
+  async function refreshLink(quiet: boolean) {
+    try {
+      const read = await cal.readLink(null, await myEmail());
+      if (read && !quiet) toast.success("Calendar updated.");
+    } catch (err) {
+      // The automatic read on opening Today stays quiet (the card shows when the calendar was last read); a press of Refresh says why.
+      if (!quiet) toastError(err, "Couldn't update the calendar.");
+    }
+  }
+
+  // Once per visit: if a connected calendar was read a while ago, read it again so new meetings appear by themselves.
+  const checkedStale = useRef(false);
+  const staleRefresh = useRef(refreshLink);
+  staleRefresh.current = refreshLink;
+  const readAt = cal.calendar?.importedAt;
+  useEffect(() => {
+    if (checkedStale.current || !cal.link || readAt === undefined) return;
+    checkedStale.current = true;
+    if (Date.now() - readAt > STALE_MS) void staleRefresh.current(true);
+  }, [cal.link, readAt]);
+
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
     try {
-      // The person's own address (to leave out meetings they declined) is asked for only now, so opening Today stays one request.
-      const email = await utils.account.me.fetch().then(
-        (me) => me.email,
-        () => null,
-      );
-      const { count, truncated } = await cal.importFile(f, email);
+      const { count, truncated } = await cal.importFile(f, await myEmail());
       toast.success(
         count === 0
           ? "Read the calendar, but found no meetings in the last 3 months."
@@ -75,6 +120,46 @@ export function CalendarSuggestions({
       aria-label="Choose calendar file"
       onChange={pick}
     />
+  );
+
+  const linkForm = typing ? (
+    <form method="post" onSubmit={connect} className="flex flex-col gap-2 border-t pt-3">
+      <label htmlFor="calendar-address" className="font-medium text-sm">
+        Private calendar address
+      </label>
+      <p className="text-muted-foreground text-xs">
+        Google Calendar: Settings, your calendar, <strong>Integrate calendar</strong>, then copy the{" "}
+        <strong>Secret address in iCal format</strong>. Outlook and iCloud work too. Anyone with this address can read
+        the calendar, so it is only kept in this browser.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          id="calendar-address"
+          type="url"
+          inputMode="url"
+          autoComplete="off"
+          spellCheck={false}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder="https://calendar.google.com/calendar/ical/…"
+          className="h-10 min-w-0 flex-1 rounded-lg border bg-card px-3 text-sm"
+        />
+        <Button type="submit" size="sm" className="h-10" disabled={cal.busy || !address.trim()}>
+          {cal.busy ? "Connecting…" : "Connect"}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" className="h-10" onClick={() => setTyping(false)}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  ) : (
+    <button
+      type="button"
+      className="self-start py-1 text-muted-foreground text-xs underline"
+      onClick={() => setTyping(true)}
+    >
+      Or connect with a private calendar address
+    </button>
   );
 
   if (!cal.calendar) {
@@ -100,6 +185,7 @@ export function CalendarSuggestions({
         >
           <CalendarPlus aria-hidden /> {cal.busy ? "Reading…" : "Add a calendar file"}
         </Button>
+        {linkForm}
       </section>
     );
   }
@@ -126,8 +212,13 @@ export function CalendarSuggestions({
         <span>
           {cal.calendar.name}, read {day.format(cal.calendar.importedAt)}.
         </span>
-        <button type="button" className="py-1 underline" disabled={cal.busy} onClick={() => file.current?.click()}>
-          {cal.busy ? "Reading…" : "Update"}
+        <button
+          type="button"
+          className="py-1 underline"
+          disabled={cal.busy}
+          onClick={() => (cal.link ? refreshLink(false) : file.current?.click())}
+        >
+          {cal.busy ? "Reading…" : cal.link ? "Refresh" : "Update"}
         </button>
         <button type="button" className="py-1 underline" onClick={cal.remove}>
           Remove calendar

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { type CalendarEvent, MAX_EVENTS } from "@/lib/calendar-events";
+import { MAX_LINK_CHARS } from "@/lib/calendar-link";
 
 /**
  * The imported calendar (issue #99), kept ONLY in this browser (localStorage), under the account that imported it. The
@@ -9,12 +10,24 @@ import { type CalendarEvent, MAX_EVENTS } from "@/lib/calendar-events";
  */
 export const CALENDAR_KEY = "hourly:calendar";
 export const CALENDAR_SKIPPED_KEY = "hourly:calendarSkipped";
+/** The private calendar address, when the calendar is connected by link instead of a file (slice 2). It is a secret. */
+export const CALENDAR_LINK_KEY = "hourly:calendarLink";
 export const CALENDAR_EVENT = "hourly:calendar-changed";
 /** How far back an import keeps meetings, and how many "skipped" marks are remembered. */
 export const KEEP_DAYS = 90;
 const MAX_SKIPPED = 500;
 /** A saved calendar over this many characters is refused (browsers allow about 5 million per site). */
 const MAX_CHARS = 1_000_000;
+
+/**
+ * Counts "the calendar was removed, replaced or signed out". A read of a connected address takes a few seconds; if one
+ * of those happened meanwhile, the read must not write its result (or the secret address) back.
+ */
+let generation = 0;
+export const calendarGeneration = () => generation;
+export const cancelCalendarReads = () => {
+  generation++;
+};
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -65,11 +78,38 @@ export function saveCalendar(
   }
 }
 
-/** Forgets the calendar and the "skipped" marks. */
+/** The calendar address this account connected, or null. */
+export function loadLink(storage: StorageLike | null, userId: string | null | undefined): string | null {
+  if (!storage || !userId) return null;
+  try {
+    const parsed = z
+      .object({ userId: z.string(), url: z.string().max(MAX_LINK_CHARS) })
+      .safeParse(JSON.parse(storage.getItem(CALENDAR_LINK_KEY) ?? "null"));
+    return parsed.success && parsed.data.userId === userId ? parsed.data.url : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Keeps the connected address for this account; null forgets it (a file import replaces a link). */
+export function saveLink(storage: StorageLike | null, userId: string, url: string | null): boolean {
+  if (!storage || !userId) return false;
+  try {
+    if (url === null) storage.removeItem(CALENDAR_LINK_KEY);
+    else storage.setItem(CALENDAR_LINK_KEY, JSON.stringify({ userId, url }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Forgets the calendar, its address and the "skipped" marks. */
 export function forgetCalendar(storage: StorageLike | null): void {
+  cancelCalendarReads();
   try {
     storage?.removeItem(CALENDAR_KEY);
     storage?.removeItem(CALENDAR_SKIPPED_KEY);
+    storage?.removeItem(CALENDAR_LINK_KEY);
   } catch {
     // storage blocked
   }
