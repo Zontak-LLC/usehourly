@@ -54,7 +54,7 @@ test("buttons that open a form close it on the second click; the day's list is h
     await expect(page.getByRole("button", { name: "Cancel" }).first()).toBeVisible();
     await add.click();
     await expect(add).toHaveAttribute("aria-expanded", "false");
-    await expect(page.getByRole("button", { name: "Add a project for Acme Studio" })).toHaveCount(2); // the header + and the dashed card are back
+    await expect(page.getByRole("button", { name: "Add a project for Acme Studio" })).toHaveCount(1); // only the + in the header: a client that has a project no longer shows a dashed add card
     await expect(page.getByRole("button", { name: "Cancel" })).toHaveCount(0);
 
     const billing = page.getByRole("button", { name: "Edit Acme Studio billing details" });
