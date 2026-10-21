@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { useClientLogos } from "@/components/client-logo";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toISODate } from "@/lib/dates";
+import { formatDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -19,7 +19,7 @@ import { ArchiveConfirmDialog, type ArchiveTarget } from "./archive-confirm-dial
 import { ArchivedSection } from "./archived-section";
 import { ClientCard } from "./client-card";
 import type { ClientRow } from "./client-types";
-import { NewClientDialog } from "./new-client-dialog";
+import { NewClientCard } from "./new-client-card";
 import { useProjectEditing } from "./use-project-editing";
 
 /** The search box shows from this many clients up. */
@@ -63,7 +63,6 @@ export function ClientsView() {
   const archiveProject = trpc.project.archive.useMutation();
   const unarchiveClient = trpc.clients.unarchive.useMutation();
   const unarchiveProject = trpc.project.unarchive.useMutation();
-  const [newOpen, setNewOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const logos = useProjectLogos();
   useClientLogos(); // starts with the first batch; the client cards read it a moment later
@@ -80,6 +79,17 @@ export function ClientsView() {
   });
   const totals = trpc.project.totals.useQuery(month);
   const budgets = trpc.project.budgets.useQuery(month);
+
+  // The old stat tiles as one line under the title: how many clients and projects, and the month's time so far.
+  const clientCount = clients.data?.length ?? 0;
+  const projectCount = (clients.data ?? []).reduce((n, c) => n + c.projects.length, 0);
+  const monthMinutes = Object.values(totals.data ?? {}).reduce((sum, t) => sum + t.range, 0);
+  const description =
+    clientCount === 0
+      ? "Your clients and the projects you log time on. Hourly rates live here."
+      : `${clientCount} client${clientCount === 1 ? "" : "s"} · ${projectCount} project${projectCount === 1 ? "" : "s"}${
+          totals.data ? ` · ${formatDuration(monthMinutes)} logged this month` : ""
+        }`;
 
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const visibleClients = filterClients(clients.data ?? [], words);
@@ -112,30 +122,12 @@ export function ClientsView() {
   }
 
   return (
-    <PageShell
-      nav="clients"
-      title="Clients"
-      description="Your clients and the projects you log time on. Hourly rates live here."
-      actions={
-        <Button
-          type="button"
-          size="lg"
-          variant="primary"
-          className="h-10 max-sm:w-10 max-sm:rounded-xl max-sm:px-0"
-          title="New client"
-          onClick={() => setNewOpen(true)}
-        >
-          <Plus className="max-sm:size-5" /> <span className="max-sm:sr-only">New client</span>
-        </Button>
-      }
-    >
+    <PageShell nav="clients" title="Clients" description={description} descriptionOnPhone>
       {/* Search only earns its place once there are more clients than fit in a glance. */}
       {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
       <ArchiveConfirmDialog target={confirming} onCancel={() => setConfirming(null)} onConfirm={archive} />
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
-
-      <NewClientDialog open={newOpen} onOpenChange={setNewOpen} clientCount={clients.data?.length ?? 0} />
 
       {clients.isLoading && <Skeleton className="h-32 w-full" />}
       {clients.error && <p className="text-destructive text-sm">Couldn't load clients: {clients.error.message}</p>}
@@ -161,9 +153,8 @@ export function ClientsView() {
         />
       ))}
 
-      {clients.data?.length === 0 && (
-        <p className="py-10 text-center text-muted-foreground text-sm">No clients yet. Use New client above.</p>
-      )}
+      {/* Not while searching (the card would sit among the matches) and not before the list has loaded. */}
+      {clients.data && words.length === 0 && <NewClientCard clientCount={clients.data.length} />}
       <ArchivedSection />
     </PageShell>
   );
