@@ -1,11 +1,38 @@
 import AxeBuilder from "@axe-core/playwright";
-import { type Browser, type BrowserContext, test as base, expect, type Page, type TestInfo } from "@playwright/test";
+import {
+  type Browser,
+  type BrowserContext,
+  test as base,
+  expect,
+  type Locator,
+  type Page,
+  type TestInfo,
+} from "@playwright/test";
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
+
+/**
+ * Runs one of an entry card's rarer actions (Move to another day, Delete) from its "More actions" menu; Edit is a visible button. `scope` is the card (or the page, for its first card).
+ * The menu opens in a layer of its own, so the item is looked up on the page.
+ */
+export async function entryAction(scope: Page | Locator, action: "Move to another day" | "Delete") {
+  const page = await openEntryMenu(scope);
+  await page.getByRole("menuitem", { name: action }).click();
+}
+
+/** Opens an entry card's "More actions" menu and returns the page, so its items can be checked. */
+export async function openEntryMenu(scope: Page | Locator): Promise<Page> {
+  const page = "context" in scope ? scope : scope.page();
+  const button = scope.getByRole("button", { name: "More actions" }).first();
+  // A card the server has not confirmed yet is replaced when it is; a menu opened before that would close under us.
+  await expect(button.locator("xpath=ancestor::li[1]")).not.toHaveAttribute("aria-busy", "true");
+  await button.click();
+  return page;
+}
 
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 /** A throwaway account. Every address starts with "e2e-" so teardown can find and delete them all. */
