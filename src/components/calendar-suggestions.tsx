@@ -58,7 +58,9 @@ export function CalendarSuggestions({
   async function connect(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const { count, truncated } = await cal.readLink(address, await myEmail());
+      const read = await cal.readLink(address, await myEmail());
+      if (!read) return;
+      const { count, truncated } = read;
       setAddress("");
       setTyping(false);
       toast.success(
@@ -73,10 +75,11 @@ export function CalendarSuggestions({
 
   async function refreshLink(quiet: boolean) {
     try {
-      await cal.readLink(null, await myEmail());
-      if (!quiet) toast.success("Calendar updated.");
+      const read = await cal.readLink(null, await myEmail());
+      if (read && !quiet) toast.success("Calendar updated.");
     } catch (err) {
-      toastError(err, "Couldn't update the calendar.");
+      // The automatic read on opening Today stays quiet (the card shows when the calendar was last read); a press of Refresh says why.
+      if (!quiet) toastError(err, "Couldn't update the calendar.");
     }
   }
 

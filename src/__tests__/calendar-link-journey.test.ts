@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { checkCalendarLink, describeCalendarLink } from "@/lib/calendar-link";
-import { addSkipped, forgetCalendar, loadLink, saveLink } from "@/lib/calendar-store";
+import {
+  addSkipped,
+  calendarGeneration,
+  cancelCalendarReads,
+  forgetCalendar,
+  loadLink,
+  saveLink,
+} from "@/lib/calendar-store";
 import { fetchCalendarFeed, MAX_FEED_BYTES } from "@/server/calendar-feed";
 
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
@@ -148,8 +155,11 @@ describe("POST /api/calendar-feed", () => {
 
   beforeEach(() => {
     limiter = memoryRateLimit();
-    prismaMock.mockResolvedValue({ rateLimit: limiter.rateLimit });
-    authMock.mockResolvedValue({ user: { id: "u1" }, expires: "" });
+    prismaMock.mockResolvedValue({
+      rateLimit: limiter.rateLimit,
+      authUser: { findUnique: vi.fn(async () => ({ token_version: 2 })) },
+    });
+    authMock.mockResolvedValue({ user: { id: "u1", tv: 2 }, expires: "" });
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(ICS, { status: 200 })),
@@ -164,10 +174,16 @@ describe("POST /api/calendar-feed", () => {
     expect(res.headers.get("content-type")).toContain("text/calendar");
   });
 
+  it("refuses a session from before a password change or log-out-everywhere, without fetching", async () => {
+    authMock.mockResolvedValueOnce({ user: { id: "u1", tv: 1 }, expires: "" });
+    expect((await post({ url: GOOGLE })).status).toBe(401);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("refuses signed-out callers and sample accounts without fetching anything", async () => {
     authMock.mockResolvedValueOnce(null);
     expect((await post({ url: GOOGLE })).status).toBe(401);
-    authMock.mockResolvedValueOnce({ user: { id: "u1", demo: true }, expires: "" });
+    authMock.mockResolvedValueOnce({ user: { id: "u1", tv: 2, demo: true }, expires: "" });
     expect((await post({ url: GOOGLE })).status).toBe(403);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -186,7 +202,7 @@ describe("POST /api/calendar-feed", () => {
     const res = await post({ url: GOOGLE });
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: expect.stringContaining("Try again") });
-    authMock.mockResolvedValue({ user: { id: "u2" }, expires: "" });
+    authMock.mockResolvedValue({ user: { id: "u2", tv: 2 }, expires: "" });
     expect((await post({ url: GOOGLE })).status).toBe(200); // another account has its own allowance
   });
 });
@@ -213,6 +229,15 @@ describe("the connected address kept on this device", () => {
     addSkipped(s, "u1", "a@1");
     forgetCalendar(s);
     expect(loadLink(s, "u1")).toBeNull();
+  });
+
+  it("cancels reads still in flight when the calendar is removed, replaced or signed out", () => {
+    const s = fake();
+    const before = calendarGeneration();
+    forgetCalendar(s);
+    expect(calendarGeneration()).toBe(before + 1);
+    cancelCalendarReads();
+    expect(calendarGeneration()).toBe(before + 2);
   });
 
   it("survives damaged or blocked storage", () => {

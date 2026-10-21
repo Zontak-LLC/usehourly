@@ -19,6 +19,16 @@ const MAX_SKIPPED = 500;
 /** A saved calendar over this many characters is refused (browsers allow about 5 million per site). */
 const MAX_CHARS = 1_000_000;
 
+/**
+ * Counts "the calendar was removed, replaced or signed out". A read of a connected address takes a few seconds; if one
+ * of those happened meanwhile, the read must not write its result (or the secret address) back.
+ */
+let generation = 0;
+export const calendarGeneration = () => generation;
+export const cancelCalendarReads = () => {
+  generation++;
+};
+
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 const saved = z.object({
@@ -95,6 +105,7 @@ export function saveLink(storage: StorageLike | null, userId: string, url: strin
 
 /** Forgets the calendar, its address and the "skipped" marks. */
 export function forgetCalendar(storage: StorageLike | null): void {
+  cancelCalendarReads();
   try {
     storage?.removeItem(CALENDAR_KEY);
     storage?.removeItem(CALENDAR_SKIPPED_KEY);

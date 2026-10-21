@@ -57,10 +57,23 @@ test("a private calendar address shows the day's meetings, refreshes, and is for
     await expect(card.getByText("Offline Co planning")).toBeVisible(); // the last good copy stays
   });
 
-  await test.step("removing the calendar forgets the address too", async () => {
+  await test.step("a read still in flight when the calendar is removed does not bring the address back", async () => {
+    await page.unroute("**/api/calendar-feed");
+    const { promise: gate, resolve: release } = Promise.withResolvers<void>();
+    let asked = false;
+    await page.route("**/api/calendar-feed", async (route) => {
+      asked = true;
+      await gate;
+      await route.fulfill({ status: 200, contentType: "text/calendar", body: ics });
+    });
+    await card.getByRole("button", { name: "Refresh" }).click();
+    await expect.poll(() => asked).toBe(true);
     await card.getByRole("button", { name: "Remove calendar" }).click();
     await expect(card).toContainText("Turn meetings into time entries");
-    const kept = await page.evaluate(() => localStorage.getItem("hourly:calendarLink"));
-    expect(kept).toBeNull();
+    release();
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => localStorage.getItem("hourly:calendarLink"))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem("hourly:calendar"))).toBeNull();
+    await expect(card).toContainText("Turn meetings into time entries");
   });
 });

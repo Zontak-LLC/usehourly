@@ -8,6 +8,8 @@ import { checkCalendarLink, describeCalendarLink } from "@/lib/calendar-link";
 import {
   addSkipped,
   CALENDAR_EVENT,
+  calendarGeneration,
+  cancelCalendarReads,
   forgetCalendar,
   keepWindow,
   loadCalendar,
@@ -61,6 +63,7 @@ export function useSavedCalendar() {
       const { events, truncated } = await readCalendar(await file.text(), keepWindow(new Date()), {
         selfEmails: selfEmail ? [selfEmail] : [],
       });
+      cancelCalendarReads(); // a connected address still being read must not overwrite this file
       const ok = saveCalendar(storage(), userId, { name: file.name, events, importedAt: Date.now() });
       if (!ok) throw new Error("Couldn't keep that calendar on this device. Try a shorter range.");
       saveLink(storage(), userId, null); // a file replaces a connected address
@@ -76,7 +79,8 @@ export function useSavedCalendar() {
 
   /**
    * Reads the calendar at a private address (through the server, which only passes the text along) and keeps its recent
-   * meetings. With no address given, re-reads the one already connected. Throws a plain-words Error when it cannot.
+   * meetings. With no address given, re-reads the one already connected. Throws a plain-words Error when it cannot, and
+   * returns null (having saved nothing) when the calendar was removed, replaced or signed out while it was being read.
    */
   async function readLink(address: string | null, selfEmail?: string | null) {
     if (!userId) throw new Error("Sign in again to use your calendar.");
@@ -84,6 +88,7 @@ export function useSavedCalendar() {
     if (!target) throw new Error("Paste the calendar's private address first.");
     const checked = checkCalendarLink(target);
     if (!checked.ok) throw new Error(checked.message);
+    const started = calendarGeneration();
     setBusy(true);
     try {
       const res = await fetch("/api/calendar-feed", {
@@ -98,6 +103,7 @@ export function useSavedCalendar() {
       const { events, truncated } = await readCalendar(await res.text(), keepWindow(new Date()), {
         selfEmails: selfEmail ? [selfEmail] : [],
       });
+      if (started !== calendarGeneration()) return null;
       const name = describeCalendarLink(checked.url);
       if (!saveCalendar(storage(), userId, { name, events, importedAt: Date.now() })) {
         throw new Error("Couldn't keep that calendar on this device.");

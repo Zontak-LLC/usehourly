@@ -3,6 +3,7 @@ import { MAX_LINK_CHARS } from "@/lib/calendar-link";
 import { clientIpFrom } from "@/lib/client-ip";
 import { getPrisma } from "@/lib/prisma";
 import { hitRateLimit } from "@/lib/rate-limit";
+import { sessionStillValid } from "@/lib/session-version";
 import { fetchCalendarFeed } from "@/server/calendar-feed";
 
 /**
@@ -17,6 +18,13 @@ export async function POST(req: Request) {
   if (!userId) return json({ error: "Sign in again to use your calendar." }, 401);
   if (session?.user?.demo === true) return json({ error: "Sample accounts can't connect a calendar." }, 403);
 
+  const prisma = await getPrisma();
+  // A token from before a password change or "log out everywhere" is no longer a session.
+  const account = await prisma.authUser.findUnique({ where: { id: userId }, select: { token_version: true } });
+  if (!sessionStillValid(session?.user?.tv, account?.token_version)) {
+    return json({ error: "Sign in again to use your calendar." }, 401);
+  }
+
   const raw = await req.text();
   if (raw.length > MAX_LINK_CHARS + 100) return json({ error: "That address is too long." }, 413);
   let link: unknown;
@@ -27,7 +35,6 @@ export async function POST(req: Request) {
   }
   if (typeof link !== "string") return json({ error: "Send the calendar address." }, 400);
 
-  const prisma = await getPrisma();
   const mine = await hitRateLimit(prisma, `calfeed:u:${userId}`, 30, 3600);
   const ip = clientIpFrom(req.headers);
   const theirs = ip ? await hitRateLimit(prisma, `calfeed:ip:${ip}`, 120, 3600) : { allowed: true as const };
