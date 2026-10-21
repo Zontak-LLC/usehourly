@@ -89,7 +89,7 @@ function ModelPicker({
 
 /**
  * Account > AI assistants > "Polish descriptions": the person's own Anthropic or OpenAI key and model, kept in this
- * browser only. With a key saved, a Polish button appears under description boxes. A chat plan (Claude Pro or Max,
+ * browser only. With a key saved, a Polish button appears inside description boxes. A chat plan (Claude Pro or Max,
  * ChatGPT Plus) cannot be used: API keys are billed separately, from the service's own console.
  */
 export function AiPolishCard() {
@@ -155,7 +155,7 @@ export function AiPolishCard() {
       return;
     }
     setDraft("");
-    toast.success("Key saved on this device. Polish now appears under descriptions.");
+    toast.success("Key saved on this device. Polish now appears in the description box.");
   }
 
   const saved = setup ? PROVIDERS[setup.provider] : null;
@@ -168,8 +168,8 @@ export function AiPolishCard() {
       {setup && saved ? (
         <div className="grid gap-3">
           <p className="text-sm">
-            Using {saved.label} with a key saved on this device (…{setup.key.slice(-4)}). Polish shows under description
-            boxes.
+            Using {saved.label} with a key saved on this device (…{setup.key.slice(-4)}). Polish shows inside
+            description boxes.
           </p>
           <div className="grid gap-1.5">
             <Label htmlFor="ai-model-saved">Model</Label>
@@ -251,7 +251,9 @@ export function AiPolishCard() {
           You need an API key from {info.consoleName}, which is billed separately. A Claude Pro or Max plan, or ChatGPT
           Plus, can't be used.
         </li>
-        <li>A suggestion is only a suggestion: nothing changes until you press Use this.</li>
+        <li>
+          Polish fills the description box with the tidier version. Keep it, or press Undo to put your own words back.
+        </li>
       </ul>
     </SectionCard>
   );

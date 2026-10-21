@@ -8,9 +8,10 @@ const reply = (text: string) => ({
   body: JSON.stringify({ content: [{ type: "text", text }] }),
 });
 
-/** Issue #98: with the person's own Anthropic key, a Polish button tidies a description; nothing changes until Use this. */
-test("polish a description with your own AI key (Anthropic or OpenAI): save the key, choose a model, polish, use or discard, remove the key", async ({
+/** Issue #98: with the person's own Anthropic key, a Polish button tidies a description; the result fills the box, and the person keeps it or undoes it. */
+test("polish a description with your own AI key (Anthropic or OpenAI): save the key, choose a model, polish in place, keep or undo, remove the key", async ({
   page,
+  shot,
 }) => {
   await startFreshAccount(page, "Fernhill");
   const calls: { headers: Record<string, string>; body: { model: string; messages: { content: string }[] } }[] = [];
@@ -45,6 +46,11 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     });
   });
 
+  await test.step("the description box is two lines tall by default", async () => {
+    const box = await page.getByLabel("Description").boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(70); // two lines of text, not one
+  });
+
   await test.step("without a key there is no Polish button", async () => {
     await page.getByLabel("Description").fill("homepage layout, fixed nav bug on mobile");
     await expect(page.getByRole("button", { name: /Polish/ })).toHaveCount(0);
@@ -68,22 +74,34 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     await expect(page.getByLabel("API key", { exact: true })).toHaveCount(0); // the key is not shown again
   });
 
-  await test.step("Polish shows a suggestion; Discard leaves the note as it was", async () => {
+  await test.step("Polish fills the box in place; Undo puts the note back", async () => {
     await page.goto("/dashboard/today");
     const box = page.getByLabel("Description");
     await box.fill("homepage layout, fixed nav bug on mobile");
+    // the button sits inside the right edge of the box, on the same line as the text
+    const field = await box.boundingBox();
+    const button = await page.getByRole("button", { name: /Polish/ }).boundingBox();
+    expect(
+      button && field && button.x + button.width <= field.x + field.width && button.x > field.x + field.width / 2,
+    ).toBe(true);
+    expect(button && field && button.y >= field.y && button.y + button.height <= field.y + field.height).toBe(true);
     await page.getByRole("button", { name: /Polish/ }).click();
-    await expect(page.getByTestId("polish-suggestion")).toHaveText(/Reworked the homepage layout/);
+    await expect(box).toHaveValue(/Reworked the homepage layout/); // the polished text is in the box itself
+    await expect(page.getByRole("button", { name: "Keep", exact: true })).toBeVisible();
+    await shot("polish-suggestion-in-box");
     const sent = calls.at(-1)?.body.messages[0].content ?? "";
     expect(sent).toBe("Client: Fernhill\nProject: General\nNote: homepage layout, fixed nav bug on mobile");
-    await page.getByRole("button", { name: "Discard" }).click();
-    await expect(page.getByTestId("polish-suggestion")).toHaveCount(0);
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(box).toHaveValue("homepage layout, fixed nav bug on mobile");
+    await expect(page.getByRole("button", { name: "Keep", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Polish/ })).toBeVisible();
   });
 
-  await test.step("Use this puts the suggestion in the box, and the entry is saved with it", async () => {
+  await test.step("Keep leaves the polished text in the box, and the entry is saved with it", async () => {
     await page.getByRole("button", { name: /Polish/ }).click();
-    await page.getByRole("button", { name: "Use this" }).click();
+    await expect(page.getByLabel("Description")).toHaveValue(/Reworked the homepage layout/);
+    await page.getByRole("button", { name: "Keep", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveCount(0);
     await expect(page.getByLabel("Description")).toHaveValue(/Reworked the homepage layout/);
     await page.getByLabel("Time to add").fill("1h");
     await page.getByRole("button", { name: /Add to the day/ }).click();
@@ -94,7 +112,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     await page.getByLabel("Description").fill("refuse me");
     await page.getByRole("button", { name: /Polish/ }).click();
     await expect(page.getByText(/Anthropic refused that key/)).toBeVisible();
-    await expect(page.getByTestId("polish-suggestion")).toHaveCount(0);
+    await expect(page.getByLabel("Description")).toHaveValue("refuse me"); // the note is untouched
   });
 
   await test.step("Polish is also on an entry being edited", async () => {
@@ -122,7 +140,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     await page.goto("/dashboard/today");
     await page.getByLabel("Description").fill("sonnet please");
     await page.getByRole("button", { name: /Polish/ }).click();
-    await expect(page.getByTestId("polish-suggestion")).toBeVisible();
+    await expect(page.getByLabel("Description")).toHaveValue(/Reworked the homepage layout/);
     expect(calls.at(-1)?.body.model).toBe("claude-sonnet-5-5");
   });
 
@@ -151,7 +169,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     await page.goto("/dashboard/today");
     await page.getByLabel("Description").fill("chatgpt please");
     await page.getByRole("button", { name: /Polish/ }).click();
-    await expect(page.getByTestId("polish-suggestion")).toHaveText("Polished by ChatGPT.");
+    await expect(page.getByLabel("Description")).toHaveValue("Polished by ChatGPT.");
     const sent = openaiCalls.at(-1);
     expect(sent?.headers.authorization).toBe(`Bearer ${OPENAI_KEY}`);
     expect(sent?.body.model).toBe("gpt-4.1-nano");
