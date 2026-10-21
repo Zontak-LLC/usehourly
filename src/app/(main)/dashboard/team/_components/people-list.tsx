@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import { Mail, UserRound, UserX } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,8 @@ import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+
+import { ClientChecks } from "./client-checks";
 
 type Person = {
   id: string;
@@ -29,6 +31,10 @@ const STATUS_WORDS = {
 /** Everyone invited, one card each: who they are, their status, which clients they may use (editable), and the buttons. */
 export function PeopleList({ people, footer }: { people: Person[]; footer: ReactNode }) {
   const shown = people.filter((p) => p.status !== "removed");
+  const row = useRef<HTMLUListElement>(null);
+  const [current, setCurrent] = useState(0);
+  const slides = shown.length + 1; // the people and the invite card
+  const goTo = (i: number) => row.current?.scrollTo({ left: i * (row.current?.clientWidth ?? 0), behavior: "smooth" });
   return (
     <section aria-label="Your team" className="flex flex-col gap-3">
       {shown.length > 0 && (
@@ -39,15 +45,41 @@ export function PeopleList({ people, footer }: { people: Person[]; footer: React
           </p>
         </div>
       )}
-      <ul className="grid gap-3 sm:grid-cols-2">
+      {/* On a phone the cards are a row you swipe through, each filling the screen, with dots to show where you are; from sm up they are the usual two-column grid. */}
+      <ul
+        ref={row}
+        data-no-swipe
+        onScroll={(e) => setCurrent(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto sm:grid sm:grid-cols-2 sm:overflow-visible"
+      >
         {shown.map((p) => (
           <PersonCard key={p.id} person={p} />
         ))}
         {footer}
       </ul>
+      {slides > 1 && (
+        <div className="flex justify-center gap-2 sm:hidden">
+          {Array.from({ length: slides }, (_, i) => (
+            <button
+              // biome-ignore lint/suspicious/noArrayIndexKey: a fixed count of dots
+              key={i}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={i === slides - 1 ? "Go to Invite someone" : `Go to person ${i + 1} of ${shown.length}`}
+              aria-current={i === current ? "true" : undefined}
+              className="flex size-8 items-center justify-center"
+            >
+              <span className={`size-2.5 rounded-full ${i === current ? "bg-foreground" : "bg-foreground/25"}`} />
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
+
+/** What makes a list item one slide of the phone's swipe row (ignored from sm up, where the list is a grid). */
+export const SLIDE = "max-sm:shrink-0 max-sm:basis-full max-sm:snap-start";
 
 function PersonCard({ person }: { person: Person }) {
   const utils = trpc.useUtils();
@@ -90,7 +122,7 @@ function PersonCard({ person }: { person: Person }) {
   }
 
   return (
-    <li>
+    <li className={SLIDE}>
       <HeaderCard
         className="h-full"
         header={
@@ -118,20 +150,13 @@ function PersonCard({ person }: { person: Person }) {
         }
       >
         {live && (
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-muted-foreground text-xs">Can log time on</legend>
-            {(clients.data ?? []).map((c) => (
-              <label key={c.id} className="flex min-h-8 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="size-4"
-                  checked={person.clientIds.includes(c.id)}
-                  onChange={(e) => toggle(c.id, e.target.checked)}
-                />
-                {c.name}
-              </label>
-            ))}
-          </fieldset>
+          <ClientChecks
+            legend="Can log time on"
+            legendClassName="mb-1 text-muted-foreground text-xs"
+            clients={clients.data ?? []}
+            checked={person.clientIds}
+            onToggle={toggle}
+          />
         )}
         {live &&
           (confirming ? (
