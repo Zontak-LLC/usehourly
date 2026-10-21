@@ -317,3 +317,9 @@ export const test = base.extend<Fixtures>({
 });
 
 export { expect };
+
+/** Opens a ··· menu by its button's name (for example "More actions for Acme Studio") and picks one item. */
+export async function menuAction(page: Page, button: string, item: string) {
+  await page.getByRole("button", { name: button, exact: true }).click();
+  await page.getByRole("menuitem", { name: item }).click();
+}

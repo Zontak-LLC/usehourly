@@ -7,6 +7,7 @@ import { Archive, Pencil, Plus, X } from "lucide-react";
 import { ClientLogoSlot } from "@/components/client-logo";
 import { ClientCurrency } from "@/components/currency-provider";
 import { IconAction } from "@/components/icon-action";
+import { MoreMenu } from "@/components/more-menu";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
 
@@ -61,8 +62,8 @@ export function ClientCard({
             </p>
           </div>
         </div>
-        {/* Same pattern as Invoices and the project cards: icons with a tooltip on wide screens, icon over word on a phone. */}
-        <span className="flex gap-1 max-sm:hidden">
+        {/* The common action stays visible; billing details and archive sit behind the ··· menu (docs/ui-spec.md). */}
+        <span className="flex gap-1">
           <IconAction
             label={`Add a project for ${c.name}`}
             tip="Add a project"
@@ -71,41 +72,18 @@ export function ClientCard({
           >
             <Plus />
           </IconAction>
-          <IconAction
-            label={`Edit ${c.name} billing details`}
-            tip="Billing details"
-            expanded={billingOpen}
-            onClick={onToggleBilling}
-          >
-            <Pencil />
-          </IconAction>
-          <IconAction label={`Archive ${c.name}`} tip="Archive client" onClick={onArchiveClient}>
-            <Archive />
-          </IconAction>
+          <MoreMenu
+            label={`More actions for ${c.name}`}
+            items={[
+              {
+                label: billingOpen ? "Close billing details" : "Billing details",
+                icon: <Pencil />,
+                onSelect: onToggleBilling,
+              },
+              { label: "Archive client", icon: <Archive />, onSelect: onArchiveClient, destructive: true },
+            ]}
+          />
         </span>
-        <div className="flex w-full gap-1.5 sm:hidden">
-          <IconAction
-            label={`Add a project for ${c.name}`}
-            tip="Add a project"
-            text="Add project"
-            expanded={adding}
-            onClick={() => setAdding((open) => !open)}
-          >
-            <Plus />
-          </IconAction>
-          <IconAction
-            label={`Edit ${c.name} billing details`}
-            tip="Billing details"
-            text="Billing details"
-            expanded={billingOpen}
-            onClick={onToggleBilling}
-          >
-            <Pencil />
-          </IconAction>
-          <IconAction label={`Archive ${c.name}`} tip="Archive client" text="Archive" onClick={onArchiveClient}>
-            <Archive />
-          </IconAction>
-        </div>
       </header>
       <ClientCurrency currency={c.currency}>
         <div className="flex flex-col gap-3 p-3">
