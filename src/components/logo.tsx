@@ -1,8 +1,8 @@
 import type { SVGProps } from "react";
 
 /**
- * The UseHourly mark: a bold ink "U" on an amber tile with a white bar across it, so it reads as the U of "Use" and
- * the H of "Hourly" at once. The tile is always amber, so it reads the same on light and dark pages. Keep the geometry
+ * The UseHourly mark: a bold ink "U" on an amber tile. (It briefly had a white bar across it to read as an H too; that
+ * was dropped on 2026-10-20.) The tile is always amber, so it reads the same on light and dark pages. Keep the geometry
  * in step with src/app/icon.svg (scripts/logo/render-icons.mjs draws every icon from it).
  */
 export function LogoMark(props: SVGProps<SVGSVGElement>) {
@@ -17,7 +17,6 @@ export function LogoMark(props: SVGProps<SVGSVGElement>) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M20 26h24" fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" />
     </svg>
   );
 }

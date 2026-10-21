@@ -11,9 +11,9 @@ import { resolve } from "node:path";
 const root = resolve(import.meta.dirname, "../..");
 const AMBER = "#f5a524";
 const INK = "#111";
-// The mark: an ink U with a white bar across it (the same geometry as src/app/icon.svg).
+// The mark: a plain ink U (the same geometry as src/app/icon.svg).
 const H = (scale) =>
-  `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)"><path d="M20 13v23a12 12 0 0 0 24 0v-23" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 26h24" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/></g>`;
+  `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)"><path d="M20 13v23a12 12 0 0 0 24 0v-23" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></g>`;
 /** `radius` rounds the tile (0 = a full square, for icons the system rounds itself); `scale` shrinks the mark. */
 const svg = ({ radius, scale = 1 }) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${radius}" fill="${AMBER}"/>${H(scale)}</svg>`;
