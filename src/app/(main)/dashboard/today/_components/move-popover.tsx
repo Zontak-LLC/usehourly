@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 
-import { CalendarArrowUp } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
 import { toastError } from "@/lib/toast-error";
@@ -24,21 +23,26 @@ const shortDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: 
 /**
  * Move one entry to another day: quick picks around its current day, or any date in the
  * year via the date field. Only the date changes; hours, note and project stay put.
+ * It opens from the entry's "More actions" menu, so it is controlled from outside and hangs under whatever it wraps.
  */
 export function MovePopover({
   entryId,
   date,
-  disabled,
+  open,
+  onOpenChange,
   onMoved,
+  children,
 }: {
   entryId: string;
   date: string;
-  disabled?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onMoved: () => void | Promise<void>;
+  children: React.ReactNode;
 }) {
   const update = trpc.entry.update.useMutation();
   const optimistic = useOptimisticEntries();
-  const [open, setOpen] = useState(false);
+  const setOpen = onOpenChange;
   const [target, setTarget] = useState(date);
 
   // Relative to the entry's own day, so "next Monday" makes sense from any week.
@@ -74,17 +78,7 @@ export function MovePopover({
         if (o) setTarget(date);
       }}
     >
-      <PopoverTrigger asChild>
-        <Button
-          size="icon"
-          variant="outline"
-          aria-label="Move to another day"
-          title="Move to another day"
-          disabled={disabled}
-        >
-          <CalendarArrowUp />
-        </Button>
-      </PopoverTrigger>
+      <PopoverAnchor asChild>{children}</PopoverAnchor>
       <PopoverContent className="w-72 space-y-3" align="end">
         <p className="font-medium text-sm">Move to another day</p>
         <div className="grid grid-cols-2 gap-1.5">
