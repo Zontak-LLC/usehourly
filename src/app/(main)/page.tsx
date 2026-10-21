@@ -198,7 +198,7 @@ export default function LandingPage() {
     <div className="min-h-dvh bg-background text-foreground">
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-5 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
           <LogoMark className="size-8" aria-hidden />
           {APP_CONFIG.name}
@@ -209,15 +209,15 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/auth/v2/login"
-            className="whitespace-nowrap rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted"
+            className="whitespace-nowrap rounded-lg px-3 py-2 font-medium text-sm hover:bg-muted sm:px-4"
           >
             Log in
           </Link>
           <Link
             href="/auth/v2/register"
-            className="whitespace-nowrap rounded-lg border border-tint-edge bg-tint px-4 py-2 font-medium text-foreground text-sm hover:bg-tint-hover"
+            className="whitespace-nowrap rounded-lg border border-tint-edge bg-tint px-3 py-2 font-medium text-foreground text-sm hover:bg-tint-hover sm:px-4"
           >
-            Create an account
+            Create account
           </Link>
         </nav>
       </header>
@@ -415,15 +415,15 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-muted-foreground text-sm">
+      <footer className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-muted-foreground text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <span>{APP_CONFIG.copyright}</span>
-        <span className="flex items-center gap-4">
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
           {donateUrl() && (
             <a
               href={donateUrl() ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block py-2 hover:text-foreground"
+              className="inline-block whitespace-nowrap py-2 hover:text-foreground"
             >
               Support UseHourly
             </a>
@@ -432,17 +432,17 @@ export default function LandingPage() {
             href="https://github.com/Zontak-LLC/usehourly/issues/new"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block py-2 hover:text-foreground"
+            className="inline-block whitespace-nowrap py-2 hover:text-foreground"
           >
             Report a bug
           </a>
-          <Link href="/privacy" className="inline-block py-2 hover:text-foreground">
+          <Link href="/privacy" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/terms" className="inline-block py-2 hover:text-foreground">
+          <Link href="/terms" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
             Terms
           </Link>
-          <Link href="/auth/v2/login" className="inline-block py-2 hover:text-foreground">
+          <Link href="/auth/v2/login" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
             Log in
           </Link>
         </span>
