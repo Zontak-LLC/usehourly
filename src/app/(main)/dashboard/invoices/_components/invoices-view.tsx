@@ -8,6 +8,7 @@ import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { HeaderCard } from "@/components/header-card";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { Pagination } from "@/components/pagination";
@@ -97,9 +98,9 @@ export function InvoicesView() {
       {showFilters && (
         <>
           {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
-          <div className="rounded-xl border bg-card p-3 sm:p-4">
+          <HeaderCard label="Find an invoice" header={<h2 className="font-semibold text-base">Find an invoice</h2>}>
             <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
-          </div>
+          </HeaderCard>
         </>
       )}
 

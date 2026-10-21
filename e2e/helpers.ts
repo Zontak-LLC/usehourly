@@ -214,6 +214,20 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
       for (let p = card.parentElement; p; p = p.parentElement) if (cardSet.has(p)) depth++;
       if (depth > 2) out.push(`card nested ${depth} deep (max 2): ${snippet(card)}`);
     }
+    // Every card on a page has a tinted header band, like its neighbours (docs/ui-spec.md "Surfaces"). A card that has a
+    // heading but no band is the loose-cards kind of inconsistency; a deliberate exception says so with data-headerless.
+    const body = document.querySelector("h1")?.closest("div.mx-auto")?.children[1];
+    for (const el of body ? [...body.children] : []) {
+      if (!cardSet.has(el) || el.hasAttribute("data-headerless") || !el.querySelector("h2, h3")) continue;
+      const head = el.firstElementChild;
+      const bandColour = head ? getComputedStyle(head).backgroundColor : "";
+      const cardColour = getComputedStyle(el).backgroundColor;
+      if (!head || bandColour === "rgba(0, 0, 0, 0)" || bandColour === cardColour) {
+        out.push(
+          `a card with a heading but no tinted header band (add one, or data-headerless with a reason): ${snippet(el)}`,
+        );
+      }
+    }
     // One solid (primary) button per screen: it is the one main action. Dialogs are closed when a page is checked.
     const solid = [...document.querySelectorAll('[data-variant="primary"]')].filter(
       (b) => (b as HTMLElement).offsetParent,
