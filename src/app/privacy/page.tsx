@@ -36,6 +36,11 @@ export default function PrivacyPage() {
           us. Your browser sends that one description and the project and client names to the service you chose
           (Anthropic or OpenAI), under your own account with them, and only when you press Polish.
         </li>
+        <li>
+          If you import a calendar file on the Today page, it is read in your browser. Only the title, start and end of
+          recent meetings are kept, in your browser, and they are removed when you log out or remove the calendar. The
+          file itself and the meetings are never sent to us.
+        </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>
       <h2>Where it lives</h2>
