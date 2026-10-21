@@ -100,7 +100,7 @@ describe("fetching a feed for the browser", () => {
 
   it("explains a reset address and an upstream failure in plain words, without echoing the address", async () => {
     const gone = await fetchCalendarFeed(GOOGLE, async () => new Response("nope", { status: 404 }));
-    expect(gone).toMatchObject({ ok: false, status: 502 });
+    expect(gone).toMatchObject({ ok: false, status: 403 });
     expect(JSON.stringify(gone)).toContain("reset");
     expect(JSON.stringify(gone)).not.toContain("private-abc123");
     const down = await fetchCalendarFeed(GOOGLE, async () => new Response("x", { status: 500 }));

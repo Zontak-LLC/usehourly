@@ -5,7 +5,9 @@ export const MAX_FEED_BYTES = 15 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
 const TIMEOUT_MS = 15_000;
 
-export type FeedResult = { ok: true; text: string } | { ok: false; status: 400 | 413 | 502 | 504; message: string };
+export type FeedResult =
+  | { ok: true; text: string }
+  | { ok: false; status: 400 | 403 | 413 | 502 | 504; message: string };
 
 type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
 
@@ -40,7 +42,12 @@ export async function fetchCalendarFeed(link: string, fetcher: Fetcher = fetch):
       }
       if (res.status === 404 || res.status === 403 || res.status === 401 || res.status === 410) {
         await res.body?.cancel();
-        return bad("The calendar service said no. The private address may have been reset: copy the new one.");
+        // The calendar service refused (403): the address was reset or turned off, and only the person can fix that.
+        return {
+          ok: false,
+          status: 403,
+          message: "The calendar service said no. The private address may have been reset: copy the new one.",
+        };
       }
       if (!res.ok) {
         await res.body?.cancel();
