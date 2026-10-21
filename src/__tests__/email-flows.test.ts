@@ -68,6 +68,21 @@ function world(initial: User[] = []) {
         const t = tokens.get(where.id);
         if (t) tokens.set(t.id, { ...t, ...data });
       }),
+      // The conditional claim: only the rows that are STILL unused and unexpired are changed, in one step.
+      updateMany: vi.fn(
+        async ({
+          where,
+          data,
+        }: {
+          where: { id: string; used_at: null; expires_at: { gt: number } };
+          data: Partial<Token>;
+        }) => {
+          const t = tokens.get(where.id);
+          if (!t || t.used_at !== null || !(t.expires_at > where.expires_at.gt)) return { count: 0 };
+          tokens.set(t.id, { ...t, ...data });
+          return { count: 1 };
+        },
+      ),
       deleteMany: vi.fn(async ({ where }: { where: { user_id: string; kind: string; used_at: null } }) => {
         for (const t of [...tokens.values()]) {
           if (t.user_id === where.user_id && t.kind === where.kind && t.used_at === null) tokens.delete(t.id);
@@ -148,6 +163,49 @@ describe("confirming an email address", () => {
     for (let i = 0; i < 3; i++) await c.account.sendVerification();
     await expect(c.account.sendVerification()).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
     expect(w.outbox).toHaveLength(3);
+  });
+});
+
+describe("a one-time link opened twice at the same moment", () => {
+  it("changes the password for exactly one of two simultaneous reset requests", async () => {
+    const w = world([await user("u1")]);
+    await w.caller().account.requestPasswordReset({ email: "jo@example.com" });
+    const token = tokenIn(w.outbox[0]);
+    const results = await Promise.allSettled([
+      w.caller().account.resetPassword({ token, newPassword: "first-new-password" }),
+      w.caller().account.resetPassword({ token, newPassword: "second-new-password" }),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
+    // one password change happened, not two (the version moves once)
+    expect(w.users.get("u1")?.token_version).toBe(1);
+  });
+
+  it("confirms the address once for two simultaneous confirmations", async () => {
+    const w = world();
+    const { id } = await w
+      .caller()
+      .account.register({ name: "Jo", email: "jo@example.com", password: "long-enough-pw" });
+    const token = tokenIn(w.outbox[0]);
+    const results = await Promise.allSettled([
+      w.caller().account.verifyEmail({ token }),
+      w.caller().account.verifyEmail({ token }),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(w.users.get(id)?.email_verified_at).toBeInstanceOf(Date);
+  });
+
+  it("an expired link is refused by the claim itself and nothing is marked used", async () => {
+    const w = world([await user("u1")]);
+    await w.caller().account.requestPasswordReset({ email: "jo@example.com" });
+    const token = tokenIn(w.outbox[0]);
+    for (const [id, t] of w.tokens) w.tokens.set(id, { ...t, expires_at: 1 });
+    await expect(
+      w.caller().account.resetPassword({ token, newPassword: "a-brand-new-password" }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect([...w.tokens.values()].every((t) => t.used_at === null)).toBe(true);
   });
 });
 

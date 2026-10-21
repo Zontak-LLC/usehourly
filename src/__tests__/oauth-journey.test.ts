@@ -31,9 +31,11 @@ function fakeDb(userOver: Partial<{ is_demo: boolean; token_version: number }> =
   const user = { id: "u1", token_version: 2, is_demo: false, ...userOver };
   const limiter = memoryRateLimit();
   let n = 0;
-  const match = (row: Row, where: Record<string, unknown>) =>
+  const match = (row: Row, where: Record<string, unknown>): boolean =>
     Object.entries(where).every(([k, v]) => {
+      if (k === "OR") return (v as Record<string, unknown>[]).some((w) => match(row, w));
       if (v && typeof v === "object" && "lt" in (v as object)) return (row[k] as number) < (v as { lt: number }).lt;
+      if (v && typeof v === "object" && "not" in (v as object)) return row[k] !== (v as { not: unknown }).not;
       return row[k] === v;
     });
   const prisma = {
@@ -333,6 +335,35 @@ describe("a whole connection, start to finish", () => {
     await exchangeCode(db.prisma, tokenRequest(id, (await approve(db, id)).code), null);
     expect(db.tokens.filter((t) => t.revoked_at === null)).toHaveLength(1);
     expect(db.tokens).toHaveLength(2);
+    expect(db.tokens.every((t) => t.oauth_client_id === id)).toBe(true);
+  });
+
+  it("two different apps with the same display name do not replace each other's token", async () => {
+    const db = fakeDb();
+    const first = await register(db, REDIRECT, "Claude");
+    const second = await register(db, "https://impostor.example/cb", "Claude");
+    await exchangeCode(db.prisma, tokenRequest(first, (await approve(db, first)).code), null);
+    const res = await decideAuthorization(
+      db.prisma,
+      "u1",
+      await authorizeParams(second, { redirect_uri: "https://impostor.example/cb" }),
+      { allow: true, access: "write" },
+      APP,
+    );
+    if (!res.ok) throw new Error(res.message);
+    const code = new URL(res.redirectUrl).searchParams.get("code") as string;
+    await exchangeCode(db.prisma, tokenRequest(second, code, { redirect_uri: "https://impostor.example/cb" }), null);
+    // both are alive: connecting the second app did not revoke the first app's token
+    expect(db.tokens.filter((t) => t.revoked_at === null)).toHaveLength(2);
+  });
+
+  it("a token made before the app id was kept is still replaced by name", async () => {
+    const db = fakeDb();
+    const id = await register(db);
+    db.tokens.push({ id: "old", user_id: "u1", name: "Claude (OAuth)", oauth_client_id: null, revoked_at: null });
+    await exchangeCode(db.prisma, tokenRequest(id, (await approve(db, id)).code), null);
+    expect(db.tokens.find((t) => t.id === "old")?.revoked_at).not.toBeNull();
+    expect(db.tokens.filter((t) => t.revoked_at === null)).toHaveLength(1);
   });
 });
 
@@ -414,6 +445,21 @@ describe("what the token endpoint refuses", () => {
       error: "access_denied",
       status: 403,
     });
+  });
+
+  it("when the account is full, a refusal does not revoke the app's token it already had", async () => {
+    const db = fakeDb();
+    const id = await register(db);
+    await exchangeCode(db.prisma, tokenRequest(id, (await approve(db, id)).code), null);
+    // fill the account up to the limit with other tokens (the app's own token is one of the 20)
+    for (let i = 0; i < MAX_TOKENS_PER_USER - 1; i++)
+      db.tokens.push({ id: `x${i}`, user_id: "u1", name: `other ${i}`, oauth_client_id: null, revoked_at: null });
+    // one more by hand, so replacing the app's token would still leave the account over the limit
+    db.tokens.push({ id: "extra", user_id: "u1", name: "extra", oauth_client_id: null, revoked_at: null });
+    const mine = db.tokens.find((t) => t.oauth_client_id === id);
+    const refused = await exchangeCode(db.prisma, tokenRequest(id, (await approve(db, id)).code), null);
+    expect(refused).toMatchObject({ error: "access_denied", status: 403 });
+    expect(mine?.revoked_at).toBeNull(); // the connection they had is untouched
   });
 
   it("limits requests per connection", async () => {

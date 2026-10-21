@@ -299,6 +299,60 @@ describe("daily time entry journey", () => {
   });
 });
 
+describe("a timer left running for days", () => {
+  it("stop banks at most one day, however long it ran", async () => {
+    const prisma = mockPrisma();
+    const caller = asCaller(prisma, "u1");
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-12T10:00:00Z"));
+    // started three days ago and forgotten
+    prisma.timeEntry.findFirst.mockResolvedValue({
+      id: "r",
+      minutes: 30,
+      started_at: new Date("2026-10-09T10:00:00Z"),
+    });
+    await caller.entry.stop();
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { minutes: 1440, started_at: null } }),
+    );
+    vi.useRealTimers();
+  });
+
+  it("starting another timer banks at most one day of the forgotten one too", async () => {
+    const prisma = mockPrisma();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-12T10:00:00Z"));
+    prisma.project.findFirst.mockResolvedValue({ id: "p2" });
+    prisma.timeEntry.findFirst.mockResolvedValue({
+      id: "run1",
+      minutes: 0,
+      started_at: new Date("2026-10-01T10:00:00Z"),
+    });
+    await asCaller(prisma, "u1").entry.start({ projectId: "p2", date: "2026-10-12" });
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith({
+      where: { id: "run1", user_id: "u1" },
+      data: { minutes: 1440, started_at: null },
+    });
+    vi.useRealTimers();
+  });
+
+  it("a normal run is not cut short", async () => {
+    const prisma = mockPrisma();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-09T12:00:00Z"));
+    prisma.timeEntry.findFirst.mockResolvedValue({
+      id: "r",
+      minutes: 15,
+      started_at: new Date("2026-10-09T10:00:00Z"),
+    });
+    await asCaller(prisma, "u1").entry.stop();
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { minutes: 135, started_at: null } }),
+    );
+    vi.useRealTimers();
+  });
+});
+
 describe("registration", () => {
   it("normalizes email, hashes the password, and rejects duplicates", async () => {
     const prisma = mockPrisma();

@@ -245,13 +245,20 @@ export async function exchangeCode(
   if (!user || user.is_demo) return grantFail();
 
   const name = `${row.client.name} (OAuth)`.slice(0, 60);
-  // Connecting the same app again replaces its earlier token instead of piling them up.
-  await prisma.apiToken.updateMany({
-    where: { user_id: user.id, name, revoked_at: null },
-    data: { revoked_at: nowSeconds },
-  });
-  const live = await prisma.apiToken.count({ where: { user_id: user.id, revoked_at: null } });
-  if (live >= MAX_TOKENS_PER_USER) {
+  // This app's earlier token: matched by the app's id (two apps can pick the same display name). A token made before
+  // the id was kept has none, so it is matched the old way, by name.
+  const mine = {
+    user_id: user.id,
+    revoked_at: null,
+    OR: [{ oauth_client_id: row.client_id }, { oauth_client_id: null, name }],
+  };
+  // The limit is checked BEFORE anything is revoked, counting the earlier token as replaced, so a refusal never costs
+  // the person the connection they already had.
+  const [live, replaced] = await Promise.all([
+    prisma.apiToken.count({ where: { user_id: user.id, revoked_at: null } }),
+    prisma.apiToken.count({ where: mine }),
+  ]);
+  if (live - replaced >= MAX_TOKENS_PER_USER) {
     return oauthError(
       "access_denied",
       "This account has too many active tokens. Revoke one in UseHourly under Account.",
@@ -264,6 +271,7 @@ export async function exchangeCode(
     data: {
       user_id: user.id,
       name,
+      oauth_client_id: row.client_id,
       token_hash: await hashApiToken(token),
       prefix: tokenPrefix(token),
       access: row.access,
@@ -271,6 +279,11 @@ export async function exchangeCode(
       expires_at: nowSeconds + OAUTH_TOKEN_SECONDS,
     },
     select: { id: true },
+  });
+  // Connecting the same app again replaces its earlier token instead of piling them up (the new one exists first).
+  await prisma.apiToken.updateMany({
+    where: { ...mine, id: { not: created.id } },
+    data: { revoked_at: nowSeconds },
   });
   await prisma.oauthCode.update({ where: { id: row.id }, data: { token_id: created.id } });
   return { access_token: token, token_type: "Bearer", expires_in: OAUTH_TOKEN_SECONDS, scope: row.access };
