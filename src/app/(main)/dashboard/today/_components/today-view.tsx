@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { CalendarSuggestions } from "@/components/calendar-suggestions";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
@@ -107,6 +108,8 @@ export function TodayView() {
       ) : (
         <FirstRun />
       )}
+
+      {hasProjects && clients.data && <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />}
 
       {/* Nothing to total or to bill until there is a project to log against (the first-run question comes first). */}
       {hasProjects && (
