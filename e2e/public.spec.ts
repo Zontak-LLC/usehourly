@@ -33,6 +33,40 @@ test.describe("public pages", () => {
     await expect(page).toHaveURL(/\/help$/);
   });
 
+  test("on a phone the landing page fits the screen: header, the three buttons and the footer links", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, "this is about the phone layout");
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    const screenWidth = await page.evaluate(() => window.screen.width);
+    // The page is no wider than the screen (a header that is too wide makes the whole page slide sideways).
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(screenWidth + 1);
+    // Every header link ends inside the screen.
+    for (const link of await page.locator("header nav a:visible").all()) {
+      const box = await link.boundingBox();
+      expect(box && box.x + box.width, `header link "${await link.textContent()}"`).toBeLessThanOrEqual(
+        screenWidth - 8,
+      );
+    }
+    // The three buttons under the headline are the same width, so they line up.
+    const hero = page.locator("main section").first();
+    const widths = await Promise.all(
+      [
+        hero.getByRole("link", { name: "Connect your assistant" }),
+        hero.getByRole("link", { name: "Create a free account" }),
+        hero.getByRole("button", { name: /Try the demo/ }),
+      ].map(async (el) => Math.round((await el.boundingBox())?.width ?? 0)),
+    );
+    expect(new Set(widths).size, `button widths ${widths.join(", ")}`).toBe(1);
+    // A footer link never breaks onto two lines.
+    for (const link of await page.locator("footer a").all()) {
+      const box = await link.boundingBox();
+      expect(box?.height ?? 0, `footer link "${await link.textContent()}"`).toBeLessThan(44);
+    }
+  });
+
   test("the health check answers and a signed-out visitor is sent to log in", async ({ page, request }) => {
     const health = await request.get("/api/health");
     expect(health.status()).toBe(200);

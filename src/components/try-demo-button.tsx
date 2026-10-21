@@ -29,7 +29,7 @@ export function TryDemoButton({ className, children }: { className?: string; chi
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-full flex-col items-center gap-2 sm:w-auto">
       <button type="button" onClick={start} disabled={busy} className={className}>
         {busy ? "Setting up your demo…" : children}
       </button>
