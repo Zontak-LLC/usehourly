@@ -52,7 +52,7 @@ It still **shows** in the day, week and month totals, and in a timesheet you sha
 
 ## A whole project
 
-On Clients & Projects, edit a project and untick **Billable**. It then has no rate and is never invoiced.
+On the Clients page, edit a project and untick **Billable**. It then has no rate and is never invoiced.
 
 > Marking a single entry non-billable is not available yet. Today, move it to a non-billable project.`,
   },
@@ -80,7 +80,7 @@ On **Month**, use **Add to several days** to put the same time on many days at o
     group: "time",
     summary: "Set a limit in hours or money and get a warning before you pass it.",
     keywords: ["limit", "cap", "retainer", "warning", "over budget", "80%"],
-    body: `Edit a project on Clients & Projects and fill in **Budget**: an amount, whether it is in **hours** or **money** (in your account's currency), and whether it **resets each month** or covers the **whole life** of the project. Clear the amount to remove it.
+    body: `Edit a project on the Clients page and fill in **Budget**: an amount, whether it is in **hours** or **money** (in your account's currency), and whether it **resets each month** or covers the **whole life** of the project. Clear the amount to remove it.
 
 A bar appears under the project and above the time box when you add time. It turns yellow at **80%** and red at **100%**, and the words say the same ("nearly used up", "over budget").
 

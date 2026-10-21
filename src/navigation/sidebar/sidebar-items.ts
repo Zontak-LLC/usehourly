@@ -35,7 +35,7 @@ export const navLinks: NavLink[] = [
     secondary: true,
   },
   { id: "invoices", title: "Invoices", url: "/dashboard/invoices", icon: FileText },
-  { id: "clients", title: "Clients & Projects", short: "Clients", url: "/dashboard/clients", icon: Users },
+  { id: "clients", title: "Clients", url: "/dashboard/clients", icon: Users },
   { id: "team", title: "Team", url: "/dashboard/team", icon: UsersRound, secondary: true },
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
   { id: "guide", title: "Guide", url: "/help", icon: BookOpen, secondary: true },

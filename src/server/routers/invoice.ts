@@ -217,7 +217,7 @@ export const invoiceRouter = router({
       if (totals.totalCents === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Every project in that period has an hourly rate of ${formatMoney(0, currency).replace(/\.00$/, "")}, so the invoice would be ${formatMoney(0, currency)}. Set the rates under Clients & Projects first.`,
+          message: `Every project in that period has an hourly rate of ${formatMoney(0, currency).replace(/\.00$/, "")}, so the invoice would be ${formatMoney(0, currency)}. Set the rates under Clients first.`,
         });
       }
 

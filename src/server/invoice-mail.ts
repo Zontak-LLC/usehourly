@@ -109,7 +109,7 @@ export async function deliverInvoiceEmail(i: DeliverInput): Promise<{ to: string
   const to = client?.email ? normalizeEmail(client.email) : "";
   if (!to) {
     throw new InvoiceMailError(
-      `Add an email address for ${client?.name ?? "this client"} under Clients & Projects, Billing details, first.`,
+      `Add an email address for ${client?.name ?? "this client"} under Clients, Billing details, first.`,
       "BAD_REQUEST",
     );
   }

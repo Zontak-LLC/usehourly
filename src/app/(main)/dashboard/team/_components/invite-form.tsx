@@ -104,7 +104,7 @@ export function InviteCard({ onClose }: { onClose: () => void }) {
       </div>
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-1 font-medium text-sm">Clients they can log time on</legend>
-        {list.length === 0 && <p className="text-muted-foreground text-sm">Add a client first (Clients & Projects).</p>}
+        {list.length === 0 && <p className="text-muted-foreground text-sm">Add a client first, on the Clients page.</p>}
         {list.map((c) => (
           <label key={c.id} className="flex min-h-8 items-center gap-2 text-sm">
             <input

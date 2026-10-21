@@ -36,7 +36,7 @@ test("navigation sits down the left by default, stays open, and survives a reloa
       "Week",
       "Month",
       "Invoices",
-      "Clients & Projects",
+      "Clients",
       "Year summary (taxes)",
       "Team",
       "Account",

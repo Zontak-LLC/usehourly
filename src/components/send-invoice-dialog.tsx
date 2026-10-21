@@ -89,7 +89,7 @@ function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean })
         <p className="rounded-lg border p-2 text-sm">
           {data?.clientName ?? "This client"} has no email address yet.{" "}
           <Link href="/dashboard/clients" className="font-medium underline">
-            Add one under Clients & Projects
+            Add one under Clients
           </Link>
           , in Billing details.
         </p>

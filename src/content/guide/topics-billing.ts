@@ -11,7 +11,7 @@ export const BILLING_TOPICS: Topic[] = [
 
 - It is built from your **billable** time for that client in those dates: one line per project, hours times the project's hourly rate.
 - Days you marked non-billable and non-billable projects are left out.
-- An invoice that would total **$0.00** is blocked, because a project has no hourly rate yet. Set it under Clients & Projects.
+- An invoice that would total **$0.00** is blocked, because a project has no hourly rate yet. Set it under Clients.
 - Numbers run \`INV-<year>-001\`, \`002\` and so on.
 
 ## After you create it
@@ -46,7 +46,7 @@ Your business name, EIN, address and payment instructions come from **Account**.
 - You can change it **until you make your first invoice**. After that it is fixed. It is the currency of every client that does not have one of its own.
 - Each invoice keeps the currency it was made in.
 
-**Billing one client in another currency:** on **Clients & Projects**, open **Billing details** for that client and pick its **Currency**. Its rates, budgets and invoices are then written in it, and the client's currency is fixed once you have made an invoice for it.
+**Billing one client in another currency:** on **Clients**, open **Billing details** for that client and pick its **Currency**. Its rates, budgets and invoices are then written in it, and the client's currency is fixed once you have made an invoice for it.
 
 - **Totals are never added across currencies.** The Invoices page shows one set of figures per currency, and the **Year summary** shows one currency at a time (a currency picker appears when you use more than one).
 - The **accounting export** asks which currency to write, because its files hold plain numbers.
@@ -59,7 +59,7 @@ An invoice PDF shows the **code** (for example EUR 150.00) for currencies whose 
     group: "billing",
     summary: "Bill in 6, 15 or 30 minute steps, with a minimum, for one client.",
     keywords: ["round up", "round", "quarter hour", "15 minutes", "minimum", "increment", "billing details"],
-    body: `Some clients are billed in blocks (for example every quarter hour). Set it per client: on Clients & Projects, open the client's **Billing details** and choose:
+    body: `Some clients are billed in blocks (for example every quarter hour). Set it per client: on the Clients page, open the client's **Billing details** and choose:
 
 - **Round to** none, 6, 15 or 30 minutes
 - **Up** or to the **nearest** step
@@ -94,7 +94,7 @@ There are tables by quarter, month, client and project, and **Export Excel** dow
     keywords: ["email", "send", "link", "reminder", "overdue", "client email", "stop emails", "paper plane"],
     body: `On the Invoices list, the paper-plane button opens **Send**. You can do either:
 
-- **Email it to the client.** Add their address first (Clients & Projects, client **Billing details**). The email comes from "your name via UseHourly", replies go to **you**, and it holds a private link. You can add a short note.
+- **Email it to the client.** Add their address first (the Clients page, client **Billing details**). The email comes from "your name via UseHourly", replies go to **you**, and it holds a private link. You can add a short note.
 - **Copy a private link** and send it yourself.
 
 The link opens a page with the invoice, a **Download PDF** button and how to pay. Choose how long it works (30, 90 or 180 days). Anyone with the link can see the invoice, including your payment instructions, so keep lifetimes short.

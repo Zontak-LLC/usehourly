@@ -128,7 +128,7 @@ export function DayEditorPanel({
           <p className="text-muted-foreground text-sm">
             Add a client and project under{" "}
             <Link href="/dashboard/clients" className="underline">
-              Clients & Projects
+              Clients
             </Link>{" "}
             to log time.
           </p>
