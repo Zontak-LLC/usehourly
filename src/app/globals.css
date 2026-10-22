@@ -479,3 +479,29 @@ textarea,
     background-position: 100% 50%;
   }
 }
+
+@keyframes sheet-drop {
+  0% {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(48px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(54px);
+    opacity: 0;
+  }
+}
+@keyframes link-travel {
+  from {
+    transform: translateX(4px);
+  }
+  to {
+    transform: translateX(196px);
+  }
+}

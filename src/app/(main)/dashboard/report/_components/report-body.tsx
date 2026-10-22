@@ -3,12 +3,12 @@ import { useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 
 import { useMoney } from "@/components/currency-provider";
-import { GoalMeter } from "@/components/goal-meter";
 import { Button } from "@/components/ui/button";
 import { formatDecimalHours } from "@/lib/duration";
 import type { AppRouter } from "@/server/routers/_app";
 
-import { Section, SummaryRow, Table } from "./report-table";
+import { Section, Table } from "./report-table";
+import { YearChart, YearDial, YearFigures } from "./year-visuals";
 
 export type AnnualReport = inferRouterOutputs<AppRouter>["report"]["annual"];
 
@@ -36,47 +36,6 @@ const periodDetail = (r: string[]) =>
   [r[1] !== "–" && `${r[1]} worked`, r[2] !== "–" && `${r[2]} billable`, r[4] !== "–" && `${r[4]} received`]
     .filter(Boolean)
     .join(" · ") || "Nothing logged";
-
-/** The year's figures as ONE card of lines, work on the left and money on the right (no tiles). */
-function ReportStats({ data }: { data: AnnualReport }) {
-  const money = useMoney();
-  return (
-    <Section title="Your year">
-      <div className="sm:grid sm:grid-cols-2 sm:divide-x">
-        <dl>
-          <SummaryRow
-            label="Hours worked"
-            value={h(data.totals.minutes)}
-            hint={`${data.totals.workedDays} ${data.totals.workedDays === 1 ? "day" : "days"}`}
-          />
-          <SummaryRow
-            label="Billable hours"
-            value={h(data.totals.billableMinutes)}
-            hint={data.totals.nonBillableMinutes ? `${h(data.totals.nonBillableMinutes)} non-billable` : undefined}
-          />
-          <SummaryRow label="Earned" value={money(data.totals.earnedCents)} hint="billable hours × rate" />
-        </dl>
-        <dl className="max-sm:border-t">
-          <SummaryRow
-            label="Invoiced"
-            value={money(data.invoices.totalCents)}
-            hint={`${data.invoices.count} invoice${data.invoices.count === 1 ? "" : "s"} issued`}
-          />
-          <SummaryRow
-            label="Received"
-            value={money(data.received.totalCents)}
-            hint={`${data.received.count} payment${data.received.count === 1 ? "" : "s"} · by paid date`}
-          />
-          <SummaryRow
-            label="Outstanding"
-            value={money(data.outstanding.totalCents)}
-            hint={`${data.outstanding.count} unpaid at year end`}
-          />
-        </dl>
-      </div>
-    </Section>
-  );
-}
 
 function totalsRow(data: AnnualReport, money: (cents: number) => string): string[] {
   return [
@@ -160,7 +119,13 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
                 <span className="font-medium">{money(c.earnedCents)}</span>
               </p>
             </div>
-            <ul className="mt-1 space-y-0.5">
+            <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber to-[color-mix(in_oklab,var(--amber)_60%,white)] transition-[width] duration-700"
+                style={{ width: `${(c.minutes / Math.max(1, ...data.clients.map((x) => x.minutes))) * 100}%` }}
+              />
+            </div>
+            <ul className="mt-2 space-y-0.5">
               {data.projects
                 .filter((p) => p.clientId === c.clientId)
                 .map((p) => (
@@ -242,26 +207,18 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
 export function ReportBody({ data, year }: { data: AnnualReport; year: number }) {
   return (
     <>
-      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
-          {/* The year as the same dial the other pages use: hours against a 1,800-hour working year. */}
-          <GoalMeter
-            id="year"
-            label={`${year}`}
-            minutes={data.totals.minutes}
-            defaultGoalHours={1800}
-            minHours={200}
-            maxHours={2400}
-            stepHours={100}
-            note={`${h(data.totals.billableMinutes)} billable · ${data.totals.workedDays} days`}
-          />
-          <ReportStats data={data} />
+      {/* The year at a glance: the dial and its goal slider on the left, the six figures and a month-by-month chart beside it. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+        <YearDial data={data} year={year} />
+        <div className="flex min-w-0 flex-col gap-6">
+          <YearFigures data={data} />
+          <YearChart data={data} />
         </div>
-        <div className="flex min-w-0 flex-col gap-4">
-          <PeriodSections data={data} />
-          <ClientProjectSection data={data} />
-          <InvoiceSections data={data} year={year} />
-        </div>
+      </div>
+      <div className="flex min-w-0 flex-col gap-4">
+        <PeriodSections data={data} />
+        <ClientProjectSection data={data} />
+        <InvoiceSections data={data} year={year} />
       </div>
 
       <p className="text-muted-foreground text-xs">

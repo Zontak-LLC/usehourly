@@ -64,7 +64,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
       title="Business details"
       description="Printed on the invoices you send to clients."
     >
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]">
         <div className="flex flex-col gap-6">
           <FormStep n={1} title="Who is sending the invoice?">
             <div className="grid gap-1.5">
@@ -129,27 +129,63 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
         {/* The top of the invoice, drawn from what is typed: the same things in the same places as the PDF. */}
         <aside
           aria-label="How your invoice will start"
-          className="flex flex-col gap-4 rounded-2xl border bg-white p-5 text-[#12151b] shadow-[var(--shadow-sheet)] lg:sticky lg:top-32"
+          className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border bg-white p-8 text-[#12151b] shadow-[var(--shadow-sheet)] lg:sticky lg:top-32"
         >
+          <div aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-amber" />
           <div className="flex items-start justify-between gap-3">
             {logo ? (
               // biome-ignore lint/performance/noImgElement: a small data: URL picture
-              <img src={logo} alt="" className="max-h-12 max-w-32 object-contain" />
+              <img src={logo} alt="" className="max-h-20 max-w-48 object-contain" />
             ) : (
-              <span className="font-display font-extrabold text-lg">{name || me.name || "Your business"}</span>
+              <span className="font-display font-extrabold text-2xl">{name || me.name || "Your business"}</span>
             )}
-            <span className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Invoice</span>
+            <span className="text-right">
+              <span className="block font-display font-extrabold text-2xl tracking-tight">INVOICE</span>
+              <span className="block font-mono text-[#8b8f98] text-xs">INV-2026-001</span>
+            </span>
           </div>
-          <div className="text-xs leading-relaxed">
-            {logo && <p className="font-bold font-display text-sm">{name || me.name}</p>}
+          <div className="text-sm leading-relaxed">
+            {logo && <p className="font-bold font-display text-lg">{name || me.name}</p>}
             <p className="whitespace-pre-line text-[#4b5160]">{address || "Your address appears here"}</p>
             {ein && <p className="mt-1 font-mono text-[#4b5160]">EIN {ein}</p>}
           </div>
-          <div className="h-px bg-[#e3e6ec]" />
-          <div className="text-xs">
-            <p className="font-mono text-[#8b8f98] uppercase tracking-widest">How to pay</p>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Bill to</p>
+              <p className="mt-1 font-semibold">Your client</p>
+              <p className="text-[#8b8f98]">Their address</p>
+            </div>
+            <div>
+              <p className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Due</p>
+              <p className="mt-1 font-semibold">In 30 days</p>
+            </div>
+          </div>
+          <div aria-hidden className="text-sm">
+            <div className="flex justify-between border-[#12151b] border-b pb-1 font-mono text-[#8b8f98] text-xs uppercase tracking-widest">
+              <span>Project</span>
+              <span>Amount</span>
+            </div>
+            {[
+              ["Website · 12.0 h", "$540.00"],
+              ["Support · 3.5 h", "$157.50"],
+            ].map(([what, amount]) => (
+              <div key={what} className="flex justify-between border-[#e3e6ec] border-b py-2 text-[#4b5160]">
+                <span>{what}</span>
+                <span className="font-mono">{amount}</span>
+              </div>
+            ))}
+            <div className="flex items-baseline justify-between pt-3">
+              <span className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Total</span>
+              <span className="font-display font-extrabold text-2xl">$697.50</span>
+            </div>
+          </div>
+          <div className="rounded-xl bg-[#f6f7f9] p-4 text-sm">
+            <p className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">How to pay</p>
             <p className="mt-1 whitespace-pre-line text-[#4b5160]">{pay || "Nothing printed"}</p>
           </div>
+          <p className="text-center text-[#8b8f98] text-xs">
+            The lines above are an example. Yours come from your time.
+          </p>
         </aside>
       </div>
     </SectionCard>
