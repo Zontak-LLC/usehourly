@@ -2,7 +2,6 @@
 
 import { Bot, Plug } from "lucide-react";
 
-import { McpAnimation } from "@/components/mcp-animation";
 import { trpc } from "@/lib/trpc";
 
 /** A small drawing: records drop into a vault drawer, with live counts of what is inside. */
@@ -101,7 +100,7 @@ export function AssistantLink() {
     ],
   ];
   return (
-    <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+    <div>
       <ol className="grid gap-5 rounded-3xl bg-card p-6 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
         <li className="flex items-center gap-3">
           <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber/15">
@@ -124,7 +123,6 @@ export function AssistantLink() {
           </li>
         ))}
       </ol>
-      <McpAnimation />
     </div>
   );
 }
