@@ -87,7 +87,7 @@ export function DataHub({ account }: { account: AccountMe }) {
             aria-label="Download everything"
             className="grid items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6"
           >
-            <ExportScene className="mx-auto w-44 sm:w-56" />
+            <ExportScene className="mx-auto w-44 sm:mx-0 sm:w-56" />
             <div className="grid gap-3">
               <h3 className="font-bold font-display text-2xl leading-tight">Take it all with you.</h3>
               <p className="max-w-xl text-foreground/75">
@@ -102,10 +102,10 @@ export function DataHub({ account }: { account: AccountMe }) {
         {choice === "accounting" && (
           <section
             aria-label="Send invoices to your accounting app"
-            className="grid gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
+            className="overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
           >
-            <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr] sm:gap-8">
-              <AccountingScene className="mx-auto w-44 sm:w-56" />
+            <div className="grid items-center gap-5 p-5 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6">
+              <AccountingScene className="mx-auto w-44 sm:mx-0 sm:w-56" />
               <div className="grid gap-3">
                 <h3 className="inline-flex items-center gap-2 font-bold font-display text-2xl leading-tight">
                   Send your invoices to the books.

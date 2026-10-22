@@ -70,74 +70,104 @@ export function AccountingExport() {
     }
   }
 
+  const select = (id: string, label: string, control: React.ReactNode) => (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      {control}
+    </div>
+  );
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="grid gap-1.5">
-          <Label htmlFor="acct-format">Send to</Label>
-          <NativeSelect id="acct-format" value={kind} onChange={(e) => setKind(e.target.value as AccountingKind)}>
-            {ACCOUNTING_KINDS.map((k) => (
-              <option key={k.kind} value={k.kind}>
-                {k.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="acct-year">Invoices issued in</Label>
-          <NativeSelect id="acct-year" value={year} onChange={(e) => setYear(e.target.value)}>
-            <option value="this">{thisYear}</option>
-            {years.slice(1).map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-            <option value="all">All time</option>
-          </NativeSelect>
-        </div>
-        {chosenCurrency && (
-          <div className="grid gap-1.5">
-            <Label htmlFor="acct-currency">Currency</Label>
-            <NativeSelect id="acct-currency" value={chosenCurrency} onChange={(e) => setCurrency(e.target.value)}>
-              {currencies.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </NativeSelect>
+    <>
+      <div className="grid gap-5 border-t px-5 py-5 sm:px-6">
+        <fieldset className="grid gap-3 border-0 p-0">
+          <legend className="mb-3 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
+            What to send
+          </legend>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {select(
+              "acct-format",
+              "Send to",
+              <NativeSelect id="acct-format" value={kind} onChange={(e) => setKind(e.target.value as AccountingKind)}>
+                {ACCOUNTING_KINDS.map((k) => (
+                  <option key={k.kind} value={k.kind}>
+                    {k.label}
+                  </option>
+                ))}
+              </NativeSelect>,
+            )}
+            {select(
+              "acct-year",
+              "Invoices issued in",
+              <NativeSelect id="acct-year" value={year} onChange={(e) => setYear(e.target.value)}>
+                <option value="this">{thisYear}</option>
+                {years.slice(1).map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+                <option value="all">All time</option>
+              </NativeSelect>,
+            )}
+            {chosenCurrency &&
+              select(
+                "acct-currency",
+                "Currency",
+                <NativeSelect id="acct-currency" value={chosenCurrency} onChange={(e) => setCurrency(e.target.value)}>
+                  {currencies.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </NativeSelect>,
+              )}
           </div>
-        )}
-        <div className="grid gap-1.5">
-          <Label htmlFor="acct-dates">Date format</Label>
-          <NativeSelect id="acct-dates" value={dateStyle} onChange={(e) => setDateStyle(e.target.value as DateStyle)}>
-            {DATE_STYLES.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        {kind === "xero" && (
-          <>
-            <div className="grid gap-1.5">
-              <Label htmlFor="acct-code">Sales account code</Label>
-              <Input id="acct-code" value={accountCode} onChange={(e) => setAccountCode(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="acct-tax">Tax type</Label>
-              <Input id="acct-tax" value={taxType} onChange={(e) => setTaxType(e.target.value)} />
-            </div>
-          </>
-        )}
-        {kind === "quickbooks" && (
-          <div className="grid gap-1.5">
-            <Label htmlFor="acct-item">Product or service name</Label>
-            <Input id="acct-item" value={itemName} onChange={(e) => setItemName(e.target.value)} />
+        </fieldset>
+        <fieldset className="grid gap-3 border-0 p-0">
+          <legend className="mb-3 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
+            How it is written
+          </legend>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {select(
+              "acct-dates",
+              "Date format",
+              <NativeSelect
+                id="acct-dates"
+                value={dateStyle}
+                onChange={(e) => setDateStyle(e.target.value as DateStyle)}
+              >
+                {DATE_STYLES.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </NativeSelect>,
+            )}
+            {kind === "xero" && (
+              <>
+                {select(
+                  "acct-code",
+                  "Sales account code",
+                  <Input id="acct-code" value={accountCode} onChange={(e) => setAccountCode(e.target.value)} />,
+                )}
+                {select(
+                  "acct-tax",
+                  "Tax type",
+                  <Input id="acct-tax" value={taxType} onChange={(e) => setTaxType(e.target.value)} />,
+                )}
+              </>
+            )}
+            {kind === "quickbooks" &&
+              select(
+                "acct-item",
+                "Product or service name",
+                <Input id="acct-item" value={itemName} onChange={(e) => setItemName(e.target.value)} />,
+              )}
           </div>
-        )}
+        </fieldset>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <p className="min-w-0 flex-1 basis-64 text-muted-foreground text-sm">{picked.hint}</p>
+      {/* The foot of the card: what happens next on the left, the one action on the right, on a tinted strip. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t bg-band-2 px-5 py-4 sm:px-6">
+        <p className="min-w-0 flex-1 basis-64 text-foreground/75 text-sm">{picked.hint}</p>
         <DocButton
           onClick={run}
           disabled={busy}
@@ -148,6 +178,6 @@ export function AccountingExport() {
           label={busy ? "Preparing…" : "Download CSV"}
         />
       </div>
-    </div>
+    </>
   );
 }
