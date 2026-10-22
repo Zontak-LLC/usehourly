@@ -28,6 +28,10 @@ const PHONE_SPECS =
 // so the waits are doubled there. A real regression still fails; a slow machine does not.
 const SLOW = process.env.CIRCLECI ? 2 : 1;
 
+// The serial spec flips a setting with SQL on the local database, so it can never run against a live site (the
+// after-deploy smoke test points E2E_BASE_URL at production: running it there failed and rolled the site back).
+const SERIAL_FIRST = external ? [] : ["serial"];
+
 export default defineConfig({
   testDir: "./e2e",
   // The "every control does something" sweep is slow (minutes), so the normal run skips it; `npm run e2e:sweep` runs it.
@@ -59,7 +63,7 @@ export default defineConfig({
     },
     {
       name: "desktop",
-      dependencies: ["serial"],
+      dependencies: SERIAL_FIRST,
       testIgnore: NORMAL_IGNORE,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
@@ -68,7 +72,7 @@ export default defineConfig({
       // rest do the same thing on any screen, so running them twice only costs time. E2E_FULL_PHONE=1 (the nightly
       // run) runs every spec on the phone as well.
       name: "phone",
-      dependencies: ["serial"],
+      dependencies: SERIAL_FIRST,
       testMatch: process.env.E2E_FULL_PHONE ? /.*\.spec\.ts$/ : PHONE_SPECS,
       testIgnore: NORMAL_IGNORE,
       use: { ...devices["Pixel 7"] },
