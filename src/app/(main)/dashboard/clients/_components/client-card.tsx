@@ -14,7 +14,7 @@ import { formatDuration } from "@/lib/duration";
 import { SetupForm } from "../../today/_components/setup-form";
 import { ClientDetailsForm } from "./client-details-form";
 import type { ClientRow, ProjectBudgets, ProjectTotals } from "./client-types";
-import { ProjectCard, ProjectEditCard } from "./project-row";
+import { PROJECT_COLS, ProjectEditCard, ProjectLine } from "./project-row";
 import { PROJECTS_SHOWN } from "./use-open-clients";
 import type { ProjectEditing } from "./use-project-editing";
 
@@ -111,21 +111,34 @@ export function ClientCard({
         </span>
       </header>
       <ClientCurrency currency={c.currency}>
-        <div id={bodyId} hidden={!open} className="flex flex-col gap-3 p-3">
+        <div id={bodyId} hidden={!open} className="flex flex-col">
           {billingOpen && (
-            <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
+            <div className="m-3 overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
               <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
             </div>
           )}
           {c.projects.length === 0 && !adding && (
-            <p className="text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
+            <p className="px-3 pt-3 text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
           )}
-          <ul className="grid gap-3 sm:grid-cols-2">
+          {c.projects.length > 0 && (
+            // Column titles, wide screens only: the projects below are rows of a table, not tiles.
+            <div
+              className={`${PROJECT_COLS} gap-x-3 px-3 pt-2 pb-1 text-muted-foreground text-xs max-sm:hidden`}
+              aria-hidden
+            >
+              <span>Project</span>
+              <span className="text-right">Rate</span>
+              <span className="text-right">This month</span>
+              <span className="text-right">All time</span>
+              <span />
+            </div>
+          )}
+          <ul>
             {projects.map((p) =>
               editing.editingId === p.id ? (
                 <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
               ) : (
-                <ProjectCard
+                <ProjectLine
                   key={p.id}
                   project={p}
                   clientColor={c.color}
@@ -137,8 +150,8 @@ export function ClientCard({
                 />
               ),
             )}
-            {adding ? (
-              <li className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10 sm:col-span-2">
+            {adding && (
+              <li className="flex flex-col gap-2 border-t px-3 py-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">
@@ -168,27 +181,30 @@ export function ClientCard({
                   onCancel={() => setAdding(false)}
                 />
               </li>
-            ) : c.projects.length === 0 ? (
-              // Only a client with no project yet gets the big dashed card; once it has one, the + in the header is enough.
-              <li className="sm:col-span-2">
-                <button
-                  type="button"
-                  onClick={() => setAdding(true)}
-                  aria-label={`Add a project for ${c.name}`}
-                  className="flex h-full min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-foreground/30 border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
-                >
-                  <span className="flex size-8 items-center justify-center rounded-full bg-muted">
-                    <Plus className="size-4" aria-hidden />
-                  </span>
-                  Add a project
-                </button>
-              </li>
-            ) : null}
+            )}
           </ul>
+          {!adding && c.projects.length === 0 && (
+            // Only a client with no project yet gets the dashed button; once it has one, the + in the header is enough.
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                aria-label={`Add a project for ${c.name}`}
+                className="flex min-h-20 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-foreground/30 border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
+              >
+                <span className="flex size-8 items-center justify-center rounded-full bg-muted">
+                  <Plus className="size-4" aria-hidden />
+                </span>
+                Add a project
+              </button>
+            </div>
+          )}
           {(hidden > 0 || (showAll && c.projects.length > PROJECTS_SHOWN)) && (
-            <Button type="button" variant="outline" className="self-start" onClick={() => setShowAll((all) => !all)}>
-              {showAll ? "Show fewer projects" : `Show all ${c.projects.length} projects`}
-            </Button>
+            <div className="border-t p-3">
+              <Button type="button" variant="outline" onClick={() => setShowAll((all) => !all)}>
+                {showAll ? "Show fewer projects" : `Show all ${c.projects.length} projects`}
+              </Button>
+            </div>
           )}
         </div>
       </ClientCurrency>

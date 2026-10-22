@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Plus, UsersRound, X } from "lucide-react";
+import { UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,22 @@ import { trpc } from "@/lib/trpc";
 const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6", "#ec4899", "#84cc16"];
 
 /**
- * "New client" as a card at the end of the list (UI simplification, ticket #135): a dashed card with a + that turns into
- * the form in the same place, the way Team's "Invite someone" and a client's "Add a project" do. With no clients yet it
- * is the big empty-state card.
+ * "New client". The way in is the + in the page header; it opens this form as a card at the TOP of the list, and Cancel
+ * (or adding the client) closes it. With no clients yet the page shows the big dashed empty-state card instead, which
+ * opens the same form. `open` is held by the page, because the header button and the card share it.
  */
-export function NewClientCard({ clientCount }: { clientCount: number }) {
+export function NewClientCard({
+  clientCount,
+  open,
+  onOpenChange,
+}: {
+  clientCount: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const utils = trpc.useUtils();
   const createClient = trpc.clients.create.useMutation();
-  const [open, setOpen] = useState(false);
+  const setOpen = onOpenChange;
   const [name, setName] = useState("");
   const empty = clientCount === 0;
 
@@ -77,24 +85,22 @@ export function NewClientCard({ clientCount }: { clientCount: number }) {
     );
   }
 
+  // Once there are clients the + in the header is the way in: no card waits at the foot of the list.
+  if (!empty) return null;
   return (
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-foreground/30 border-dashed p-4 text-center text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-card hover:text-foreground ${
-        empty ? "min-h-52" : "min-h-24"
-      }`}
+      className="flex min-h-52 w-full flex-col items-center justify-center gap-2 rounded-xl border border-foreground/30 border-dashed p-4 text-center text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-card hover:text-foreground"
     >
-      <span className={`flex items-center justify-center rounded-full bg-muted ${empty ? "size-12" : "size-8"}`}>
-        {empty ? <UsersRound className="size-6" aria-hidden /> : <Plus className="size-4" aria-hidden />}
+      <span className="flex size-12 items-center justify-center rounded-full bg-muted">
+        <UsersRound className="size-6" aria-hidden />
       </span>
-      {empty && <span className="font-medium text-foreground">No clients yet</span>}
+      <span className="font-medium text-foreground">No clients yet</span>
       <span className="font-medium text-foreground">New client</span>
-      {empty && (
-        <span className="max-w-md">
-          The people or companies you do the work for. Each one gets its own projects and rates.
-        </span>
-      )}
+      <span className="max-w-md">
+        The people or companies you do the work for. Each one gets its own projects and rates.
+      </span>
     </button>
   );
 }

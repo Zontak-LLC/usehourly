@@ -116,7 +116,7 @@ test("the app links to the guide: the menu, and a ? beside the settings that are
   await test.step("the ? beside rounding opens the matching topic in a new tab", async () => {
     await page.goto("/dashboard/clients");
     await page
-      .getByRole("button", { name: /More actions for/ })
+      .getByRole("button", { name: /More actions for (?!Clients$)/ })
       .first()
       .click();
     await page.getByRole("menuitem", { name: "Billing details" }).click();

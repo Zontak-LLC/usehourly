@@ -18,8 +18,14 @@ import { currencySymbol } from "@/lib/money";
 import type { ClientRow, ProjectRow as ProjectData, ProjectTotals } from "./client-types";
 import type { ProjectEditing } from "./use-project-editing";
 
-/** One project as a tile: a header with its name and buttons, then the rate, this month and all time, and its budget. */
-export function ProjectCard({
+/** The columns of the project table (the header in the client card uses the same ones). Phones use two columns. */
+export const PROJECT_COLS = "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_6.5rem_6rem_6rem_5.5rem]";
+
+/**
+ * One project as a ROW in its client's table: name (with its budget bar under it), rate, this month, all time, and the
+ * buttons. On a phone the rate and all-time figures move under the name and the month's hours sit at the right.
+ */
+export function ProjectLine({
   project: p,
   clientColor,
   logos,
@@ -37,56 +43,60 @@ export function ProjectCard({
   onArchive: () => void;
 }) {
   const money = useMoney();
+  const month = formatDuration(totals?.[p.id]?.range ?? 0);
+  const allTime = formatDuration(totals?.[p.id]?.total ?? 0);
+  const rate =
+    p.hourly_rate > 0 ? (
+      <span className="font-medium">{money(p.hourly_rate)}/h</span>
+    ) : p.billable ? (
+      <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
+        No hourly rate yet
+      </span>
+    ) : (
+      <span className="text-muted-foreground">–</span>
+    );
   return (
-    <li className="flex flex-col overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
-      <div className="flex items-center justify-between gap-2 bg-band-3 py-2 pr-2 pl-3">
-        <span className="flex min-w-0 items-center gap-2">
+    <li className={`${PROJECT_COLS} items-center gap-x-3 gap-y-1 border-t px-3 py-2.5 text-sm first:border-t-0`}>
+      <div className="min-w-0 max-sm:col-start-1 max-sm:row-start-1">
+        <div className="flex min-w-0 items-center gap-2">
           <ProjectMark projectId={p.id} color={clientColor} logos={logos} />
-          <h3 className="truncate font-semibold text-sm">{p.name}</h3>
+          <h3 className="truncate font-medium">{p.name}</h3>
           {!p.billable && (
-            <span className="shrink-0 rounded-full border px-2 py-0.5 text-foreground/70 text-xs">non-billable</span>
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-foreground/70 text-xs">non-billable</span>
           )}
-        </span>
-        {/* Edit is the common action and stays visible; archiving is rare, so it sits behind the ··· menu. */}
-        <span className="flex gap-1">
-          <IconAction label={`Edit ${p.name}`} tip="Edit project" onClick={onEdit}>
-            <Pencil />
-          </IconAction>
-          <MoreMenu
-            label={`More actions for ${p.name}`}
-            items={[{ label: "Archive project", icon: <Archive />, onSelect: onArchive, destructive: true }]}
-          />
-        </span>
+        </div>
+        {budget && (
+          <div className="mt-1.5 max-w-xs">
+            <BudgetBar status={budget} />
+          </div>
+        )}
       </div>
-      <div className="flex flex-1 flex-col gap-3 p-3 text-sm">
-        <p>
-          {p.hourly_rate > 0 ? (
-            <span className="font-medium">{money(p.hourly_rate)}/h</span>
-          ) : p.billable ? (
-            <span className="text-destructive text-xs" title="Use the pencil to set an hourly rate">
-              No hourly rate yet
-            </span>
-          ) : (
-            <span className="text-muted-foreground">No rate (non-billable)</span>
-          )}
+      {/* Rate and all time: their own columns on a wide screen; on a phone one muted line under the name. */}
+      <div className="contents max-sm:col-start-1 max-sm:row-start-2 max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:gap-x-2 max-sm:text-muted-foreground max-sm:text-xs">
+        <p className="sm:col-start-2 sm:row-start-1 sm:text-right">{rate}</p>
+        <p className="font-mono tabular-nums sm:col-start-4 sm:row-start-1 sm:text-right sm:text-foreground/75">
+          <span className="sm:hidden">· all time </span>
+          {allTime}
         </p>
-        <dl className="grid grid-cols-2 gap-2">
-          <div>
-            <dt className="text-muted-foreground text-xs">This month</dt>
-            <dd className="font-medium font-mono tabular-nums">{formatDuration(totals?.[p.id]?.range ?? 0)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground text-xs">All time</dt>
-            <dd className="font-medium font-mono tabular-nums">{formatDuration(totals?.[p.id]?.total ?? 0)}</dd>
-          </div>
-        </dl>
-        {budget && <BudgetBar status={budget} />}
       </div>
+      <p className="text-right font-medium font-mono tabular-nums max-sm:col-start-2 max-sm:row-start-1 sm:col-start-3 sm:row-start-1">
+        {month}
+      </p>
+      {/* Edit is the common action and stays visible; archiving is rare, so it sits behind the ··· menu. */}
+      <span className="flex justify-end gap-1 max-sm:col-start-2 max-sm:row-start-2 sm:col-start-5 sm:row-start-1">
+        <IconAction label={`Edit ${p.name}`} tip="Edit project" onClick={onEdit}>
+          <Pencil />
+        </IconAction>
+        <MoreMenu
+          label={`More actions for ${p.name}`}
+          items={[{ label: "Archive project", icon: <Archive />, onSelect: onArchive, destructive: true }]}
+        />
+      </span>
     </li>
   );
 }
 
-/** One project in its edit form (a card spanning the row): name, client, rate, billable, budget, logo. */
+/** One project in its edit form (it takes the whole row): name, client, rate, billable, budget, logo. */
 export function ProjectEditCard({
   project: p,
   clients,
@@ -100,7 +110,7 @@ export function ProjectEditCard({
 }) {
   const currency = useCurrency();
   return (
-    <li className="overflow-hidden rounded-lg bg-card px-4 py-3 ring-1 ring-foreground/10 sm:col-span-2">
+    <li className="border-t px-3 py-3 first:border-t-0">
       <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
         <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
         <select
