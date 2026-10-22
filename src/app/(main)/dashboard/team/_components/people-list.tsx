@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { CircleCheck, Hourglass, Mail, MailX, Pencil, UserRound, UserX } from "lucide-react";
+import { CircleCheck, Hourglass, Mail, MailX, Pencil, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { IconAction } from "@/components/icon-action";
@@ -13,6 +13,7 @@ import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { ClientChecks } from "./client-checks";
+import { Avatar } from "./person-avatar";
 
 type Person = {
   id: string;
@@ -52,18 +53,18 @@ function StatusIcon({ status }: { status: Person["status"] }) {
   );
 }
 
-/** Everyone invited, one row each (cards group, rows list): who they are, their status, their clients, and the actions. */
+/** Everyone invited, one row each: a coloured monogram, who they are, which clients they log time for, and the actions. */
 export function PeopleList({ people }: { people: Person[] }) {
   const shown = people.filter((p) => p.status !== "removed");
   return (
-    <section aria-label="Your team" className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
-      <header className="bg-band-2 px-3 py-3 sm:px-4">
-        <h2 className="font-semibold text-base">Your team</h2>
+    <section aria-label="Your team">
+      <header className="px-1 pb-2">
+        <h2 className="font-display font-extrabold text-2xl">Your team</h2>
         <p className="text-foreground/75 text-sm">
           Their time shows up on your Today, Week and Month pages, marked with their name.
         </p>
       </header>
-      <ul>
+      <ul className="divide-y rounded-2xl bg-card ring-1 ring-foreground/10">
         {shown.map((p) => (
           <PersonRow key={p.id} person={p} />
         ))}
@@ -126,9 +127,7 @@ function PersonRow({ person }: { person: Person }) {
       {/* Three columns on a wide screen (who, status and clients, actions); on a phone the actions sit beside the name and the details drop under it. */}
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:px-4">
         <div className="flex min-w-0 items-center gap-3 sm:row-start-1">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <UserRound className="size-5" aria-hidden />
-          </span>
+          <Avatar label={person.label} className="size-11 text-lg" />
           <div className="min-w-0">
             <h3 className="truncate font-semibold text-base">
               {person.label}
@@ -159,7 +158,7 @@ function PersonRow({ person }: { person: Person }) {
                 <>
                   {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
                   {allowed.map((name) => (
-                    <span key={name} className="rounded-md bg-muted px-2 py-0.5">
+                    <span key={name} className="rounded-full bg-muted px-3 py-1 ring-1 ring-foreground/10">
                       {name}
                     </span>
                   ))}

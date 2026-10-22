@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { ChevronDown } from "lucide-react";
-
 import { CardTitle } from "@/components/card-title";
+import { Caret } from "@/components/caret";
 import { FOLDED_KEY, readFolded } from "@/lib/folded-sections";
 
 /**
@@ -61,7 +60,7 @@ export function CollapsibleSection({
         <CardTitle as="span" title={title} note={note} />
         <span className="flex shrink-0 items-center gap-2 text-foreground/75 text-sm">
           {!open && summary && <span className="font-mono tabular-nums">{summary}</span>}
-          <ChevronDown aria-hidden className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
+          <Caret open={open} />
         </span>
       </button>
       <div id={`${id}-body`} hidden={!open}>

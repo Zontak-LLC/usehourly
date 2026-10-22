@@ -2,8 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { ChevronDown } from "lucide-react";
-
+import { Caret } from "@/components/caret";
 import { trpc } from "@/lib/trpc";
 
 /**
@@ -54,7 +53,7 @@ export function ProjectFilter({
           </optgroup>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Caret className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2" />
     </div>
   );
 }

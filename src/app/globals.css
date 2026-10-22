@@ -452,12 +452,12 @@ textarea,
 
 /* The drop-down arrow for NativeSelect: a rounded chevron in a quiet grey (works on light and dark fields). */
 .field-chevron {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b8f98' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23f5a623' fill-opacity='.22'/%3E%3Cpath d='m7.5 10 4.5 4.5 4.5-4.5' stroke='%23c98a10' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.75rem center;
+  background-position: right 0.6rem center;
 }
 .field-chevron:focus-visible {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f5a623' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23f5a623' fill-opacity='.45'/%3E%3Cpath d='m7.5 10 4.5 4.5 4.5-4.5' stroke='%23f5a623' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* Home page: the colour glows drift slowly, and a gradient band shifts across its colours. */

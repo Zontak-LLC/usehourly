@@ -13,6 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { InviteCard } from "./invite-form";
 import { MemberSection } from "./member-section";
 import { PeopleList } from "./people-list";
+import { TeamStrip } from "./team-strip";
 
 /** Two sides of one page: the people you invited to log time on your clients, and the teams you were invited to. */
 export function TeamView() {
@@ -66,7 +67,10 @@ export function TeamView() {
           </EmptyState>
         )
       ) : (
-        <PeopleList people={people.data ?? []} />
+        <>
+          <TeamStrip people={shown} />
+          <PeopleList people={people.data ?? []} />
+        </>
       )}
       {(teams.data?.length ?? 0) > 0 && <MemberSection teams={teams.data ?? []} />}
     </PageShell>

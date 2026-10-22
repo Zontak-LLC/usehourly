@@ -74,7 +74,7 @@ export function AccountView() {
               title="Download everything"
               description="Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook, one per client, and plain CSV files."
             >
-              <ExportEverything className="self-start" />
+              <ExportEverything big className="self-start" />
             </SectionCard>
 
             <SectionCard

@@ -6,6 +6,7 @@ import { Archive } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAccountCurrency } from "@/components/currency-provider";
+import { DocButton } from "@/components/doc-button";
 import { Button } from "@/components/ui/button";
 import { toISODate } from "@/lib/dates";
 import { downloadExportZip, planExport } from "@/lib/export-all";
@@ -15,9 +16,12 @@ import { trpc } from "@/lib/trpc";
 export function ExportEverything({
   variant = "outline",
   className,
+  big = false,
 }: {
   variant?: "outline" | "ghost" | "secondary";
   className?: string;
+  /** The big two-line document button (Account > Your data) instead of a small one. */
+  big?: boolean;
 }) {
   const accountCurrency = useAccountCurrency();
   const utils = trpc.useUtils();
@@ -59,6 +63,20 @@ export function ExportEverything({
     }
   }
 
+  if (big) {
+    return (
+      <DocButton
+        onClick={run}
+        disabled={busy}
+        busy={busy}
+        icon={<Archive />}
+        title={busy ? "Preparing your zip…" : "Download everything"}
+        hint="A zip of spreadsheets and CSV files"
+        label={busy ? "Preparing your zip…" : "Download everything (.zip)"}
+        className={className}
+      />
+    );
+  }
   return (
     <Button variant={variant} className={className} onClick={run} disabled={busy}>
       <Archive /> {busy ? "Preparing your zip…" : "Download everything (.zip)"}

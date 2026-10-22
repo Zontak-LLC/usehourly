@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { DocButton } from "@/components/doc-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -137,9 +137,16 @@ export function AccountingExport() {
         )}
       </div>
       <p className="text-muted-foreground text-sm">{picked.hint}</p>
-      <Button variant="outline" className="h-10 self-start" onClick={run} disabled={busy}>
-        <Download /> {busy ? "Preparing…" : "Download CSV"}
-      </Button>
+      <DocButton
+        onClick={run}
+        disabled={busy}
+        busy={busy}
+        icon={<Download />}
+        title={busy ? "Preparing…" : "Download CSV"}
+        hint="Ready to import"
+        label={busy ? "Preparing…" : "Download CSV"}
+        className="self-start"
+      />
     </div>
   );
 }

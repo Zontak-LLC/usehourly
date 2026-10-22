@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronDown, CircleHelp, Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
+import { CircleHelp, Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Caret } from "@/components/caret";
 import { useAccountCurrency } from "@/components/currency-provider";
 import { RangeExport } from "@/components/range-export";
 import { ShareTimesheet } from "@/components/share-timesheet";
@@ -76,8 +77,8 @@ export function ShareExportMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className={`h-10 ${className ?? ""}`}>
-          <Share2 /> Share &amp; export <ChevronDown className="opacity-60" />
+        <Button variant="outline" className={`group h-10 ${className ?? ""}`}>
+          <Share2 /> Share &amp; export <Caret />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-64">
