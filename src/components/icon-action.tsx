@@ -14,6 +14,7 @@ export function IconAction({
   onClick,
   expanded,
   text,
+  inline = false,
   children,
 }: {
   label: string;
@@ -25,15 +26,21 @@ export function IconAction({
   expanded?: boolean;
   /** Visible words under the icon (the phone's action row); without it the button is icon-only with a tooltip. */
   text?: string;
+  /** With `text`: the icon and the words side by side in a normal button (wide screens), not stacked in a row of equal tiles. */
+  inline?: boolean;
   children: React.ReactNode;
 }) {
   const button = (
     <Button
-      size={text ? "default" : "icon"}
+      size={text && !inline ? "default" : text ? "sm" : "icon"}
       variant="outline"
       aria-label={label}
       aria-expanded={expanded}
-      className={cn(text && "h-auto min-h-12 flex-1 flex-col gap-0.5 px-1 py-2 text-xs", className)}
+      className={cn(
+        text && !inline && "h-auto min-h-12 flex-1 flex-col gap-0.5 px-1 py-2 text-xs",
+        text && inline && "h-8 gap-1.5 px-2.5 text-sm",
+        className,
+      )}
       disabled={disabled}
       onClick={onClick}
     >
@@ -41,7 +48,7 @@ export function IconAction({
       {text}
     </Button>
   );
-  if (text) return button;
+  if (text && !inline) return button; // a phone row has no tooltips
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>

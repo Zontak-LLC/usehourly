@@ -47,7 +47,7 @@ function SearchRow({
       <Button
         type="button"
         variant="outline"
-        className="h-11 shrink-0 sm:hidden"
+        className="h-11 shrink-0"
         aria-expanded={filtersOpen}
         aria-controls="invoice-filters"
         onClick={onToggleFilters}
@@ -90,7 +90,7 @@ function IssuedPresets({ filters, today }: { filters: InvoiceFilters; today: str
   );
 }
 
-/** Labelled controls in a grid: two across on a phone (behind the Filters button), one row on a wide screen. */
+/** Labelled controls in a grid (two across on a phone, one row on a wide screen), folded behind the Filters button on every screen. */
 function FilterFields({
   filters,
   clients,
@@ -105,7 +105,7 @@ function FilterFields({
   return (
     <div
       id="invoice-filters"
-      className={`grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5 ${filtersOpen ? "" : "max-sm:hidden"}`}
+      className={`grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 lg:grid-cols-5 ${filtersOpen ? "" : "hidden"}`}
     >
       <div className="grid min-w-0 gap-1">
         <label htmlFor="inv-client" className="text-muted-foreground text-xs">
@@ -187,7 +187,7 @@ function FilterFields({
   );
 }
 
-/** Search box, the phone's Filters button, the filter fields and "Clear all filters". */
+/** Search box, the Filters button, the filter fields and "Clear all filters". */
 export function InvoiceFilterBar({
   filters,
   clients,
@@ -197,7 +197,7 @@ export function InvoiceFilterBar({
   clients: { id: string; name: string }[] | undefined;
   today: string | null;
 }) {
-  const [filtersOpen, setFiltersOpen] = useState(false); // phones only: the filters start folded away
+  const [filtersOpen, setFiltersOpen] = useState(false); // the filters start folded away on every screen
   return (
     <search aria-label="Find invoices" className="flex flex-col gap-3">
       <SearchRow filters={filters} filtersOpen={filtersOpen} onToggleFilters={() => setFiltersOpen((o) => !o)} />
