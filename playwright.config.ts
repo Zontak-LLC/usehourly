@@ -18,6 +18,9 @@ const BASE = external ?? `http://localhost:${PORT}`;
 if (!external) process.env.E2E_PERSIST ??= ".wrangler/state-e2e";
 
 const SERIAL_SPECS = /support-notice\.spec\.ts$/;
+// The slow "every control does something" sweep is not part of the normal run (npm run e2e:sweep runs it). A project's own
+// testIgnore replaces the top-level one, so it is listed here too.
+const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-control/])];
 const PHONE_SPECS =
   /(first-day|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal)\.spec\.ts$/;
 
@@ -53,7 +56,7 @@ export default defineConfig({
     {
       name: "desktop",
       dependencies: ["serial"],
-      testIgnore: SERIAL_SPECS,
+      testIgnore: NORMAL_IGNORE,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
@@ -63,7 +66,7 @@ export default defineConfig({
       name: "phone",
       dependencies: ["serial"],
       testMatch: process.env.E2E_FULL_PHONE ? /.*\.spec\.ts$/ : PHONE_SPECS,
-      testIgnore: SERIAL_SPECS,
+      testIgnore: NORMAL_IGNORE,
       use: { ...devices["Pixel 7"] },
     },
   ],
