@@ -53,7 +53,7 @@ export function DataHub({ account }: { account: AccountMe }) {
           in files any tool can open.
         </p>
       )}
-      <fieldset className="flex min-w-0 gap-1 overflow-x-auto border-0 border-b p-0 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
+      <fieldset className="flex min-w-0 gap-6 overflow-x-auto border-0 border-b p-0 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
         <legend className="sr-only">What do you want to do with your data?</legend>
         {tiles.map((t) => {
           const on = t.id === choice;
@@ -64,15 +64,15 @@ export function DataHub({ account }: { account: AccountMe }) {
               type="button"
               aria-pressed={on}
               onClick={() => setChoice(t.id)}
-              // Tabs, not pills: square-ish, joined to a line under the row; the open one sits on the line with an ink top edge.
-              className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-t-lg border border-b-0 px-4 font-semibold text-sm transition-colors ${
+              // Standard tabs: plain labels on one line, an underline under the open one. No boxes, no rounded corners.
+              className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-0.5 font-semibold text-sm transition-colors ${
                 on
                   ? t.danger
-                    ? "border-destructive/50 border-t-2 border-t-destructive bg-card text-destructive"
-                    : "border-foreground/15 border-t-2 border-t-foreground bg-card text-foreground"
+                    ? "border-destructive text-destructive"
+                    : "border-foreground text-foreground"
                   : t.danger
-                    ? "border-transparent text-destructive/80 hover:bg-destructive/10"
-                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "border-transparent text-destructive/70 hover:text-destructive"
+                    : "border-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               }`}
             >
               <Icon className="size-4" aria-hidden />
