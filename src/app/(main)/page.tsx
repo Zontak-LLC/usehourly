@@ -95,7 +95,10 @@ export default function LandingPage() {
           {APP_CONFIG.name}
         </Link>
         <nav className="flex items-center gap-2">
-          <ThemeSwitcher />
+          {/* On a phone the header has no room for it: the button sits in the footer there. */}
+          <span className="max-sm:hidden">
+            <ThemeSwitcher />
+          </span>
           <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
             Guide
           </Link>
@@ -407,6 +410,9 @@ export default function LandingPage() {
 
       <footer className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-muted-foreground text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <span>{APP_CONFIG.copyright} · Proudly created with AI</span>
+        <span className="sm:hidden">
+          <ThemeSwitcher />
+        </span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
           {donateUrl() && (
             <a
