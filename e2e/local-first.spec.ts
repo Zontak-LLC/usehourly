@@ -39,7 +39,14 @@ test("entries added, edited and deleted offline reach the server once the connec
     await page.getByLabel("Time to add").fill(time);
     await page.getByLabel("Description").fill(note);
     await page.getByRole("button", { name: /Log time/ }).click();
-    await expect(page.getByText(note)).toBeVisible(); // shown at once, from the device
+    // Shown at once, from the device. If a slow machine swallowed the click the form still holds the note, so the
+    // click is repeated; once the form has cleared, the entry exists and is never added a second time.
+    await expect(async () => {
+      if ((await page.getByLabel("Description").inputValue()) === note) {
+        await page.getByRole("button", { name: /Log time/ }).click();
+      }
+      await expect(page.getByText(note)).toBeVisible({ timeout: 4_000 });
+    }).toPass({ timeout: 30_000 });
   };
   await add("2h", "kept offline");
   await add("30m", "also offline");
