@@ -16,7 +16,7 @@ export function ClientChecks({
 }: {
   legend: string;
   legendClassName?: string;
-  clients: { id: string; name: string }[];
+  clients: { id: string; name: string; color?: string | null }[];
   checked: string[];
   onToggle: (id: string, on: boolean) => void;
   /** Shown when there are no clients to pick from. */
@@ -46,6 +46,7 @@ export function ClientChecks({
               ) : (
                 <Circle className="size-3.5 text-current" aria-hidden />
               )}
+              {c.color && <span aria-hidden className="size-2 rounded-full" style={{ background: c.color }} />}
               {c.name}
             </button>
           );
