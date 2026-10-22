@@ -2,6 +2,7 @@
 
 import { Bot, Plug } from "lucide-react";
 
+import { McpAnimation } from "@/components/mcp-animation";
 import { trpc } from "@/lib/trpc";
 
 /** A small drawing: records drop into a vault drawer, with live counts of what is inside. */
@@ -88,7 +89,7 @@ export function DataVault() {
   );
 }
 
-/** How an assistant gets connected, in three steps drawn as a path from the assistant to UseHourly. */
+/** How an assistant gets connected: the animated scene beside the three steps. */
 export function AssistantLink() {
   const steps = [
     ["1", "Make a token", "Below: name it, choose read only or read and change."],
@@ -100,17 +101,17 @@ export function AssistantLink() {
     ],
   ];
   return (
-    <div className="grid gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
-      <div className="flex items-center gap-3">
-        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber/15">
-          <Bot className="size-6" aria-hidden />
-        </span>
-        <span aria-hidden className="h-0.5 flex-1 border-foreground/25 border-t-2 border-dashed" />
-        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
-          <Plug className="size-6" aria-hidden />
-        </span>
-      </div>
-      <ol className="grid gap-4 sm:grid-cols-3">
+    <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      <ol className="grid gap-5 rounded-3xl bg-card p-6 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
+        <li className="flex items-center gap-3">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber/15">
+            <Bot className="size-6" aria-hidden />
+          </span>
+          <span aria-hidden className="h-0.5 flex-1 border-foreground/25 border-t-2 border-dashed" />
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
+            <Plug className="size-6" aria-hidden />
+          </span>
+        </li>
         {steps.map(([n, title, text]) => (
           <li key={n} className="flex gap-3">
             <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber font-bold text-[#1b1405] text-sm">
@@ -123,6 +124,7 @@ export function AssistantLink() {
           </li>
         ))}
       </ol>
+      <McpAnimation />
     </div>
   );
 }

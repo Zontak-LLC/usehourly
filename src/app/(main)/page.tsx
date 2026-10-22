@@ -3,7 +3,10 @@ import Link from "next/link";
 import { ArrowRight, Bot, Code2, FileText, Heart, KeyRound, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
+import { LandingFeatures } from "@/components/landing-features";
 import { LandingHero } from "@/components/landing-hero";
+import { LandingScenes } from "@/components/landing-scenes";
+import { LandingShowcase } from "@/components/landing-showcase";
 import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
 import { McpAnimation } from "@/components/mcp-animation";
@@ -25,11 +28,16 @@ const JSON_LD = {
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   featureList: [
-    "Quick daily time entry",
-    "Start/stop timer",
+    "Quick daily time entry and a start/stop timer",
     "Weekly timesheet and month calendar",
-    "Invoices as PDF",
-    "Year-end report and Excel export",
+    "Invoices as PDF, by email or as a private link, with overdue reminders",
+    "Timesheets a client can read and approve",
+    "Teams: let others log time on the clients you choose",
+    "Project budgets, billing rounding and a currency for each client",
+    "Meetings from your calendar turned into time entries",
+    "Year summary for taxes, Excel export, and Xero and QuickBooks files",
+    "Works offline and installs like an app",
+    "Export all your data, or import from Toggl and Clockify",
     "MCP server: your AI assistant can log time, build timesheets for clients and prepare invoices",
   ],
 };
@@ -224,32 +232,38 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-          <h2 className="text-center font-semibold text-3xl tracking-tight md:text-4xl">
-            Everything you need, nothing you don&rsquo;t.
+        <section id="see-it" className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+          <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
+            See it working.
           </h2>
-          <ul className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">
-            {[
-              ["Clients and projects", "Keep each client's projects together, with an hourly rate on each.", "#F5A524"],
-              ["Start and stop timer", "Prefer to track as you go? One button starts it, one stops it.", "#8A6CFF"],
-              ["Month calendar", "See how every day and week added up at a glance.", "#3DDC97"],
-              ["Excel export", "Take any week, month or year into a spreadsheet in one click.", "#ff7a45"],
-            ].map(([title, body, color], n) => (
-              <Reveal
-                as="li"
-                delay={n * 90}
-                key={title}
-                className="relative overflow-hidden rounded-3xl border bg-card p-5 shadow-[var(--shadow-sheet)]"
-              >
-                <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: color }} />
-                <p className="font-bold font-display text-xl">{title}</p>
-                <p className="mt-1 text-muted-foreground">{body}</p>
-              </Reveal>
-            ))}
-          </ul>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
+            Real screens from the app, with sample data. Pick one.
+          </p>
+          <div className="mt-8">
+            <LandingShowcase />
+          </div>
         </section>
 
-        {/* The finale, in two parts: three promises (free, open, made with AI), then one big invitation. */}
+        <section id="features" className="mx-auto max-w-6xl px-6 pb-16 md:pb-24">
+          <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
+            Everything a freelancer needs.
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
+            From the first hour you log to the invoice, the approval and the tax summary. Free, with no ads.
+          </p>
+          <LandingFeatures />
+        </section>
+
+        <section id="how-it-feels" className="mx-auto max-w-6xl px-6 pb-16 md:pb-24">
+          <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
+            Small things that save your week.
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
+            Four of the parts people ask about most, in a few seconds each.
+          </p>
+          <LandingScenes />
+        </section>
+
         <section aria-labelledby="promises-heading" className="relative mx-auto max-w-6xl px-6 pt-16 pb-8 md:pt-24">
           <Reveal>
             <p className="text-center font-mono text-muted-foreground text-xs uppercase tracking-[0.3em]">

@@ -20,7 +20,7 @@ const pad = (n) => String(n).padStart(2, "0");
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 // The Thursday of last week: a full past week of sample data, so the pictures are busy.
 const d = new Date();
-d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - 4);
+d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - 5);
 const thu = ymd(d);
 const SCREENS = [
   ["1-today", `/dashboard/today?date=${thu}`],
