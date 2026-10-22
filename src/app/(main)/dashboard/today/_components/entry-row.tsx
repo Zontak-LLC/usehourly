@@ -12,6 +12,7 @@ import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
+import { fromISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
@@ -33,11 +34,28 @@ export type EntryData = {
   project: { name: string; client: { name: string; color: string } };
 };
 
+const leadDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
+
+/** The words that start a row: the project and its client, or (in a list already grouped by project) the day. */
+function RowLabel({ entry, lead }: { entry: EntryData; lead: "project" | "date" }) {
+  if (lead === "date") return <span className="font-medium">{leadDate.format(fromISODate(entry.date))}</span>;
+  return (
+    <>
+      <span className="font-medium max-sm:truncate">{entry.project.name}</span>
+      <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
+        <span className="max-sm:hidden"> · </span>
+        {entry.project.client.name}
+      </span>
+    </>
+  );
+}
+
 export function EntryRow({
   entry,
   initialEditing = false,
   onEditDone,
   bare = false,
+  lead = "project",
 }: {
   entry: EntryData;
   /** Open straight into the edit form (the lists that edit an entry where it sits). */
@@ -46,6 +64,8 @@ export function EntryRow({
   onEditDone?: () => void;
   /** A borderless tile with a lighter header, for when it already sits inside a card (a card never holds a framed card). */
   bare?: boolean;
+  /** What the row starts with: the project (the default) or the day, for a list that is already grouped by project. */
+  lead?: "project" | "date";
 }) {
   const uid = useId();
   const utils = trpc.useUtils();
@@ -121,11 +141,19 @@ export function EntryRow({
     </optgroup>
   ));
 
+  const noteBlock = (
+    <div className="pb-0.5 pl-1">
+      {entry.note ? (
+        <FoldedNote note={entry.note} />
+      ) : (
+        <p className="text-muted-foreground/70 text-sm italic">No description</p>
+      )}
+    </div>
+  );
+
   return (
     <li
       aria-busy={unconfirmed || undefined}
-      // A stripe in the project's colour down the left edge, so a long list reads by colour as well as by name.
-      style={editing ? undefined : { boxShadow: `inset 4px 0 0 ${entry.project.client.color}` }}
       className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""}`}
     >
       {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
@@ -163,11 +191,7 @@ export function EntryRow({
                   <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
                     {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
                     <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
-                      <span className="font-medium max-sm:truncate">{entry.project.name}</span>
-                      <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
-                        <span className="max-sm:hidden"> · </span>
-                        {entry.project.client.name}
-                      </span>
+                      <RowLabel entry={entry} lead={lead} />
                     </span>
                     <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:hidden" />
                   </p>
@@ -179,15 +203,7 @@ export function EntryRow({
                 </span>
               )}
             </div>
-            {!editing && (
-              <div className="pb-0.5 pl-1">
-                {entry.note ? (
-                  <FoldedNote note={entry.note} />
-                ) : (
-                  <p className="text-muted-foreground/70 text-sm italic">No description</p>
-                )}
-              </div>
-            )}
+            {!editing && noteBlock}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">

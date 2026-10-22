@@ -47,3 +47,48 @@ export function groupByDay<T extends { date: string; minutes: number }>(items: T
   }
   return groups;
 }
+
+export type ProjectGroup<T> = {
+  projectId: string;
+  project: string;
+  client: string;
+  color: string;
+  minutes: number;
+  items: T[];
+};
+
+/** Entries ordered by project (the project with the most time first, then each project's newest day first). */
+export function orderByProject<T extends { project_id: string; date: string; minutes: number }>(items: T[]): T[] {
+  const totals = new Map<string, number>();
+  for (const e of items) totals.set(e.project_id, (totals.get(e.project_id) ?? 0) + e.minutes);
+  return [...items].sort(
+    (a, b) =>
+      (totals.get(b.project_id) ?? 0) - (totals.get(a.project_id) ?? 0) ||
+      a.project_id.localeCompare(b.project_id) ||
+      b.date.localeCompare(a.date),
+  );
+}
+
+/** Consecutive items of the same project become one group; `minutes` totals that project across ALL matches. */
+export function groupByProject<
+  T extends { project_id: string; minutes: number; project: { name: string; client: { name: string; color: string } } },
+>(items: T[], all: T[]): ProjectGroup<T>[] {
+  const totals = new Map<string, number>();
+  for (const e of all) totals.set(e.project_id, (totals.get(e.project_id) ?? 0) + e.minutes);
+  const groups: ProjectGroup<T>[] = [];
+  for (const e of items) {
+    const last = groups[groups.length - 1];
+    if (last && last.projectId === e.project_id) last.items.push(e);
+    else {
+      groups.push({
+        projectId: e.project_id,
+        project: e.project.name,
+        client: e.project.client.name,
+        color: e.project.client.color,
+        minutes: totals.get(e.project_id) ?? 0,
+        items: [e],
+      });
+    }
+  }
+  return groups;
+}

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DayEditorPanel } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
+import { PeriodGlance } from "@/components/period-glance";
 import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -124,6 +125,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
           <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
             <WeekDial total={sheet.total} today={today ? (sheet.dayTotals[today] ?? 0) : null} />
             <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
+            <PeriodGlance dayTotals={sheet.dayTotals} days={7} />
           </div>
           <div className="flex min-w-0 flex-col gap-4">
             <DayTiles
