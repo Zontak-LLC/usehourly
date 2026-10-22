@@ -9,6 +9,7 @@ import { MoreMenu } from "@/components/more-menu";
 import { SendInvoicePanel } from "@/components/send-invoice-panel";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
+import { INVOICE_COLORS } from "@/lib/invoice-colors";
 import { formatMoney } from "@/lib/money";
 
 import { DeleteInvoiceConfirm } from "./delete-invoice-dialog";
@@ -49,11 +50,11 @@ function InvoiceStatus({ invoice: i, today }: { invoice: InvoiceRow; today: stri
   );
 }
 
-/** The colour of the stripe at the row's left edge: green paid, red overdue, amber waiting (a quiet hint, the words say it too). */
+/** The colour of the stripe at the row's left edge: teal paid, coral overdue, violet waiting (a quiet hint, the words say it too). */
 function stripeColour(i: InvoiceRow, today: string | null) {
-  if (i.paid_date) return "var(--success-bright)";
-  if (today && i.due_date && i.due_date < today) return "var(--destructive)";
-  return "var(--amber)";
+  if (i.paid_date) return INVOICE_COLORS.paid;
+  if (today && i.due_date && i.due_date < today) return INVOICE_COLORS.late;
+  return INVOICE_COLORS.waiting;
 }
 
 export type InvoiceActionHandlers = {
