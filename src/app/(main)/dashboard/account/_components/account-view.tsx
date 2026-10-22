@@ -35,13 +35,7 @@ export function AccountView() {
     <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
       <AccountTabs tab={tab} onTab={setTab} />
 
-      <div
-        key={tab}
-        role="tabpanel"
-        id={`panel-${tab}`}
-        aria-labelledby={`tab-${tab}`}
-        className="flex flex-col gap-8 motion-safe:animate-[settle_0.45s_ease-out_both]"
-      >
+      <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-8">
         {tab === "account" && (
           <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
             {!account.is_demo && <MemberBadge me={account} />}

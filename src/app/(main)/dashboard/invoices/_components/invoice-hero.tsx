@@ -51,7 +51,6 @@ export function InvoiceHero({
             strokeLinecap="round"
             strokeDasharray={LENGTH}
             strokeDashoffset={LENGTH * (1 - paid / Math.max(1, total))}
-            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)" }}
           />
         </svg>
         <div className="absolute inset-0 grid place-content-center text-center">
@@ -80,9 +79,9 @@ export function InvoiceHero({
         </dl>
         <div>
           <div aria-hidden className="flex h-3 overflow-hidden rounded-full bg-muted">
-            <span className="h-full bg-success-bright transition-[width] duration-700" style={{ width: share(paid) }} />
-            <span className="h-full bg-amber transition-[width] duration-700" style={{ width: share(soon) }} />
-            <span className="h-full bg-destructive transition-[width] duration-700" style={{ width: share(late) }} />
+            <span className="h-full bg-success-bright" style={{ width: share(paid) }} />
+            <span className="h-full bg-amber" style={{ width: share(soon) }} />
+            <span className="h-full bg-destructive" style={{ width: share(late) }} />
           </div>
           <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 font-mono text-[11px] text-foreground/75">
             <li className="flex items-center gap-1.5">

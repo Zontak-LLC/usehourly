@@ -3,7 +3,6 @@
 import { UserAvatar } from "@/components/user-avatar";
 import { toISODate } from "@/lib/dates";
 import { trpc } from "@/lib/trpc";
-import { useCountUp } from "@/lib/use-count-up";
 
 const since = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
 
@@ -17,7 +16,7 @@ function barsFor(id: string): number[] {
 }
 
 function Figure({ value, label }: { value: number; label: string }) {
-  const shown = useCountUp(value);
+  const shown = value;
   return (
     <div className="min-w-0">
       <p className="font-display font-extrabold text-3xl tabular-nums leading-none">

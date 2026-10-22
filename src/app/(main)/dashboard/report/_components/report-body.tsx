@@ -121,7 +121,7 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
             </div>
             <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber to-[color-mix(in_oklab,var(--amber)_60%,white)] transition-[width] duration-700"
+                className="h-full rounded-full bg-gradient-to-r from-amber to-[color-mix(in_oklab,var(--amber)_60%,white)]"
                 style={{ width: `${(c.minutes / Math.max(1, ...data.clients.map((x) => x.minutes))) * 100}%` }}
               />
             </div>

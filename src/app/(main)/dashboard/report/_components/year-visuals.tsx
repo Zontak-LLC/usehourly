@@ -71,7 +71,7 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
         <div className="relative mt-2 h-6">
           <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-amber transition-[width] duration-200"
+              className="h-full rounded-full bg-amber"
               style={{ width: `calc(12px + (100% - 24px) * ${(goal - 200) / 2200})` }}
             />
           </div>
@@ -213,7 +213,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               <button
                 type="button"
                 aria-label={`${MONTH_NAMES[m.month - 1]}: ${read(v)}`}
-                className="w-full rounded-t-lg bg-gradient-to-t from-amber to-[color-mix(in_oklab,var(--amber)_55%,white)] outline-none transition-[height,opacity] duration-500 focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80"
+                className="w-full rounded-t-lg bg-gradient-to-t from-amber to-[color-mix(in_oklab,var(--amber)_55%,white)] outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80"
                 style={{ height: `${pct}%`, opacity: v ? 1 : 0.18 }}
               />
             </li>

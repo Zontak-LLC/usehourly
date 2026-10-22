@@ -56,7 +56,7 @@ export function DataHub({ account }: { account: AccountMe }) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => setChoice(t.id)}
-                className={`group flex h-full w-full flex-col items-start gap-3 rounded-3xl p-4 text-left outline-none ring-1 transition-all duration-200 focus-visible:ring-4 focus-visible:ring-amber/40 motion-safe:hover:-translate-y-0.5 ${
+                className={`group flex h-full w-full flex-col items-start gap-3 rounded-3xl p-4 text-left outline-none ring-1 transition-all duration-200 focus-visible:ring-4 focus-visible:ring-amber/40 ${
                   on
                     ? `bg-card shadow-[var(--shadow-sheet)] ring-2 ${t.danger ? "ring-destructive/60" : "ring-amber"}`
                     : "bg-card/60 ring-foreground/10 hover:bg-card"
@@ -83,7 +83,7 @@ export function DataHub({ account }: { account: AccountMe }) {
         })}
       </ul>
 
-      <div key={choice} className="motion-safe:animate-[settle_0.4s_ease-out_both]">
+      <div key={choice}>
         {choice === "export" && (
           <SectionCard
             title="Download everything"

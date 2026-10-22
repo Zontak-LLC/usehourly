@@ -2,8 +2,6 @@
 
 import type { ReactNode } from "react";
 
-import { useCountUp } from "@/lib/use-count-up";
-
 const RING = 2 * Math.PI * 22;
 
 /** A small ring that fills to `fraction` (0 to 1): the drawing for a figure that is a share of something. */
@@ -23,14 +21,13 @@ export function TileRing({ fraction, label }: { fraction: number; label: string 
         strokeLinecap="round"
         strokeDasharray={RING}
         strokeDashoffset={RING * (1 - f)}
-        style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)" }}
       />
     </svg>
   );
 }
 
 /**
- * A stat tile: a mono label, a big figure that counts up when the tile first shows, an optional note, and a small
+ * A stat tile: a mono label, a big figure that shows, an optional note, and a small
  * drawing on the right that says what the figure is a share of. `display` turns the counted number into words
  * (money, hours); the default is the plain number. The tile itself stays still.
  */
@@ -60,7 +57,6 @@ export function StatTile({
   /** A line above the figure, such as a name with its colour dot. */
   title?: ReactNode;
 }) {
-  const shown = useCountUp(value);
   return (
     <dl
       style={accent ? { borderTop: `3px solid ${accent}` } : undefined}
@@ -75,7 +71,7 @@ export function StatTile({
         <dd
           className={`order-1 font-display font-extrabold ${corner ? "text-3xl" : "truncate text-4xl"} tabular-nums leading-none ${tone}`}
         >
-          {display(shown)}
+          {display(value)}
         </dd>
         <dt className="order-2 mt-2 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">{label}</dt>
         {hint && <p className="mt-1 text-muted-foreground text-xs">{hint}</p>}

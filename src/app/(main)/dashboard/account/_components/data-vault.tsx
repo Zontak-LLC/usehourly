@@ -29,11 +29,7 @@ export function DataVault() {
         <rect x="32" y="64" width="136" height="46" rx="8" fill="var(--card)" stroke="var(--border)" strokeWidth="2" />
         <rect x="84" y="82" width="32" height="8" rx="4" fill="var(--amber)" />
         {[0, 1, 2].map((i) => (
-          <g
-            key={i}
-            className="motion-safe:animate-[sheet-drop_60s_ease-in-out_infinite]"
-            style={{ animationDelay: `${i * 1.2}s` }}
-          >
+          <g key={i} style={{ animationDelay: `${i * 1.2}s` }}>
             <rect
               x={62 + i * 26}
               y="6"
@@ -101,7 +97,7 @@ export function AssistantLink() {
       </span>
       <svg viewBox="0 0 200 12" aria-hidden className="h-3 min-w-0 flex-1">
         <line x1="4" y1="6" x2="196" y2="6" stroke="var(--border)" strokeWidth="2" strokeDasharray="4 6" />
-        <circle r="5" cy="6" fill="var(--amber)" className="motion-safe:animate-[link-travel_60s_linear_infinite]" />
+        <circle r="5" cy="6" fill="var(--amber)" />
       </svg>
       <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
         <Plug className="size-7" aria-hidden />

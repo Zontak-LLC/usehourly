@@ -77,7 +77,7 @@ export function GuideSearch({
             <Link
               href={`/help/${step.slug}`}
               prefetch={false}
-              className="group/start relative flex h-full flex-col gap-1 overflow-hidden rounded-3xl bg-gradient-to-b from-card to-muted p-4 text-foreground shadow-[var(--shadow-sheet)] ring-1 ring-foreground/15 transition-all duration-200 hover:ring-amber/70 motion-safe:hover:-translate-y-0.5"
+              className="group/start relative flex h-full flex-col gap-1 overflow-hidden rounded-3xl bg-gradient-to-b from-card to-muted p-4 text-foreground shadow-[var(--shadow-sheet)] ring-1 ring-foreground/15 transition-all duration-200 hover:ring-amber/70"
             >
               <StepArt step={n as 0 | 1 | 2} />
               <span className="mt-2 font-mono text-[11px] text-amber uppercase tracking-widest">Step {n + 1}</span>
