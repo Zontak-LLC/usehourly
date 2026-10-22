@@ -257,9 +257,17 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   let invoiceUrl = "";
   await test.step("get a private link to the invoice and open it as the client", async () => {
-    await page.getByRole("button", { name: /^Send INV-/ }).click();
-    await page.getByRole("button", { name: "Make a link" }).click();
-    invoiceUrl = await page.getByLabel("Invoice link").inputValue();
+    // The list refreshes when the link is saved and can close the panel for a moment on a busy machine: open it again if so.
+    const linkBox = page.getByLabel("Invoice link");
+    const makeLink = page.getByRole("button", { name: "Make a link" });
+    await expect(async () => {
+      if (!(await linkBox.isVisible())) {
+        if (!(await makeLink.isVisible())) await page.getByRole("button", { name: /^Send INV-/ }).click();
+        await makeLink.click();
+      }
+      await expect(linkBox).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 30_000 });
+    invoiceUrl = await linkBox.inputValue();
     expect(invoiceUrl).toMatch(/\/invoice\/\S{40,}/);
     const anon = await anonymous(browser, info);
     const client = await anon.newPage();
