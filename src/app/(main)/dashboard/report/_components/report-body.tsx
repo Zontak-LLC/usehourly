@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { formatDecimalHours } from "@/lib/duration";
 import type { AppRouter } from "@/server/routers/_app";
 
-import { Section, Stat, Table } from "./report-table";
+import { Section, SummaryRow, Table } from "./report-table";
 
 export type AnnualReport = inferRouterOutputs<AppRouter>["report"]["annual"];
 
@@ -36,37 +36,44 @@ const periodDetail = (r: string[]) =>
     .filter(Boolean)
     .join(" · ") || "Nothing logged";
 
+/** The year's figures as ONE card of lines, work on the left and money on the right (no tiles). */
 function ReportStats({ data }: { data: AnnualReport }) {
   const money = useMoney();
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-      <Stat
-        label="Hours worked"
-        value={h(data.totals.minutes)}
-        hint={`${data.totals.workedDays} ${data.totals.workedDays === 1 ? "day" : "days"}`}
-      />
-      <Stat
-        label="Billable hours"
-        value={h(data.totals.billableMinutes)}
-        hint={data.totals.nonBillableMinutes ? `${h(data.totals.nonBillableMinutes)} non-billable` : undefined}
-      />
-      <Stat label="Earned" value={money(data.totals.earnedCents)} hint="billable hours × rate" />
-      <Stat
-        label="Invoiced"
-        value={money(data.invoices.totalCents)}
-        hint={`${data.invoices.count} invoice${data.invoices.count === 1 ? "" : "s"} issued`}
-      />
-      <Stat
-        label="Received"
-        value={money(data.received.totalCents)}
-        hint={`${data.received.count} payment${data.received.count === 1 ? "" : "s"} · by paid date`}
-      />
-      <Stat
-        label="Outstanding"
-        value={money(data.outstanding.totalCents)}
-        hint={`${data.outstanding.count} unpaid at year end`}
-      />
-    </div>
+    <Section title="Your year">
+      <div className="sm:grid sm:grid-cols-2 sm:divide-x">
+        <dl>
+          <SummaryRow
+            label="Hours worked"
+            value={h(data.totals.minutes)}
+            hint={`${data.totals.workedDays} ${data.totals.workedDays === 1 ? "day" : "days"}`}
+          />
+          <SummaryRow
+            label="Billable hours"
+            value={h(data.totals.billableMinutes)}
+            hint={data.totals.nonBillableMinutes ? `${h(data.totals.nonBillableMinutes)} non-billable` : undefined}
+          />
+          <SummaryRow label="Earned" value={money(data.totals.earnedCents)} hint="billable hours × rate" />
+        </dl>
+        <dl className="max-sm:border-t">
+          <SummaryRow
+            label="Invoiced"
+            value={money(data.invoices.totalCents)}
+            hint={`${data.invoices.count} invoice${data.invoices.count === 1 ? "" : "s"} issued`}
+          />
+          <SummaryRow
+            label="Received"
+            value={money(data.received.totalCents)}
+            hint={`${data.received.count} payment${data.received.count === 1 ? "" : "s"} · by paid date`}
+          />
+          <SummaryRow
+            label="Outstanding"
+            value={money(data.outstanding.totalCents)}
+            hint={`${data.outstanding.count} unpaid at year end`}
+          />
+        </dl>
+      </div>
+    </Section>
   );
 }
 
