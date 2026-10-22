@@ -6,6 +6,7 @@
     "scripts/logo/render-icons.mjs",
     "scripts/social/render.mjs",
     "scripts/social/screens.mjs",
+    "scripts/social/dark-screens.mjs",
     "scripts/social/feature-graphic.mjs",
     "bridge/index.mjs",
     "open-next.config.ts",
