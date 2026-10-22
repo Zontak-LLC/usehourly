@@ -642,3 +642,16 @@ textarea,
     animation: none;
   }
 }
+
+/* The Account tab's icon gives a small, quiet pop when its tab opens. */
+@keyframes tab-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
