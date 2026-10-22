@@ -10,8 +10,8 @@ type SectionId = (typeof SECTIONS)[number]["id"];
 
 const ICONS = { account: UserRound, invoices: FileText, data: Database, ai: Sparkles } as const;
 
-/** Each tab has its own colour, so the four are told apart at a glance and the open one glows. */
-const COLORS = { account: "#F5A524", invoices: "#3DDC97", data: "#8A6CFF", ai: "#ff7a45" } as const;
+/** The open tab glows in the one accent colour. */
+const COLORS = { account: "#F5A524", invoices: "#F5A524", data: "#F5A524", ai: "#F5A524" } as const;
 
 const CAPTIONS = {
   account: "You and how you sign in",
@@ -88,8 +88,8 @@ export function AccountTabs({ tab, onTab }: { tab: SectionId; onTab: (next: Sect
               style={{ "--tab": COLORS[s.id] } as React.CSSProperties}
               className={`group flex min-h-[4.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-xs leading-tight outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[var(--tab)] active:scale-[0.98] motion-reduce:transition-none sm:min-h-20 sm:text-sm ${
                 on
-                  ? "bg-[color-mix(in_oklab,var(--tab)_16%,transparent)] font-semibold text-foreground shadow-[0_6px_18px_-12px_var(--tab)] ring-1 ring-[color-mix(in_oklab,var(--tab)_60%,transparent)]"
-                  : "text-muted-foreground hover:bg-[color-mix(in_oklab,var(--tab)_8%,transparent)] hover:text-foreground"
+                  ? "bg-muted font-semibold text-foreground ring-1 ring-foreground/15"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               }`}
             >
               <span
@@ -97,7 +97,7 @@ export function AccountTabs({ tab, onTab }: { tab: SectionId; onTab: (next: Sect
                 className={`grid size-9 place-items-center rounded-xl transition-all duration-300 group-hover:scale-105 motion-reduce:transition-none ${
                   on
                     ? "bg-[var(--tab)] text-[#1b1405] motion-safe:animate-[tab-pop_0.4s_ease-out]"
-                    : "bg-[color-mix(in_oklab,var(--tab)_20%,transparent)] text-foreground/80"
+                    : "bg-muted text-foreground/70"
                 }`}
               >
                 <Icon className="size-5" />

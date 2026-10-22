@@ -109,13 +109,6 @@ export function MonthCalendar({
             key={n}
             className={`border-b px-0.5 py-2 text-center text-muted-foreground text-xs sm:px-2 ${n === "Week" ? "hidden xl:block" : ""}`}
           >
-            {n !== "Week" && (
-              <span
-                aria-hidden
-                className="mr-1 inline-block size-1.5 rounded-full align-middle"
-                style={{ backgroundColor: DAY_COLORS[weekdayNames.indexOf(n)] }}
-              />
-            )}
             {n}
           </div>
         ))}

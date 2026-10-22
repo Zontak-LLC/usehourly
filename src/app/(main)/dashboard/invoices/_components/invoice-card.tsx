@@ -144,7 +144,11 @@ export function InvoiceLine({
   return (
     <li
       className="border-t first:border-t-0"
-      style={{ boxShadow: `inset 3px 0 0 0 color-mix(in oklab, ${stripeColour(i, today)} 70%, transparent)` }}
+      style={
+        stripeColour(i, today) === INVOICE_COLORS.late
+          ? { boxShadow: `inset 3px 0 0 0 color-mix(in oklab, ${INVOICE_COLORS.late} 70%, transparent)` }
+          : undefined
+      }
     >
       <div className={`${INVOICE_COLS} items-center gap-x-3 gap-y-1 px-3 py-3 text-sm sm:px-4`}>
         <div className="min-w-0 sm:col-start-1 sm:row-start-1">

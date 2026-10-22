@@ -84,7 +84,7 @@ export function DayTiles({
                     data-dot=""
                     className="block w-full rounded-md"
                     style={{
-                      backgroundColor: r.color,
+                      backgroundColor: "color-mix(in oklab, var(--foreground) 38%, transparent)",
                       height: grown ? `${Math.max(4, ((r.cells[d]?.minutes ?? 0) / scale) * 56)}px` : "0px",
                       transition: "height .8s cubic-bezier(.2,.8,.2,1)",
                     }}
@@ -172,7 +172,10 @@ export function WeekTotalCard({
                     <span aria-hidden className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
                       <span
                         className="block h-full rounded-full"
-                        style={{ width: `${(r.total / longest) * 100}%`, backgroundColor: r.color }}
+                        style={{
+                          width: `${(r.total / longest) * 100}%`,
+                          backgroundColor: "color-mix(in oklab, var(--foreground) 38%, transparent)",
+                        }}
                       />
                     </span>
                     <span className="sr-only">{r.client}</span>

@@ -305,10 +305,10 @@ export function QuickAdd({
           type="submit"
           disabled={create.isPending || parsed === null}
           // The main event: a big amber button with a plus disc, a soft glow and a lift. While no time is typed it is a
-          // quiet dashed outline (not a grey slab that looks broken), and it comes alive when there is something to add.
-          className={`group relative flex h-14 w-full items-center justify-center gap-3 ${wc("lg:col-start-2 lg:row-start-3")} rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:border-2 disabled:border-foreground/25 disabled:border-dashed disabled:bg-transparent disabled:font-bold disabled:text-foreground/60 disabled:shadow-none`}
+          // plain neutral (not brown, not a dashed box), and it comes alive when there is something to add.
+          className={`group relative flex h-14 w-full items-center justify-center gap-3 ${wc("lg:col-start-2 lg:row-start-3")} rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-muted disabled:font-bold disabled:text-foreground/55 disabled:shadow-none`}
         >
-          <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/15 group-disabled:text-foreground/60">
+          <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/20 group-disabled:text-foreground/70">
             <Plus className="size-4" strokeWidth={3} aria-hidden />
           </span>
           Log time
@@ -321,9 +321,9 @@ export function QuickAdd({
             onClick={startTimer}
             disabled={start.isPending || !online}
             title={online ? undefined : "A timer needs a connection"}
-            className={`group flex w-full items-center gap-3 ${wc("lg:col-start-1 lg:row-start-3")} rounded-2xl border border-[#3DDC97]/40 bg-[linear-gradient(90deg,color-mix(in_oklab,#3DDC97_14%,transparent),var(--card)_70%)] px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-[#3DDC97] disabled:opacity-50`}
+            className={`group flex w-full items-center gap-3 ${wc("lg:col-start-1 lg:row-start-3")} rounded-2xl border bg-card px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-foreground/40 disabled:opacity-50`}
           >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#3DDC97] text-[#08140E] shadow-[0_0_0_5px_color-mix(in_oklab,#3DDC97_24%,transparent)] transition-transform group-hover:scale-105">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-foreground text-background transition-transform group-hover:scale-105">
               <Play className="size-4" fill="currentColor" aria-hidden />
             </span>
             <span className="min-w-0">

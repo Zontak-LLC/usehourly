@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { addDays } from "@/lib/dates";
 import { DAY_COLORS } from "@/lib/day-colors";
 import { formatDuration } from "@/lib/duration";
-import { brightLine } from "@/lib/line-color";
 
 type Entry = {
   date: string;
@@ -79,7 +78,7 @@ export function DaySide({
                     className="block h-full rounded-full"
                     style={{
                       width: grown ? `${(r.minutes / longest) * 100}%` : "0%",
-                      ...brightLine(r.color),
+                      backgroundColor: "color-mix(in oklab, var(--foreground) 45%, transparent)",
                       transition: "width 1s cubic-bezier(.2,.8,.2,1)",
                     }}
                   />

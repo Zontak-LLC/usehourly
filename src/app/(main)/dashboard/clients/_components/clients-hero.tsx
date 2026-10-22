@@ -55,7 +55,6 @@ export function ClientsHero({
             label={`${c.projects.length} project${c.projects.length === 1 ? "" : "s"} · this month`}
             value={minutes}
             display={formatDuration}
-            accent={c.color ?? "var(--amber)"}
             title={
               <>
                 <span
@@ -67,11 +66,7 @@ export function ClientsHero({
               </>
             }
           >
-            <TileRing
-              fraction={monthMinutes ? minutes / monthMinutes : 0}
-              label={`${c.name}'s share of the month`}
-              colour={c.color ?? MONTH_RING[0]}
-            />
+            <TileRing fraction={monthMinutes ? minutes / monthMinutes : 0} label={`${c.name}'s share of the month`} />
           </StatTile>
         ))}
         {rest.length > 0 && (
@@ -84,7 +79,6 @@ export function ClientsHero({
             <TileRing
               fraction={monthMinutes ? restMinutes / monthMinutes : 0}
               label="Share of the month from the other clients"
-              colour={MONTH_RING[0]}
             />
           </StatTile>
         )}

@@ -63,12 +63,16 @@ export function InvoiceHero({
         <dl className="grid grid-cols-3 gap-4">
           {(
             [
-              ["Paid", money(paid), "text-success", INVOICE_COLORS.paid],
-              ["Unpaid", money(unpaid), "", INVOICE_COLORS.waiting],
-              ["Of", money(total), "", "var(--amber)"],
+              ["Paid", money(paid), "text-success"],
+              ["Unpaid", money(unpaid), ""],
+              ["Of", money(total), ""],
             ] as const
-          ).map(([label, value, tone, line]) => (
-            <div key={label} className="flex min-w-0 flex-col border-t-2 pt-2" style={{ borderTopColor: line }}>
+          ).map(([label, value, tone]) => (
+            <div
+              key={label}
+              className="flex min-w-0 flex-col border-t-2 pt-2"
+              style={{ borderTopColor: "color-mix(in oklab, var(--foreground) 18%, transparent)" }}
+            >
               <dd className={`order-1 truncate font-display font-extrabold text-xl tabular-nums sm:text-3xl ${tone}`}>
                 {value}
               </dd>

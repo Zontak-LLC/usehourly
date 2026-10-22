@@ -29,7 +29,11 @@ export function InvoiceTotals({ groups, filtering }: { groups: CurrencyTotals[];
               {count} invoice{count === 1 ? "" : "s"}
               {filtering ? " (filtered)" : ""}
             </span>
-            <Chip colour="var(--amber)" value={money(total)} label="invoiced" />
+            <Chip
+              colour="color-mix(in oklab, var(--foreground) 45%, transparent)"
+              value={money(total)}
+              label="invoiced"
+            />
             <Chip colour={INVOICE_COLORS.waiting} value={money(unpaid)} label="unpaid" />
             <Chip colour={INVOICE_COLORS.paid} value={money(total - unpaid)} label="paid" />
           </div>
