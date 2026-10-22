@@ -67,7 +67,7 @@ export function ClientsHero({
         ))}
         {rest.length > 0 && (
           <StatTile
-            label={`${rest.length} other clients · this month`}
+            label={`${rest.length} other clients · listed below`}
             value={restMinutes}
             display={formatDuration}
             title={<span className="truncate">Everyone else</span>}
