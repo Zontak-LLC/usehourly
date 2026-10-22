@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { addDays } from "@/lib/dates";
+import { DAY_COLORS } from "@/lib/day-colors";
 import { formatDuration } from "@/lib/duration";
 import { brightLine } from "@/lib/line-color";
 
@@ -14,8 +15,6 @@ type Entry = {
 };
 
 const LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
-/** Each day of the week has its own colour, Monday to Sunday, so the week reads as a little spectrum. */
-const DAY_COLORS = ["#F5A524", "#ff7a45", "#ec5f9a", "#8A6CFF", "#4f8cff", "#2fc5d6", "#3DDC97"];
 
 /**
  * Under the dial: where today's hours went (a coloured row per project with a bar) and the week as seven small bars,
