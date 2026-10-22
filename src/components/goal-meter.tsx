@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
 import { formatDuration } from "@/lib/duration";
+import { blendSlice } from "@/lib/line-color";
 
 /** The goal lives in this browser (a convenience, not account data); a stored value outside the range is ignored. */
 function readGoal(id: string, fallback: number, min: number, max: number): number {
@@ -16,7 +17,7 @@ function readGoal(id: string, fallback: number, min: number, max: number): numbe
 }
 
 /**
- * A summary as a line instead of a dial: a big figure, an amber line that fills against a goal, and a slider under it
+ * A summary as a line instead of a dial: a big figure, a line in the brand colours that fills against a goal, and a slider under it
  * that moves the goal (kept on this device). Use it where a page's list is long and a dial would leave empty room.
  */
 export function GoalMeter({
@@ -73,8 +74,13 @@ export function GoalMeter({
       </div>
       <div aria-hidden className="h-2.5 overflow-hidden rounded-full bg-muted">
         <span
-          className="block h-full rounded-full bg-amber"
-          style={{ width: grown ? `${pct}%` : "0%", transition: "width 1s cubic-bezier(.2,.8,.2,1)" }}
+          className="block h-full rounded-full"
+          style={{
+            width: grown ? `${pct}%` : "0%",
+            // The slice of the brand blend (amber, coral, pink, violet) that this much of the line covers.
+            ...blendSlice(0, Math.max(0.01, pct / 100)),
+            transition: "width 1s cubic-bezier(.2,.8,.2,1)",
+          }}
         />
       </div>
       <div className="relative">

@@ -11,7 +11,7 @@ test("the client's timesheet lists what was worked on as a table: date once per 
   ]) {
     await page.getByLabel("Time to add").fill(time);
     await page.getByLabel("Description").fill(note);
-    await page.getByRole("button", { name: /^Add to the day/ }).click();
+    await page.getByRole("button", { name: /^Log time/ }).click();
     await expect(page.getByText(note)).toBeVisible();
   }
   await page.goto("/dashboard/month");

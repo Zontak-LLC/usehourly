@@ -219,6 +219,7 @@ export function QuickAdd({
               )}
               value={projectId}
               onChange={remember}
+              onPicked={() => durationRef.current?.focus({ preventScroll: true })}
             />
           </div>
         )}
@@ -310,19 +311,19 @@ export function QuickAdd({
           <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/15 group-disabled:text-foreground/60">
             <Plus className="size-4" strokeWidth={3} aria-hidden />
           </span>
-          Add to the day
+          Log time
           <Kbd className="hidden bg-[#1b1405]/15 text-inherit md:inline-flex">↵</Kbd>
         </button>
-        {/* The timer is the second way: a quiet button under Add (an amber play disc, two short lines). Only for today. */}
+        {/* The timer is the second way: a quiet button under Add (a green "go" play disc, two short lines). Only for today. */}
         {isToday && (
           <button
             type="button"
             onClick={startTimer}
             disabled={start.isPending || !online}
             title={online ? undefined : "A timer needs a connection"}
-            className={`group flex w-full items-center gap-3 ${wc("lg:col-start-1 lg:row-start-3")} rounded-2xl border border-amber/40 bg-[linear-gradient(90deg,var(--amber-soft),var(--card)_70%)] px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-amber disabled:opacity-50`}
+            className={`group flex w-full items-center gap-3 ${wc("lg:col-start-1 lg:row-start-3")} rounded-2xl border border-[#3DDC97]/40 bg-[linear-gradient(90deg,color-mix(in_oklab,#3DDC97_14%,transparent),var(--card)_70%)] px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-[#3DDC97] disabled:opacity-50`}
           >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-amber text-[#1b1405] shadow-[0_0_0_5px_color-mix(in_oklab,var(--amber)_22%,transparent)] transition-transform group-hover:scale-105">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#3DDC97] text-[#08140E] shadow-[0_0_0_5px_color-mix(in_oklab,#3DDC97_24%,transparent)] transition-transform group-hover:scale-105">
               <Play className="size-4" fill="currentColor" aria-hidden />
             </span>
             <span className="min-w-0">
@@ -352,7 +353,7 @@ export function QuickAdd({
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
       <div className="border-b bg-band-2 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">
-          Add to the day
+          Log time
           {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
         </h2>
       </div>

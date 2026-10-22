@@ -46,7 +46,7 @@ export function ConnectSnippets({ endpoint, token }: { endpoint: string; token: 
             aria-selected={t === tab}
             onClick={() => setTab(t)}
             className={`min-h-9 rounded-full px-4 font-semibold text-sm ${
-              t === tab ? "bg-amber text-[#1b1405]" : "text-foreground/75 hover:text-foreground"
+              t === tab ? "bg-foreground text-background" : "text-foreground/75 hover:text-foreground"
             }`}
           >
             {t}

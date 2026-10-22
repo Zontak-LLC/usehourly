@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
 
-import { SectionCard } from "@/components/section-card";
+import { ImportScene } from "@/components/import-scene";
 import { Button } from "@/components/ui/button";
 import { type DateOrder, IMPORT_CHUNK, type ImportFormat, MAX_IMPORT_BYTES, readTimeCsv } from "@/lib/import-csv";
 import { trpc } from "@/lib/trpc";
@@ -101,132 +101,150 @@ export function ImportTime() {
   const readings = p?.dateOrderAmbiguous && p.dateSample ? bothReadings(p.dateSample) : null;
 
   return (
-    <SectionCard
-      title="Import from Toggl or Clockify"
-      description="Bring your history over from a CSV export. Clients and projects are created for you, and importing the same file twice never doubles anything."
+    <section
+      aria-label="Import history"
+      className="grid gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
     >
-      <details className="text-sm">
-        <summary className="cursor-pointer text-muted-foreground">How to export the file</summary>
-        <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted-foreground">
-          <li>
-            <strong className="text-foreground">Toggl Track:</strong> Reports, Detailed, pick the dates, Export, CSV.
-          </li>
-          <li>
-            <strong className="text-foreground">Clockify:</strong> Reports, Detailed, pick the dates, Export, CSV.
-          </li>
-          <li>
-            <strong className="text-foreground">Anything else:</strong> a CSV with a date column, a duration or hours
-            column, and (if you like) client, project and description columns.
-          </li>
-        </ul>
-      </details>
-
-      <label className="inline-flex h-10 cursor-pointer items-center gap-2 self-start rounded-lg border bg-background px-4 font-medium text-sm hover:bg-muted">
-        <FileUp className="size-4" aria-hidden />
-        Choose a CSV file
-        <input type="file" accept=".csv,text/csv" className="sr-only" onChange={pick} disabled={progress !== null} />
-      </label>
-
-      {read && !read.ok && (
-        <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
-          {fileName && <strong>{fileName}: </strong>}
-          {read.error}
-        </p>
-      )}
-
-      {p && (
-        <div className="grid gap-3 rounded-lg border p-3 text-sm">
-          <p>
-            <strong>{fileName}</strong> looks like a {FORMAT_LABEL[p.format]}.
+      <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr] sm:gap-8">
+        <ImportScene className="mx-auto w-44 sm:w-56" />
+        <div className="grid gap-3">
+          <h3 className="font-bold font-display text-2xl leading-tight">Bring your history over.</h3>
+          <p className="max-w-xl text-foreground/75">
+            Import a CSV export from Toggl, Clockify or anywhere else. Clients and projects are created for you, and
+            importing the same file twice never doubles anything.
           </p>
-          <p>
-            Found <strong>{p.rows.length.toLocaleString("en-US")}</strong> {p.rows.length === 1 ? "entry" : "entries"}{" "}
-            from {p.from} to {p.to}: <strong>{hours(p.totalMinutes)} hours</strong> across {p.clients.length}{" "}
-            {p.clients.length === 1 ? "client" : "clients"} and {p.projects.length}{" "}
-            {p.projects.length === 1 ? "project" : "projects"}.
-          </p>
-
-          {readings && (
-            <fieldset className="grid gap-1 rounded-md border border-amber-500/60 bg-amber-500/10 p-3">
-              <legend className="px-1 font-medium">Dates like {p.dateSample}: which comes first?</legend>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="date-order"
-                  checked={p.dateOrder === "mdy"}
-                  onChange={() => setOrder("mdy")}
-                />
-                The month first (that is {readings.mdy})
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="date-order"
-                  checked={p.dateOrder === "dmy"}
-                  onChange={() => setOrder("dmy")}
-                />
-                The day first (that is {readings.dmy})
-              </label>
-            </fieldset>
-          )}
-
-          <ul className="grid gap-0.5 text-muted-foreground">
-            {p.projects.slice(0, 6).map((x) => (
-              <li key={`${x.client}/${x.project}`}>
-                {x.client} / {x.project}: {x.entries.toLocaleString("en-US")} {x.entries === 1 ? "entry" : "entries"},{" "}
-                {hours(x.minutes)} h
+          <details className="text-sm">
+            <summary className="cursor-pointer text-muted-foreground">How to export the file</summary>
+            <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted-foreground">
+              <li>
+                <strong className="text-foreground">Toggl Track:</strong> Reports, Detailed, pick the dates, Export,
+                CSV.
               </li>
-            ))}
-            {p.projects.length > 6 && <li>and {p.projects.length - 6} more projects</li>}
-          </ul>
-
-          {p.truncatedNotes > 0 && (
-            <p className="text-muted-foreground">
-              {p.truncatedNotes} {p.truncatedNotes === 1 ? "description was" : "descriptions were"} longer than 2,000
-              characters and will be shortened.
-            </p>
-          )}
-          {p.skipped.length > 0 && (
-            <details>
-              <summary className="cursor-pointer">
-                {p.skipped.length} {p.skipped.length === 1 ? "row" : "rows"} will be skipped
-              </summary>
-              <ul className="mt-1 grid gap-0.5 text-muted-foreground">
-                {p.skipped.slice(0, 8).map((s) => (
-                  <li key={s.line}>
-                    Line {s.line}: {s.reason}
-                  </li>
-                ))}
-                {p.skipped.length > 8 && <li>and {p.skipped.length - 8} more</li>}
-              </ul>
-            </details>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={run} disabled={progress !== null}>
-              {progress
-                ? `Importing ${progress.done.toLocaleString("en-US")} of ${progress.total.toLocaleString("en-US")}…`
-                : `Import ${p.rows.length.toLocaleString("en-US")} ${p.rows.length === 1 ? "entry" : "entries"}`}
-            </Button>
-            <Button
-              variant="ghost"
+              <li>
+                <strong className="text-foreground">Clockify:</strong> Reports, Detailed, pick the dates, Export, CSV.
+              </li>
+              <li>
+                <strong className="text-foreground">Anything else:</strong> a CSV with a date column, a duration or
+                hours column, and (if you like) client, project and description columns.
+              </li>
+            </ul>
+          </details>
+          <label className="inline-flex h-11 cursor-pointer items-center gap-2 justify-self-start rounded-full bg-foreground px-5 font-semibold text-background text-sm hover:opacity-90">
+            <FileUp className="size-4" aria-hidden />
+            Choose a CSV file
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="sr-only"
+              onChange={pick}
               disabled={progress !== null}
-              onClick={() => {
-                setText(null);
-                setFileName("");
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
+            />
+          </label>
         </div>
-      )}
+      </div>
 
-      {outcome && (
-        <p role="status" className="rounded-lg border border-success/40 bg-success-soft p-3 text-sm">
-          {outcome}
-        </p>
-      )}
-    </SectionCard>
+      <div className="flex flex-col gap-3 empty:hidden">
+        {read && !read.ok && (
+          <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            {fileName && <strong>{fileName}: </strong>}
+            {read.error}
+          </p>
+        )}
+
+        {p && (
+          <div className="grid gap-3 rounded-lg border p-3 text-sm">
+            <p>
+              <strong>{fileName}</strong> looks like a {FORMAT_LABEL[p.format]}.
+            </p>
+            <p>
+              Found <strong>{p.rows.length.toLocaleString("en-US")}</strong> {p.rows.length === 1 ? "entry" : "entries"}{" "}
+              from {p.from} to {p.to}: <strong>{hours(p.totalMinutes)} hours</strong> across {p.clients.length}{" "}
+              {p.clients.length === 1 ? "client" : "clients"} and {p.projects.length}{" "}
+              {p.projects.length === 1 ? "project" : "projects"}.
+            </p>
+
+            {readings && (
+              <fieldset className="grid gap-1 rounded-md border border-amber-500/60 bg-amber-500/10 p-3">
+                <legend className="px-1 font-medium">Dates like {p.dateSample}: which comes first?</legend>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="date-order"
+                    checked={p.dateOrder === "mdy"}
+                    onChange={() => setOrder("mdy")}
+                  />
+                  The month first (that is {readings.mdy})
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="date-order"
+                    checked={p.dateOrder === "dmy"}
+                    onChange={() => setOrder("dmy")}
+                  />
+                  The day first (that is {readings.dmy})
+                </label>
+              </fieldset>
+            )}
+
+            <ul className="grid gap-0.5 text-muted-foreground">
+              {p.projects.slice(0, 6).map((x) => (
+                <li key={`${x.client}/${x.project}`}>
+                  {x.client} / {x.project}: {x.entries.toLocaleString("en-US")} {x.entries === 1 ? "entry" : "entries"},{" "}
+                  {hours(x.minutes)} h
+                </li>
+              ))}
+              {p.projects.length > 6 && <li>and {p.projects.length - 6} more projects</li>}
+            </ul>
+
+            {p.truncatedNotes > 0 && (
+              <p className="text-muted-foreground">
+                {p.truncatedNotes} {p.truncatedNotes === 1 ? "description was" : "descriptions were"} longer than 2,000
+                characters and will be shortened.
+              </p>
+            )}
+            {p.skipped.length > 0 && (
+              <details>
+                <summary className="cursor-pointer">
+                  {p.skipped.length} {p.skipped.length === 1 ? "row" : "rows"} will be skipped
+                </summary>
+                <ul className="mt-1 grid gap-0.5 text-muted-foreground">
+                  {p.skipped.slice(0, 8).map((s) => (
+                    <li key={s.line}>
+                      Line {s.line}: {s.reason}
+                    </li>
+                  ))}
+                  {p.skipped.length > 8 && <li>and {p.skipped.length - 8} more</li>}
+                </ul>
+              </details>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={run} disabled={progress !== null}>
+                {progress
+                  ? `Importing ${progress.done.toLocaleString("en-US")} of ${progress.total.toLocaleString("en-US")}…`
+                  : `Import ${p.rows.length.toLocaleString("en-US")} ${p.rows.length === 1 ? "entry" : "entries"}`}
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={progress !== null}
+                onClick={() => {
+                  setText(null);
+                  setFileName("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {outcome && (
+          <p role="status" className="rounded-lg border border-success/40 bg-success-soft p-3 text-sm">
+            {outcome}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }

@@ -72,7 +72,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.getByLabel("Time to add").fill("1:30");
     await expect(page.getByText("Day total 0:00 → 1:30 h")).toBeVisible(); // the live preview
     await page.getByLabel("Description").fill("Logo concepts for the homepage");
-    await page.getByRole("button", { name: /Add to the day/ }).click();
+    await page.getByRole("button", { name: /Log time/ }).click();
     count("firstEntry", 3);
     await expect(page.getByText("Logo concepts for the homepage")).toBeVisible();
     await expect(page.getByText(/Ready to get paid/)).toHaveCount(0); // no invoice nudge on Today
@@ -84,7 +84,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   await test.step("log a second entry with a quick-pick chip", async () => {
     await page.getByRole("button", { name: "1 hour", exact: true }).click();
     await expect(page.getByLabel("Time to add")).toHaveValue("1h");
-    await page.getByRole("button", { name: /Add to the day/ }).click();
+    await page.getByRole("button", { name: /Log time/ }).click();
   });
 
   await test.step("fix a mistake: change the first entry from 1:30 to 2:00", async () => {
@@ -385,7 +385,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
     await page.goto("/dashboard/account#data");
     await page.getByRole("button", { name: /Accounting app/ }).click(); // the data tiles: one panel at a time
-    await expect(page.getByText("Send invoices to your accounting app")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Send invoices to your accounting app" })).toBeVisible();
     await shot("accounting-export");
     await audit("account, accounting export");
 

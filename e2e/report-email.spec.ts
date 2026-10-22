@@ -4,7 +4,7 @@ import { clearMail, expect, mailTo, sql, startFreshAccount, test } from "./helpe
 test("Email me this sends the year summary to your own confirmed address", async ({ page }) => {
   const user = await startFreshAccount(page);
   await page.getByPlaceholder(/Time:/).fill("2h");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
 
   await test.step("an unconfirmed address is told to confirm first, and nothing is sent", async () => {

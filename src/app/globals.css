@@ -434,3 +434,224 @@ textarea,
     background-position: 100% 50%;
   }
 }
+
+/* The "Download everything" scene (Account > Your data): files drop into a box, the lid shuts, sparkles pop, then it
+   starts again. With reduced motion it is the finished picture: a closed box and its sparkles. */
+@keyframes es-drop {
+  0% {
+    transform: translateY(-70px);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  30%,
+  86% {
+    transform: translateY(40px);
+    opacity: 1;
+  }
+  94%,
+  100% {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+@keyframes es-lid {
+  0%,
+  36% {
+    transform: translateY(-34px);
+    opacity: 0;
+  }
+  42% {
+    opacity: 1;
+  }
+  52%,
+  88% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  96%,
+  100% {
+    transform: translateY(-34px);
+    opacity: 0;
+  }
+}
+@keyframes es-spark {
+  0%,
+  50% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  62% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  74%,
+  88% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  96%,
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+.export-scene .es-file {
+  animation: es-drop 5.5s cubic-bezier(0.3, 0.9, 0.3, 1) infinite both;
+}
+.export-scene .es-lid {
+  animation: es-lid 5.5s cubic-bezier(0.3, 1.3, 0.5, 1) infinite both;
+}
+.export-scene .es-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: es-spark 5.5s ease-out infinite both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .export-scene .es-file {
+    animation: none;
+    opacity: 0;
+  }
+  .export-scene .es-lid {
+    animation: none;
+  }
+  .export-scene .es-spark {
+    animation: none;
+  }
+}
+
+/* The "Import history" scene (Account > Your data): a CSV page slides toward UseHourly, its rows land as coloured
+   entries, a tick pops, then it starts again. Reduced motion shows the finished picture. */
+@keyframes is-slide {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  34% {
+    transform: translateX(58px);
+    opacity: 1;
+  }
+  44%,
+  100% {
+    transform: translateX(70px);
+    opacity: 0;
+  }
+}
+@keyframes is-bar {
+  0%,
+  36% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  48%,
+  88% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  96%,
+  100% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+@keyframes is-tick {
+  0%,
+  62% {
+    transform: scale(0);
+  }
+  72% {
+    transform: scale(1.25);
+  }
+  80%,
+  88% {
+    transform: scale(1);
+  }
+  96%,
+  100% {
+    transform: scale(0);
+  }
+}
+.import-scene .is-file,
+.acct-scene .is-file {
+  animation: is-slide 5.5s cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+}
+.import-scene .is-bar,
+.acct-scene .is-bar {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: is-bar 5.5s ease-out infinite both;
+}
+.import-scene .is-tick,
+.acct-scene .is-tick {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: is-tick 5.5s ease-out infinite both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .import-scene .is-file,
+  .acct-scene .is-file {
+    animation: none;
+    opacity: 0;
+  }
+  .import-scene .is-bar,
+  .import-scene .is-tick,
+  .acct-scene .is-bar,
+  .acct-scene .is-tick {
+    animation: none;
+  }
+}
+
+/* The "This device" scene: a screen fills with entries with no connection, and a tick says they are safe. */
+.device-scene .is-bar {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: is-bar 5.5s ease-out infinite both;
+}
+.device-scene .is-tick {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: is-tick 5.5s ease-out infinite both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .device-scene .is-bar,
+  .device-scene .is-tick {
+    animation: none;
+  }
+}
+
+/* The "Delete account" scene: calm on purpose. The tiles drift down very slowly and dim; nothing sparkles. */
+@keyframes ds-drift {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(14px);
+    opacity: 0.3;
+  }
+}
+.delete-scene .ds-tile {
+  animation: ds-drift 7s ease-in-out infinite alternate both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .delete-scene .ds-tile {
+    animation: none;
+  }
+}
+
+/* The Account tab's icon gives a small, quiet pop when its tab opens. */
+@keyframes tab-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

@@ -6,7 +6,7 @@ test("an entry is deleted only after confirming, from the list and from Today", 
   const add = async (time: string, note: string) => {
     await page.getByLabel("Time to add").fill(time);
     await page.getByLabel("Description").fill(note);
-    await page.getByRole("button", { name: /Add to the day/ }).click();
+    await page.getByRole("button", { name: /Log time/ }).click();
     await expect(page.getByText(note)).toBeVisible();
     await expect(page.getByLabel("Time to add")).toHaveValue(""); // the form clears itself just after saving
   };
@@ -61,7 +61,7 @@ test("the Week page shows a colour dot on a day with time, and none on an empty 
   await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(0); // a new account has no time: no dots anywhere
   await expect(page.getByRole("region", { name: "What you worked on" })).toHaveCount(0); // and no empty "What you worked on"
   await page.getByLabel("Time to add").fill("1");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(1); // one client, one day
   await expect(page.getByRole("region", { name: "What you worked on" })).toBeVisible(); // the list appears with the first entry
   const withDot = page.getByRole("tab").filter({ has: page.locator("[data-dot]") });
@@ -90,7 +90,7 @@ test("a day's total says it is the total, and the day has a labelled Edit day bu
   await startFreshAccount(page);
   await page.getByLabel("Time to add").fill("1.5");
   await page.getByLabel("Description").fill("labelled total");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("labelled total")).toBeVisible();
   await page.goto("/dashboard/week");
   const list = page.getByRole("region", { name: "What you worked on" });
@@ -106,7 +106,7 @@ test("Edit day on the Week page opens that day's entries for editing, and saving
   await startFreshAccount(page);
   await page.getByLabel("Time to add").fill("1.5");
   await page.getByLabel("Description").fill("edit me from the day button");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("edit me from the day button")).toBeVisible();
   await page.goto("/dashboard/week");
   const list = page.getByRole("region", { name: "What you worked on" });

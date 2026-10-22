@@ -20,6 +20,9 @@ test("the Account page shows one section at a time, in tabs, and a link or reloa
 
   await tab("Your data").press("ArrowRight"); // arrow keys move along the tabs
   await expect(tab("AI assistants")).toHaveAttribute("aria-selected", "true");
+  // This tab is for settings (tokens, the key, the steps): the story animation lives on the home page, not here.
+  await expect(page.getByRole("heading", { name: "AI assistants" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /^Animation:/ })).toHaveCount(0);
   await tab("Invoices").click();
   await expect(page.getByText("Business details").first()).toBeVisible();
 });

@@ -16,6 +16,7 @@ import { TimerPanel } from "@/components/timer-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
+import { useRunningMinutes } from "@/components/use-running-minutes";
 import { addDays, DATE_RE, fromISODate, monthBounds, startOfWeek } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
@@ -40,6 +41,10 @@ export function TodayView() {
 
   const clients = trpc.clients.list.useQuery();
   const running = trpc.entry.running.useQuery();
+  // A timer running on the day shown adds its minutes to the day dial, so there is one clock for the day.
+  const timer = running.data?.started_at ? running.data : null;
+  const timerOnThisDay = !!timer && timer.date === date;
+  const timerMinutes = useRunningMinutes(timerOnThisDay ? timer.started_at : null);
   // Started here, with the first batch, so the quick-add form and the entry rows find them already loaded (they would
   // otherwise start them only after the client list arrives: a second round trip). Same keys, so nothing is fetched twice.
   trpc.project.budgets.useQuery(date ? monthBounds(date) : { from: "", to: "" }, { enabled: !!date });
@@ -55,10 +60,13 @@ export function TodayView() {
   const go = (d: string) => router.replace(d === today ? "/dashboard/today" : `/dashboard/today?date=${d}`);
   const dayEntries = week.data?.filter((e) => e.date === date) ?? [];
   const sum = (xs: { minutes: number }[]) => xs.reduce((a, e) => a + e.minutes, 0);
+  // The running timer counts in the day and week totals as well as in the dial, so the three never disagree.
+  const dayTotal = sum(dayEntries) + timerMinutes;
+  const weekTotal = week.data ? sum(week.data) + timerMinutes : null;
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
   // The two totals are one line under the title (they were two stat cards): this day, and this week.
   const totalsText = week.data
-    ? `${formatDuration(sum(dayEntries))} this day · ${formatDuration(sum(week.data))} this week`
+    ? `${formatDuration(dayTotal)} this day · ${formatDuration(weekTotal ?? 0)} this week`
     : "";
   // On a wide screen they sit in the header line; on a phone that line has the arrows too, so they go under it.
   const totals = totalsText ? <span className="max-sm:hidden"> · {totalsText}</span> : null;
@@ -127,22 +135,17 @@ export function TodayView() {
         <div className="flex min-w-0 flex-col gap-4">
           <div className="grid gap-4 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
             <DayDial
-              minutes={sum(dayEntries)}
-              weekMinutes={week.data ? sum(week.data) : null}
+              minutes={dayTotal}
+              timerCounted={timerOnThisDay}
+              weekMinutes={weekTotal}
               timerRunning={!!running.data}
             />
             {week.data && weekStart && (
-              <DaySide
-                row
-                entries={week.data}
-                weekStart={weekStart}
-                date={date}
-                today={today}
-                onPick={go}
-                after={running.data?.started_at ? <TimerPanel /> : undefined}
-              />
+              <DaySide row entries={week.data} weekStart={weekStart} date={date} today={today} onPick={go} />
             )}
           </div>
+
+          {timer && <TimerPanel />}
 
           <QuickAdd date={date} showDate={false} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} wide />
 

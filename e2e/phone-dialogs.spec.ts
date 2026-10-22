@@ -8,11 +8,11 @@ test("a dialog on a phone stays above the keyboard, and the field being typed in
   page,
 }, info) => {
   test.skip(info.project.name !== "phone", "only phones have an on-screen keyboard");
-  // The sample account has several projects, so Today offers "Another project…": a chooser dialog with a search box.
+  // The sample account has several projects, so Today offers a search button that opens a chooser dialog with a search box.
   await startDemo(page);
-  await page.getByRole("button", { name: /Another project/ }).click();
+  await page.getByRole("button", { name: "Search projects or clients" }).click();
   const dialog = page.getByRole("dialog");
-  const field = dialog.getByRole("textbox").first();
+  const field = dialog.getByRole("combobox");
   await expect(field).toBeVisible();
 
   const full = page.viewportSize()?.height ?? 800;

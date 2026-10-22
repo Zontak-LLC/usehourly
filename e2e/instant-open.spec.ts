@@ -10,7 +10,7 @@ test("reopening a page shows the last data immediately, while fresh data is stil
   await page.goto("/dashboard/today");
   await page.getByPlaceholder(/Time:/).fill("2h");
   await page.getByLabel("Description").fill("Instant open check");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("Instant open check")).toBeVisible();
   await page.waitForTimeout(2500); // the saved copy is written a moment after the data changes
 

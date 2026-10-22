@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 
 import { formatDuration } from "@/lib/duration";
+import { blendSlice } from "@/lib/line-color";
 
 type Piece = { project_id: string; minutes: number; project: { name: string; client: { color: string } } };
 
 /**
- * One bar for the whole day, cut into a coloured piece for each project by how long it took. It draws in from the left
+ * One bar for the whole day, cut into a piece for each project by how long it took, all one blend of the brand colours. It draws in from the left
  * the first time it shows. Under it, a small legend names each piece and its time.
  */
 export function DayBar({ entries }: { entries: Piece[] }) {
@@ -37,13 +38,14 @@ export function DayBar({ entries }: { entries: Piece[] }) {
           transition: "clip-path 1s cubic-bezier(.2,.8,.2,1)",
         }}
       >
-        {pieces.map((p) => (
-          <span
-            key={p.name}
-            className="h-full"
-            style={{ width: `${(p.minutes / total) * 100}%`, backgroundColor: p.color }}
-          />
-        ))}
+        {pieces.map((p, i) => {
+          const share = p.minutes / total;
+          const start = pieces.slice(0, i).reduce((sum, q) => sum + q.minutes / total, 0);
+          // One blend of the brand colours runs along the whole bar; each project's piece is its slice of it.
+          return (
+            <span key={p.name} className="h-full" style={{ width: `${share * 100}%`, ...blendSlice(start, share) }} />
+          );
+        })}
       </div>
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-foreground/80 text-xs">
         {pieces.map((p) => (

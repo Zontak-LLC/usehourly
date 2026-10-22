@@ -62,7 +62,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 These are the general UI/UX habits every screen is judged against, by a person and by the independent UI review (a fresh reviewer is given this file and screenshots of every page; run it after each look-and-layout release). Where a rule is already measurable it says **[checked]**; the rest is judged in review. When a rule here and an older rule above disagree, the older, more specific one wins and this file is fixed.
 
 ### Hierarchy and focus
-- **One job per screen, one main action.** The eye should land on the thing the person came to do (Today: the time box and "Add to the day"). One solid button per screen **[checked]**; everything else is quieter (soft tint, outline, text).
+- **One job per screen, one main action.** The eye should land on the thing the person came to do (Today: the time box and "Log time"). One solid button per screen **[checked]**; everything else is quieter (soft tint, outline, text).
 - **Visual weight follows importance:** size, boldness, contrast and position say what matters most; if everything is bold, nothing is. Max two type weights per card (regular and semibold).
 - **Show less until it is needed** (progressive disclosure): rare actions go behind ···, advanced options behind "More options", details open in place. Delete no feature; move it.
 - **Group by meaning (proximity):** things that belong together sit close (a label and its field, a card's title and its actions); unrelated groups get more space. Space and tint separate groups before lines do.
@@ -98,7 +98,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - **A visible label above each field**, not only a placeholder (placeholders vanish and fail contrast) **[checked: every control has a name]**. Required fields are obvious; optional ones say "(optional)".
 - **Ask for the least**; sensible defaults; accept messy input and normalise it (`1.5`, `1:30`, `90m` all work).
 - **Validate where the person is looking:** an error sits next to its field in plain words that say how to fix it ("Pick a project first", not "Invalid input"); keep what they typed; never clear a form on error.
-- **Enter submits**, Escape cancels, focus goes to the first field on open and back to the trigger on close. The submit button names the result ("Add to the day", "Create invoice"), never "Submit" or "OK".
+- **Enter submits**, Escape cancels, focus goes to the first field on open and back to the trigger on close. The submit button names the result ("Log time", "Create invoice"), never "Submit" or "OK".
 - A form opens **in place of the thing it edits** (not a pop-up) unless it is tiny or a chooser (project picker, avatar cropper).
 
 ### Feedback and states
@@ -129,7 +129,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - Do not rely on gestures, hover or colour; text can zoom to 200% without breaking the layout.
 
 ### Microcopy
-- Plain, short, active, in the person's terms ("Add to the day", "Make a link"). Sentence case. Numbers and dates in the person's own format. No blame ("You must…"), no jargon, no exclamation marks except a first welcome.
+- Plain, short, active, in the person's terms ("Log time", "Make a link"). Sentence case. Numbers and dates in the person's own format. No blame ("You must…"), no jargon, no exclamation marks except a first welcome.
 - A button says what it does; a title says what the thing is; a hint says what to do, once.
 
 ### Before a UI change is approved (checklist)
@@ -148,7 +148,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - Offline: a banner; adding time still works; everything else says it needs a connection.
 
 ## Words
-Plain, short, no jargon, no blame. Name things the way the menu does ("Clients", "Year summary"). Prefer "Add to the day" to "Submit". The obvious is not explained; the confusing goes in the guide.
+Plain, short, no jargon, no blame. Name things the way the menu does ("Clients", "Year summary"). Prefer "Log time" to "Submit". The obvious is not explained; the confusing goes in the guide.
 
 ## Per page (what to expect)
 - **Today:** the add form card (three quick-time chips; until a time is typed the Add button is a clear outline and a line says what to do, then it turns solid; the timer is a small "Haven't done it yet? Start timer" link under it, never a rival button), the day's entry cards (or the dashed empty state), then the calendar card. The day's and the week's totals are one line under the title, not cards. A connected calendar's card (with meetings to log) sits right under the add form; not connected, it waits at the foot with two short sentences.

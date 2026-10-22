@@ -95,7 +95,7 @@ test("on Today a swipe in the page body moves a day; the header still changes ta
   await startFreshAccount(page);
   const w = page.viewportSize()?.width ?? 412;
   await page.goto("/dashboard/today");
-  const tile = page.getByRole("heading", { name: "Add to the day" });
+  const tile = page.getByRole("heading", { name: "Log time" });
 
   let { y } = await centreOf(page, tile);
   await swipe(page, [w - 40, y], [40, y]); // left: the next day

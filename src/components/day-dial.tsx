@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { DAY_GOAL_MINUTES, DIAL_LENGTH, dialFraction, dialLeft } from "@/lib/day-dial";
 import { formatDuration } from "@/lib/duration";
 import { round3 } from "@/lib/round3";
+
+/** The day dial's ring blends the brand colours (amber, coral, pink, violet), the same blend as the home page headline. */
+const DAY_RING = ["#F5A524", "#ff7a45", "#ec5f9a", "#8A6CFF"] as const;
 
 const TICKS = Array.from({ length: 48 }, (_, i) => {
   const a = (i / 48) * Math.PI * 2;
@@ -22,27 +25,33 @@ const TICKS = Array.from({ length: 48 }, (_, i) => {
 
 /**
  * The day as a dial: the ring fills with the hours logged against the day's goal, the hand sits where the fill ends,
- * and the middle says the total and what is left. While a timer runs, a thin second hand sweeps. The ring sweeps in
+ * and the middle says the total and what is left. While a timer runs on the day shown, its minutes are part of the
+ * total (the title says "Logged + timer") and a thin second hand sweeps: there is one clock for the day, not two. The ring sweeps in
  * from empty on first show, so a person sees the day add up.
  */
 export function DayDial({
   minutes,
   weekMinutes,
   timerRunning,
+  timerCounted = false,
   goal = DAY_GOAL_MINUTES,
 }: {
+  /** Logged minutes, plus the running timer's minutes when `timerCounted`. */
   minutes: number;
   weekMinutes: number | null;
   timerRunning: boolean;
+  /** The running timer is part of `minutes` (it runs on the day shown): the dial says so and grows with it. */
+  timerCounted?: boolean;
   goal?: number;
 }) {
   return (
     <Dial
       label="Today's hours"
-      title="Logged"
+      title={timerCounted ? "Logged + timer" : "Logged"}
       minutes={minutes}
       goal={goal}
       timerRunning={timerRunning}
+      ring={DAY_RING}
       footLeft={`Goal ${formatDuration(goal)}`}
       footRight={weekMinutes !== null ? `Week ${formatDuration(weekMinutes)}` : undefined}
     />
@@ -63,6 +72,7 @@ export function Dial({
   caption,
   footLeft,
   footRight,
+  ring,
 }: {
   label: string;
   title: string;
@@ -73,7 +83,10 @@ export function Dial({
   caption?: string;
   footLeft?: string;
   footRight?: string;
+  /** Colours for the ring (a gradient round the dial); plain amber when left out. */
+  ring?: readonly string[];
 }) {
+  const gradientId = useId();
   const [shown, setShown] = useState(0);
   // After the first paint, move to the real value: the CSS transition draws the sweep.
   useEffect(() => {
@@ -93,6 +106,15 @@ export function Dial({
       />
       <div className="relative aspect-square w-full max-w-[210px] sm:max-w-[300px]">
         <svg viewBox="0 0 200 200" className="size-full overflow-visible" aria-hidden>
+          {ring && (
+            <defs>
+              <linearGradient id={gradientId} x1="1" y1="0" x2="0" y2="1">
+                {ring.map((c, i) => (
+                  <stop key={c} offset={i / (ring.length - 1)} stopColor={c} />
+                ))}
+              </linearGradient>
+            </defs>
+          )}
           {TICKS.map((t) => (
             <line
               key={t.key}
@@ -110,7 +132,7 @@ export function Dial({
             cy="100"
             r="78"
             fill="none"
-            stroke="var(--amber)"
+            stroke={ring ? `url(#${gradientId})` : "var(--amber)"}
             strokeWidth="16"
             strokeLinecap="round"
             strokeDasharray={DIAL_LENGTH}
@@ -141,7 +163,7 @@ export function Dial({
           <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">{title}</span>
           <span
             className={`font-display font-extrabold tabular-nums leading-none ${center ? "text-4xl" : "text-5xl"}`}
-            aria-live="polite"
+            aria-live={timerRunning ? "off" : "polite"}
           >
             {center ?? formatDuration(minutes)}
           </span>

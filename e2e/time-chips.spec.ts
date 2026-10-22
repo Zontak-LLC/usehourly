@@ -24,6 +24,6 @@ test("tapping a time chip again adds its time again; typing or another chip star
   await expect(time).toHaveValue("2h");
 
   // the doubled time is what is saved
-  await page.getByRole("button", { name: /^Add to the day/ }).click();
+  await page.getByRole("button", { name: /^Log time/ }).click();
   await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText("2:00 this day");
 });
