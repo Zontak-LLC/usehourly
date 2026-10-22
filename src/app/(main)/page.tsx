@@ -5,7 +5,6 @@ import type { Metadata } from "next";
 
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
-import { LandingHero } from "@/components/landing-hero";
 import { LandingScenes } from "@/components/landing-scenes";
 import { LandingShowcase } from "@/components/landing-showcase";
 import { LandingStory } from "@/components/landing-story";
@@ -89,26 +88,26 @@ export default function LandingPage() {
 
       <main>
         <section className="mx-auto max-w-6xl px-6 pt-8 pb-16 md:pt-14">
-          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-            <div>
+          <div className="flex flex-col items-center gap-12">
+            <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
               <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 font-medium text-sm">
                 <Bot className="size-4" aria-hidden />
                 Free, open source, built for AI assistants
               </p>
-              <h1 className="mt-5 max-w-xl font-extrabold text-5xl leading-[0.98] tracking-tight md:text-7xl">
+              <h1 className="mt-5 max-w-3xl font-extrabold text-5xl leading-[0.98] tracking-tight md:text-7xl">
                 Log a day in{" "}
                 <span className="bg-gradient-to-r from-[#F5A524] via-[#ff7a45] to-[#8A6CFF] bg-clip-text text-transparent">
                   seconds.
                 </span>
               </h1>
-              <p className="mt-5 max-w-lg text-lg text-muted-foreground md:text-xl">
+              <p className="mt-5 max-w-2xl text-lg text-muted-foreground md:text-xl">
                 Time tracking for freelancers. Type <strong className="text-foreground">1.5</strong> or{" "}
                 <strong className="text-foreground">90m</strong>, press Enter, done. Or tell your AI assistant:{" "}
                 <strong className="text-foreground">
                   &ldquo;log 3 hours on Acme, then make this week&rsquo;s timesheet.&rdquo;
                 </strong>
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/auth/v2/register"
                   className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-b from-[#F5A524] to-[#e8820b] px-6 font-semibold text-[#1b1405] text-base shadow-[0_10px_30px_-10px_#F5A524] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_#F5A524]"
@@ -124,7 +123,18 @@ export default function LandingPage() {
                 </a>
               </p>
             </div>
-            <LandingHero />
+            <div id="ai-assistants" className="w-full max-w-4xl scroll-mt-6">
+              <h2 className="sr-only">Ask your AI assistant. It&rsquo;s in your timesheet.</h2>
+              <AssistantTerminal />
+              <div className="mt-6 flex flex-col items-center gap-3 text-center">
+                <code className="max-w-full break-all rounded-lg bg-muted px-3 py-2 text-foreground text-sm">
+                  claude mcp add --transport http usehourly https://usehourly.app/api/mcp
+                </code>
+                <Link href="/help/ai-assistants" className="text-muted-foreground text-sm underline underline-offset-4">
+                  Works with Claude, ChatGPT, Cursor and other MCP assistants. Setup guide
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -141,31 +151,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="ai-assistants" aria-labelledby="ai-heading" className="border-t">
-          <div className="mx-auto max-w-4xl px-6 py-16 md:py-24">
-            <h2 id="ai-heading" className="sr-only">
-              Ask your AI assistant. It&rsquo;s in your timesheet.
-            </h2>
-            <Reveal>
-              <AssistantTerminal />
-            </Reveal>
-            <div className="mt-6 flex flex-col items-center gap-3 text-center">
-              <code className="max-w-full break-all rounded-lg bg-muted px-3 py-2 text-foreground text-sm">
-                claude mcp add --transport http usehourly https://usehourly.app/api/mcp
-              </code>
-              <Link href="/help/ai-assistants" className="text-muted-foreground text-sm underline underline-offset-4">
-                Works with Claude, ChatGPT, Cursor and other MCP assistants. Setup guide
-              </Link>
-            </div>
-          </div>
-        </section>
-
         <section id="see-it" className="mx-auto max-w-6xl px-6 py-16 md:py-24">
           <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
             See it working.
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
-            Real screens from the app, with sample data. Pick one.
+            Real screens from the app, with sample data. Scroll to flip through them.
           </p>
           <div className="mt-8">
             <LandingShowcase />
