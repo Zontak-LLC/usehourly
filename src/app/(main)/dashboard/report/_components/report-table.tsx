@@ -1,4 +1,5 @@
 import { CardTitle } from "@/components/card-title";
+import { CollapsibleSection } from "@/components/collapsible-section";
 
 /** One line of the summary: the label (with a muted hint under it) on the left, the figure on the right. */
 export function SummaryRow({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -13,7 +14,29 @@ export function SummaryRow({ label, value, hint }: { label: string; value: strin
   );
 }
 
-export function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+/** A section of the year summary. `foldId` makes it fold (with `summary` shown while folded); without it it is plain. */
+export function Section({
+  title,
+  note,
+  foldId,
+  summary,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  note?: string;
+  foldId?: string;
+  summary?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  if (foldId) {
+    return (
+      <CollapsibleSection id={`report:${foldId}`} title={title} note={note} summary={summary} defaultOpen={defaultOpen}>
+        {children}
+      </CollapsibleSection>
+    );
+  }
   return (
     <section aria-label={title} className="overflow-hidden rounded-xl border bg-card">
       <div className="border-b bg-band-2 px-4 py-3">
