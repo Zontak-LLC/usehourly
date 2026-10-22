@@ -21,6 +21,7 @@ import { trpc } from "@/lib/trpc";
 
 import { ClientCard } from "./client-card";
 import type { ClientRow } from "./client-types";
+import { ClientsHero } from "./clients-hero";
 import { NewClientCard } from "./new-client-card";
 import { useOpenClients } from "./use-open-clients";
 import { useProjectEditing } from "./use-project-editing";
@@ -170,32 +171,7 @@ export function ClientsView() {
     >
       <div className="flex flex-col gap-3 sm:gap-4">
         {clientCount > 0 && totals.data && (
-          // This month across every client as a slim strip, so it never competes with a long list for room.
-          <section
-            aria-label="This month"
-            data-headerless="a one-line summary above the list"
-            className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-3xl border bg-card px-4 py-3 shadow-[var(--shadow-sheet)]"
-          >
-            <div>
-              <p className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">This month</p>
-              <p className="font-display font-extrabold text-3xl tabular-nums leading-none">
-                {formatDuration(monthMinutes)}
-              </p>
-            </div>
-            <div
-              aria-hidden
-              className="h-2 min-w-32 flex-1 overflow-hidden rounded-full bg-muted"
-              title="Against a 160-hour month"
-            >
-              <span
-                className="block h-full rounded-full bg-amber"
-                style={{ width: `${Math.min(100, (monthMinutes / (160 * 60)) * 100)}%` }}
-              />
-            </div>
-            <p className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-              {clientCount} client{clientCount === 1 ? "" : "s"} · {projectCount} project{projectCount === 1 ? "" : "s"}
-            </p>
-          </section>
+          <ClientsHero clients={clients.data ?? []} totals={totals.data} monthMinutes={monthMinutes} />
         )}
         {/* Search only earns its place once there are more clients than fit in a glance. */}
         {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
