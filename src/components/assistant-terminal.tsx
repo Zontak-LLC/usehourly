@@ -98,7 +98,7 @@ export function AssistantTerminal() {
       {/* A fixed height (on a phone the newest line sits at the foot): the window never grows, so the page never jumps. */}
       <pre
         aria-hidden
-        className="m-0 flex h-[41rem] flex-col justify-end overflow-hidden sm:justify-start p-4 font-mono text-[11.5px] leading-relaxed sm:h-[35rem] sm:p-5 sm:text-[13px]"
+        className="m-0 flex h-[41rem] flex-col justify-end overflow-hidden p-4 font-mono text-[11.5px] leading-relaxed sm:h-[35rem] sm:justify-start sm:p-5 sm:text-[13px]"
       >
         <div className="whitespace-pre-wrap break-words">
           {parts.map((p, i) => (
