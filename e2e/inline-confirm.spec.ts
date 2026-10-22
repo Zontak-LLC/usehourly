@@ -1,13 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 /** Deleting an invoice asks inside its card; archiving a client or project is immediate with Undo (no pop-ups). */
 test("delete invoice confirms inside the card; archive is immediate with Undo", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
 
   await test.step("an invoice's delete question opens in its card and names the invoice", async () => {
     await page.goto("/dashboard/invoices");

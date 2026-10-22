@@ -1,4 +1,4 @@
-import { expect, test } from "./helpers";
+import { expect, startDemo, test } from "./helpers";
 
 /**
  * On a phone a dialog sits at the TOP of the screen, so the on-screen keyboard (which covers the lower part) never hides
@@ -9,12 +9,7 @@ test("a dialog on a phone stays above the keyboard, and the field being typed in
 }, info) => {
   test.skip(info.project.name !== "phone", "only phones have an on-screen keyboard");
   // The sample account has several projects, so Today offers "Another project…": a chooser dialog with a search box.
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.getByRole("button", { name: /Another project/ }).click();
   const dialog = page.getByRole("dialog");
   const field = dialog.getByRole("textbox").first();
