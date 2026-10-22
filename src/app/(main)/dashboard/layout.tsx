@@ -48,7 +48,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         name: true,
         email: true,
         token_version: true,
-        theme_preset: true,
         theme_mode: true,
         email_verified_at: true,
         is_demo: true,

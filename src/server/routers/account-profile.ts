@@ -5,26 +5,24 @@ import { isDemoSession } from "@/lib/demo";
 import { CURRENCY_CODES } from "@/lib/money";
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
-import { isThemeMode, isThemePreset } from "@/lib/theme-sync";
+import { isThemeMode } from "@/lib/theme-sync";
 
 import { avatarSchema, logoSchema } from "../logo-schema";
 import { protectedProcedure } from "../trpc";
 
 export const profileProcedures = {
-  /** Remembers the colour and light/dark choice so other devices open with it. Demo accounts keep it to the browser. */
+  /** Remembers the light/dark choice so other devices open with it. Demo accounts keep it to the browser. */
   setTheme: protectedProcedure
     .input(
       z.object({
-        preset: z.string().refine(isThemePreset, "Unknown colour.").optional(),
         mode: z.string().refine(isThemeMode, "Unknown mode.").optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (isDemoSession(ctx.session) || (!input.preset && !input.mode)) return { saved: false };
+      if (isDemoSession(ctx.session) || !input.mode) return { saved: false };
       await ctx.prisma.authUser.update({
         where: { id: ctx.userId },
         data: {
-          ...(input.preset ? { theme_preset: input.preset } : {}),
           ...(input.mode ? { theme_mode: input.mode } : {}),
         },
       });
