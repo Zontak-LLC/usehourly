@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, startDemo, startFreshAccount, test } from "./helpers";
 
 /**
  * Clients: "New client" is a + in the page header that opens the form as a card at the top of the list; an empty page has
@@ -47,12 +47,7 @@ test("a new client is added from the card in place, and the title line counts cl
 test("archived clients and projects open from a menu in the header, on a page of their own, and can be restored", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/clients");
 
   // nothing about the archive hangs at the foot of the page

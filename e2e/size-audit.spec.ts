@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
 import { mkdirSync, writeFileSync } from "node:fs";
 
 /**
@@ -103,12 +104,7 @@ test("text and tap targets are big enough", async ({ page }, info) => {
     await page.waitForLoadState("networkidle");
     found.push(...(await scan(page, url)));
   }
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   for (const url of APP) {
     await page.goto(url);
     await page.waitForLoadState("networkidle");

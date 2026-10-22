@@ -1,13 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 test("on a phone the invoice card's buttons are all the same height", async ({ page }, info) => {
   test.skip(info.project.name !== "phone", "the buttons only carry words on a phone");
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/invoices");
   const row = page.locator('[data-testid="invoice-actions"]:visible').first();
   await expect(row).toBeVisible();

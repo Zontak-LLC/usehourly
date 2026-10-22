@@ -1,12 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 test("a day on Month opens as a card under the calendar, not a pop-up, and closes again", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/month");
 
   // a day with time in it (the sample data has entries on recent weekdays)
