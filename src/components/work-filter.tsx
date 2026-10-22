@@ -78,7 +78,7 @@ export function WorkModeSwitch({
           aria-pressed={mode === id}
           onClick={() => onMode(id)}
           className={`min-h-9 rounded-full px-4 font-semibold text-sm transition-colors ${
-            mode === id ? "bg-amber text-[#1b1405]" : "text-foreground/75 hover:text-foreground"
+            mode === id ? "bg-foreground text-background" : "text-foreground/75 hover:text-foreground"
           }`}
         >
           {label}

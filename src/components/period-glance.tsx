@@ -1,5 +1,7 @@
 import { fromISODate } from "@/lib/dates";
+import { DAY_COLORS } from "@/lib/day-colors";
 import { formatDuration } from "@/lib/duration";
+import { blendSlice } from "@/lib/line-color";
 
 const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 
@@ -67,6 +69,9 @@ export function PeriodGlance({
 
 const GOAL_DAY = 8 * 60;
 
+/** The colour of a date's weekday (Monday first), the same seven as the Today week bars and the Month calendar. */
+const weekdayColor = (date: string) => DAY_COLORS[(fromISODate(date).getDay() + 6) % 7];
+
 /** The dates of the period, one per day, from `from`. */
 function datesFrom(from: string, count: number): string[] {
   const start = fromISODate(from);
@@ -77,7 +82,7 @@ function datesFrom(from: string, count: number): string[] {
   });
 }
 
-/** Three cards, each with a small picture: a chart of the days (the busiest in amber), a gauge against an 8 hour day, a dot for every day. */
+/** Three cards, each with a small picture: a chart of the days (each in its weekday's colour), a gauge against an 8 hour day in the brand blend, a dot for every day in its weekday's colour. */
 function GlanceStrip({
   facts,
   dayTotals,
@@ -101,17 +106,22 @@ function GlanceStrip({
       {dates.map((d) => (
         <span
           key={d}
-          className={`min-w-0 flex-1 rounded-sm ${d === busiestDate ? "bg-amber" : "bg-foreground/20"}`}
+          className="min-w-0 flex-1 rounded-sm"
           style={{
             height: `${Math.max(dayTotals[d] ? 8 : 3, ((dayTotals[d] ?? 0) / top) * 100)}%`,
-            opacity: dayTotals[d] ? 1 : 0.5,
+            // Every day in its weekday's colour; the busiest at full strength, the rest a little softer, empty days grey.
+            backgroundColor: dayTotals[d] ? weekdayColor(d) : "color-mix(in oklab, var(--foreground) 20%, transparent)",
+            opacity: dayTotals[d] ? (d === busiestDate ? 1 : 0.7) : 0.5,
           }}
         />
       ))}
     </div>,
     <div key="gauge" aria-hidden className="flex flex-col gap-1.5">
       <div className="relative h-3 overflow-hidden rounded-full bg-muted">
-        <span className="absolute inset-y-0 left-0 rounded-full bg-amber" style={{ width: `${share * 100}%` }} />
+        <span
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{ width: `${share * 100}%`, ...blendSlice(0, Math.max(0.01, share)) }}
+        />
       </div>
       <div className="flex justify-between font-mono text-[10px] text-foreground/70">
         <span>0</span>
@@ -121,7 +131,11 @@ function GlanceStrip({
     </div>,
     <div key="dots" aria-hidden className="flex flex-wrap gap-1.5">
       {dates.map((d) => (
-        <span key={d} className={`size-3 rounded-full ${dayTotals[d] ? "bg-amber" : "bg-foreground/15"}`} />
+        <span
+          key={d}
+          className={`size-3 rounded-full ${dayTotals[d] ? "" : "bg-foreground/15"}`}
+          style={dayTotals[d] ? { backgroundColor: weekdayColor(d) } : undefined}
+        />
       ))}
     </div>,
   ];
