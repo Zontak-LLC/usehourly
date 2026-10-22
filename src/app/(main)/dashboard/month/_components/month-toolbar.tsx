@@ -43,7 +43,7 @@ export function MonthToolbar({
         data-testid="timesheet-toolbar"
         className="flex w-full flex-wrap items-center gap-2 sm:*:min-w-[9rem] sm:*:flex-1 lg:flex-nowrap lg:*:min-w-0 lg:*:flex-1"
       >
-        <ProjectFilter className="h-10 max-sm:flex-1" value={projectId} onChange={onProjectId} />
+        <ProjectFilter className="h-10 max-sm:basis-full" value={projectId} onChange={onProjectId} />
         <ShareExportMenu
           className="h-10 max-sm:flex-1"
           entries={shown}

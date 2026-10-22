@@ -14,6 +14,8 @@ import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
 
 const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
+/** Entries the global search shows. */
+const ENTRY_SEARCH_LIMIT = 8;
 /** Entries per page of `listAll`. */
 const LIST_ALL_PAGE = 2_000;
 
@@ -82,6 +84,40 @@ export const entryRouter = router({
       if (!project) return []; // cannot happen (an entry's project is deleted with it); never show a half-built row
       const author = e.author_id ? { name: authorName.get(e.author_id) ?? null } : null;
       return [{ ...e, project, author, non_billable: days.has(e.date) }];
+    });
+  }),
+
+  /**
+   * Time entries whose description holds every word typed (the global search in the top bar). Newest first, a handful at
+   * most, and only ever the caller's own entries and projects.
+   */
+  search: protectedProcedure.input(z.object({ q: z.string().trim().min(2).max(100) })).query(async ({ ctx, input }) => {
+    const words = input.q.split(/\s+/).filter(Boolean).slice(0, 4);
+    const rows = await ctx.prisma.timeEntry.findMany({
+      where: { user_id: ctx.userId, AND: words.map((w) => ({ note: { contains: w } })) },
+      orderBy: [{ date: "desc" }, { created_at: "desc" }],
+      take: ENTRY_SEARCH_LIMIT,
+    });
+    if (rows.length === 0) return [];
+    const projects = await ctx.prisma.project.findMany({
+      where: { user_id: ctx.userId, id: { in: [...new Set(rows.map((e) => e.project_id))] } },
+      omit: { logo: true },
+      include: { client: { omit: { logo: true } } },
+    });
+    const byId = new Map(projects.map((p) => [p.id, p]));
+    return rows.flatMap((e) => {
+      const project = byId.get(e.project_id);
+      if (!project) return [];
+      return [
+        {
+          id: e.id,
+          date: e.date,
+          minutes: e.minutes,
+          note: e.note,
+          project: project.name,
+          client: project.client.name,
+        },
+      ];
     });
   }),
 

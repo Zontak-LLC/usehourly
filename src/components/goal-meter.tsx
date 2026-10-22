@@ -17,8 +17,8 @@ function readGoal(id: string, fallback: number, min: number, max: number): numbe
 }
 
 /**
- * A summary as a line instead of a dial: a big figure, a line in the brand colours that fills against a goal, and a slider under it
- * that moves the goal (kept on this device). Use it where a page's list is long and a dial would leave empty room.
+ * A summary as a line instead of a dial: a big figure, a line in the brand colours that fills against a goal, and a line under it with the goal, which "Change goal" opens as a slider
+ * (the goal is kept on this device). Use it where a page's list is long and a dial would leave empty room.
  */
 export function GoalMeter({
   id,
@@ -41,6 +41,7 @@ export function GoalMeter({
 }) {
   const [goal, setGoal] = useState(defaultGoalHours);
   const [grown, setGrown] = useState(false);
+  const [editing, setEditing] = useState(false);
   useEffect(() => {
     setGoal(readGoal(id, defaultGoalHours, minHours, maxHours));
     const frame = requestAnimationFrame(() => setGrown(true));
@@ -83,7 +84,18 @@ export function GoalMeter({
           }}
         />
       </div>
-      <div className="relative">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-foreground/75 text-sm">
+        <span>Goal {goal} h</span>
+        <button
+          type="button"
+          aria-expanded={editing}
+          onClick={() => setEditing((on) => !on)}
+          className="min-h-9 rounded-md px-2 font-medium text-foreground underline underline-offset-4"
+        >
+          {editing ? "Done" : "Change goal"}
+        </button>
+      </div>
+      {editing && (
         <div className="relative h-6">
           <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-border" />
           <input
@@ -98,10 +110,7 @@ export function GoalMeter({
             className={RANGE_INPUT_CLASS}
           />
         </div>
-        <p aria-hidden className="mt-0.5 text-center font-mono text-[11px] text-muted-foreground">
-          Goal {goal} h · drag to change
-        </p>
-      </div>
+      )}
     </section>
   );
 }

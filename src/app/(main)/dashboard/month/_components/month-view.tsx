@@ -8,7 +8,6 @@ import { DayEditorPanel, longDateLabel } from "@/components/day-editor";
 import { GoalMeter } from "@/components/goal-meter";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
-import { PeriodGlance } from "@/components/period-glance";
 import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +18,7 @@ import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
 import { MonthCalendar } from "./month-calendar";
+import { MonthFacts } from "./month-facts";
 import { MonthToolbar } from "./month-toolbar";
 import { QuickCreate } from "./quick-create";
 import { useDaySelection } from "./use-day-selection";
@@ -172,12 +172,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </section>
           )}
 
-          <PeriodGlance
-            dayTotals={sheet.dayTotals}
-            days={last ? Number(last.slice(8)) : 30}
-            from={first ?? undefined}
-            strip
-          />
+          <MonthFacts dayTotals={sheet.dayTotals} />
           <div className="flex min-w-0 flex-col gap-4">
             <MergeDaysPanel entries={shown} />
 
