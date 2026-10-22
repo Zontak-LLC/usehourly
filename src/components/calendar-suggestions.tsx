@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useGoogleCalendarClientId } from "@/components/google-calendar-config";
 import { GuideLink } from "@/components/guide-link";
+import { HeaderCard } from "@/components/header-card";
 import { SwipeArea } from "@/components/swipe-area";
 import { Button } from "@/components/ui/button";
 import { useSavedCalendar } from "@/components/use-calendar";
@@ -189,18 +190,21 @@ export function CalendarSuggestions({
 
   if (!cal.calendar) {
     return (
-      <section aria-label="From your calendar" className="flex flex-col gap-2 rounded-xl border bg-card p-4">
+      <HeaderCard
+        label="From your calendar"
+        header={
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-base">Turn meetings into time entries</h2>
+            <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
+          </div>
+        }
+      >
         {input}
-        <div className="flex items-center gap-2">
-          <h2 className="font-medium text-sm">Turn meetings into time entries</h2>
-          <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
-        </div>
         {googleClientId ? (
           <>
             <p className="text-muted-foreground text-sm">
-              Connect your Google Calendar and each day shows its meetings ready to log in one tap. Your browser reads
-              it straight from Google, read-only; UseHourly's servers never see it. Only recent meetings' titles and
-              times are kept, on this device, and nothing is added unless you tap Add.
+              Each day shows your meetings ready to log in one tap. Read-only, straight from Google: UseHourly's servers
+              never see it. Nothing is added unless you tap Add.
             </p>
             <Button type="button" className="h-11 self-start" disabled={cal.busy} onClick={connectGoogle}>
               <CalendarPlus aria-hidden /> {cal.busy ? "Connecting…" : "Connect Google Calendar"}
@@ -217,9 +221,8 @@ export function CalendarSuggestions({
         ) : (
           <>
             <p className="text-muted-foreground text-sm">
-              Add a calendar file (.ics) from Google, Apple or Outlook Calendar and each day shows its meetings ready to
-              log in one tap. It is read on this device. Only recent meetings' titles and times are kept, here, and
-              nothing is added unless you tap Add.
+              Add a calendar file (.ics) from Google, Apple or Outlook and each day shows its meetings ready to log in
+              one tap. Read on this device; nothing is added unless you tap Add.
             </p>
             <Button
               type="button"
@@ -234,17 +237,21 @@ export function CalendarSuggestions({
           </>
         )}
         {linkForm}
-      </section>
+      </HeaderCard>
     );
   }
 
   return (
-    <section aria-label="From your calendar" className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+    <HeaderCard
+      label="From your calendar"
+      header={
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold text-base">From your calendar</h2>
+          <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
+        </div>
+      }
+    >
       {input}
-      <div className="flex items-center gap-2">
-        <h2 className="font-medium text-sm">From your calendar</h2>
-        <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
-      </div>
 
       {suggestions.length === 0 ? (
         <p className="text-muted-foreground text-sm">No meetings to log for this day.</p>
@@ -274,7 +281,7 @@ export function CalendarSuggestions({
           {cal.google ? "Disconnect" : "Remove calendar"}
         </button>
       </p>
-    </section>
+    </HeaderCard>
   );
 }
 

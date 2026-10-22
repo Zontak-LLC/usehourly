@@ -1,6 +1,9 @@
+import { useState } from "react";
+
 import type { inferRouterOutputs } from "@trpc/server";
 
 import { useMoney } from "@/components/currency-provider";
+import { Button } from "@/components/ui/button";
 import { formatDecimalHours } from "@/lib/duration";
 import type { AppRouter } from "@/server/routers/_app";
 
@@ -24,6 +27,14 @@ const MONTHS = [
 ];
 
 const h = (m: number) => `${formatDecimalHours(m)} h`;
+/** An empty figure is always "–" (never "0.00 h" in one table and "–" in another). */
+const hOrDash = (m: number) => (m ? h(m) : "–");
+
+/** Phones: "Billable 12.50 h · Received $800.00" under the month, skipping empty figures. */
+const periodDetail = (r: string[]) =>
+  [r[1] !== "–" && `${r[1]} worked`, r[2] !== "–" && `${r[2]} billable`, r[4] !== "–" && `${r[4]} received`]
+    .filter(Boolean)
+    .join(" · ") || "Nothing logged";
 
 function ReportStats({ data }: { data: AnnualReport }) {
   const money = useMoney();
@@ -71,6 +82,11 @@ function totalsRow(data: AnnualReport, money: (cents: number) => string): string
 
 function PeriodSections({ data }: { data: AnnualReport }) {
   const money = useMoney();
+  const [allMonths, setAllMonths] = useState(false);
+  // Months with nothing in them only bury the real ones; "Show all 12 months" brings them back.
+  const active = data.months.filter((m) => m.minutes || m.earnedCents || m.receivedCents);
+  const shownMonths = allMonths || active.length === 0 ? data.months : active;
+  const hidden = data.months.length - shownMonths.length;
   return (
     <>
       <Section title="By quarter" note="Handy for quarterly estimated tax payments.">
@@ -78,27 +94,36 @@ function PeriodSections({ data }: { data: AnnualReport }) {
           head={["Quarter", "Hours", "Billable", "Earned", "Received"]}
           rows={data.quarters.map((q) => [
             `Q${q.quarter} · ${MONTHS[(q.quarter - 1) * 3].slice(0, 3)}–${MONTHS[q.quarter * 3 - 1].slice(0, 3)}`,
-            h(q.minutes),
-            h(q.billableMinutes),
-            money(q.earnedCents),
+            hOrDash(q.minutes),
+            hOrDash(q.billableMinutes),
+            q.earnedCents ? money(q.earnedCents) : "–",
             q.receivedCents ? money(q.receivedCents) : "–",
           ])}
           total={totalsRow(data, money)}
+          phoneSummary={{ valueIndex: 3, detail: periodDetail }}
         />
       </Section>
 
       <Section title="By month">
         <Table
           head={["Month", "Hours", "Billable", "Earned", "Received"]}
-          rows={data.months.map((m) => [
+          rows={shownMonths.map((m) => [
             MONTHS[m.month - 1],
-            m.minutes ? h(m.minutes) : "–",
-            m.billableMinutes ? h(m.billableMinutes) : "–",
+            hOrDash(m.minutes),
+            hOrDash(m.billableMinutes),
             m.earnedCents ? money(m.earnedCents) : "–",
             m.receivedCents ? money(m.receivedCents) : "–",
           ])}
           total={totalsRow(data, money)}
+          phoneSummary={{ valueIndex: 3, detail: periodDetail }}
         />
+        {(hidden > 0 || allMonths) && active.length > 0 && (
+          <div className="border-t px-4 py-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAllMonths((v) => !v)}>
+              {allMonths ? "Show only months with activity" : `Show all 12 months (${hidden} with nothing)`}
+            </Button>
+          </div>
+        )}
       </Section>
     </>
   );

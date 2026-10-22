@@ -12,6 +12,7 @@ import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSavedCalendar } from "@/components/use-calendar";
 import { addDays, DATE_RE, fromISODate, monthBounds, startOfWeek } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { trpc } from "@/lib/trpc";
@@ -41,6 +42,7 @@ export function TodayView() {
   // otherwise start them only after the client list arrives: a second round trip). Same keys, so nothing is fetched twice.
   trpc.project.budgets.useQuery(date ? monthBounds(date) : { from: "", to: "" }, { enabled: !!date });
   useProjectLogos();
+  const calendarFirst = useSavedCalendar().calendar !== null;
   const week = trpc.entry.list.useQuery(
     { from: weekStart ?? "", to: weekStart ? addDays(weekStart, 6) : "" },
     { enabled: !!weekStart },
@@ -52,6 +54,12 @@ export function TodayView() {
   const dayEntries = week.data?.filter((e) => e.date === date) ?? [];
   const sum = (xs: { minutes: number }[]) => xs.reduce((a, e) => a + e.minutes, 0);
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
+  // The two totals are one line under the title (they were two stat cards): this day, and this week.
+  const totalsText = week.data
+    ? `${formatDuration(sum(dayEntries))} this day · ${formatDuration(sum(week.data))} this week`
+    : "";
+  // On a wide screen they sit in the header line; on a phone that line has the arrows too, so they go under it.
+  const totals = totalsText ? <span className="max-sm:hidden"> · {totalsText}</span> : null;
 
   return (
     <PageShell
@@ -59,16 +67,22 @@ export function TodayView() {
       title={date === today ? "Today" : shortDate.format(fromISODate(date))}
       description={
         date === today ? (
-          shortDate.format(fromISODate(date))
+          <>
+            {shortDate.format(fromISODate(date))}
+            {hasProjects && totals}
+          </>
         ) : (
-          <button
-            type="button"
-            aria-label="Back to today"
-            className="py-1 font-medium text-foreground underline"
-            onClick={() => go(today ?? date)}
-          >
-            Today
-          </button>
+          <>
+            <button
+              type="button"
+              aria-label="Back to today"
+              className="py-1 font-medium text-foreground underline"
+              onClick={() => go(today ?? date)}
+            >
+              Today
+            </button>
+            {hasProjects && totals}
+          </>
         )
       }
       descriptionOnPhone
@@ -102,6 +116,8 @@ export function TodayView() {
     >
       <TimerBanner />
 
+      {hasProjects && totalsText && <p className="text-foreground/75 text-sm sm:hidden">{totalsText}</p>}
+
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : hasProjects ? (
@@ -110,16 +126,12 @@ export function TodayView() {
         <FirstRun />
       )}
 
-      {hasProjects && clients.data && <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />}
-
-      {/* Nothing to total or to bill until there is a project to log against (the first-run question comes first). */}
-      {hasProjects && (
-        <div className="grid grid-cols-2 gap-3">
-          <Stat label="This day" value={formatDuration(sum(dayEntries))} />
-          <Stat label="This week" value={formatDuration(sum(week.data ?? []))} />
-        </div>
+      {/* A connected calendar has meetings to log: they sit right under the add form. Not connected, the card waits at the foot. */}
+      {calendarFirst && hasProjects && clients.data && (
+        <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
       )}
 
+      {/* Nothing to total or to bill until there is a project to log against (the first-run question comes first). */}
       {week.error ? (
         <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
       ) : week.isLoading ? (
@@ -130,15 +142,10 @@ export function TodayView() {
           <MergeEntriesBar entries={dayEntries} />
         </>
       )}
-    </PageShell>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border bg-card px-4 py-3">
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-mono font-semibold text-2xl tabular-nums">{value}</p>
-    </div>
+      {!calendarFirst && hasProjects && clients.data && (
+        <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+      )}
+    </PageShell>
   );
 }

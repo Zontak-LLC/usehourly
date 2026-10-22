@@ -8,6 +8,7 @@ import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePageSize } from "@/components/use-page-size";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import type { SheetEntry } from "@/lib/timesheet";
@@ -16,7 +17,7 @@ import { groupByDay, paginate, searchWorkItems } from "@/lib/work-items";
 const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
 /**
- * What you worked on in a period: searchable, grouped by day (with the day's total), 7 entries per page. Click a row to edit that day.
+ * What you worked on in a period: searchable, grouped by day (with the day's total), 3 entries per page on a phone and 10 on a wide screen. Click a row to edit that day.
  * `period` words the empty state ("month", "week").
  */
 export function WorkItems({
@@ -58,7 +59,8 @@ export function WorkItems({
   const [page, setPage] = useState(1);
 
   const matches = searchWorkItems(entries, query);
-  const view = paginate(matches, page);
+  const pageSize = usePageSize();
+  const view = paginate(matches, page, pageSize);
   const days = groupByDay(view.items, matches);
 
   // Nothing logged in this period: there is nothing to list, so the section is not shown at all (a search that finds

@@ -1,5 +1,6 @@
 "use client";
 
+import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import type { buildSheet } from "@/lib/timesheet";
@@ -14,19 +15,21 @@ export function ProjectBreakdown({
   onProjectId: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="font-semibold text-base">By project</h2>
-        {projectId && (
-          <Button size="sm" variant="outline" onClick={() => onProjectId("")}>
-            Show all projects
-          </Button>
-        )}
-      </div>
+    <HeaderCard
+      label="By project"
+      header={
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-base">By project</h2>
+          {projectId && (
+            <Button size="sm" variant="outline" onClick={() => onProjectId("")}>
+              Show all projects
+            </Button>
+          )}
+        </div>
+      }
+    >
       {rows.length === 0 ? (
-        <p className="rounded-xl border bg-card px-4 py-8 text-center text-muted-foreground text-sm">
-          No time logged this month.
-        </p>
+        <p className="py-4 text-center text-muted-foreground text-sm">No time logged this month.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((r) => {
@@ -58,6 +61,6 @@ export function ProjectBreakdown({
           })}
         </div>
       )}
-    </div>
+    </HeaderCard>
   );
 }

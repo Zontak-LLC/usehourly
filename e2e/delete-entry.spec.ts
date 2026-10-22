@@ -20,16 +20,21 @@ test("an entry is deleted only after confirming, from the list and from Today", 
     const list = page.getByRole("region", { name: "What you worked on" });
     const card = list.getByRole("listitem").filter({ hasText: "delete me from the list" });
     await entryAction(card, "Delete"); // from the entry card's "More actions" menu, like on Today
-    const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "Delete this entry?" })).toBeVisible();
-    await expect(dialog).toContainText("delete me from the list"); // it says which entry
-    await expect(dialog).toContainText("2:00");
-    await dialog.getByRole("button", { name: "Cancel" }).click();
-    await expect(dialog).toBeHidden();
+    // the question opens inside the entry's own card (not a pop-up) and names the entry
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    const ask = card.getByRole("region", { name: "Delete this entry?" });
+    await expect(ask).toBeVisible();
+    await expect(ask).toContainText("delete me from the list"); // it says which entry
+    await expect(ask).toContainText("2:00");
+    await ask.getByRole("button", { name: "Cancel" }).click();
+    await expect(ask).toBeHidden();
     await expect(page.getByText("delete me from the list").first()).toBeVisible();
 
     await entryAction(card, "Delete");
-    await page.getByRole("dialog").getByRole("button", { name: "Delete entry" }).click();
+    await card
+      .getByRole("region", { name: "Delete this entry?" })
+      .getByRole("button", { name: "Delete entry" })
+      .click();
     await expect(page.getByText("delete me from the list")).toHaveCount(0);
     await expect(page.getByText("keep me").first()).toBeVisible();
   });
@@ -37,9 +42,11 @@ test("an entry is deleted only after confirming, from the list and from Today", 
   await test.step("on Today the entry's own delete button asks too", async () => {
     await page.goto("/dashboard/today");
     await expect(page.getByText("delete me on Today").first()).toBeVisible();
-    await entryAction(page.getByRole("listitem").filter({ hasText: "delete me on Today" }), "Delete");
-    await expect(page.getByRole("dialog")).toContainText("delete me on Today");
-    await page.getByRole("dialog").getByRole("button", { name: "Delete entry" }).click();
+    const row = page.getByRole("listitem").filter({ hasText: "delete me on Today" });
+    await entryAction(row, "Delete");
+    const ask = row.getByRole("region", { name: "Delete this entry?" });
+    await expect(ask).toContainText("delete me on Today");
+    await ask.getByRole("button", { name: "Delete entry" }).click();
     await expect(page.getByText("delete me on Today")).toHaveCount(0);
     await expect(page.getByText("keep me").first()).toBeVisible();
   });

@@ -54,3 +54,39 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
     await expect(pager.getByRole("button", { name: "Next" })).toBeDisabled();
   }
 });
+
+test("an invoice shows its status in its header, labelled buttons on a wide screen, and the filters start folded", async ({
+  page,
+}, info) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: /try the demo/i })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/dashboard/);
+  await page.goto("/dashboard/invoices");
+
+  const first = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
+  // the status (Unpaid / Paid) is in the header line, next to the invoice number
+  await expect(
+    first
+      .locator("div")
+      .first()
+      .getByText(/Unpaid|Paid/),
+  ).toBeVisible();
+
+  if (info.project.name === "desktop") {
+    // words on the buttons, not bare icons
+    await expect(
+      first.getByRole("button", { name: /^(Mark|Edit payment|Send) /, includeHidden: false }).first(),
+    ).toBeVisible();
+    await expect(first.getByText("Send", { exact: true }).locator("visible=true")).toBeVisible();
+  }
+
+  // the filters are folded on every screen until Filters is pressed
+  await expect(page.getByLabel("Issued from")).toBeHidden();
+  await page.getByRole("button", { name: "Filters" }).click();
+  await expect(page.getByLabel("Issued from")).toBeVisible();
+  await page.getByRole("button", { name: "Filters" }).click();
+  await expect(page.getByLabel("Issued from")).toBeHidden();
+});

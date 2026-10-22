@@ -15,7 +15,6 @@ import { formatDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-import { ArchiveConfirmDialog, type ArchiveTarget } from "./archive-confirm-dialog";
 import { ArchivedSection } from "./archived-section";
 import { ClientCard } from "./client-card";
 import type { ClientRow } from "./client-types";
@@ -69,7 +68,6 @@ export function ClientsView() {
   useClientLogos(); // starts with the first batch; the client cards read it a moment later
   const editing = useProjectEditing();
   const [search, setSearch] = useState("");
-  const [confirming, setConfirming] = useState<ArchiveTarget | null>(null);
 
   // Month bounds come from the browser clock (the Worker runs in UTC).
   const [month] = useState(() => {
@@ -95,8 +93,8 @@ export function ClientsView() {
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const visibleClients = filterClients(clients.data ?? [], words);
 
-  async function archive({ kind, id, name }: ArchiveTarget) {
-    setConfirming(null);
+  // Archiving needs no "Are you sure?": it is fully reversible, and the toast offers Undo (docs/ui-spec.md).
+  async function archive({ kind, id, name }: { kind: "client" | "project"; id: string; name: string }) {
     try {
       await (kind === "client" ? archiveClient : archiveProject).mutateAsync({ id });
       await Promise.all([
@@ -127,7 +125,6 @@ export function ClientsView() {
     <PageShell nav="clients" title="Clients" description={description} descriptionOnPhone>
       {/* Search only earns its place once there are more clients than fit in a glance. */}
       {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
-      <ArchiveConfirmDialog target={confirming} onCancel={() => setConfirming(null)} onConfirm={archive} />
 
       {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
 
@@ -153,8 +150,8 @@ export function ClientsView() {
           onOpenChange={(open) => openClients.setOpen(c.id, open)}
           onToggleBilling={() => setEditingClientId(editingClientId === c.id ? null : c.id)}
           onCloseBilling={() => setEditingClientId(null)}
-          onArchiveClient={() => setConfirming({ kind: "client", id: c.id, name: c.name })}
-          onArchiveProject={(p) => setConfirming({ kind: "project", ...p })}
+          onArchiveClient={() => void archive({ kind: "client", id: c.id, name: c.name })}
+          onArchiveProject={(p) => void archive({ kind: "project", ...p })}
         />
       ))}
 

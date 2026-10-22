@@ -41,6 +41,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - `Notice` (`components/notice.tsx`): a short message set apart; `tone="danger"` for failures **[checked]**.
 - Stat cards: a `dl` of small white cards (label above, figure below), three across on Clients, Invoices and Year summary, four on Insights.
 - **Controls look pressable, labels do not.** A control (button, chip you can click, field) is white with a border. Information is flat: the hours (`HoursChip`) are plain text with a small clock, and status pills are a light tint with no outline, so nobody taps them expecting something to happen.
+- **Entry cards** read as ONE row (colour dot, project · client, the description under it, the hours, Edit, ···), about half the height they were; the tinted header only appears while the entry is being edited.
 - Chips and pills: `rounded-full`, no shadow; a selected project is a white card with a dark outline and a tick.
 - **A summary is not a card:** the Week page's "This week" is a frameless darker strip with a big figure, then the projects that made it up. Day tiles carry a dot per client that has time that day, none when empty.
 - Icon buttons: 40px in headers (`h-10`), 32px inside a card header, tooltip on wide screens, a labelled row on phones (`IconAction`).
@@ -53,6 +54,83 @@ Look at the real thing first: the pages are the reference, this file is the expl
 - **The guide** is its own frame (`/help`): a contents list down the left (a folded "Browse all topics" on a phone), Guide and FAQ buttons that stay pressed on the current page, and no app menu, so there is never a second left menu.
 - Every page's name is the same in the menu, the heading and the browser title **[checked]**.
 
+## Best practices (the why behind the rules)
+These are the general UI/UX habits every screen is judged against, by a person and by the independent UI review (a fresh reviewer is given this file and screenshots of every page; run it after each look-and-layout release). Where a rule is already measurable it says **[checked]**; the rest is judged in review. When a rule here and an older rule above disagree, the older, more specific one wins and this file is fixed.
+
+### Hierarchy and focus
+- **One job per screen, one main action.** The eye should land on the thing the person came to do (Today: the time box and "Add to the day"). One solid button per screen **[checked]**; everything else is quieter (soft tint, outline, text).
+- **Visual weight follows importance:** size, boldness, contrast and position say what matters most; if everything is bold, nothing is. Max two type weights per card (regular and semibold).
+- **Show less until it is needed** (progressive disclosure): rare actions go behind ···, advanced options behind "More options", details open in place. Delete no feature; move it.
+- **Group by meaning (proximity):** things that belong together sit close (a label and its field, a card's title and its actions); unrelated groups get more space. Space and tint separate groups before lines do.
+- **Recognition over recall:** show the options (chips, toggles, a visible list) instead of asking people to remember or type. Defaults are the common choice (the last project, today's date).
+- **Do not explain the obvious**; explain the confusing once, in a `GuideLink`, not in paragraphs on the screen.
+
+### Layout, alignment and position
+- **One column**, content centred at `max-w-5xl`; a phone runs the card edge to edge. Never two competing columns of equal weight.
+- **Align to a shared left edge** (titles, labels, fields, card text start on the same x) and to a shared baseline in a row (a title and its date, a label and its value). Right-align numbers and money so digits line up (`tabular-nums`).
+- **Where things go (consistent places, so nobody hunts):** page title and the page's main control top left/right of the page card header; a card's actions pinned to the right of its header; the main submit button at the end of its form, full width on a phone; Previous/Next at the end of a list; filters above the list they filter; destructive actions away from the main one.
+- **Reading order = visual order = tab order.** No layout that reads differently from how it is focused.
+- **Lists that grow are paginated or collapsed** (Invoices and "What you worked on": 3 per page on a phone, 10 wide, `lib/paginate.ts`; Clients: rows that open), never an endless scroll of heavy cards.
+- **Every card has a tinted header band** with its title, like its neighbours **[checked: `auditPage` fails a card that has a heading but no band]**. A deliberate exception says why with `data-headerless="..."` (the Week total strip, a white "light" header, the welcome question, a tinted information card).
+- **Sticky only what earns it:** the running-timer banner and the bottom tab bar; nothing else covers content.
+
+### Spacing and sizing (use the scale, do not invent numbers)
+- Spacing scale **4, 8, 12, 16** (`p-1`, `p-2`, `p-3`, `p-4`) inside and between things; 24 (`gap-6`) only between big page sections; half steps only for tiny badges. Related things 8, groups 16, sections 24.
+- **Rhythm:** the same gap between siblings of the same kind (cards in a list `gap-3`, fields in a form `gap-2` to `gap-3`); a card's padding is `p-3` on a phone, `p-4` from `sm` up.
+- **Touch targets: 44px minimum on a phone, 40px in a page header, 32px inside a card header; at least 8px between two targets.** A link inside a sentence is exempt. Under 24px is flagged **[checked]**. A small icon gets a bigger invisible hit area.
+- **Radius** `xl` cards, `lg` tiles and fields, full pills; never mix several radii in one card.
+- **Line length** 45 to 75 characters for running text; long text is wrapped in a narrower box, not stretched across the page.
+- **Type scale (Tailwind):** page title `clamp(1.375rem, 6.5vw, 2.25rem)`, card title `text-base` semibold, body `text-sm` (14px) for dense UI, `text-base` for reading text and fields on a phone (16px stops iOS zooming into a field) **[checked: selects and inputs are 16px under 768px]**, small print `text-xs` only for secondary hints, never for anything needed to act. Line height about 1.4 to 1.5.
+- **Icons** 16 to 20px beside text (`size-4` to `size-5`), 24px alone in a tile; stroke weight consistent (lucide); an icon never carries meaning alone (a label or tooltip says it).
+
+### Phones and thumbs
+- **Primary navigation at the bottom** (thumb zone), page content scrolls above it; destructive or rare controls are not in the easiest-to-hit corner.
+- **Forms put the field being typed in above the keyboard** (dialogs sit at the top) **[checked: `phone-dialogs.spec.ts`]**; the right keyboard for the data (`inputMode="decimal"` for rates, `type="url"`, `email`).
+- **No hover-only information** (tooltips do not exist on touch: a phone shows the words; `IconAction`). No double-tap or long-press as the only way to do something. Gestures (swipes) are shortcuts; a button always does the same.
+- **No sideways page scroll** **[checked]**; wide tables scroll inside their own box. Respect the safe areas (`env(safe-area-inset-*)`).
+- Test every change at 360px, 412px and a 1280px desktop.
+
+### Forms and input
+- **A visible label above each field**, not only a placeholder (placeholders vanish and fail contrast) **[checked: every control has a name]**. Required fields are obvious; optional ones say "(optional)".
+- **Ask for the least**; sensible defaults; accept messy input and normalise it (`1.5`, `1:30`, `90m` all work).
+- **Validate where the person is looking:** an error sits next to its field in plain words that say how to fix it ("Pick a project first", not "Invalid input"); keep what they typed; never clear a form on error.
+- **Enter submits**, Escape cancels, focus goes to the first field on open and back to the trigger on close. The submit button names the result ("Add to the day", "Create invoice"), never "Submit" or "OK".
+- A form opens **in place of the thing it edits** (not a pop-up) unless it is tiny or a chooser (project picker, avatar cropper).
+
+### Feedback and states
+- **Every action answers within about 100 ms** (a pressed state, an optimistic change); anything over 1 s shows progress; over 10 s says what is happening and offers cancel.
+- **Loading:** skeletons shaped like the content, not spinners; no layout jump when the data arrives.
+- **Empty:** says what this is and the one next step (a dashed card with +); a filtered-to-nothing list says "No invoices match that search", not "No invoices yet".
+- **Errors:** plain words, what happened and what to do, never a code or the provider's own text; recoverable where possible (Undo, Try again). Network trouble says "No connection. That needs you to be online."
+- **Success is quiet:** a toast or the change itself (the entry appears); no modal "Success!".
+- **Destructive actions** name what goes ("Delete invoice INV-2026-004 and its links?"), are never the default button, sit away from the main action, and offer Undo where they can. Prefer Undo over "Are you sure?" for cheap-to-reverse actions.
+- Disabled controls say why (a hint or a tooltip), or are hidden when they cannot apply.
+
+### Navigation and wayfinding
+- The current place is always marked (bar and tint on the menu item, the page title matches the menu word **[checked]**). Same words everywhere for the same thing.
+- **Two taps to anything common** (Today, Week, Month, Invoices, Clients are in the tab bar); rare pages live under More. No dead ends: every empty or error screen has a way forward.
+- Links look like links (underline) inside text; buttons look like buttons; nothing that is only informative looks pressable (see "Controls look pressable, labels do not").
+
+### Colour, contrast and theming
+- **Contrast** 4.5:1 for text, 3:1 for large text and for the edge of a control, in every preset, light and dark **[checked: theme audit]**. Never colour alone: status also has an icon or word (green check + "Paid", red icon + "Unpaid").
+- Colour is meaningful and rationed: neutral by default, the accent for the main action and the current place, green only for good news, red only for removal and problems, yellow for warnings. Use theme tokens, never raw hex, so every preset and dark mode follows.
+- Both light and dark are designed, not inverted; images and logos have a transparent or neutral background.
+
+### Motion
+- Motion explains a change (a form opening, a day sliding) and is **under 200 ms**, ease-out; nothing loops or moves for decoration except the landing tour, which stops on hover, focus, hidden tabs and Pause. Respect `prefers-reduced-motion` **[checked on the tour]**.
+
+### Accessibility
+- Everything works with the keyboard alone, with a visible focus ring; the focus order follows the reading order; dialogs trap and return focus **[checked in part]**.
+- Names, roles and states are real: toggles use `aria-pressed`, openers `aria-expanded`, a list is a list, headings go in order with one `h1` per page **[checked]**. Live changes (a page count, a toast) are announced politely.
+- Do not rely on gestures, hover or colour; text can zoom to 200% without breaking the layout.
+
+### Microcopy
+- Plain, short, active, in the person's terms ("Add to the day", "Make a link"). Sentence case. Numbers and dates in the person's own format. No blame ("You must…"), no jargon, no exclamation marks except a first welcome.
+- A button says what it does; a title says what the thing is; a hint says what to do, once.
+
+### Before a UI change is approved (checklist)
+1. Is there one obvious main action, and is it the only solid button? 2. Does it use the existing components and the spacing scale (no one-off numbers)? 3. Is everything aligned, and are repeated things identical? 4. Are touch targets 44px on a phone and the layout fine at 360px, 412px and 1280px? 5. Every state: loading, empty, error, success, disabled, long text, many items? 6. Keyboard, focus, names, contrast, dark mode and the other theme presets? 7. Does it still work with no hover and no gesture? 8. Is the same thing drawn the same way as on the other pages? 9. Did the spec change, and is it updated in the same pull request? 10. Was the independent UI review run for a look-and-layout release?
+
 ## Layout and spacing
 - Spacing on a 4px scale in steps of 4, 8, 12, 16 (`p-1`, `p-2`, `p-3`, `p-4`); half steps only for tiny badges.
 - The dashboard content is one column, `max-w-5xl`, centred; on a phone the page card runs edge to edge.
@@ -61,7 +139,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 
 ## Forms and states
 - Every `<form>` declares `method="post"` **[checked]**. Every control has a visible or accessible name **[checked]**. Inputs are white.
-- Destructive actions ask first and **name what they will remove** (`DeleteEntryDialog`, the archive and delete-invoice dialogs); archiving offers Undo.
+- Destructive actions that cannot be undone ask first, **inside the card they belong to** (`InlineConfirm`: it names what will go, the safe choice comes first and is focused, Escape cancels): deleting an entry, deleting an invoice. Reversible ones do not ask: archiving a client or project happens at once and the toast offers Undo.
 - Loading: skeletons, not spinners. Errors: `Notice tone="danger"` or a toast; network errors say "No connection. That needs you to be online."
 - Offline: a banner; adding time still works; everything else says it needs a connection.
 
@@ -69,12 +147,13 @@ Look at the real thing first: the pages are the reference, this file is the expl
 Plain, short, no jargon, no blame. Name things the way the menu does ("Clients", "Year summary"). Prefer "Add to the day" to "Submit". The obvious is not explained; the confusing goes in the guide.
 
 ## Per page (what to expect)
-- **Today:** the add form card, two total cards, the day's entry cards (or the dashed empty state).
-- **Week / Month:** toolbar (project filter, Share & export, date arrows; the export and share forms open as a card under the toolbar, not a pop-up), the day strip or calendar card, the Week summary strip, and "What you worked on": one card (header: title, count, search) holding day headings with an entry tile each. **That card is not shown at all when the period has no entries.** The Week page's address carries the picked day (`?date=`), so a refresh returns to it.
-- **Invoices:** total cards, filters in one card, an invoice card per invoice with two visible buttons (money, send) and a ··· menu (PDF, delete); Mark as paid and Send open inside the card, not in a popup.
-- **Clients:** one **card per client** (header: its logo if it has one, name, summary, the visible + to add a project and a ··· menu with Billing details and Archive client) holding **project tiles** (header row: name, a visible Edit pencil and a ··· menu with Archive project). No stat cards: their numbers are one line under the title ("3 clients · 4 projects · 31:45 logged this month"); the search box appears from six clients up; the page ends with a dashed **New client** card that turns into the form in place (no header button, no popup); the dashed "Add a project" tile only for a client with no project yet (UI simplification, 2026-10-21, ticket #135).
-- **Year summary:** stat cards, then one card per table.
-- **Team:** count cards, one card per person, ending in the dashed "Invite someone" card. On a phone the cards are a swipe row (`SLIDE` in `people-list.tsx`): each as wide as the screen, with dots under them that show and change the position; `data-no-swipe` keeps the page swipe out of the way. A person's clients are toggle buttons (`ClientChecks`, `aria-pressed`) in a wrapping row, not tick boxes.
+- **Today:** the add form card (three quick-time chips; until a time is typed the Add button is a quiet outline and a line says what to do), the day's entry cards (or the dashed empty state), then the calendar card. The day's and the week's totals are one line under the title, not cards. A connected calendar's card (with meetings to log) sits right under the add form; not connected, it waits at the foot with two short sentences.
+- **Month:** the month's total is a figure in the header line; today is a filled day number; hours in cells and the weekly totals are readable (not small grey); "This month" stays fully readable when you are already on it; "Add to several days" comes after the filter and Share & export, not first. Picking a day opens it as one card under the calendar (title: the date; the entries and the add form inside; a Close button), not a pop-up.
+- **Week / Month:** toolbar (project filter, Share & export, date arrows; the export and share forms open as a card under the toolbar, not a pop-up), the day strip or calendar card, the Week summary strip (right under the day strip on Week), on Week one card for the picked day (header: entry count, total, non-billable button; the entries; the add form inside it), and "What you worked on": one card (header: title, count, search) holding day headings with an entry tile each. **That card is not shown at all when the period has no entries.** The Week page's address carries the picked day (`?date=`), so a refresh returns to it.
+- **Invoices:** total cards, a "Find an invoice" card (search and a Filters button on every screen; the fields start folded), an invoice card per invoice (the status Unpaid/Paid in its header; wide screens show labelled "Mark paid" and "Send" buttons), an invoice card per invoice with two visible buttons (money, send) and a ··· menu (PDF, delete); Mark as paid and Send open inside the card, not in a popup.
+- **Clients:** one **card per client** (header: its logo if it has one, name, summary, the visible + to add a project and a ··· menu with Billing details and Archive client) holding **project tiles** (header row: name, a visible Edit pencil and a ··· menu with Archive project). No stat cards: their numbers are one line under the title ("3 clients · 4 projects · 31:45 logged this month"); the search box appears from six clients up; the page ends with a dashed **New client** card that turns into the form in place (no header button, no popup); the dashed "Add a project" tile only for a client with no project yet (UI simplification, 2026-10-21, ticket #135). The Month page's "By project" and the Invoices "Find an invoice" filters are headed cards like the rest.
+- **Year summary:** stat cards, then one card per table. "By month" shows only months with activity (a button shows all 12); an empty figure is always a dash; on a phone each period is two lines (name and what it earned, the rest in one muted line).
+- **Team:** one "Your team" card holding a tile per person and the dashed "Invite someone" tile; the counts are one line under the title (no count cards). On a phone the cards are a swipe row (`SLIDE` in `people-list.tsx`): each as wide as the screen, with dots under them that show and change the position; `data-no-swipe` keeps the page swipe out of the way. A person's clients are toggle buttons (`ClientChecks`, `aria-pressed`) in a wrapping row, not tick boxes.
 - **Account:** one page card with section cards.
 - **Public pages** (sign-in, calculator, guide): the same cards and notices on the neutral page; the sign-in forms sit in one card.
 

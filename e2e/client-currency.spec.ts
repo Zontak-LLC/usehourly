@@ -28,7 +28,7 @@ test("a client can be billed in euros while the account is in dollars, until it 
     await page.goto("/dashboard/today");
     await page.getByPlaceholder(/Time:/).fill("2h");
     await page.getByRole("button", { name: /Add to the day/ }).click();
-    await expect(page.getByText("2:00").first()).toBeVisible();
+    await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
     await page.goto("/dashboard/invoices/new");
     await expect(page.getByText("€170.00").first()).toBeVisible(); // the preview already speaks euros
     await page.getByRole("button", { name: "Create invoice" }).click();

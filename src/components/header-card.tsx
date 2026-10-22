@@ -13,6 +13,7 @@ export function HeaderCard({
   className,
   light = false,
   tile = false,
+  label,
   children,
 }: {
   header: ReactNode;
@@ -22,11 +23,16 @@ export function HeaderCard({
   light?: boolean;
   /** For a card that sits inside another card (a person inside "Your team"): a clearly visible ring (a ring, not a border, so the nesting check ignores it), and the darkest header shade. */
   tile?: boolean;
+  /** The region name for a screen reader (the card is a `section`). */
+  label?: string;
   children?: ReactNode;
 }) {
   const body = "flex flex-col gap-3 p-3 sm:p-4";
   return (
     <section
+      aria-label={label}
+      // A white ("light") header is a deliberate exception to "every card has a tinted header" (see e2e auditPage).
+      data-headerless={light ? "light header on purpose" : undefined}
       className={cn(
         "overflow-hidden bg-card",
         tile ? "rounded-lg ring-1 ring-foreground/25" : "rounded-xl border",

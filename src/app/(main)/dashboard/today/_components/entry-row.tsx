@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { Check, ChevronDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-import { DeleteEntryDialog } from "@/components/delete-entry-dialog";
+import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
 import { FoldedNote } from "@/components/folded-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
@@ -130,50 +130,80 @@ export function EntryRow({
           : "overflow-hidden rounded-xl border bg-card"
       } ${unconfirmed ? "opacity-70" : ""}`}
     >
-      {/* Header: which project this entry is for, and its controls, always visible. */}
+      {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
       <header
-        className={`flex items-center justify-between gap-2 py-2 pr-2 pl-3 ${bare ? "bg-band-3" : "border-b bg-band-2"}`}
+        className={
+          editing
+            ? `flex items-center justify-between gap-2 py-2 pr-2 pl-3 ${bare ? "bg-band-3" : "border-b bg-band-2"}`
+            : "flex items-start justify-between gap-2 py-2 pr-2 pl-3"
+        }
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
-          {editing ? (
-            <p className="truncate text-sm">
-              <span className="font-medium">{entry.project.name}</span>
-              <span className="text-muted-foreground"> · {entry.project.client.name}</span>
-            </p>
-          ) : (
-            // Native <select> laid invisibly over the label: click anywhere on the project to reassign it.
-            <div className="relative min-w-0 flex-1">
-              <select
-                value={entry.project_id}
-                onChange={(e) => moveTo(e.target.value)}
-                disabled={update.isPending || !clients.data || unconfirmed}
-                aria-label="Move to another project"
-                title="Move to another project"
-                className="peer absolute inset-0 size-full cursor-pointer opacity-0"
-              >
-                {projectOptions ?? <option value={entry.project_id}>{entry.project.name}</option>}
-              </select>
-              <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
-                {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
-                <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
-                  <span className="font-medium max-sm:truncate">{entry.project.name}</span>
-                  <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
-                    <span className="max-sm:hidden"> · </span>
-                    {entry.project.client.name}
-                  </span>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <span className="mt-1.5 shrink-0">
+            <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-2">
+              {editing ? (
+                <p className="truncate text-sm">
+                  <span className="font-medium">{entry.project.name}</span>
+                  <span className="text-muted-foreground"> · {entry.project.client.name}</span>
+                </p>
+              ) : (
+                // Native <select> laid invisibly over the label: click anywhere on the project to reassign it.
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    value={entry.project_id}
+                    onChange={(e) => moveTo(e.target.value)}
+                    disabled={update.isPending || !clients.data || unconfirmed}
+                    aria-label="Move to another project"
+                    title="Move to another project"
+                    className="peer absolute inset-0 size-full cursor-pointer opacity-0"
+                  >
+                    {projectOptions ?? <option value={entry.project_id}>{entry.project.name}</option>}
+                  </select>
+                  <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
+                    {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
+                    <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
+                      <span className="font-medium max-sm:truncate">{entry.project.name}</span>
+                      <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
+                        <span className="max-sm:hidden"> · </span>
+                        {entry.project.client.name}
+                      </span>
+                    </span>
+                    <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
+                  </p>
+                </div>
+              )}
+              {entry.author_id && (
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
+                  by {entry.author?.name?.trim() || "a team member"}
                 </span>
-                <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
-              </p>
+              )}
             </div>
-          )}
-          {entry.author_id && (
-            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
-              by {entry.author?.name?.trim() || "a team member"}
-            </span>
-          )}
+            {!editing && (
+              <div className="pb-0.5 pl-1">
+                {entry.note ? (
+                  <FoldedNote note={entry.note} />
+                ) : (
+                  <p className="text-muted-foreground/70 text-sm italic">No description</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          {!editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              disabled={isRunning || unconfirmed}
+              title={isRunning ? "Stop the timer to edit" : "Click to edit"}
+              className="rounded px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
+            >
+              {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
+            </button>
+          )}
           {/* Edit is the common action and stays a button; it opens the form and, while open, closes it again (and says so to a screen reader). */}
           <Button
             size="icon"
@@ -267,28 +297,8 @@ export function EntryRow({
             </Button>
           </div>
         </div>
-      ) : (
-        // Body: what was done on the left, the hours in the lower right corner.
-        <div className="flex items-end justify-between gap-3 px-3 py-3">
-          <div className="min-w-0 flex-1">
-            {entry.note ? (
-              <FoldedNote note={entry.note} />
-            ) : (
-              <p className="text-muted-foreground/70 text-sm italic">No description</p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            disabled={isRunning || unconfirmed}
-            title={isRunning ? "Stop the timer to edit" : "Click to edit"}
-            className="shrink-0 rounded px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
-          >
-            {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
-          </button>
-        </div>
-      )}
-      <DeleteEntryDialog entry={confirmingDelete ? entry : null} onClose={() => setConfirmingDelete(false)} />
+      ) : null}
+      <DeleteEntryConfirm entry={confirmingDelete ? entry : null} onClose={() => setConfirmingDelete(false)} />
     </li>
   );
 }

@@ -5,7 +5,7 @@ test("Email me this sends the year summary to your own confirmed address", async
   const user = await startFreshAccount(page);
   await page.getByPlaceholder(/Time:/).fill("2h");
   await page.getByRole("button", { name: /Add to the day/ }).click();
-  await expect(page.getByText("2:00").first()).toBeVisible();
+  await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
 
   await test.step("an unconfirmed address is told to confirm first, and nothing is sent", async () => {
     await page.goto("/dashboard/report");

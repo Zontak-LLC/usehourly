@@ -54,6 +54,7 @@ export function MergeDaysPanel({ entries }: { entries: Entry[] }) {
   return (
     // An information card: it tells you something worth a look (duplicates on a day) and offers the fix.
     <section
+      data-headerless="a tinted information card, not a content card"
       className="overflow-hidden rounded-xl border border-primary/30 bg-primary/5"
       aria-label="Days with several entries"
     >

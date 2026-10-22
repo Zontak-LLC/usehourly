@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { DayEditorDialog } from "@/components/day-editor";
+import Link from "next/link";
+
+import { DayEditorPanel, longDateLabel } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
@@ -32,6 +34,11 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   const [first, setFirst] = useState<string | null>(null);
   const [projectId, setProjectId] = useProjectFilter(initialProject);
   const [editDate, setEditDate] = useState<string | null>(null);
+  const dayCard = useRef<HTMLElement>(null);
+  // The card opens below the calendar; bring it into view when a day is picked.
+  useEffect(() => {
+    if (editDate) dayCard.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [editDate]);
   // Quick-add mode: clicking day cells selects them instead of opening the day editor.
   const [selectMode, setSelectMode] = useState(false);
   const selection = useDaySelection(first, setSelectMode);
@@ -73,7 +80,15 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
       onSwipe={(direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1))}
       inlineDescription
       title={monthTitle.format(fromISODate(first))}
-      description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}
+      description={
+        // The month's total is the number people came for: a figure, not small print.
+        <>
+          <span className="font-mono font-semibold text-base text-foreground tabular-nums">
+            {formatDuration(sheet.total)}
+          </span>{" "}
+          logged ({formatDecimalHours(sheet.total)} h)
+        </>
+      }
     >
       <MonthToolbar
         first={first}
@@ -90,8 +105,6 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
         onProjectId={setProjectId}
         onFirst={setFirst}
       />
-
-      <DayEditorDialog date={editDate} onClose={() => setEditDate(null)} />
 
       {entries.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
@@ -128,6 +141,25 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             nonBillable={nonBillable}
             onOpenDay={setEditDate}
           />
+
+          {/* A picked day opens here, under the calendar, as one card (not a pop-up), and closes again. */}
+          {editDate && (
+            <section ref={dayCard} aria-label={longDateLabel(editDate)} className="scroll-mt-28">
+              <DayEditorPanel
+                key={editDate}
+                date={editDate}
+                inPage
+                title={longDateLabel(editDate)}
+                onClose={() => setEditDate(null)}
+              />
+              <Link
+                href={`/dashboard/today?date=${editDate}`}
+                className="mt-2 inline-block text-muted-foreground text-xs underline"
+              >
+                Open this day's full page
+              </Link>
+            </section>
+          )}
 
           <ProjectBreakdown rows={allRows} projectId={projectId} onProjectId={setProjectId} />
 
