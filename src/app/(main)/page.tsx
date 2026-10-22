@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Bot, Code2, FileText, Heart, KeyRound, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
+import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingHero } from "@/components/landing-hero";
 import { LandingScenes } from "@/components/landing-scenes";
@@ -94,6 +95,7 @@ export default function LandingPage() {
           {APP_CONFIG.name}
         </Link>
         <nav className="flex items-center gap-2">
+          <ThemeSwitcher />
           <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
             Guide
           </Link>

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import Link from "next/link";
 
+import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
 import { LogoMark } from "@/components/logo";
 import { round3 } from "@/lib/round3";
 
@@ -40,6 +41,9 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
       <Link href="/" className="absolute top-5 left-6 z-10 flex items-center gap-2 font-bold font-display text-lg">
         <LogoMark className="size-7" /> UseHourly
       </Link>
+      <div className="absolute top-4 right-5 z-10">
+        <ThemeSwitcher />
+      </div>
       <div className="relative z-10 flex min-h-dvh items-center justify-center p-2 py-20">{children}</div>
     </main>
   );
