@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -21,6 +21,14 @@ export function ClaimDemoCard() {
   const router = useRouter();
   const claim = trpc.account.claimDemo.useMutation();
   const [startFresh, setStartFresh] = useState(true);
+  // One line and a button until the person wants it; the demo banner's link (…/account#claim) opens it at once.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const check = () => window.location.hash === "#claim" && setOpen(true);
+    check();
+    window.addEventListener("hashchange", check);
+    return () => window.removeEventListener("hashchange", check);
+  }, []);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,7 +56,12 @@ export function ClaimDemoCard() {
           no card.
         </p>
       </div>
-      <form method="post" onSubmit={submit} className="grid gap-3">
+      {!open && (
+        <Button type="button" variant="primary" className="self-start" onClick={() => setOpen(true)}>
+          Create my account
+        </Button>
+      )}
+      <form method="post" onSubmit={submit} className={open ? "grid gap-3" : "hidden"}>
         <div className="grid gap-1.5">
           <Label htmlFor="claim-name">Your name</Label>
           <Input id="claim-name" name="name" autoComplete="name" required maxLength={80} />
@@ -84,9 +97,14 @@ export function ClaimDemoCard() {
             </span>
           </label>
         </fieldset>
-        <Button type="submit" variant="primary" className="self-start" disabled={claim.isPending}>
-          Create my account
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="primary" disabled={claim.isPending}>
+            Create my account
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            Not now
+          </Button>
+        </div>
       </form>
     </section>
   );
