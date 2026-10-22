@@ -1,5 +1,5 @@
 /** Three small looping drawings for the guide's first steps: a time being typed, an invoice filling in, a PAID stamp. */
-const LOOP = "motion-safe:animate-[step-fill_4s_ease-in-out_infinite]";
+const LOOP = "motion-safe:animate-[step-fill_60s_ease-in-out_infinite]";
 
 export function StepArt({ step }: { step: 0 | 1 | 2 }) {
   if (step === 0) {
@@ -15,7 +15,7 @@ export function StepArt({ step }: { step: 0 | 1 | 2 }) {
           width="2"
           height="14"
           fill="var(--amber)"
-          className="motion-safe:animate-[step-caret_1s_steps(2)_infinite]"
+          className="motion-safe:animate-[step-caret_60s_linear_infinite]"
         />
         <rect x="8" y="52" width="144" height="8" rx="4" fill="var(--muted)" />
         <rect
@@ -46,7 +46,7 @@ export function StepArt({ step }: { step: 0 | 1 | 2 }) {
             rx="2"
             fill="var(--muted-foreground)"
             opacity="0.5"
-            className="motion-safe:animate-[step-line_4s_ease-in-out_infinite]"
+            className="motion-safe:animate-[step-line_60s_ease-in-out_infinite]"
             style={{ transformOrigin: `54px ${y + 2}px`, animationDelay: `${i * 0.25}s` }}
           />
         ))}
@@ -59,7 +59,7 @@ export function StepArt({ step }: { step: 0 | 1 | 2 }) {
       <rect x="46" y="4" width="68" height="62" rx="6" fill="var(--card)" stroke="var(--border)" strokeWidth="2" />
       <rect x="54" y="16" width="52" height="4" rx="2" fill="var(--muted-foreground)" opacity="0.5" />
       <rect x="54" y="26" width="38" height="4" rx="2" fill="var(--muted-foreground)" opacity="0.5" />
-      <g style={{ transformOrigin: "80px 46px" }} className="motion-safe:animate-[step-stamp_4s_ease-in-out_infinite]">
+      <g style={{ transformOrigin: "80px 46px" }} className="motion-safe:animate-[step-stamp_60s_ease-in-out_infinite]">
         <rect x="52" y="36" width="56" height="22" rx="5" fill="none" stroke="var(--success-bright)" strokeWidth="3" />
         <text x="80" y="52" textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--success-bright)">
           PAID

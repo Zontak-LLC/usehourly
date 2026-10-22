@@ -31,7 +31,7 @@ export function DataVault() {
         {[0, 1, 2].map((i) => (
           <g
             key={i}
-            className="motion-safe:animate-[sheet-drop_3.6s_ease-in-out_infinite]"
+            className="motion-safe:animate-[sheet-drop_60s_ease-in-out_infinite]"
             style={{ animationDelay: `${i * 1.2}s` }}
           >
             <rect
@@ -101,7 +101,7 @@ export function AssistantLink() {
       </span>
       <svg viewBox="0 0 200 12" aria-hidden className="h-3 min-w-0 flex-1">
         <line x1="4" y1="6" x2="196" y2="6" stroke="var(--border)" strokeWidth="2" strokeDasharray="4 6" />
-        <circle r="5" cy="6" fill="var(--amber)" className="motion-safe:animate-[link-travel_2.4s_linear_infinite]" />
+        <circle r="5" cy="6" fill="var(--amber)" className="motion-safe:animate-[link-travel_60s_linear_infinite]" />
       </svg>
       <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
         <Plug className="size-7" aria-hidden />

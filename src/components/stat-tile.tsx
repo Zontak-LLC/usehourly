@@ -32,7 +32,7 @@ export function TileRing({ fraction, label }: { fraction: number; label: string 
 /**
  * A stat tile: a mono label, a big figure that counts up when the tile first shows, an optional note, and a small
  * drawing on the right that says what the figure is a share of. `display` turns the counted number into words
- * (money, hours); the default is the plain number. The tile settles in and lifts a little on hover.
+ * (money, hours); the default is the plain number. The tile itself stays still.
  */
 export function StatTile({
   label,
@@ -64,7 +64,7 @@ export function StatTile({
   return (
     <dl
       style={accent ? { borderTop: `3px solid ${accent}` } : undefined}
-      className={`relative flex gap-3 overflow-hidden rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-all duration-300 motion-safe:animate-[settle_0.6s_ease-out_both] motion-safe:hover:-translate-y-0.5 motion-safe:hover:ring-amber/60 ${corner ? "flex-col justify-end" : "items-center justify-between"} ${className}`}
+      className={`relative flex gap-3 overflow-hidden rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 ${corner ? "flex-col justify-end" : "items-center justify-between"} ${className}`}
     >
       <div className="min-w-0">
         {title && (

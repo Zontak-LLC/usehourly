@@ -30,8 +30,7 @@ export function TeamStrip({ people }: { people: Person[] }) {
             <span
               // biome-ignore lint/suspicious/noArrayIndexKey: five fixed seats
               key={i}
-              style={{ animationDelay: `${i * 120}ms` }}
-              className={`grid size-8 place-items-center rounded-full ring-2 ring-card motion-safe:animate-[settle_0.5s_ease-out_both] ${
+              className={`grid size-8 place-items-center rounded-full ring-2 ring-card ${
                 i < active.length ? "bg-amber text-[#1b1405]" : "border-2 border-foreground/35 border-dashed bg-card"
               }`}
             >
@@ -43,7 +42,7 @@ export function TeamStrip({ people }: { people: Person[] }) {
       <StatTile label="Invitations waiting" value={waiting}>
         <span className="relative grid size-14 place-items-center">
           {waiting > 0 && (
-            <span className="absolute inset-0 rounded-full bg-amber/40 motion-safe:animate-[ring-ping_2s_ease-out_infinite]" />
+            <span className="absolute inset-0 rounded-full bg-amber/40 motion-safe:animate-[ring-ping_60s_ease-out_infinite]" />
           )}
           <span
             className={`relative grid size-12 place-items-center rounded-full ${waiting > 0 ? "bg-amber text-[#1b1405]" : "bg-muted text-foreground/60"}`}
