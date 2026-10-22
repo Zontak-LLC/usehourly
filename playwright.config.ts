@@ -48,6 +48,9 @@ export default defineConfig({
   // they never share data). Override with E2E_WORKERS. The one spec that flips a global setting runs first, alone
   // (the "serial" project below).
   fullyParallel: false,
+  // A slow shared CI machine now and then times a test out that passes alone (issue #197). One retry there; a test that
+  // needs it is listed as "flaky" in the report, so it is never hidden. Locally a failure is a failure.
+  retries: process.env.CIRCLECI ? 1 : 0,
   workers: Number(process.env.E2E_WORKERS ?? (process.env.CIRCLECI ? 2 : process.env.CI ? 3 : 4)),
   timeout: 180_000,
   expect: { timeout: 15_000 * SLOW },
