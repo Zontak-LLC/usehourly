@@ -20,7 +20,7 @@ import {
   SIDEBAR_COLLAPSIBLE_VALUES,
   SIDEBAR_VARIANT_VALUES,
 } from "./layout";
-import { THEME_MODE_VALUES, THEME_PRESET_VALUES } from "./theme";
+import { THEME_MODE_VALUES } from "./theme";
 
 export type PreferencePersistence = "none" | "client-cookie" | "server-cookie" | "localStorage";
 
@@ -59,13 +59,6 @@ export const PREFERENCE_REGISTRY = {
     defaultValue: "light",
     persistence: "client-cookie",
     attribute: "data-theme-mode",
-  }),
-
-  theme_preset: definePreference({
-    values: THEME_PRESET_VALUES,
-    defaultValue: "default",
-    persistence: "client-cookie",
-    attribute: "data-theme-preset",
   }),
 
   font: definePreference({

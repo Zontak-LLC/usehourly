@@ -2,16 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Theme preset styles: these override CSS variables based on the selected data-theme-preset */
-@import "../styles/presets/mint.css";
-@import "../styles/presets/coral.css";
-@import "../styles/presets/sky.css";
-@import "../styles/presets/lilac.css";
-@import "../styles/presets/sunshine.css";
-@import "../styles/presets/mono.css";
-@import "../styles/presets/cream.css";
-@import "../styles/presets/azure.css";
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -70,8 +60,7 @@
   --color-ink: var(--foreground);
 }
 
-/* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
-These serve as the fallback; there is no separate default.css file. */
+/* Theme styles: one palette, light and dark (the colour presets were removed on 2026-10-22). */
 :root {
   /* The ink-and-paper look (2026-10-22): a cool paper page, white sheets, ink text, ONE amber (the hour hand) that does
      the pointing, green only for good news. Hex values come straight from the redesign demo. */
@@ -139,9 +128,7 @@ These serve as the fallback; there is no separate default.css file. */
   --font-display: var(--font-bricolage);
 }
 
-:root:not([data-theme-preset]),
-:root[data-theme-preset="default"],
-:root[data-theme-preset="mono"] {
+:root {
   --tint-strength: 5%;
   --tint-hover-strength: 9%;
   --tint-edge-strength: 22%;
@@ -265,38 +252,6 @@ These serve as the fallback; there is no separate default.css file. */
 }
 
 @layer utilities {
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-2xs {
-    box-shadow: var(--shadow-2xs);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-xs {
-    box-shadow: var(--shadow-xs);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-sm {
-    box-shadow: var(--shadow-sm);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow {
-    box-shadow: var(--shadow);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-md {
-    box-shadow: var(--shadow-md);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-lg {
-    box-shadow: var(--shadow-lg);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-xl {
-    box-shadow: var(--shadow-xl);
-  }
-
-  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-2xl {
-    box-shadow: var(--shadow-2xl);
-  }
-
   html[data-font="instrumentSans"] body {
     --font-sans: var(--font-instrument-sans);
   }

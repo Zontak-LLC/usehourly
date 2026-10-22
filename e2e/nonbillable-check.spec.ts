@@ -32,7 +32,7 @@ test("the dark-mode choice lives in the gear menu, not as a second button in the
   await expect(page.getByRole("button", { name: /Current theme/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Appearance and layout settings" }).click();
   const menu = page.getByRole("dialog");
-  await expect(menu.getByText("Theme Preset")).toBeVisible();
+  await expect(menu.getByText("Theme Preset")).toHaveCount(0); // colour presets were removed
   await expect(menu.getByText("Theme Mode")).toBeVisible();
   await expect(menu.getByRole("radio", { name: "Toggle dark" })).toBeVisible();
 

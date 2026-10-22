@@ -13,11 +13,11 @@ Look at the real thing first: the pages are the reference, this file is the expl
 4. **Works for everyone:** keyboard, screen reader, phone, offline, dark mode.
 
 ## Colour
-- **Accent (near-black "Neutral"; amber "Sunshine" is an optional preset):** only for **the one main button** (`variant="primary"`), **the current page** (tab underline, side-menu bar) and focus. Other presets (Sunshine, Mint, Coral, Sky, Lilac, Azure, Cream, Mono) change the accent only; Azure also sets cool-grey surfaces.
+- **Accent (the one amber, the hour hand; there are no colour presets since 2026-10-22):** only for **the one main button** (`variant="primary"`), **the current page** (tab underline, side-menu bar) and focus. Other presets (Sunshine, Mint, Coral, Sky, Lilac, Azure, Cream, Mono) change the accent only; Azure also sets cool-grey surfaces.
 - **One solid button per screen** **[checked: `auditPage`]**. Everything else is the soft tint (`default`) or an outline.
 - **Status colours carry meaning only:** green = done, paid, confirmed; red = remove, stop, problem; yellow = warning. Icons are neutral grey otherwise; the status colours are applied to icons by class in `globals.css`. A check icon on a dark or accent surface sets its own colour.
 - **Green** (Bright Optimistic Green `#50B83C`, 2026-10-20) is only for good news. It is too pale for words on white (2.5:1), so `bg-success-bright` / `text-success-bright` and the check icons use it for icons, bars and fills, while `text-success` is the same hue darker (7:1) and `bg-success-soft` the pale tint behind it.
-- **Contrast:** WCAG AA (4.5:1) for text in every preset, light and dark, both layouts **[checked: `THEME_AUDIT=1 npx playwright test e2e/theme-audit.spec.ts`, also with `THEME_AUDIT_NAV=left`]**. Text on a tinted band uses `text-foreground/75`, never `text-muted-foreground` on the darker bands, and never `text-primary` for small text.
+- **Contrast:** WCAG AA (4.5:1) for text in light and dark, both layouts **[checked: `THEME_AUDIT=1 npx playwright test e2e/theme-audit.spec.ts`, also with `THEME_AUDIT_NAV=left`]**. Text on a tinted band uses `text-foreground/75`, never `text-muted-foreground` on the darker bands, and never `text-primary` for small text.
 
 ## Surfaces: three levels (headers are a light tint of the text colour over the card colour, 4 to 5%, since 2026-10-21; they were white for a day and a tile's header then looked like its body)
 | Level | What | Header shade |
@@ -27,7 +27,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 | 2. Card | cards directly inside it (`HeaderCard`, `SectionCard`, entry cards, client cards, invoice cards) | `bg-band-2` (the same shade as band-1) |
 | 3. Tile | a borderless block inside a card (a project tile) | `bg-band-3` (5%), body white with a hairline ring (`ring-1 ring-foreground/10`, not a border, so the nesting check ignores it) |
 
-- `--band-1/2/3` are mixed from the theme's own text and page colours (`globals.css`), so presets and dark mode follow. **Never use `bg-muted/40` for a header band** **[checked: `check-rules`]**.
+- `--band-1/2/3` are mixed from the theme's own text and page colours (`globals.css`), so dark mode follows. **Never use `bg-muted/40` for a header band** **[checked: `check-rules`]**.
 - **Cards go one level deep** **[checked: `auditPage` fails a bordered, rounded box nested 3 deep]**. A card never holds another framed card: inside a card use plain sections, borderless tiles, spacing or a heading.
 - **No lines for separating things** on card pages: tint and spacing do it (`border-t`, `divide-y` are for tables and a card's own header only). The page card's header has one line under it.
 - Cards: `rounded-xl border bg-card` (white). Tiles: `rounded-lg`, no border. Buttons, fields, tabs and pills are not cards.
@@ -116,7 +116,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - Links look like links (underline) inside text; buttons look like buttons; nothing that is only informative looks pressable (see "Controls look pressable, labels do not").
 
 ### Colour, contrast and theming
-- **Contrast** 4.5:1 for text, 3:1 for large text and for the edge of a control, in every preset, light and dark **[checked: theme audit]**. Never colour alone: status also has an icon or word (green check + "Paid", red icon + "Unpaid").
+- **Contrast** 4.5:1 for text, 3:1 for large text and for the edge of a control, in light and dark **[checked: theme audit]**. Never colour alone: status also has an icon or word (green check + "Paid", red icon + "Unpaid").
 - Colour is meaningful and rationed: neutral by default, the accent for the main action and the current place, green only for good news, red only for removal and problems, yellow for warnings. Use theme tokens, never raw hex, so every preset and dark mode follows.
 - Both light and dark are designed, not inverted; images and logos have a transparent or neutral background.
 
@@ -163,5 +163,5 @@ Plain, short, no jargon, no blame. Name things the way the menu does ("Clients",
 
 ## How consistency is kept
 - `npm run ci` (includes `scripts/check-rules.mjs` for the code-level rules above) and `npm run e2e` (every page gets `auditPage`: labels, form method, no sideways scroll, one heading, accessibility, card nesting, one solid button) must pass.
-- After touching a colour, a preset or a shared component: run the contrast audit (both layouts).
+- After touching a colour or a shared component: run the contrast audit (both layouts).
 - A new page or component starts by copying the nearest existing one, and adds itself to this file if it is a new pattern.
