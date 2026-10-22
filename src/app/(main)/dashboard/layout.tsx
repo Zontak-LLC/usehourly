@@ -32,7 +32,6 @@ import { GuideButton } from "./_components/header/guide-button";
 import { LayoutControls } from "./_components/header/layout-controls";
 import { MobileNav } from "./_components/header/mobile-nav";
 import { SideNav } from "./_components/header/side-nav";
-import { ThemeSwitcher } from "./_components/header/theme-switcher";
 import { UserMenu } from "./_components/header/user-menu";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
@@ -115,7 +114,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                   <div className="flex items-center gap-2">
                     <GuideButton />
                     <LayoutControls />
-                    <ThemeSwitcher />
                     <UserMenu user={user} />
                   </div>
                 </div>

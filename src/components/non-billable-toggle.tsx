@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban } from "lucide-react";
+import { Ban, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
@@ -56,7 +56,8 @@ export function NonBillableToggle({
       type="button"
       size={labelled ? "default" : "icon"}
       variant={on ? "default" : "outline"}
-      className={labelled ? "h-9" : compact ? "size-8" : "size-10"}
+      // Selected: a darker outline and bold words on the soft tint, and a check mark, so it reads as ON (like the Team pills).
+      className={`${labelled ? "h-9" : compact ? "size-8" : "size-10"} ${on ? "border-foreground/60 font-semibold ring-1 ring-foreground/30" : ""}`}
       aria-pressed={on}
       aria-label={on ? "Non-billable day (click to undo)" : "Mark day non-billable"}
       title={
@@ -67,7 +68,7 @@ export function NonBillableToggle({
       disabled={set.isPending || days.isLoading}
       onClick={toggle}
     >
-      <Ban />
+      {on ? <Check className="text-current" /> : <Ban />}
       {labelled && "Non-billable day"}
     </Button>
   );

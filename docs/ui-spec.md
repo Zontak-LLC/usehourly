@@ -49,8 +49,8 @@ Look at the real thing first: the pages are the reference, this file is the expl
 
 ## Navigation
 - **Phones:** a bottom tab bar (Today, Week, Month, Invoices, Clients, Account where there is room, More).
-- **Wide screens:** the tab strip under the top bar (default) or a side menu down the left (gear, Navigation); the choice is per browser. The side menu groups pages by function (Track, Bill, Manage, Settings), marks the current page with an accent bar. Navigation has **no borders**; it is separated by background only.
-- The top bar, top right: **? Guide**, the settings gear, the theme switch.
+- **Wide screens:** the tab strip under the top bar (default) or a side menu down the left (gear, Navigation); the choice is per browser. The side menu keeps the pages in spaced groups (no headings), and marks the current page with an accent bar. Navigation has **no borders**; it is separated by background only.
+- The top bar, top right: **? Guide**, the settings gear (it holds the Light, Dark and System choice) and your name; a signed-out visitor keeps a quick theme switch because they have no gear.
 - **The guide** is its own frame (`/help`): a contents list down the left (a folded "Browse all topics" on a phone), Guide and FAQ buttons that stay pressed on the current page, and no app menu, so there is never a second left menu.
 - Every page's name is the same in the menu, the heading and the browser title **[checked]**.
 

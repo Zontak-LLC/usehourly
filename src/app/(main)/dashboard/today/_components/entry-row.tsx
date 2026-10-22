@@ -194,15 +194,10 @@ export function EntryRow({
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {!editing && (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              disabled={isRunning || unconfirmed}
-              title={isRunning ? "Stop the timer to edit" : "Click to edit"}
-              className="rounded px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums enabled:cursor-pointer enabled:hover:bg-muted"
-            >
+            // The hours are information, not a second way to edit: only the pencil opens the form (one way, no confusion).
+            <span className="px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums">
               {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
-            </button>
+            </span>
           )}
           {/* Edit is the common action and stays a button; it opens the form and, while open, closes it again (and says so to a screen reader). */}
           <Button
