@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { addDays } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { brightLine } from "@/lib/line-color";
 
 type Entry = {
   date: string;
@@ -79,7 +80,7 @@ export function DaySide({
                     className="block h-full rounded-full"
                     style={{
                       width: grown ? `${(r.minutes / longest) * 100}%` : "0%",
-                      backgroundColor: r.color,
+                      ...brightLine(r.color),
                       transition: "width 1s cubic-bezier(.2,.8,.2,1)",
                     }}
                   />

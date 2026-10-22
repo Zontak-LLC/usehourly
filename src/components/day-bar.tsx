@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { formatDuration } from "@/lib/duration";
+import { brightLine } from "@/lib/line-color";
 
 type Piece = { project_id: string; minutes: number; project: { name: string; client: { color: string } } };
 
@@ -41,7 +42,7 @@ export function DayBar({ entries }: { entries: Piece[] }) {
           <span
             key={p.name}
             className="h-full"
-            style={{ width: `${(p.minutes / total) * 100}%`, backgroundColor: p.color }}
+            style={{ width: `${(p.minutes / total) * 100}%`, ...brightLine(p.color) }}
           />
         ))}
       </div>

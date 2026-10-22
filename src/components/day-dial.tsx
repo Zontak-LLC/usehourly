@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { DAY_GOAL_MINUTES, DIAL_LENGTH, dialFraction, dialLeft } from "@/lib/day-dial";
 import { formatDuration } from "@/lib/duration";
 import { round3 } from "@/lib/round3";
+
+/** The day dial's ring is a little spectrum, sky to violet to pink, so it brightens the page. */
+const DAY_RING = ["#4f8cff", "#8A6CFF", "#ec5f9a"] as const;
 
 const TICKS = Array.from({ length: 48 }, (_, i) => {
   const a = (i / 48) * Math.PI * 2;
@@ -48,6 +51,7 @@ export function DayDial({
       minutes={minutes}
       goal={goal}
       timerRunning={timerRunning}
+      ring={DAY_RING}
       footLeft={`Goal ${formatDuration(goal)}`}
       footRight={weekMinutes !== null ? `Week ${formatDuration(weekMinutes)}` : undefined}
     />
@@ -68,6 +72,7 @@ export function Dial({
   caption,
   footLeft,
   footRight,
+  ring,
 }: {
   label: string;
   title: string;
@@ -78,7 +83,10 @@ export function Dial({
   caption?: string;
   footLeft?: string;
   footRight?: string;
+  /** Three colours for the ring (a gradient round the dial); the amber of the brand when left out. */
+  ring?: readonly [string, string, string];
 }) {
+  const gradientId = useId();
   const [shown, setShown] = useState(0);
   // After the first paint, move to the real value: the CSS transition draws the sweep.
   useEffect(() => {
@@ -98,6 +106,15 @@ export function Dial({
       />
       <div className="relative aspect-square w-full max-w-[210px] sm:max-w-[300px]">
         <svg viewBox="0 0 200 200" className="size-full overflow-visible" aria-hidden>
+          {ring && (
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor={ring[0]} />
+                <stop offset="0.55" stopColor={ring[1]} />
+                <stop offset="1" stopColor={ring[2]} />
+              </linearGradient>
+            </defs>
+          )}
           {TICKS.map((t) => (
             <line
               key={t.key}
@@ -115,7 +132,7 @@ export function Dial({
             cy="100"
             r="78"
             fill="none"
-            stroke="var(--amber)"
+            stroke={ring ? `url(#${gradientId})` : "var(--amber)"}
             strokeWidth="16"
             strokeLinecap="round"
             strokeDasharray={DIAL_LENGTH}
