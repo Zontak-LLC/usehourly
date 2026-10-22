@@ -1,6 +1,5 @@
 {
   "src/app/(main)/dashboard/_components/header/side-nav.tsx": 3,
-  "src/app/(main)/dashboard/account/_components/account-tabs.tsx": 1,
   "src/app/(main)/dashboard/account/_components/business-details-card.tsx": 16,
   "src/app/(main)/dashboard/account/_components/friday-reminder-card.tsx": 1,
   "src/app/(main)/dashboard/clients/_components/new-client-card.tsx": 8,

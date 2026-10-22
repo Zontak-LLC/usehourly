@@ -384,7 +384,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
     await page.goto("/dashboard/account#data");
-    await page.getByRole("button", { name: /Accounting app/ }).click(); // the data tiles: one panel at a time
     await expect(page.getByRole("region", { name: "Send invoices to your accounting app" })).toBeVisible();
     await shot("accounting-export");
     await audit("account, accounting export");
@@ -417,7 +416,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("delete the account; the details no longer work", async () => {
     await page.goto("/dashboard/account#data");
-    await page.getByRole("button", { name: /^Delete account/ }).click(); // the data tiles: one panel at a time
     await page.getByRole("button", { name: /Delete my account/ }).click();
     await page.getByLabel(/Type your password/).fill(user.password);
     await page.getByRole("button", { name: "Delete everything" }).click();

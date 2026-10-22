@@ -77,13 +77,13 @@ export function AccountingExport() {
     </div>
   );
   return (
-    <>
+    <div className="@container">
       <div className="grid gap-5 px-5 pb-5 sm:px-6">
         <fieldset className="grid gap-3 border-0 p-0">
           <legend className="mb-3 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
             What to send
           </legend>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 @md:grid-cols-2 @2xl:grid-cols-3">
             {select(
               "acct-format",
               "Send to",
@@ -126,7 +126,7 @@ export function AccountingExport() {
           <legend className="mb-3 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
             How it is written
           </legend>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 @md:grid-cols-2 @2xl:grid-cols-3">
             {select(
               "acct-dates",
               "Date format",
@@ -178,6 +178,6 @@ export function AccountingExport() {
           label={busy ? "Preparing…" : "Download CSV"}
         />
       </div>
-    </>
+    </div>
   );
 }

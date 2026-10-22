@@ -73,7 +73,7 @@ export function LocalFirstCard() {
         </p>
         <Button
           className="h-11 justify-self-start rounded-full px-5"
-          variant={on ? "outline" : "primary"}
+          variant={on ? "outline" : "default"}
           disabled={busy}
           onClick={() => void change(!on)}
           type="button"
