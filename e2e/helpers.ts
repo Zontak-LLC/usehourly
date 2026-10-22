@@ -37,14 +37,30 @@ export async function openEntryMenu(scope: Page | Locator): Promise<Page> {
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 /** A throwaway account. Every address starts with "e2e-" so teardown can find and delete them all. */
 export const newUser = () => ({ name: "Sam Freelancer", email: `e2e-${stamp()}@example.test`, password: PASSWORD });
-/** Signs a new account up through the real pages and answers the first-run question, ending on Today with the add form ready. */
-export async function startFreshAccount(page: Page, clientName = "Offline Co") {
+/**
+ * A new account, ready for the first-run question, signed in and standing on Today. The account is made and signed in
+ * through the same two calls the pages make (the sign-up procedure and the sign-in), not by clicking through the form: a
+ * click-through costs about three seconds and 34 test files do it. The real sign-up PAGE is covered once, by the
+ * first-day journey (e2e/first-day.spec.ts) and by e2e/public.spec.ts.
+ */
+export async function signUpByApi(page: Page) {
   const user = newUser();
-  await page.goto("/auth/v2/register");
-  await page.getByLabel("Name", { exact: true }).fill(user.name);
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
-  await page.getByRole("button", { name: "Create account" }).click();
+  const made = await page.request.post("/api/trpc/account.register", {
+    data: { name: user.name, email: user.email, password: user.password },
+  });
+  expect(made.ok(), `sign-up call answered ${made.status()}`).toBe(true);
+  const { csrfToken } = (await (await page.request.get("/api/auth/csrf")).json()) as { csrfToken: string };
+  const signedIn = await page.request.post("/api/auth/callback/credentials", {
+    form: { csrfToken, email: user.email, password: user.password, json: "true" },
+  });
+  expect(signedIn.ok(), `sign-in call answered ${signedIn.status()}`).toBe(true);
+  return user;
+}
+
+/** Signs a new account up and answers the first-run question, ending on Today with the add form ready. */
+export async function startFreshAccount(page: Page, clientName = "Offline Co") {
+  const user = await signUpByApi(page);
+  await page.goto("/dashboard/today");
   await expect(page).toHaveURL(/dashboard\/today/);
   await page.getByPlaceholder(/company or a person/i).fill(clientName);
   await page.getByRole("button", { name: "Continue" }).click();
