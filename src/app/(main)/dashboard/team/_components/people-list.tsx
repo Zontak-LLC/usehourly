@@ -53,7 +53,7 @@ function StatusIcon({ status }: { status: Person["status"] }) {
   );
 }
 
-/** Everyone invited, one row each: a coloured monogram, who they are, which clients they log time for, and the actions. */
+/** Everyone invited as a roster of cards: a banner in their own colour, a big monogram, who they are, which clients they log time for, and the actions. */
 export function PeopleList({ people }: { people: Person[] }) {
   const shown = people.filter((p) => p.status !== "removed");
   return (
@@ -64,7 +64,7 @@ export function PeopleList({ people }: { people: Person[] }) {
           Their time shows up on your Today, Week and Month pages, marked with their name.
         </p>
       </header>
-      <ul className="divide-y rounded-2xl bg-card ring-1 ring-foreground/10">
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((p) => (
           <PersonRow key={p.id} person={p} />
         ))}
@@ -82,7 +82,7 @@ function PersonRow({ person }: { person: Person }) {
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState(false);
   const live = person.status === "active" || person.status === "pending";
-  const allowed = (clients.data ?? []).filter((c) => person.clientIds.includes(c.id)).map((c) => c.name);
+  const allowed = (clients.data ?? []).filter((c) => person.clientIds.includes(c.id));
 
   async function toggle(clientId: string, on: boolean) {
     const next = on ? [...person.clientIds, clientId] : person.clientIds.filter((x) => x !== clientId);
@@ -122,52 +122,24 @@ function PersonRow({ person }: { person: Person }) {
     { label: "Remove from team", icon: <UserX />, onSelect: () => setConfirming(true), destructive: true },
   ];
 
+  const hue = [...person.label.toLowerCase()].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 0);
+  const badge = {
+    active: "bg-success-soft text-success",
+    pending: "bg-amber/20 text-foreground",
+    expired: "bg-destructive/15 text-destructive",
+    removed: "bg-muted text-foreground/75",
+  }[person.status];
+  const badgeWords = { active: "On the team", pending: "Waiting", expired: "Expired", removed: "Removed" }[
+    person.status
+  ];
   return (
-    <li className="border-t first:border-t-0">
-      {/* Three columns on a wide screen (who, status and clients, actions); on a phone the actions sit beside the name and the details drop under it. */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:px-4">
-        <div className="flex min-w-0 items-center gap-3 sm:row-start-1">
-          <Avatar label={person.label} className="size-11 text-lg" />
-          <div className="min-w-0">
-            <h3 className="truncate font-semibold text-base">
-              {person.label}
-              {person.memberName && person.memberName !== person.label && (
-                <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
-              )}
-            </h3>
-            {/* With no name given the title IS the address: show it once. */}
-            {person.label.toLowerCase() !== person.email.toLowerCase() && (
-              <p className="truncate text-muted-foreground text-sm">{person.email}</p>
-            )}
-          </div>
-        </div>
-        {/* The middle is only who they may log time for; the status is the icon beside the buttons. */}
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm max-sm:col-span-2 max-sm:row-start-2 sm:col-start-2 sm:row-start-1">
-          {live ? (
-            <>
-              <span className="mr-1 text-muted-foreground text-xs">Logs time for</span>
-              {editing ? (
-                <ClientChecks
-                  legend="Can log time on"
-                  legendClassName="sr-only"
-                  clients={clients.data ?? []}
-                  checked={person.clientIds}
-                  onToggle={toggle}
-                />
-              ) : (
-                <>
-                  {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
-                  {allowed.map((name) => (
-                    <span key={name} className="rounded-full bg-muted px-3 py-1 ring-1 ring-foreground/10">
-                      {name}
-                    </span>
-                  ))}
-                </>
-              )}
-            </>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 items-center gap-1 sm:col-start-3 sm:row-start-1">
+    <li className="flex flex-col overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_40px_-20px_color-mix(in_oklab,var(--amber)_55%,transparent)]">
+      {/* the banner takes the person's own colour; the actions sit in its corner */}
+      <div
+        style={{ ["--h" as string]: hue }}
+        className="relative h-20 bg-[linear-gradient(135deg,hsl(var(--h)_80%_60%/0.4),hsl(var(--h)_80%_60%/0.06))]"
+      >
+        <div className="absolute top-2 right-2 flex items-center gap-1">
           <StatusIcon status={person.status} />
           {live && (
             <>
@@ -183,6 +155,60 @@ function PersonRow({ person }: { person: Person }) {
             </>
           )}
         </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-3 px-5 pb-5">
+        <Avatar label={person.label} className="-mt-9 size-[4.5rem] text-3xl ring-4 ring-card" />
+        <div className="min-w-0">
+          <h3 className="truncate font-bold font-display text-xl">
+            {person.label}
+            {person.memberName && person.memberName !== person.label && (
+              <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
+            )}
+          </h3>
+          {/* With no name given the title IS the address: show it once. */}
+          {person.label.toLowerCase() !== person.email.toLowerCase() && (
+            <p className="truncate text-muted-foreground text-sm">{person.email}</p>
+          )}
+          <span
+            aria-hidden
+            className={`mt-2 inline-flex rounded-full px-3 py-0.5 font-mono text-[11px] uppercase tracking-widest ${badge}`}
+          >
+            {badgeWords}
+          </span>
+        </div>
+        {live && (
+          <div className="mt-auto flex min-w-0 flex-col gap-2 border-foreground/10 border-t pt-3">
+            <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">Logs time for</span>
+            <div className="flex flex-wrap items-center gap-1.5 text-sm">
+              {editing ? (
+                <ClientChecks
+                  legend="Can log time on"
+                  legendClassName="sr-only"
+                  clients={clients.data ?? []}
+                  checked={person.clientIds}
+                  onToggle={toggle}
+                />
+              ) : (
+                <>
+                  {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
+                  {allowed.map((c) => (
+                    <span
+                      key={c.name}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 ring-1 ring-foreground/10"
+                    >
+                      <span
+                        aria-hidden
+                        className="size-2 rounded-full"
+                        style={{ background: c.color ?? "var(--amber)" }}
+                      />
+                      {c.name}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       {confirming && (
         <InlineConfirm
