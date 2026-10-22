@@ -6,6 +6,12 @@ import { Check, Mail, Wifi, WifiOff } from "lucide-react";
 
 import { useScene } from "@/lib/use-scene";
 
+// How long each step of a scene lasts, in milliseconds. Constants, so a scene never restarts itself.
+const SIGN_OFF = [900, 1200, 1500, 4000];
+const OFFLINE = [900, 1100, 1600, 4000];
+const TEAM = [900, 1200, 1500, 4000];
+const BUDGET = [800, 1300, 1300, 4000];
+
 const panel = "rounded-2xl bg-card p-3 ring-1 ring-foreground/10";
 const cap = "font-mono text-[11px] text-foreground/75 uppercase tracking-widest";
 const fade = (on: boolean) =>
@@ -27,7 +33,7 @@ function Frame({ title, text, label, children }: { title: string; text: string; 
 
 /** A client approves a timesheet: the sheet, a link, a name typed in, an approved stamp and the email to you. */
 function SignOffScene() {
-  const { ref, step } = useScene([900, 1200, 1500, 4000]);
+  const { ref, step } = useScene(SIGN_OFF);
   const name = "Maria Lopez";
   const typed = step === 2 ? name.slice(0, 7) : step >= 3 ? name : "";
   return (
@@ -73,7 +79,7 @@ function SignOffScene() {
 
 /** Offline: the connection drops, an entry is kept on the device, the connection returns and it is sent once. */
 function OfflineScene() {
-  const { ref, step } = useScene([900, 1100, 1600, 4000]);
+  const { ref, step } = useScene(OFFLINE);
   const offline = step === 1 || step === 2;
   return (
     <Frame
@@ -122,7 +128,7 @@ function OfflineScene() {
 
 /** A team member logs time on a client you gave them: it lands on your books with their name. */
 function TeamScene() {
-  const { ref, step } = useScene([900, 1200, 1500, 4000]);
+  const { ref, step } = useScene(TEAM);
   return (
     <Frame
       label="Animation: you invite Sam, Sam joins, logs two hours on Acme, and the hours appear in your timesheet with Sam's name."
@@ -179,7 +185,7 @@ function TeamScene() {
 
 /** A budget filling: green, then yellow at 80%, then red when it is passed. */
 function BudgetScene() {
-  const { ref, step } = useScene([800, 1300, 1300, 4000]);
+  const { ref, step } = useScene(BUDGET);
   const pct = [20, 62, 85, 108][step];
   const tone = step >= 3 ? "bg-destructive" : step === 2 ? "bg-amber" : "bg-success-bright";
   const words = ["on track", "on track", "nearly used up", "over budget"][step];

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Drives a short scene made of steps. `lasts` is how long each step stays in milliseconds. The scene plays from the first
+ * Drives a short scene made of steps. `lasts` is how long each step stays in milliseconds; pass a constant array (a new
+ * array on every render would restart the scene). The scene plays from the first
  * step each time it scrolls into view and then holds its last step, which is a finished picture. With reduced motion
  * (or no IntersectionObserver) it shows the last step at once and never moves.
  */
@@ -37,8 +38,6 @@ export function useScene(lasts: number[]) {
       io.disconnect();
       window.clearTimeout(timer);
     };
-    // `lasts` is a constant array in each scene
-    // biome-ignore lint/correctness/useExhaustiveDependencies: the durations never change
   }, [last, lasts]);
   return { ref, step };
 }
