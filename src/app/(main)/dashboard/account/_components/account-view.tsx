@@ -17,7 +17,6 @@ import { CurrencyCard } from "./currency-card";
 import { DataHub } from "./data-hub";
 import { AssistantLink, DataVault } from "./data-vault";
 import { FridayReminderCard } from "./friday-reminder-card";
-import { MemberBadge } from "./member-badge";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
 
@@ -45,15 +44,12 @@ export function AccountView() {
                 <SignOutCard />
               </>
             ) : (
-              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-                <div className="lg:sticky lg:top-32">
-                  <MemberBadge me={account} />
-                </div>
-                <div className="flex min-w-0 flex-col gap-6">
-                  <AccountChecklist me={account} />
+              <div className="flex flex-col gap-6">
+                <AccountChecklist me={account} />
+                <div className="grid items-start gap-6 xl:grid-cols-2">
                   <ProfileCard me={account} emailEnabled={emailEnabled.data} />
-                  <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />
-                  <div className="grid items-start gap-6 xl:grid-cols-2">
+                  <div className="flex flex-col gap-6">
+                    <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />
                     {account.has_password ? <ChangePasswordCard me={account} /> : <PasswordNote />}
                     <SignOutCard />
                   </div>
