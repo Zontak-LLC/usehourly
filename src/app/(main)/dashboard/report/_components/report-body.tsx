@@ -187,6 +187,13 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
               i.paid_date ?? "Unpaid",
             ])}
             total={["Total", "", "", money(data.invoices.totalCents), ""]}
+            phoneSummary={{
+              valueIndex: 3,
+              detail: (r) =>
+                [r[1] && r[1], r[2] && `issued ${r[2]}`, r[4] && r[4] !== "Unpaid" ? `paid ${r[4]}` : r[4]]
+                  .filter(Boolean)
+                  .join(" · "),
+            }}
           />
         </Section>
       )}
@@ -200,6 +207,7 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
             textCols={3}
             head={["Invoice", "Client", "Paid on", "Amount"]}
             rows={data.received.list.map((i) => [i.number, i.client_name, i.paid_date ?? "", money(i.total_cents)])}
+            phoneSummary={{ valueIndex: 3, detail: (r) => [r[1], r[2] && `paid ${r[2]}`].filter(Boolean).join(" · ") }}
             total={["Total", "", "", money(data.received.totalCents)]}
           />
         </Section>
