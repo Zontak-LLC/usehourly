@@ -16,9 +16,9 @@ import { ClientChecks } from "./client-checks";
 
 /**
  * The invitation form as a card: pick a name and the clients, get a private link to send (shown once: only its hash is
- * stored). It opens in place of the "Invite someone" card and closes back into it.
+ * stored). It opens at the top of the page from the + in the header and closes with the X.
  */
-export function InviteCard({ onClose, compact = false }: { onClose: () => void; compact?: boolean }) {
+export function InviteCard({ onClose }: { onClose: () => void }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
   const invite = trpc.team.invite.useMutation();
@@ -57,7 +57,6 @@ export function InviteCard({ onClose, compact = false }: { onClose: () => void; 
   const list = clients.data ?? [];
   return (
     <HeaderCard
-      tile
       header={
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -81,7 +80,7 @@ export function InviteCard({ onClose, compact = false }: { onClose: () => void; 
       }
       onSubmit={submit}
     >
-      <div className={compact ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="invite-email">Their email address</Label>
           <Input

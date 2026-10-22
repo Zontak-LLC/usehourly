@@ -1,12 +1,13 @@
 "use client";
 
-import { type ReactNode, useRef, useState } from "react";
+import { useState } from "react";
 
-import { Mail, UserRound, UserX } from "lucide-react";
+import { Mail, Pencil, UserRound, UserX } from "lucide-react";
 import { toast } from "sonner";
 
-import { HeaderCard } from "@/components/header-card";
-import { Button } from "@/components/ui/button";
+import { IconAction } from "@/components/icon-action";
+import { InlineConfirm } from "@/components/inline-confirm";
+import { MoreMenu } from "@/components/more-menu";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -22,19 +23,15 @@ type Person = {
 };
 
 const STATUS_WORDS = {
-  pending: "Invitation sent, not accepted yet",
+  pending: "Invitation sent, waiting to accept",
   active: "On your team",
-  expired: "Invitation expired",
+  expired: "Invitation expired, send it again",
   removed: "Removed",
 } as const;
 
-/** Everyone invited, one card each: who they are, their status, which clients they may use (editable), and the buttons. */
-export function PeopleList({ people, footer }: { people: Person[]; footer: ReactNode }) {
+/** Everyone invited, one row each (cards group, rows list): who they are, their status, their clients, and the actions. */
+export function PeopleList({ people }: { people: Person[] }) {
   const shown = people.filter((p) => p.status !== "removed");
-  const row = useRef<HTMLUListElement>(null);
-  const [current, setCurrent] = useState(0);
-  const slides = shown.length + 1; // the people and the invite card
-  const goTo = (i: number) => row.current?.scrollTo({ left: i * (row.current?.clientWidth ?? 0), behavior: "smooth" });
   return (
     <section aria-label="Your team" className="overflow-hidden rounded-xl border bg-card">
       <header className="bg-band-2 px-3 py-3 sm:px-4">
@@ -43,54 +40,25 @@ export function PeopleList({ people, footer }: { people: Person[]; footer: React
           Their time shows up on your Today, Week and Month pages, marked with their name.
         </p>
       </header>
-      <div className="flex flex-col gap-3 p-3 sm:p-4">
-        {/* On a phone the cards are a row you swipe through, each filling the screen, with dots to show where you are; from sm up they are the usual two-column grid. */}
-        <ul
-          ref={row}
-          data-no-swipe
-          onScroll={(e) =>
-            setCurrent(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))
-          }
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto sm:grid sm:grid-cols-2 sm:overflow-visible"
-        >
-          {shown.map((p) => (
-            <PersonCard key={p.id} person={p} />
-          ))}
-          {footer}
-        </ul>
-        {slides > 1 && (
-          <div className="flex justify-center gap-2 sm:hidden">
-            {Array.from({ length: slides }, (_, i) => (
-              <button
-                // biome-ignore lint/suspicious/noArrayIndexKey: a fixed count of dots
-                key={i}
-                type="button"
-                onClick={() => goTo(i)}
-                aria-label={i === slides - 1 ? "Go to Invite someone" : `Go to person ${i + 1} of ${shown.length}`}
-                aria-current={i === current ? "true" : undefined}
-                className="flex size-8 items-center justify-center"
-              >
-                <span className={`size-2.5 rounded-full ${i === current ? "bg-foreground" : "bg-foreground/25"}`} />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <ul>
+        {shown.map((p) => (
+          <PersonRow key={p.id} person={p} />
+        ))}
+      </ul>
     </section>
   );
 }
 
-/** What makes a list item one slide of the phone's swipe row (ignored from sm up, where the list is a grid). */
-export const SLIDE = "max-sm:shrink-0 max-sm:basis-full max-sm:snap-start";
-
-function PersonCard({ person }: { person: Person }) {
+function PersonRow({ person }: { person: Person }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
   const setClients = trpc.team.setClients.useMutation();
   const remove = trpc.team.remove.useMutation();
   const resend = trpc.team.resend.useMutation();
   const [confirming, setConfirming] = useState(false);
+  const [editing, setEditing] = useState(false);
   const live = person.status === "active" || person.status === "pending";
+  const allowed = (clients.data ?? []).filter((c) => person.clientIds.includes(c.id)).map((c) => c.name);
 
   async function toggle(clientId: string, on: boolean) {
     const next = on ? [...person.clientIds, clientId] : person.clientIds.filter((x) => x !== clientId);
@@ -123,68 +91,96 @@ function PersonCard({ person }: { person: Person }) {
     }
   }
 
+  const menu = [
+    ...(person.status !== "active"
+      ? [{ label: "Send again", icon: <Mail />, onSelect: sendAgain, disabled: resend.isPending }]
+      : []),
+    { label: "Remove from team", icon: <UserX />, onSelect: () => setConfirming(true), destructive: true },
+  ];
+
   return (
-    <li className={SLIDE}>
-      <HeaderCard
-        tile
-        className="h-full"
-        header={
-          <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <UserRound className="size-5" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate font-semibold text-base">
-                {person.label}
-                {person.memberName && person.memberName !== person.label && (
-                  <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
-                )}
-              </h3>
-              <p className="truncate text-muted-foreground text-sm">{person.email}</p>
-              <p
-                className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${
-                  person.status === "active" ? "bg-success-soft text-success" : "bg-muted text-foreground/80"
-                }`}
-              >
-                {STATUS_WORDS[person.status]}
-              </p>
-            </div>
-          </div>
-        }
-      >
-        {live && (
-          <ClientChecks
-            legend="Can log time on"
-            legendClassName="mb-1 text-muted-foreground text-xs"
-            clients={clients.data ?? []}
-            checked={person.clientIds}
-            onToggle={toggle}
-          />
-        )}
-        {live &&
-          (confirming ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-card p-3 text-sm ring-1 ring-foreground/10">
-              Remove {person.label}?
-              <Button type="button" onClick={takeOut} disabled={remove.isPending}>
-                Yes, remove
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
-                Keep
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {person.status !== "active" && (
-                <Button type="button" variant="outline" onClick={sendAgain} disabled={resend.isPending}>
-                  <Mail /> Send again
-                </Button>
+    <li className="border-t first:border-t-0">
+      {/* Three columns on a wide screen (who, status and clients, actions); on a phone the actions sit beside the name and the details drop under it. */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:px-4">
+        <div className="flex min-w-0 items-center gap-3 sm:row-start-1">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <UserRound className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate font-semibold text-base">
+              {person.label}
+              {person.memberName && person.memberName !== person.label && (
+                <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
               )}
-              <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
-                <UserX /> Remove
-              </Button>
-            </div>
-          ))}
-      </HeaderCard>
+            </h3>
+            {/* With no name given the title IS the address: show it once. */}
+            {person.label.toLowerCase() !== person.email.toLowerCase() && (
+              <p className="truncate text-muted-foreground text-sm">{person.email}</p>
+            )}
+          </div>
+        </div>
+        {/* Two labeled lines that line up: Status, then Clients. */}
+        <dl className="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 text-sm max-sm:col-span-2 max-sm:row-start-2 sm:col-start-2 sm:row-start-1">
+          <dt className="pt-0.5 text-muted-foreground text-xs">Status</dt>
+          <dd className="flex items-center gap-2">
+            <span
+              className={`size-2 shrink-0 rounded-full ${person.status === "active" ? "bg-success-bright" : "bg-foreground/30"}`}
+              aria-hidden
+            />
+            {STATUS_WORDS[person.status]}
+          </dd>
+          {live && (
+            <>
+              <dt className="pt-1 text-muted-foreground text-xs">Clients</dt>
+              <dd className="min-w-0">
+                {editing ? (
+                  <ClientChecks
+                    legend="Can log time on"
+                    legendClassName="sr-only"
+                    clients={clients.data ?? []}
+                    checked={person.clientIds}
+                    onToggle={toggle}
+                  />
+                ) : (
+                  <span className="flex flex-wrap gap-1.5">
+                    {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
+                    {allowed.map((name) => (
+                      <span key={name} className="rounded-md bg-muted px-2 py-0.5">
+                        {name}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </dd>
+            </>
+          )}
+        </dl>
+        {live && (
+          <div className="flex shrink-0 gap-1 sm:col-start-3 sm:row-start-1">
+            <IconAction
+              label={`Edit clients for ${person.label}`}
+              tip="Change their clients"
+              expanded={editing}
+              onClick={() => setEditing(!editing)}
+            >
+              <Pencil />
+            </IconAction>
+            <MoreMenu label={`More actions for ${person.label}`} items={menu} />
+          </div>
+        )}
+      </div>
+      {confirming && (
+        <InlineConfirm
+          title={`Remove ${person.label}?`}
+          confirmLabel="Remove"
+          confirmIcon={<UserX />}
+          pending={remove.isPending}
+          onConfirm={takeOut}
+          onCancel={() => setConfirming(false)}
+        >
+          They can no longer log time. Their entries stay on your books.
+        </InlineConfirm>
+      )}
     </li>
   );
 }
