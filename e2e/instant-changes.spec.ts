@@ -86,6 +86,6 @@ test("deleting an entry removes it at once, and an edit shows its new time at on
 
   await hold(page, "entry.delete");
   await entryAction(page, "Delete");
-  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("region", { name: "Delete this entry?" }).getByRole("button", { name: "Delete entry" }).click();
   await expect(page.getByText("Edit then delete me")).toHaveCount(0, { timeout: 1500 });
 });

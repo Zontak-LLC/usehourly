@@ -55,9 +55,11 @@ export function TodayView() {
   const sum = (xs: { minutes: number }[]) => xs.reduce((a, e) => a + e.minutes, 0);
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
   // The two totals are one line under the title (they were two stat cards): this day, and this week.
-  const totals = week.data
-    ? ` · ${formatDuration(sum(dayEntries))} this day · ${formatDuration(sum(week.data))} this week`
+  const totalsText = week.data
+    ? `${formatDuration(sum(dayEntries))} this day · ${formatDuration(sum(week.data))} this week`
     : "";
+  // On a wide screen they sit in the header line; on a phone that line has the arrows too, so they go under it.
+  const totals = totalsText ? <span className="max-sm:hidden"> · {totalsText}</span> : null;
 
   return (
     <PageShell
@@ -113,6 +115,8 @@ export function TodayView() {
       }
     >
       <TimerBanner />
+
+      {hasProjects && totalsText && <p className="text-foreground/75 text-sm sm:hidden">{totalsText}</p>}
 
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />

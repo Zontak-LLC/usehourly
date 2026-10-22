@@ -31,7 +31,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
     await page.goto("/dashboard/today");
     await page.getByPlaceholder(/Time:/).fill("2h");
     await page.getByRole("button", { name: /Add to the day/ }).click();
-    await expect(page.getByText("2:00").first()).toBeVisible();
+    await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
     await page.goto("/dashboard/invoices/new");
     await page.getByRole("button", { name: "Create invoice" }).click();
     await expect(page.getByText("€170.00").first()).toBeVisible(); // 2 hours at €85
