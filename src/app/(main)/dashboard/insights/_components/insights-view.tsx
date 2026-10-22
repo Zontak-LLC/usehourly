@@ -2,22 +2,13 @@
 
 import { CardTitle } from "@/components/card-title";
 import { PageShell } from "@/components/page-shell";
+import { StatTile, TileRing } from "@/components/stat-tile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
 import { SupportNoticeCard } from "./support-notice-card";
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : "–");
-
-function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-3xl border bg-card px-4 py-4 shadow-[var(--shadow-sheet)]">
-      <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">{label}</span>
-      <span className="font-display font-extrabold text-5xl tabular-nums leading-none">{value}</span>
-      {hint && <span className="text-muted-foreground text-xs">{hint}</span>}
-    </div>
-  );
-}
 
 /** Columns for a short series (weeks, days): the tallest is the scale, the latest is amber, a title says each value. */
 function Columns({ items }: { items: { key: string; label: string; value: number }[] }) {
@@ -86,19 +77,36 @@ export function InsightsView() {
       title="Insights"
       description="Totals only: no names, emails, clients or entries appear here. Sample accounts are left out."
     >
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-        <Tile
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <StatTile
           label="Accounts"
           value={d.totals.users}
           hint={`${d.totals.demoAccounts} sample account${d.totals.demoAccounts === 1 ? "" : "s"} now`}
-        />
-        <Tile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`} />
-        <Tile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time" />
-        <Tile
+        >
+          <TileRing fraction={d.totals.users ? d.active.last30 / d.totals.users : 0} label="Share active in 30 days" />
+        </StatTile>
+        <StatTile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`}>
+          <TileRing
+            fraction={d.signups.last30 ? d.signups.last7 / d.signups.last30 : 0}
+            label="Share of the month's sign-ups"
+          />
+        </StatTile>
+        <StatTile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time">
+          <TileRing
+            fraction={d.totals.users ? d.active.last7 / d.totals.users : 0}
+            label="Share of accounts active this week"
+          />
+        </StatTile>
+        <StatTile
           label="Active, last 30 days"
           value={d.active.last30}
           hint={d.entriesPerActiveUser30 === null ? "" : `${d.entriesPerActiveUser30} entries each`}
-        />
+        >
+          <TileRing
+            fraction={d.totals.users ? d.active.last30 / d.totals.users : 0}
+            label="Share of accounts active this month"
+          />
+        </StatTile>
       </div>
 
       <Card title="Do people get going?" note="Of everyone who signed up, how far they got.">

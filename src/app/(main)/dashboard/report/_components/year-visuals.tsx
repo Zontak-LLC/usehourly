@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useMoney } from "@/components/currency-provider";
 import { Dial } from "@/components/day-dial";
+import { StatTile, TileRing } from "@/components/stat-tile";
 import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
 import { formatDecimalHours } from "@/lib/duration";
 
@@ -90,39 +91,79 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
   );
 }
 
-/** Six big figures, work on the first row and money on the second, each with its plain-words note. */
+/** Six stat tiles: each figure counts up and carries a ring for the share it is of the figure it comes from. */
 export function YearFigures({ data }: { data: AnnualReport }) {
   const money = useMoney();
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-  const items: [string, string, string][] = [
-    ["Hours worked", hours(data.totals.minutes), plural(data.totals.workedDays, "day")],
-    [
-      "Billable hours",
-      hours(data.totals.billableMinutes),
-      data.totals.nonBillableMinutes ? `${hours(data.totals.nonBillableMinutes)} non-billable` : "all of it",
-    ],
-    ["Earned", money(data.totals.earnedCents), "billable hours × rate"],
-    ["Invoiced", money(data.invoices.totalCents), `${plural(data.invoices.count, "invoice")} issued`],
-    ["Received", money(data.received.totalCents), `${plural(data.received.count, "payment")} · by paid date`],
-    ["Outstanding", money(data.outstanding.totalCents), `${data.outstanding.count} unpaid at year end`],
+  const t = data.totals;
+  const share = (part: number, whole: number) => (whole > 0 ? part / whole : 0);
+  const items: {
+    label: string;
+    value: number;
+    display: (n: number) => string;
+    hint: string;
+    ring: number;
+    ringLabel: string;
+    tone?: string;
+  }[] = [
+    {
+      label: "Hours worked",
+      value: t.minutes,
+      display: hours,
+      hint: plural(t.workedDays, "day"),
+      ring: share(t.minutes, 1800 * 60),
+      ringLabel: "Share of the yearly goal",
+    },
+    {
+      label: "Billable hours",
+      value: t.billableMinutes,
+      display: hours,
+      hint: t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it",
+      ring: share(t.billableMinutes, t.minutes),
+      ringLabel: "Share of hours that are billable",
+    },
+    {
+      label: "Earned",
+      value: t.earnedCents,
+      display: money,
+      hint: "billable hours × rate",
+      ring: share(data.invoices.totalCents, t.earnedCents),
+      ringLabel: "Share of earnings invoiced",
+      tone: "text-amber-700 dark:text-amber",
+    },
+    {
+      label: "Invoiced",
+      value: data.invoices.totalCents,
+      display: money,
+      hint: `${plural(data.invoices.count, "invoice")} issued`,
+      ring: share(data.received.totalCents, data.invoices.totalCents),
+      ringLabel: "Share of invoiced money received",
+    },
+    {
+      label: "Received",
+      value: data.received.totalCents,
+      display: money,
+      hint: `${plural(data.received.count, "payment")} · by paid date`,
+      ring: share(data.received.totalCents, data.invoices.totalCents),
+      ringLabel: "Share of invoiced money received",
+    },
+    {
+      label: "Outstanding",
+      value: data.outstanding.totalCents,
+      display: money,
+      hint: `${data.outstanding.count} unpaid at year end`,
+      ring: share(data.outstanding.totalCents, data.invoices.totalCents),
+      ringLabel: "Share of invoiced money still unpaid",
+    },
   ];
   return (
-    <dl className="grid h-full auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3">
-      {items.map(([label, value, hint], i) => (
-        <div
-          key={label}
-          className="flex flex-col justify-center rounded-3xl border-amber/70 border-t-2 bg-card p-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
-        >
-          <dd
-            className={`order-1 font-display font-extrabold text-3xl tabular-nums leading-none sm:text-4xl ${i === 2 ? "text-amber-700 dark:text-amber" : ""}`}
-          >
-            {value}
-          </dd>
-          <dt className="order-2 mt-2 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">{label}</dt>
-          <p className="order-3 text-muted-foreground text-xs">{hint}</p>
-        </div>
+    <div className="grid h-full auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+      {items.map((i) => (
+        <StatTile key={i.label} label={i.label} value={i.value} display={i.display} hint={i.hint} tone={i.tone} corner>
+          <TileRing fraction={i.ring} label={i.ringLabel} />
+        </StatTile>
       ))}
-    </dl>
+    </div>
   );
 }
 
