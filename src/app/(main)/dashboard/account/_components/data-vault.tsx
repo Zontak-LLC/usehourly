@@ -85,21 +85,3 @@ export function DataVault() {
     </div>
   );
 }
-
-/** How an assistant gets connected, in three plain written steps (no picture: the words are the explanation). */
-export function AssistantLink() {
-  return (
-    <ol className="list-decimal space-y-3 pl-6 marker:font-semibold">
-      <li>
-        <strong>Make a token.</strong> Below: name it, choose read only or read and change.
-      </li>
-      <li>
-        <strong>Give it to your assistant.</strong> Paste the command or the file it shows you, once.
-      </li>
-      <li>
-        <strong>Ask for what you need.</strong> For example: &ldquo;Log 2 hours on Acme today.&rdquo; or &ldquo;Make
-        last month&rsquo;s invoice.&rdquo;
-      </li>
-    </ol>
-  );
-}
