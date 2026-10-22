@@ -77,10 +77,21 @@ export const today = () => new Date().toISOString().slice(0, 10);
 /** Run SQL against the local database (only for setup a user cannot do, like making an account a few days old). */
 export function sql(statement: string) {
   const persist = process.env.E2E_PERSIST ? ["--persist-to", process.env.E2E_PERSIST] : [];
-  execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", ...persist, "--command", statement], {
-    cwd: process.cwd(),
-    stdio: "pipe",
-  });
+  // Several workers share one local database file with the app, so it can be locked for a moment ("database is locked",
+  // SQLITE_BUSY). Wait a little and try again instead of failing the test.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", ...persist, "--command", statement], {
+        cwd: process.cwd(),
+        stdio: "pipe",
+      });
+      return;
+    } catch (err) {
+      const text = `${(err as { stderr?: Buffer }).stderr ?? ""}${(err as Error).message}`;
+      if (attempt >= 6 || !/SQLITE_BUSY|database is locked/i.test(text)) throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 400 * attempt);
+    }
+  }
 }
 
 export type Mail = {
