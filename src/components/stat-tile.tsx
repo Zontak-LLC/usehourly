@@ -43,6 +43,8 @@ export function StatTile({
   children,
   className = "",
   corner = false,
+  accent,
+  title,
 }: {
   label: string;
   value: number;
@@ -53,13 +55,23 @@ export function StatTile({
   className?: string;
   /** Put the drawing in the top corner and let the figure use the whole width (for long figures such as money). */
   corner?: boolean;
+  /** A colour for the top edge (a client's own colour, for example). */
+  accent?: string;
+  /** A line above the figure, such as a name with its colour dot. */
+  title?: ReactNode;
 }) {
   const shown = useCountUp(value);
   return (
     <dl
+      style={accent ? { borderTop: `3px solid ${accent}` } : undefined}
       className={`relative flex gap-3 overflow-hidden rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-all duration-300 motion-safe:animate-[settle_0.6s_ease-out_both] motion-safe:hover:-translate-y-0.5 motion-safe:hover:ring-amber/60 ${corner ? "flex-col justify-end" : "items-center justify-between"} ${className}`}
     >
       <div className="min-w-0">
+        {title && (
+          <p className="mb-3 flex items-center gap-2 truncate font-display font-extrabold text-lg leading-tight">
+            {title}
+          </p>
+        )}
         <dd
           className={`order-1 font-display font-extrabold ${corner ? "text-3xl" : "truncate text-4xl"} tabular-nums leading-none ${tone}`}
         >

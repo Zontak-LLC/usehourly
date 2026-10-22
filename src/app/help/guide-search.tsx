@@ -10,6 +10,8 @@ import { StopSlider } from "@/components/stop-slider";
 import { Input } from "@/components/ui/input";
 import { searchGuide } from "@/lib/guide-search";
 
+import { StepArt } from "./step-art";
+
 /** How deep a group is: 0 = logging time, 1 = billing and sharing, 2 = the rest. */
 const depthOf = (group: string) => (group === "time" ? 0 : group === "billing" || group === "sharing" ? 1 : 2);
 
@@ -77,9 +79,10 @@ export function GuideSearch({
               prefetch={false}
               className="group/start relative flex h-full flex-col gap-1 overflow-hidden rounded-3xl bg-gradient-to-b from-card to-muted p-4 text-foreground shadow-[var(--shadow-sheet)] ring-1 ring-foreground/15 transition-all duration-200 hover:ring-amber/70 motion-safe:hover:-translate-y-0.5"
             >
-              <span className="font-mono text-[11px] text-amber uppercase tracking-widest">Step {n + 1}</span>
+              <StepArt step={n as 0 | 1 | 2} />
+              <span className="mt-2 font-mono text-[11px] text-amber uppercase tracking-widest">Step {n + 1}</span>
               <span className="font-bold font-display text-xl">{step.title}</span>
-              <span className="text-foreground/75 text-sm">{step.hint}</span>
+              <span className="pr-6 text-foreground/75 text-sm">{step.hint}</span>
               <ArrowRight
                 aria-hidden
                 className="absolute right-4 bottom-4 size-4 text-amber transition-transform group-hover/start:translate-x-1"
