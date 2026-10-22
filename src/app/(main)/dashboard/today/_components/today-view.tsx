@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { CalendarSuggestions } from "@/components/calendar-suggestions";
+import { DayDial } from "@/components/day-dial";
+import { DaySide } from "@/components/day-side";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
+import { TimerPanel } from "@/components/timer-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
@@ -20,7 +23,6 @@ import { useToday } from "@/lib/use-today";
 
 import { FirstRun } from "./first-run";
 import { QuickAdd } from "./quick-add";
-import { TimerBanner } from "./timer-banner";
 
 const _longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 const shortDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -114,37 +116,56 @@ export function TodayView() {
         )
       }
     >
-      <TimerBanner />
-
       {hasProjects && totalsText && <p className="text-foreground/75 text-sm sm:hidden">{totalsText}</p>}
 
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
-      ) : hasProjects ? (
-        <QuickAdd date={date} showDate={false} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} />
-      ) : (
+      ) : !hasProjects ? (
         <FirstRun />
-      )}
+      ) : (
+        // The dial on the left (it stays in view while the list grows), the add form and the day's rows on the right.
+        <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-4">
+            <DayDial
+              minutes={sum(dayEntries)}
+              weekMinutes={week.data ? sum(week.data) : null}
+              timerRunning={!!running.data}
+            />
+            {week.data && weekStart && (
+              <DaySide
+                entries={week.data}
+                weekStart={weekStart}
+                date={date}
+                today={today}
+                onPick={go}
+                after={running.data?.started_at ? <TimerPanel /> : undefined}
+              />
+            )}
+          </div>
+          <div className="flex min-w-0 flex-col gap-4">
+            <QuickAdd date={date} showDate={false} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} />
 
-      {/* A connected calendar has meetings to log: they sit right under the add form. Not connected, the card waits at the foot. */}
-      {calendarFirst && hasProjects && clients.data && (
-        <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
-      )}
+            {/* A connected calendar has meetings to log: they sit right under the add form. Not connected, the card waits at the foot. */}
+            {calendarFirst && clients.data && (
+              <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+            )}
 
-      {/* Nothing to total or to bill until there is a project to log against (the first-run question comes first). */}
-      {week.error ? (
-        <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
-      ) : week.isLoading ? (
-        <Skeleton className="h-32 w-full" />
-      ) : !hasProjects || dayEntries.length === 0 ? null : (
-        <>
-          <EntryList entries={dayEntries} date={date} today={today} />
-          <MergeEntriesBar entries={dayEntries} />
-        </>
-      )}
+            {week.error ? (
+              <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
+            ) : week.isLoading ? (
+              <Skeleton className="h-32 w-full" />
+            ) : dayEntries.length === 0 ? null : (
+              <>
+                <EntryList entries={dayEntries} date={date} today={today} />
+                <MergeEntriesBar entries={dayEntries} />
+              </>
+            )}
 
-      {!calendarFirst && hasProjects && clients.data && (
-        <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+            {!calendarFirst && clients.data && (
+              <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+            )}
+          </div>
+        </div>
       )}
     </PageShell>
   );

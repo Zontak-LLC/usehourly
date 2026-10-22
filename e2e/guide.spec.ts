@@ -130,6 +130,7 @@ test("the app links to the guide: the menu, and a ? beside the settings that are
 
   await test.step("the accounting export on Account has one too", async () => {
     await page.goto("/dashboard/account#data");
+    await page.getByRole("button", { name: /Accounting app/ }).click(); // the data tiles: one panel at a time
     await expect(page.getByRole("link", { name: "Guide: Xero and QuickBooks" })).toHaveAttribute(
       "href",
       "/help/xero-quickbooks",

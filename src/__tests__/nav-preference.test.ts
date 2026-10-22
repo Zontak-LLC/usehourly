@@ -6,8 +6,8 @@ import { PREFERENCE_DEFAULTS, PREFERENCE_REGISTRY, parsePreference } from "@/lib
 vi.mock("@/lib/fonts/registry", () => ({ fontKeys: ["geist"], fontOptions: [] }));
 
 describe("where the main navigation sits on a wide screen", () => {
-  it("starts down the left on a wide screen until someone chooses otherwise", () => {
-    expect(PREFERENCE_DEFAULTS.nav_position).toBe("left");
+  it("starts as a pill of tabs in the top bar (the 2026-10-22 look) until someone chooses the left menu", () => {
+    expect(PREFERENCE_DEFAULTS.nav_position).toBe("top");
   });
 
   it("has no icons-only mode any more: the old collapse choice is gone from the registry", () => {
@@ -22,10 +22,10 @@ describe("where the main navigation sits on a wide screen", () => {
   });
 
   it("only accepts the known values: anything else in a cookie falls back to the default", () => {
-    expect(parsePreference("nav_position", "left")).toBe("left");
-    expect(parsePreference("nav_position", "top")).toBe("top"); // a saved choice of Top is kept
-    expect(parsePreference("nav_position", "right")).toBe("left");
-    expect(parsePreference("nav_position", "<script>")).toBe("left");
-    expect(parsePreference("nav_position", null)).toBe("left");
+    expect(parsePreference("nav_position", "left")).toBe("left"); // a saved choice of Left is kept
+    expect(parsePreference("nav_position", "top")).toBe("top");
+    expect(parsePreference("nav_position", "right")).toBe("top");
+    expect(parsePreference("nav_position", "<script>")).toBe("top");
+    expect(parsePreference("nav_position", null)).toBe("top");
   });
 });

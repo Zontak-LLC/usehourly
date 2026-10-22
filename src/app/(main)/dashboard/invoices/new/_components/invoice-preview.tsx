@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimalHours } from "@/lib/duration";
 import type { buildInvoice } from "@/lib/invoice";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
+import { useCountUp } from "@/lib/use-count-up";
 
 export type InvoiceTotals = ReturnType<typeof buildInvoice>;
 
@@ -24,8 +25,10 @@ export function InvoicePreviewCard({
   clientName: string | undefined;
 }) {
   const money = useMoney();
+  const total = useCountUp(totals.totalCents, 800, totals.totalCents);
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    // A sheet of paper: it settles onto the page, and its total counts up.
+    <div className="overflow-hidden rounded-md border bg-card shadow-[var(--shadow-sheet)] motion-safe:animate-[settle_.7s_cubic-bezier(.2,.8,.2,1)]">
       <h2 className="border-b bg-band-2 px-4 py-3 font-semibold text-base">Preview</h2>
       {!validRange ? (
         <p className="px-4 py-8 text-center text-muted-foreground text-sm">
@@ -56,7 +59,7 @@ export function InvoicePreviewCard({
               <td className="px-4 py-3 text-right font-mono tabular-nums">
                 {formatDecimalHours(totals.totalMinutes)} h
               </td>
-              <td className="px-4 py-3 text-right font-mono tabular-nums">{money(totals.totalCents)}</td>
+              <td className="px-4 py-3 text-right font-display font-extrabold text-xl tabular-nums">{money(total)}</td>
             </tr>
           </tbody>
         </table>

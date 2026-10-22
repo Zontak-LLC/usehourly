@@ -51,7 +51,7 @@ test("text stays readable in every preset and mode", async ({ page }) => {
   await expect(page).toHaveURL(/dashboard/);
   // THEME_AUDIT_NAV=left audits the layout with the navigation down the left (the app's default); otherwise the tab strip along the top.
   const nav = process.env.THEME_AUDIT_NAV === "left" ? "left" : "top"; // left is now the app's default: say which
-  await page.context().addCookies([{ name: "nav_position", value: nav, url: page.url() }]);
+  await page.context().addCookies([{ name: "nav_position", value: nav, url: new URL("/", page.url()).href }]);
 
   const findings: Finding[] = [];
   for (const url of PAGES) {

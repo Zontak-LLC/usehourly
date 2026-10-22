@@ -23,20 +23,23 @@ const ROOMY: Record<string, { tab: string; menu: string }> = {
 };
 
 /**
- * The pages used most: a tab bar at the bottom of a phone (where a thumb reaches) and a strip under the top bar from `sm` up. Every tab has an icon and a word, and
- * "More" is a real menu: the rarely used pages. The signed-in person and Log out are in the top bar.
+ * The pages used most, as a pill of tabs: centered in the top bar from 1024px up (below that it wraps onto its own line
+ * under the logo) and a floating bar at the bottom of a phone, where a thumb reaches. "More" is a real menu: the rarely
+ * used pages. The signed-in person and Log out are in the top bar.
  */
 export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const items = MAIN.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
   const more = [...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])];
+  const tab =
+    "flex items-center justify-center gap-0.5 rounded-full font-medium transition-colors max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:text-xs sm:gap-2 sm:px-4 sm:py-1.5 sm:text-sm";
 
   return (
     <nav
       aria-label="Main pages"
-      className="z-40 bg-background max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:border-t max-sm:pb-[env(safe-area-inset-bottom)] sm:sticky sm:top-12 lg:[html[data-nav-position=left]_&]:hidden"
+      className="z-40 max-sm:fixed max-sm:inset-x-3 max-sm:bottom-[calc(0.75rem+env(safe-area-inset-bottom))] max-sm:rounded-2xl max-sm:border max-sm:bg-card max-sm:p-1 max-sm:shadow-[var(--shadow-sheet)] sm:order-last sm:w-full lg:order-none lg:w-auto lg:[html[data-nav-position=left]_&]:hidden"
     >
-      <div className="mx-auto grid max-w-5xl grid-cols-6 min-[480px]:grid-cols-7">
+      <div className="flex gap-1 sm:mx-auto sm:w-fit sm:rounded-full sm:border sm:bg-muted sm:p-1">
         {items.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
           return (
@@ -44,22 +47,21 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
               key={item.id}
               href={item.url}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 font-medium text-xs max-sm:border-t-2 max-sm:border-b-0 ${
-                ROOMY[item.id] ? `${ROOMY[item.id].tab} ` : ""
-              }${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground"}`}
+              className={`${tab} ${ROOMY[item.id] ? `${ROOMY[item.id].tab} ` : ""}${
+                active
+                  ? "bg-card text-foreground shadow-sm max-sm:bg-muted"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <item.icon className="size-5" aria-hidden />
+              <item.icon className="size-5 sm:size-4" aria-hidden />
               {item.short ?? item.title}
             </Link>
           );
         })}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-transparent border-b-2 px-1 font-medium text-muted-foreground text-xs aria-expanded:text-foreground max-sm:border-t-2 max-sm:border-b-0"
-            >
-              <Menu className="size-5" aria-hidden />
+            <button type="button" className={`${tab} text-muted-foreground aria-expanded:text-foreground`}>
+              <Menu className="size-5 sm:size-4" aria-hidden />
               More
             </button>
           </DropdownMenuTrigger>

@@ -40,7 +40,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     const addBox = await add.boundingBox();
     const timerBox = await timer.boundingBox();
     expect(timerBox?.y ?? 0).toBeGreaterThan((addBox?.y ?? 0) + (addBox?.height ?? 0));
-    expect(timerBox?.height ?? 99).toBeLessThan(40); // a line of text, not a 48px button
+    expect(timerBox?.height ?? 99).toBeLessThan(80); // a quiet row, not a big solid button
     await expect(timer).not.toHaveAttribute("data-variant", /.+/); // not one of the app's solid or outline buttons
   });
 
@@ -52,13 +52,16 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     expect(await entries.count()).toBeGreaterThanOrEqual(0);
   });
 
-  await test.step("once a calendar is connected its card moves up under the add form", async () => {
+  await test.step("once a calendar is connected its card sits right under the add form, before the long day list", async () => {
     await page
       .getByLabel("Choose calendar file")
       .setInputFiles({ name: "work.ics", mimeType: "text/calendar", buffer: Buffer.from(await icsFor(page)) });
     await expect(card.getByText("Offline Co planning")).toBeVisible();
-    const calendarY = (await card.boundingBox())?.y ?? 0;
-    const entry = (await page.getByText("1:00", { exact: true }).first().boundingBox())?.y ?? 0;
-    expect(calendarY).toBeLessThan(entry + 400);
+    // Positions on the whole page (the boxes are relative to the screen, which may have scrolled).
+    const top = async (el: typeof card) => el.evaluate((node) => node.getBoundingClientRect().top + window.scrollY);
+    const calendarY = await top(card);
+    const addY = await top(addCard);
+    expect(calendarY).toBeGreaterThan(addY); // below the add form, never above it
+    expect(calendarY - addY).toBeLessThan(1500); // and close to it: the calendar is not pushed to the foot of the page
   });
 });

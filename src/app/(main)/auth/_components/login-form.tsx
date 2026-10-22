@@ -50,7 +50,7 @@ export function LoginForm() {
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" variant="primary" size="lg" className="h-11 text-base" disabled={pending}>
         {pending ? "Logging in…" : "Log in"}
       </Button>
       <Link

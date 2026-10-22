@@ -12,9 +12,8 @@ import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
-import { dayDots } from "@/lib/week-dots";
 
-import { DayTiles, longDayLabel, WeekTotalCard } from "./week-strip";
+import { DayTiles, longDayLabel, WeekDial, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
 
 /** The chosen day, else today when it is in this week, else Monday. */
@@ -58,7 +57,6 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
-  const dots = useMemo(() => dayDots(shown), [shown]);
 
   if (!start) return <Skeleton className="h-64 w-full" />;
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -121,53 +119,57 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
-        <>
-          <DayTiles
-            days={days}
-            selected={selected}
-            today={today}
-            dayTotals={sheet.dayTotals}
-            dots={dots}
-            nonBillable={nonBillable}
-            onPick={pickDay}
-          />
-
-          {/* The week's total sits right under the strip of days it adds up. */}
-          <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
-
-          <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
-            {/* The day strip above already says which day this is, so the date is not repeated here. */}
-            <DayEditorPanel
-              key={selected}
-              date={selected}
-              projectFilter={projectId}
-              inPage
-              weekSeed={
-                entries.data && nonBillableDays.data
-                  ? {
-                      entries: entries.data,
-                      days: nonBillableDays.data,
-                      updatedAt: entries.dataUpdatedAt,
-                      daysUpdatedAt: nonBillableDays.dataUpdatedAt,
-                    }
-                  : undefined
-              }
+        <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+          {/* The dial and the projects stay on the left; the days and the picked day's editor are on the right. */}
+          <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
+            <WeekDial total={sheet.total} today={today ? (sheet.dayTotals[today] ?? 0) : null} />
+            <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-4">
+            <DayTiles
+              days={days}
+              selected={selected}
+              today={today}
+              dayTotals={sheet.dayTotals}
+              rows={sheet.rows}
+              nonBillable={nonBillable}
+              onPick={pickDay}
             />
-          </section>
 
-          {/* The picked day has its own Merge button in the editor above, so this card covers the other days. */}
-          <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
+            <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
+              {/* The day strip above already says which day this is, so the date is not repeated here. */}
+              <DayEditorPanel
+                key={selected}
+                date={selected}
+                projectFilter={projectId}
+                inPage
+                weekSeed={
+                  entries.data && nonBillableDays.data
+                    ? {
+                        entries: entries.data,
+                        days: nonBillableDays.data,
+                        updatedAt: entries.dataUpdatedAt,
+                        daysUpdatedAt: nonBillableDays.dataUpdatedAt,
+                      }
+                    : undefined
+                }
+              />
+            </section>
 
-          {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
-          <WorkItems
-            key={`${start}-${projectId}`}
-            entries={shown}
-            onOpenDay={openDay}
-            period="week"
-            editInPlace
-            nonBillable={nonBillable}
-          />
-        </>
+            {/* The picked day has its own Merge button in the editor above, so this card covers the other days. */}
+            <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
+
+            {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
+            <WorkItems
+              key={`${start}-${projectId}`}
+              entries={shown}
+              onOpenDay={openDay}
+              period="week"
+              editInPlace
+              nonBillable={nonBillable}
+            />
+          </div>
+        </div>
       )}
     </PageShell>
   );

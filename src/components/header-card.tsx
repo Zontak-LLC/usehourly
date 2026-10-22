@@ -35,7 +35,7 @@ export function HeaderCard({
       data-headerless={light ? "light header on purpose" : undefined}
       className={cn(
         "overflow-hidden bg-card",
-        tile ? "rounded-lg ring-1 ring-foreground/25" : "rounded-xl border",
+        tile ? "rounded-lg ring-1 ring-foreground/25" : "rounded-3xl border shadow-[var(--shadow-sheet)]",
         className,
       )}
     >

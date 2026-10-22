@@ -27,7 +27,7 @@ test("By project is a list of rows with one figure each", async ({ page }) => {
   expect(new Set(boxes.map((b) => b.left)).size).toBe(1);
   expect(new Set(boxes.map((b) => b.width)).size).toBe(1);
   const firstRow = tiles.first();
-  const figure = await firstRow.locator("span.font-mono").boundingBox();
+  const figure = await firstRow.locator("span.font-display").boundingBox();
   const rowBox = await firstRow.boundingBox();
   expect((figure?.x ?? 0) + (figure?.width ?? 0)).toBeGreaterThan((rowBox?.x ?? 0) + (rowBox?.width ?? 0) - 40);
 });

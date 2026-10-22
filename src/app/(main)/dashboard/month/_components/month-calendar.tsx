@@ -40,15 +40,15 @@ function DayCell({
       onClick={onClick}
       aria-pressed={selectMode ? isPicked : undefined}
       aria-label={`${d}: ${formatDuration(mins)}${nonBillable ? ", non-billable" : ""}`}
-      className={`flex min-h-16 cursor-pointer flex-col justify-between border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
+      className={`relative flex min-h-16 cursor-pointer flex-col justify-between overflow-hidden border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
         inMonth ? "" : "bg-muted/30 text-muted-foreground"
-      } ${isToday ? "ring-2 ring-primary ring-inset" : ""} ${
+      } ${isToday ? "ring-2 ring-amber ring-inset" : ""} ${
         isPicked ? "bg-tint outline-2 outline-primary -outline-offset-2" : ""
       }`}
       style={
         mins
           ? {
-              backgroundColor: `color-mix(in oklab, var(--primary) calc(var(--heat-range) * ${(mins / max).toFixed(3)} + var(--heat-base)), transparent)`,
+              backgroundColor: `color-mix(in oklab, var(--amber) calc(26% * ${(mins / max).toFixed(3)} + 4%), transparent)`,
             }
           : undefined
       }
@@ -58,7 +58,7 @@ function DayCell({
         <span
           className={
             isToday
-              ? "inline-flex size-6 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground"
+              ? "inline-flex size-6 items-center justify-center rounded-full bg-amber font-semibold text-[#1b1405]"
               : ""
           }
         >
@@ -69,6 +69,14 @@ function DayCell({
       <span className="text-right font-medium font-mono text-foreground text-xs tabular-nums sm:text-sm">
         {mins ? formatDuration(mins) : ""}
       </span>
+      {/* How full the day is, against the busiest day of the month: a thin amber bar along the foot of the cell. */}
+      {mins > 0 && (
+        <span
+          aria-hidden
+          className="absolute bottom-0 left-0 h-1 bg-amber"
+          style={{ width: `${Math.max(6, (mins / max) * 100)}%` }}
+        />
+      )}
     </button>
   );
 }
@@ -99,12 +107,12 @@ export function MonthCalendar({
   const max = Math.max(1, ...Object.values(dayTotals));
 
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
-      <div className="grid select-none grid-cols-7 text-sm sm:min-w-[560px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
+    <div className="overflow-x-auto rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
+      <div className="grid select-none grid-cols-7 text-sm xl:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
         {[...weekdayNames, "Week"].map((n) => (
           <div
             key={n}
-            className={`border-b px-0.5 py-2 text-center text-muted-foreground text-xs sm:px-2 ${n === "Week" ? "hidden sm:block" : ""}`}
+            className={`border-b px-0.5 py-2 text-center text-muted-foreground text-xs sm:px-2 ${n === "Week" ? "hidden xl:block" : ""}`}
           >
             {n}
           </div>
@@ -161,7 +169,7 @@ export function MonthCalendar({
                   }}
                 />
               ))}
-              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-mono font-semibold text-foreground tabular-nums sm:flex">
+              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-bold font-display text-foreground tabular-nums xl:flex">
                 {weekTotal ? formatDuration(weekTotal) : ""}
               </div>
             </div>

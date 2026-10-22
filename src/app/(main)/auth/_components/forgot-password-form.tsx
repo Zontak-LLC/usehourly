@@ -49,7 +49,13 @@ export function ForgotPasswordForm() {
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" autoComplete="email" autoFocus required />
       </div>
-      <Button type="submit" disabled={request.isPending || enabled.isLoading}>
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        className="h-11 text-base"
+        disabled={request.isPending || enabled.isLoading}
+      >
         {request.isPending ? "Sending…" : "Email me a reset link"}
       </Button>
     </form>

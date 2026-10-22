@@ -117,7 +117,15 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
         </p>
       ) : null}
 
-      <section className="rounded-xl border bg-card p-4">
+      <section className="relative rounded-xl border bg-card p-4">
+        {invoice.paid_date && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-3 right-4 rotate-[-10deg] rounded-md px-3 font-display font-extrabold text-2xl text-success tracking-widest opacity-90 ring-4 ring-success-bright ring-inset motion-safe:animate-[stamp_.45s_cubic-bezier(.2,1.6,.4,1)]"
+          >
+            PAID
+          </span>
+        )}
         <p className="text-muted-foreground text-sm">Bill to</p>
         <p className="font-medium">{s.client.legalName || s.client.name}</p>
         {s.client.address && <p className="whitespace-pre-line text-muted-foreground text-sm">{s.client.address}</p>}

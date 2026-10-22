@@ -1,4 +1,5 @@
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
+import { DayBar } from "@/components/day-bar";
 import { HeaderCard } from "@/components/header-card";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
@@ -30,20 +31,23 @@ export function EntryList({
     <HeaderCard
       label={title}
       header={
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="font-semibold text-base">
-            {title}{" "}
-            <span className="font-normal text-foreground/75 text-sm">
-              ({entries.length} {entries.length === 1 ? "entry" : "entries"})
-            </span>
-          </h2>
-          {showTotal && (
-            <span className="text-sm">
-              <span className="text-foreground/75">Total </span>
-              <span className="font-medium font-mono tabular-nums">{formatDuration(total)}</span>
-            </span>
-          )}
-        </div>
+        <>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-semibold text-base">
+              {title}{" "}
+              <span className="font-normal text-foreground/75 text-sm">
+                ({entries.length} {entries.length === 1 ? "entry" : "entries"})
+              </span>
+            </h2>
+            {showTotal && (
+              <span className="text-sm">
+                <span className="text-foreground/75">Total </span>
+                <span className="font-display font-extrabold text-xl tabular-nums">{formatDuration(total)}</span>
+              </span>
+            )}
+          </div>
+          <DayBar entries={entries} />
+        </>
       }
     >
       <ul className="divide-y border-y">

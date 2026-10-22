@@ -56,6 +56,7 @@ test("a swipe that starts in a text field or a dialog does not change the page",
   await page.goto("/dashboard/today");
   const field = page.getByPlaceholder(/Time:/);
   await expect(field).toBeVisible();
+  await field.evaluate((el) => el.scrollIntoView({ block: "center" })); // the field now sits below the first screen
   const box = await field.boundingBox();
   if (!box) throw new Error("time field not on screen");
   await swipe(page, [w - 60, box.y + box.height / 2], [60, box.y + box.height / 2]);

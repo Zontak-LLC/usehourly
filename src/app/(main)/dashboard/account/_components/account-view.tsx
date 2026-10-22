@@ -1,26 +1,23 @@
 "use client";
 
-import { AccountingExport } from "@/components/accounting-export";
 import { AiPolishCard } from "@/components/ai-polish-card";
 import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
-import { DeleteAccountCard } from "@/components/delete-account-card";
-import { ExportEverything } from "@/components/export-everything";
-import { GuideLink } from "@/components/guide-link";
-import { ImportTime } from "@/components/import-time";
-import { LocalFirstCard } from "@/components/local-first-card";
 import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
 import { SupportHourly } from "@/components/support-hourly";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
+import { AccountChecklist } from "./account-checklist";
 import { Section } from "./account-section";
 import { AccountTabs, useAccountTab } from "./account-tabs";
 import { BusinessDetailsCard } from "./business-details-card";
 import { CurrencyCard } from "./currency-card";
+import { DataHub } from "./data-hub";
+import { AssistantLink, DataVault } from "./data-vault";
 import { FridayReminderCard } from "./friday-reminder-card";
-import { InvoiceFooterCard } from "./invoice-footer-card";
+import { MemberBadge } from "./member-badge";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
 
@@ -39,21 +36,36 @@ export function AccountView() {
     <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
       <AccountTabs tab={tab} onTab={setTab} />
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-8">
+      <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-8">
         {tab === "account" && (
           <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
-            {account.is_demo ? <ClaimDemoCard /> : <ProfileCard me={account} emailEnabled={emailEnabled.data} />}
-            {!account.is_demo && !account.has_password && <PasswordNote />}
-            {!account.is_demo && account.has_password && <ChangePasswordCard me={account} />}
-            <SignOutCard />
-            {!account.is_demo && <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />}
+            {account.is_demo ? (
+              <>
+                <ClaimDemoCard />
+                <SignOutCard />
+              </>
+            ) : (
+              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+                <div className="lg:sticky lg:top-32">
+                  <MemberBadge me={account} />
+                </div>
+                <div className="flex min-w-0 flex-col gap-6">
+                  <AccountChecklist me={account} />
+                  <ProfileCard me={account} emailEnabled={emailEnabled.data} />
+                  <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />
+                  <div className="grid items-start gap-6 xl:grid-cols-2">
+                    {account.has_password ? <ChangePasswordCard me={account} /> : <PasswordNote />}
+                    <SignOutCard />
+                  </div>
+                </div>
+              </div>
+            )}
           </Section>
         )}
         {tab === "invoices" && (
           <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
             <BusinessDetailsCard me={account} />
             <CurrencyCard me={account} />
-            <InvoiceFooterCard me={account} />
           </Section>
         )}
         {tab === "data" && (
@@ -62,29 +74,8 @@ export function AccountView() {
             title="Your data"
             description="Keep a copy of everything you have logged, or bring your history in from another tool."
           >
-            <SectionCard
-              title="Download everything"
-              description="Everything you have logged, every client and all time, as a zip of spreadsheets: one combined workbook, one per client, and plain CSV files."
-            >
-              <ExportEverything className="self-start" />
-            </SectionCard>
-
-            <SectionCard
-              title={
-                <span className="inline-flex items-center gap-1">
-                  Send invoices to your accounting app <GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />
-                </span>
-              }
-              description="Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you marked non-billable are already left off every invoice."
-            >
-              <AccountingExport />
-            </SectionCard>
-
-            <ImportTime />
-
-            {!account.is_demo && <LocalFirstCard />}
-
-            {!account.is_demo && <DeleteAccountCard hasPassword={account.has_password} email={account.email} />}
+            <DataVault />
+            <DataHub account={account} />
           </Section>
         )}
         {tab === "ai" && (
@@ -100,6 +91,7 @@ export function AccountView() {
               />
             ) : (
               <>
+                <AssistantLink />
                 <ApiTokensCard />
                 <AiPolishCard />
               </>

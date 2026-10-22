@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { CircleCheck, Hourglass, Mail, MailX, Pencil, UserRound, UserX } from "lucide-react";
+import { CircleCheck, Hourglass, Mail, MailX, Pencil, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { IconAction } from "@/components/icon-action";
@@ -13,6 +13,7 @@ import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 import { ClientChecks } from "./client-checks";
+import { Avatar } from "./person-avatar";
 
 type Person = {
   id: string;
@@ -22,6 +23,8 @@ type Person = {
   status: "pending" | "active" | "expired" | "removed";
   clientIds: string[];
 };
+
+const COLS = "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1.3fr)_7.5rem_minmax(0,1.6fr)_7rem]";
 
 const STATUS_WORDS = {
   pending: "Invitation sent, waiting to accept",
@@ -52,22 +55,33 @@ function StatusIcon({ status }: { status: Person["status"] }) {
   );
 }
 
-/** Everyone invited, one row each (cards group, rows list): who they are, their status, their clients, and the actions. */
+/** Everyone invited as a table, one row each: a coloured monogram and who they are, their status, the clients they log time for, and the actions. Rows keep a long team easy to scan. */
 export function PeopleList({ people }: { people: Person[] }) {
   const shown = people.filter((p) => p.status !== "removed");
   return (
-    <section aria-label="Your team" className="overflow-hidden rounded-xl border bg-card">
-      <header className="bg-band-2 px-3 py-3 sm:px-4">
-        <h2 className="font-semibold text-base">Your team</h2>
+    <section aria-label="Your team">
+      <header className="px-1 pb-2">
+        <h2 className="font-display font-extrabold text-2xl">Your team</h2>
         <p className="text-foreground/75 text-sm">
           Their time shows up on your Today, Week and Month pages, marked with their name.
         </p>
       </header>
-      <ul>
-        {shown.map((p) => (
-          <PersonRow key={p.id} person={p} />
-        ))}
-      </ul>
+      <div className="overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
+        <div
+          aria-hidden
+          className={`${COLS} gap-x-4 border-foreground/10 border-b bg-band-2 px-5 py-2 font-mono text-[11px] text-foreground/75 uppercase tracking-widest max-sm:hidden`}
+        >
+          <span>Person</span>
+          <span>Status</span>
+          <span>Logs time for</span>
+          <span />
+        </div>
+        <ul className="divide-y divide-foreground/10">
+          {shown.map((p) => (
+            <PersonRow key={p.id} person={p} />
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
@@ -81,7 +95,7 @@ function PersonRow({ person }: { person: Person }) {
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState(false);
   const live = person.status === "active" || person.status === "pending";
-  const allowed = (clients.data ?? []).filter((c) => person.clientIds.includes(c.id)).map((c) => c.name);
+  const allowed = (clients.data ?? []).filter((c) => person.clientIds.includes(c.id));
 
   async function toggle(clientId: string, on: boolean) {
     const next = on ? [...person.clientIds, clientId] : person.clientIds.filter((x) => x !== clientId);
@@ -121,16 +135,32 @@ function PersonRow({ person }: { person: Person }) {
     { label: "Remove from team", icon: <UserX />, onSelect: () => setConfirming(true), destructive: true },
   ];
 
+  const _hue = [...person.label.toLowerCase()].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 0);
+  const _badge = {
+    active: "bg-success-soft text-success",
+    pending: "bg-amber/20 text-foreground",
+    expired: "bg-destructive/15 text-destructive",
+    removed: "bg-muted text-foreground/75",
+  }[person.status];
+  const _badgeWords = { active: "On the team", pending: "Waiting", expired: "Expired", removed: "Removed" }[
+    person.status
+  ];
+  const badge = {
+    active: "bg-success-soft text-success",
+    pending: "bg-amber/20 text-foreground",
+    expired: "bg-destructive/15 text-destructive",
+    removed: "bg-muted text-foreground/75",
+  }[person.status];
+  const badgeWords = { active: "On the team", pending: "Waiting", expired: "Expired", removed: "Removed" }[
+    person.status
+  ];
   return (
-    <li className="border-t first:border-t-0">
-      {/* Three columns on a wide screen (who, status and clients, actions); on a phone the actions sit beside the name and the details drop under it. */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:px-4">
-        <div className="flex min-w-0 items-center gap-3 sm:row-start-1">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <UserRound className="size-5" aria-hidden />
-          </span>
+    <li className="transition-colors hover:bg-amber/5">
+      <div className={`${COLS} items-center gap-x-4 gap-y-3 px-5 py-4`}>
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar label={person.label} className="size-12 text-xl" />
           <div className="min-w-0">
-            <h3 className="truncate font-semibold text-base">
+            <h3 className="truncate font-bold font-display text-lg leading-tight">
               {person.label}
               {person.memberName && person.memberName !== person.label && (
                 <span className="font-normal text-muted-foreground"> ({person.memberName})</span>
@@ -142,33 +172,44 @@ function PersonRow({ person }: { person: Person }) {
             )}
           </div>
         </div>
-        {/* The middle is only who they may log time for; the status is the icon beside the buttons. */}
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm max-sm:col-span-2 max-sm:row-start-2 sm:col-start-2 sm:row-start-1">
-          {live ? (
-            <>
-              <span className="mr-1 text-muted-foreground text-xs">Logs time for</span>
-              {editing ? (
-                <ClientChecks
-                  legend="Can log time on"
-                  legendClassName="sr-only"
-                  clients={clients.data ?? []}
-                  checked={person.clientIds}
-                  onToggle={toggle}
-                />
-              ) : (
-                <>
-                  {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
-                  {allowed.map((name) => (
-                    <span key={name} className="rounded-md bg-muted px-2 py-0.5">
-                      {name}
-                    </span>
-                  ))}
-                </>
-              )}
-            </>
-          ) : null}
+        <div className="flex items-center gap-1 max-sm:order-3 max-sm:col-span-2 sm:col-start-2">
+          <span
+            aria-hidden
+            className={`inline-flex rounded-full px-3 py-0.5 font-mono text-[11px] uppercase tracking-widest ${badge}`}
+          >
+            {badgeWords}
+          </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1 sm:col-start-3 sm:row-start-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm max-sm:order-4 max-sm:col-span-2 sm:col-start-3">
+          {live &&
+            (editing ? (
+              <ClientChecks
+                legend="Can log time on"
+                legendClassName="sr-only"
+                clients={clients.data ?? []}
+                checked={person.clientIds}
+                onToggle={toggle}
+              />
+            ) : (
+              <>
+                {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
+                {allowed.map((c) => (
+                  <span
+                    key={c.name}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 ring-1 ring-foreground/10"
+                  >
+                    <span
+                      aria-hidden
+                      className="size-2 rounded-full"
+                      style={{ background: c.color ?? "var(--amber)" }}
+                    />
+                    {c.name}
+                  </span>
+                ))}
+              </>
+            ))}
+        </div>
+        <div className="flex shrink-0 items-center justify-end gap-1 max-sm:order-2 sm:col-start-4">
           <StatusIcon status={person.status} />
           {live && (
             <>

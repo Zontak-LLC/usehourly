@@ -2,8 +2,10 @@ import * as React from "react";
 
 import { cn } from "cn";
 
+import { FIELD_CLASS } from "./field-style";
+
 /**
- * A native drop-down that looks exactly like an `Input` (same height, border, corners, text size), so a form's fields
+ * A native drop-down that looks exactly like an `Input` (same height, field style, corners, text size), with its own chevron, so a form's fields
  * line up. Use it instead of a hand-styled `<select>` in forms.
  */
 function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
@@ -11,7 +13,8 @@ function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
     <select
       data-slot="native-select"
       className={cn(
-        "h-8 w-full min-w-0 rounded-lg border border-input bg-card px-2 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 max-md:h-10 md:text-sm dark:bg-input/30",
+        FIELD_CLASS,
+        "field-chevron h-10 w-full min-w-0 cursor-pointer appearance-none pr-9 pl-3 text-base max-md:h-11 md:text-sm",
         className,
       )}
       {...props}

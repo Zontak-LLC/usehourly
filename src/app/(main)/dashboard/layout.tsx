@@ -94,33 +94,28 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
               <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
               {session?.user?.demo === true && <DemoBanner />}
-              <header
-                className={cn(
-                  "flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
-                  // Handle sticky navbar style with conditional classes so blur, background, z-index, and rounded corners remain consistent across all SidebarVariant layouts.
-                  "[html[data-navbar-style=sticky]_&]:sticky [html[data-navbar-style=sticky]_&]:top-0 [html[data-navbar-style=sticky]_&]:z-50 [html[data-navbar-style=sticky]_&]:overflow-hidden [html[data-navbar-style=sticky]_&]:rounded-t-[inherit] [html[data-navbar-style=sticky]_&]:bg-background/50 [html[data-navbar-style=sticky]_&]:backdrop-blur-md",
-                )}
-              >
-                <div className="flex w-full items-center justify-between px-4 lg:px-6">
-                  <div className="flex items-center gap-1 lg:gap-2">
+              {/* No backdrop-filter on a phone: it would make the fixed bottom tab bar (inside this header) position itself against the header instead of the screen. */}
+              <header className="sticky top-0 z-40 shrink-0 border-b max-sm:bg-background sm:bg-background/85 sm:backdrop-blur-md">
+                <div className="flex w-full flex-wrap items-center justify-between gap-x-3 px-4 py-2 lg:px-6">
+                  <div className="flex min-w-0 items-center gap-1 lg:flex-1 lg:gap-2">
                     <Link
                       href="/dashboard/today"
-                      className="flex items-center gap-2 font-semibold text-base lg:[html[data-nav-position=left]_&]:hidden"
+                      className="flex items-center gap-2 font-display font-extrabold text-lg lg:[html[data-nav-position=left]_&]:hidden"
                     >
                       <LogoMark className="size-6 shrink-0" aria-hidden />
                       UseHourly
                     </Link>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <MobileNav isAdmin={isAdmin} />
+                  <div className="flex items-center justify-end gap-2 lg:flex-1">
                     <GuideButton />
                     <LayoutControls />
                     <UserMenu user={user} />
                   </div>
                 </div>
               </header>
-              <MobileNav isAdmin={isAdmin} />
               {/* Pages can set data-content-padding="false" to render full-bleed app layouts. */}
-              <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-2 has-data-[content-padding=false]:p-0 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:has-data-[content-padding=false]:p-0">
+              <div className="min-h-0 min-w-0 flex-1 overflow-x-clip p-2 has-data-[content-padding=false]:p-0 max-sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:has-data-[content-padding=false]:p-0">
                 <OfflineSync />
                 <SupportNotice cost={dbUser?.is_demo ? null : (supportNotice?.cost ?? null)} url={donateUrl()} />
                 {children}

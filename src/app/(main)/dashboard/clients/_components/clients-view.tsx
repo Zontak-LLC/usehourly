@@ -21,6 +21,7 @@ import { trpc } from "@/lib/trpc";
 
 import { ClientCard } from "./client-card";
 import type { ClientRow } from "./client-types";
+import { ClientsHero } from "./clients-hero";
 import { NewClientCard } from "./new-client-card";
 import { useOpenClients } from "./use-open-clients";
 import { useProjectEditing } from "./use-project-editing";
@@ -168,42 +169,47 @@ export function ClientsView() {
         </div>
       }
     >
-      {/* Search only earns its place once there are more clients than fit in a glance. */}
-      {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
+      <div className="flex flex-col gap-3 sm:gap-4">
+        {clientCount > 0 && totals.data && (
+          <ClientsHero clients={clients.data ?? []} totals={totals.data} monthMinutes={monthMinutes} />
+        )}
+        {/* Search only earns its place once there are more clients than fit in a glance. */}
+        {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
 
-      {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
+        {/* The page's header card: what this page is, the button to add a client, and the numbers at a glance. */}
 
-      {clients.isLoading && <Skeleton className="h-32 w-full" />}
-      {clients.error && <p className="text-destructive text-sm">Couldn't load clients: {clients.error.message}</p>}
+        {clients.isLoading && <Skeleton className="h-32 w-full" />}
+        {clients.error && <p className="text-destructive text-sm">Couldn't load clients: {clients.error.message}</p>}
 
-      {words.length > 0 && visibleClients.length === 0 && (
-        <p className="py-6 text-center text-muted-foreground text-sm">No client or project matches that.</p>
-      )}
+        {words.length > 0 && visibleClients.length === 0 && (
+          <p className="py-6 text-center text-muted-foreground text-sm">No client or project matches that.</p>
+        )}
 
-      {/* The form (or, on an empty page, the big card) sits at the top; not while searching or before the list loads. */}
-      {clients.data && words.length === 0 && (
-        <NewClientCard clientCount={clients.data.length} open={newClientOpen} onOpenChange={setNewClientOpen} />
-      )}
+        {/* The form (or, on an empty page, the big card) sits at the top; not while searching or before the list loads. */}
+        {clients.data && words.length === 0 && (
+          <NewClientCard clientCount={clients.data.length} open={newClientOpen} onOpenChange={setNewClientOpen} />
+        )}
 
-      {visibleClients.map((c) => (
-        <ClientCard
-          key={c.id}
-          client={c}
-          allClients={clients.data}
-          logos={logos}
-          totals={totals.data}
-          budgets={budgets.data}
-          editing={editing}
-          billingOpen={editingClientId === c.id}
-          // While searching, every match is shown open so the project that matched is visible.
-          open={words.length > 0 || openClients.isOpen(c.id, c.projects.length)}
-          onOpenChange={(open) => openClients.setOpen(c.id, open)}
-          onToggleBilling={() => setEditingClientId(editingClientId === c.id ? null : c.id)}
-          onCloseBilling={() => setEditingClientId(null)}
-          onArchiveClient={() => void archive({ kind: "client", id: c.id, name: c.name })}
-          onArchiveProject={(p) => void archive({ kind: "project", ...p })}
-        />
-      ))}
+        {visibleClients.map((c) => (
+          <ClientCard
+            key={c.id}
+            client={c}
+            allClients={clients.data}
+            logos={logos}
+            totals={totals.data}
+            budgets={budgets.data}
+            editing={editing}
+            billingOpen={editingClientId === c.id}
+            // While searching, every match is shown open so the project that matched is visible.
+            open={words.length > 0 || openClients.isOpen(c.id, c.projects.length)}
+            onOpenChange={(open) => openClients.setOpen(c.id, open)}
+            onToggleBilling={() => setEditingClientId(editingClientId === c.id ? null : c.id)}
+            onCloseBilling={() => setEditingClientId(null)}
+            onArchiveClient={() => void archive({ kind: "client", id: c.id, name: c.name })}
+            onArchiveProject={(p) => void archive({ kind: "project", ...p })}
+          />
+        ))}
+      </div>
     </PageShell>
   );
 }

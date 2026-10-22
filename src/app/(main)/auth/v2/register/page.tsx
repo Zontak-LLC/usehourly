@@ -12,9 +12,9 @@ export const metadata: Metadata = { title: "Create account · UseHourly" };
 export default function RegisterPage() {
   return (
     <>
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 rounded-2xl border bg-card p-6 sm:w-[400px] sm:p-8">
+      <div className="relative mx-auto flex w-full flex-col justify-center space-y-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)] sm:w-[420px] sm:p-8">
         <div className="space-y-2 text-center">
-          <h1 className="font-medium text-3xl">Create your account</h1>
+          <h1 className="font-bold font-display text-4xl">Create your account</h1>
           <p className="text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
         </div>
         <SocialSignIn />

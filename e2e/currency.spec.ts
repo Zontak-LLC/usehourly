@@ -20,7 +20,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
   await test.step("a rate is shown and typed in euros", async () => {
     await page.goto("/dashboard/clients");
     await page.getByRole("button", { name: "Edit General" }).click();
-    await expect(page.getByLabel("Rate per hour").locator("..")).toContainText("€"); // the symbol beside the rate box
+    await expect(page.getByText(/€\d+\/h/).first()).toBeVisible(); // the symbol beside the rate
     await page.getByLabel("Rate per hour").fill("85");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("€85.00/h")).toBeVisible();

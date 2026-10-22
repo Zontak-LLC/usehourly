@@ -23,6 +23,7 @@ import { useToday } from "@/lib/use-today";
 
 import { INVOICE_COLS, type InvoiceActionHandlers, InvoiceLine } from "./invoice-card";
 import { InvoiceFilterBar } from "./invoice-filter-bar";
+import { InvoiceHero } from "./invoice-hero";
 import { InvoiceTotals } from "./invoice-totals";
 import type { InvoiceRow } from "./invoice-types";
 import { useInvoiceFilters } from "./use-invoice-filters";
@@ -98,46 +99,57 @@ export function InvoicesView() {
           <p className="text-muted-foreground text-sm">Create one from the time you've already logged.</p>
         </EmptyState>
       ) : (
-        <section
-          id="invoice-list"
-          aria-label="Your invoices"
-          className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
-        >
-          <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
-            <h2 className="font-semibold text-base">Your invoices</h2>
-            {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
-          </header>
-          {/* Search and filters sit right above the list they narrow. */}
-          {showFilters && (
-            <div className="border-b px-3 py-3 sm:px-4">
-              <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
-            </div>
-          )}
-          {invoices.error ? (
-            <div className="p-3 sm:p-4">
-              <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
-            </div>
-          ) : invoices.isLoading ? (
-            <Skeleton className="m-3 h-32 sm:m-4" />
-          ) : invoices.data?.length === 0 ? (
-            <p className="px-3 py-10 text-center text-muted-foreground text-sm sm:px-4">
-              No invoices match that search.
-            </p>
-          ) : (
-            <InvoiceTable
+        <div className="flex flex-col gap-4">
+          {groups[0] && !filtering && (
+            <InvoiceHero
               invoices={invoices.data ?? []}
-              pageNo={pageNo}
-              pageSize={pageSize}
-              onPage={(n) => {
-                setPageNo(n);
-                // Landing on the new page at its top, not wherever the buttons were.
-                document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
-              }}
+              currency={groups[0].currency}
+              total={groups[0].total}
+              unpaid={groups[0].unpaid}
               today={today}
-              handlers={handlers}
             />
           )}
-        </section>
+          <section
+            id="invoice-list"
+            aria-label="Your invoices"
+            className="scroll-mt-20 overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
+          >
+            <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
+              <h2 className="font-semibold text-base">Your invoices</h2>
+              {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
+            </header>
+            {/* Search and filters sit right above the list they narrow. */}
+            {showFilters && (
+              <div className="border-b px-3 py-3 sm:px-4">
+                <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
+              </div>
+            )}
+            {invoices.error ? (
+              <div className="p-3 sm:p-4">
+                <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
+              </div>
+            ) : invoices.isLoading ? (
+              <Skeleton className="m-3 h-32 sm:m-4" />
+            ) : invoices.data?.length === 0 ? (
+              <p className="px-3 py-10 text-center text-muted-foreground text-sm sm:px-4">
+                No invoices match that search.
+              </p>
+            ) : (
+              <InvoiceTable
+                invoices={invoices.data ?? []}
+                pageNo={pageNo}
+                pageSize={pageSize}
+                onPage={(n) => {
+                  setPageNo(n);
+                  // Landing on the new page at its top, not wherever the buttons were.
+                  document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
+                }}
+                today={today}
+                handlers={handlers}
+              />
+            )}
+          </section>
+        </div>
       )}
     </PageShell>
   );

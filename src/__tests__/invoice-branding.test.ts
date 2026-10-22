@@ -70,61 +70,34 @@ const baseSnapshot = (over: Partial<InvoiceSnapshot> = {}): InvoiceSnapshot => (
   ...over,
 });
 
-describe("the optional 'Made with UseHourly' line on invoices", () => {
-  it("is on for a new seller: the invoice is frozen with the setting at the moment it is issued", async () => {
+describe("invoices carry no UseHourly credit", () => {
+  it("a new invoice is frozen with no branding key", async () => {
     const { prisma, caller } = setup(true);
     const made = await caller.invoice.create(input);
-    expect(made.snapshot.branding).toBe(true);
-    const stored = JSON.parse(prisma.invoice.create.mock.calls[0][0].data.snapshot);
-    expect(stored.branding).toBe(true);
+    expect("branding" in made.snapshot).toBe(false);
+    expect("branding" in JSON.parse(prisma.invoice.create.mock.calls[0][0].data.snapshot)).toBe(false);
   });
 
-  it("stays off for a seller who turned it off, and changing it later does not rewrite issued invoices", async () => {
-    const { prisma, caller } = setup(false);
-    const made = await caller.invoice.create(input);
-    expect(made.snapshot.branding).toBe(false);
-    expect(JSON.parse(prisma.invoice.create.mock.calls[0][0].data.snapshot).branding).toBe(false);
-
-    await caller.account.setInvoiceBranding({ enabled: true });
-    expect(prisma.authUser.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { invoice_branding: true } });
-    // the setting touches only the account row; no invoice is rewritten
-    expect(prisma.invoice.create).toHaveBeenCalledTimes(1);
-  });
-
-  it("prints a linked credit on every page when on, and nothing when off or for older invoices", async () => {
-    const on = (await buildInvoicePdf(baseSnapshot({ branding: true }))).output();
-    expect(on).toContain("Made with UseHourly");
-    expect(on).toContain("usehourly.app");
-    expect(on).toContain("/URI"); // a clickable link
-
-    const off = (await buildInvoicePdf(baseSnapshot({ branding: false }))).output();
-    expect(off).not.toContain("Made with UseHourly");
-
-    // issued before the setting existed: no key at all, so it stays as it was sent
-    const legacy = (await buildInvoicePdf(baseSnapshot())).output();
+  it("the PDF prints no credit or link, even for an old snapshot that still says branding", async () => {
+    const legacy = (await buildInvoicePdf(baseSnapshot({ branding: true } as never))).output();
     expect(legacy).not.toContain("Made with UseHourly");
     expect(legacy).toContain("INV-1");
   });
 
-  it("repeats the credit on each page of a long invoice", async () => {
+  it("the setting is gone from the account API", () => {
+    expect("setInvoiceBranding" in (appRouter._def.procedures as object)).toBe(false);
+    expect(Object.keys(appRouter._def.procedures)).not.toContain("account.setInvoiceBranding");
+  });
+
+  it("long invoices print no credit on any page", async () => {
     const detail = Array.from({ length: 90 }, (_, i) => ({
       date: `2026-10-${String((i % 28) + 1).padStart(2, "0")}`,
       project: "Website",
       note: `task ${i}`,
       minutes: 30,
     }));
-    const doc = await buildInvoicePdf(baseSnapshot({ branding: true, includeDetail: true, detail }));
-    const pages = doc.getNumberOfPages();
-    expect(pages).toBeGreaterThan(1);
-    expect(doc.output().split("Made with UseHourly").length - 1).toBe(pages);
-  });
-
-  it("is settable only for the signed-in account, and signed-out callers are refused", async () => {
-    const { prisma } = setup(true);
-    const signedOut = createCaller({ session: null, prisma: prisma as never });
-    await expect(signedOut.account.setInvoiceBranding({ enabled: false })).rejects.toMatchObject({
-      code: "UNAUTHORIZED",
-    });
-    expect(prisma.authUser.update).not.toHaveBeenCalled();
+    const doc = await buildInvoicePdf(baseSnapshot({ includeDetail: true, detail }));
+    expect(doc.getNumberOfPages()).toBeGreaterThan(1);
+    expect(doc.output()).not.toContain("Made with UseHourly");
   });
 });

@@ -1,6 +1,6 @@
 /** Rules for the project picker: a few recent projects as chips, everything else behind a search. */
 
-export type PickerProject = { id: string; name: string; clientName: string };
+export type PickerProject = { id: string; name: string; clientName: string; color?: string };
 
 /** With this many projects or fewer, every project is a chip and there is no search (a fourth project starts the picker). */
 export const ALL_AS_CHIPS = 3;

@@ -250,7 +250,6 @@ export const invoiceRouter = router({
         notes: input.notes,
         includeDetail: input.includeDetail,
         compactNotes: input.compactNotes,
-        branding: user.invoice_branding,
         lines: totals.lines,
         detail: totals.detail,
         totalMinutes: totals.totalMinutes,

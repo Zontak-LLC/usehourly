@@ -47,7 +47,10 @@ export function NewClientCard({
 
   if (open) {
     return (
-      <section aria-label="New client" className="flex flex-col gap-3 rounded-xl border bg-card p-3">
+      <section
+        aria-label="New client"
+        className="flex flex-col gap-3 rounded-3xl border bg-card p-3 shadow-[var(--shadow-sheet)]"
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <h2 className="font-semibold text-base">New client</h2>

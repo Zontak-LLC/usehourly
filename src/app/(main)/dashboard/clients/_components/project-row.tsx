@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Archive, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -11,6 +13,8 @@ import { MoreMenu } from "@/components/more-menu";
 import { ProjectMark } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { ValueSlider } from "@/components/value-slider";
 import { type BudgetStatus, budgetInputValue } from "@/lib/budget";
 import { formatDuration } from "@/lib/duration";
 import { currencySymbol } from "@/lib/money";
@@ -109,91 +113,135 @@ export function ProjectEditCard({
   editing: ProjectEditing;
 }) {
   const currency = useCurrency();
+  // The rate and the budget are held here so a slider and its number box move together; both still post by name.
+  const [rate, setRate] = useState(p.hourly_rate > 0 ? (p.hourly_rate / 100).toFixed(2) : "");
+  const [budget, setBudget] = useState(
+    p.budget_amount !== null && (p.budget_unit === "hours" || p.budget_unit === "dollars")
+      ? budgetInputValue(p.budget_amount, p.budget_unit)
+      : "",
+  );
+  const [unit, setUnit] = useState<string>(p.budget_unit ?? "dollars");
+  const hours = unit === "hours";
   return (
-    <li className="border-t px-3 py-3 first:border-t-0">
-      <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-wrap items-center gap-2">
-        <Input name="name" defaultValue={p.name} required className="w-44" autoFocus />
-        <select
-          name="clientId"
-          defaultValue={p.client_id}
-          aria-label="Client"
-          className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
-        >
-          {clients?.map((cl) => (
-            <option key={cl.id} value={cl.id}>
-              {cl.name}
-            </option>
-          ))}
-        </select>
-        <span className="flex items-center gap-1 text-muted-foreground text-sm">
-          {currencySymbol(currency)}
-          <Input
-            name="rate"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="0.01"
-            // No rate yet is an empty box with a hint (a real "0.00" turned a typed 95 into 0.0095); a click selects what is there.
-            defaultValue={p.hourly_rate > 0 ? (p.hourly_rate / 100).toFixed(2) : ""}
-            placeholder="0.00"
-            onFocus={(e) => e.currentTarget.select()}
-            className="w-24"
-            aria-label="Rate per hour"
-          />
-          /h
-        </span>
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" name="billable" defaultChecked={p.billable} /> Billable
-        </label>
-        <fieldset className="flex basis-full flex-wrap items-center gap-2 text-sm">
+    <li className="px-3 py-4">
+      <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input name="name" defaultValue={p.name} required className="w-56" autoFocus aria-label="Project name" />
+          <NativeSelect name="clientId" defaultValue={p.client_id} aria-label="Client" className="w-44">
+            {clients?.map((cl) => (
+              <option key={cl.id} value={cl.id}>
+                {cl.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <label className="flex items-center gap-1.5 text-sm">
+            <input type="checkbox" name="billable" defaultChecked={p.billable} className="size-4" /> Billable
+          </label>
+        </div>
+
+        <div className="grid gap-1">
+          <div className="flex items-end justify-between gap-3">
+            <span className="font-medium text-sm">Hourly rate</span>
+            <span className="font-display font-extrabold text-2xl tabular-nums">
+              {currencySymbol(currency)}
+              {rate ? Number(rate) : 0}
+              <span className="font-normal text-muted-foreground text-sm">/h</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <ValueSlider
+              value={Number(rate) || 0}
+              min={0}
+              max={300}
+              step={5}
+              label="Hourly rate slider"
+              valueText={`${rate || 0} per hour`}
+              onChange={(v) => setRate(v ? v.toFixed(2) : "")}
+            />
+            <Input
+              name="rate"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={rate}
+              // No rate yet is an empty box with a hint (a real "0.00" turned a typed 95 into 0.0095); a click selects what is there.
+              placeholder="0.00"
+              onChange={(e) => setRate(e.target.value)}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-24 font-mono"
+              aria-label="Rate per hour"
+            />
+          </div>
+        </div>
+
+        <fieldset className="grid gap-1">
           <legend className="sr-only">Budget</legend>
-          <span className="text-muted-foreground">Budget</span>
-          <GuideLink topic="budgets" label="project budgets" />
-          <Input
-            name="budgetAmount"
-            inputMode="decimal"
-            placeholder="none"
-            defaultValue={
-              p.budget_amount !== null && (p.budget_unit === "hours" || p.budget_unit === "dollars")
-                ? budgetInputValue(p.budget_amount, p.budget_unit)
-                : ""
-            }
-            className="w-24"
-            aria-label="Budget amount"
-          />
-          <select
-            name="budgetUnit"
-            defaultValue={p.budget_unit ?? "dollars"}
-            aria-label="Budget unit"
-            className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
-          >
-            <option value="dollars">{currency}</option>
-            <option value="hours">hours</option>
-          </select>
-          <select
-            name="budgetPeriod"
-            defaultValue={p.budget_period}
-            aria-label="Budget period"
-            className="h-9 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
-          >
-            <option value="month">per month</option>
-            <option value="total">in total</option>
-          </select>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1 font-medium text-sm">
+              Budget <GuideLink topic="budgets" label="project budgets" />
+            </span>
+            <span className="font-display font-extrabold text-2xl tabular-nums">
+              {budget ? `${hours ? "" : currencySymbol(currency)}${Number(budget)}${hours ? " h" : ""}` : "none"}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <ValueSlider
+              value={Number(budget) || 0}
+              min={0}
+              max={hours ? 200 : 10000}
+              step={hours ? 5 : 100}
+              label="Budget slider"
+              valueText={budget ? `${budget} ${hours ? "hours" : currency}` : "no budget"}
+              onChange={(v) => setBudget(v ? String(v) : "")}
+            />
+            <Input
+              name="budgetAmount"
+              inputMode="decimal"
+              placeholder="none"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+              className="w-24 font-mono"
+              aria-label="Budget amount"
+            />
+            <NativeSelect
+              name="budgetUnit"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              aria-label="Budget unit"
+              className="w-28"
+            >
+              <option value="dollars">{currency}</option>
+              <option value="hours">hours</option>
+            </NativeSelect>
+            <NativeSelect
+              name="budgetPeriod"
+              defaultValue={p.budget_period}
+              aria-label="Budget period"
+              className="w-32"
+            >
+              <option value="month">per month</option>
+              <option value="total">in total</option>
+            </NativeSelect>
+          </div>
           <span className="text-muted-foreground text-xs">Leave blank for no budget.</span>
         </fieldset>
-        <LogoPicker
-          compact
-          value={editing.logoDraft === undefined ? logos[p.id] : editing.logoDraft}
-          onPick={editing.pickProjectLogo}
-          onRemove={editing.removeLogoDraft}
-          name="project logo"
-        />
-        <Button type="submit" size="sm" disabled={editing.isSaving}>
-          Save
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={editing.stopEditing}>
-          Cancel
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <LogoPicker
+            compact
+            value={editing.logoDraft === undefined ? logos[p.id] : editing.logoDraft}
+            onPick={editing.pickProjectLogo}
+            onRemove={editing.removeLogoDraft}
+            name="project logo"
+          />
+          <Button type="submit" variant="primary" disabled={editing.isSaving}>
+            Save
+          </Button>
+          <Button type="button" variant="ghost" onClick={editing.stopEditing}>
+            Cancel
+          </Button>
+        </div>
       </form>
     </li>
   );

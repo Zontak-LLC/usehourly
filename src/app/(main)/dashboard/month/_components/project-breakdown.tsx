@@ -1,6 +1,5 @@
 "use client";
 
-import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/lib/duration";
 import type { buildSheet } from "@/lib/timesheet";
@@ -14,25 +13,28 @@ export function ProjectBreakdown({
   projectId: string;
   onProjectId: (id: string) => void;
 }) {
+  const longest = Math.max(1, ...rows.map((x) => x.total));
   return (
-    <HeaderCard
-      label="By project"
-      header={
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-semibold text-base">By project</h2>
-          {projectId && (
-            <Button size="sm" variant="outline" onClick={() => onProjectId("")}>
-              Show all projects
-            </Button>
-          )}
-        </div>
-      }
+    <section
+      aria-label="By project"
+      data-headerless="a summary list under the dial"
+      className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
     >
+      <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2">
+        <h2 className="font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
+          By project
+        </h2>
+        {projectId && (
+          <Button size="sm" variant="outline" onClick={() => onProjectId("")}>
+            Show all projects
+          </Button>
+        )}
+      </div>
       {rows.length === 0 ? (
-        <p className="py-4 text-center text-muted-foreground text-sm">No time logged this month.</p>
+        <p className="px-4 pb-4 text-muted-foreground text-sm">No time logged this month.</p>
       ) : (
-        // One row per project (cards group, rows list): colour dot, project and client, hours. A row filters the page.
-        <ul className="-m-3 divide-y sm:-m-4">
+        // One row per project: colour dot, project, a bar for its share, hours. A row filters the page.
+        <ul className="divide-y border-t">
           {rows.map((r) => {
             const on = r.projectId === projectId;
             return (
@@ -42,23 +44,28 @@ export function ProjectBreakdown({
                   aria-pressed={on}
                   onClick={() => onProjectId(on ? "" : r.projectId)}
                   title={on ? "Show all projects again" : "Show only this project"}
-                  className={`flex min-h-12 w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-muted sm:px-4 ${
+                  className={`flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted ${
                     on ? "bg-tint" : projectId ? "text-muted-foreground" : ""
                   }`}
                 >
                   <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
                   <span className="min-w-0 flex-1 text-sm">
                     <span className="block truncate font-medium">{r.project}</span>
-                    <span className="block truncate text-muted-foreground text-xs">{r.client}</span>
+                    <span aria-hidden className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
+                      <span
+                        className="block h-full rounded-full"
+                        style={{ width: `${(r.total / longest) * 100}%`, backgroundColor: r.color }}
+                      />
+                    </span>
+                    <span className="sr-only">{r.client}</span>
                   </span>
-                  {/* One figure: the hours and minutes (the decimal says the same thing a second time). */}
-                  <span className="font-mono font-semibold text-lg tabular-nums">{formatDuration(r.total)}</span>
+                  <span className="font-bold font-display text-lg tabular-nums">{formatDuration(r.total)}</span>
                 </button>
               </li>
             );
           })}
         </ul>
       )}
-    </HeaderCard>
+    </section>
   );
 }

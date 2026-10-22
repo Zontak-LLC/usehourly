@@ -118,11 +118,6 @@ export type InvoiceSnapshot = {
   includeDetail: boolean;
   /** Line items show only the first line of each description (full text stays in the time detail). */
   compactNotes?: boolean;
-  /**
-   * Print "Made with UseHourly" at the foot of each page. Frozen when the invoice is issued, from the
-   * seller's setting at that moment; absent on invoices issued before it existed, which stay unbranded.
-   */
-  branding?: boolean;
   /** The client's rounding rule when the invoice was issued; absent = exact minutes. Minutes above are already rounded. */
   rounding?: Rounding;
   /** Minutes actually logged, kept when a rounding rule changed the billed total. */

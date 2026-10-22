@@ -5,10 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ClientCurrency } from "@/components/currency-provider";
+import { DocButton } from "@/components/doc-button";
 import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -159,9 +160,10 @@ export function NewInvoiceView() {
         {!hasClients ? (
           <EmptyState>Add a client and project first, then log some time to invoice.</EmptyState>
         ) : (
-          <>
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
             <InvoiceDetailsCard
               clients={clients.data ?? []}
+              today={today}
               values={{ clientId, number, from, to, netDays, notes, includeDetail, compactNotes }}
               onClientId={setClientId}
               onNumber={(v) => {
@@ -176,32 +178,37 @@ export function NewInvoiceView() {
               onCompactNotes={setCompactNotes}
             />
 
-            {/* The preview and its notices are in the chosen client's currency (its own, else the account's). */}
-            <ClientCurrency currency={client?.currency}>
-              <InvoicePreviewCard
-                validRange={validRange}
-                loading={entries.isLoading}
-                error={entries.error?.message ?? null}
-                totals={totals}
-                clientName={client?.name}
-              />
+            {/* The paper preview and the main action stay in view while the form scrolls. */}
+            <div className="flex flex-col gap-4 lg:sticky lg:top-32">
+              <ClientCurrency currency={client?.currency}>
+                <InvoicePreviewCard
+                  validRange={validRange}
+                  loading={entries.isLoading}
+                  error={entries.error?.message ?? null}
+                  totals={totals}
+                  clientName={client?.name}
+                />
 
-              <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
-            </ClientCurrency>
+                <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
+              </ClientCurrency>
 
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
-              >
-                {create.isPending ? "Creating…" : "Create invoice & download PDF"}
-              </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link href="/dashboard/invoices">Cancel</Link>
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <DocButton
+                  type="submit"
+                  tone="amber"
+                  icon={<FileCheck2 />}
+                  title={create.isPending ? "Creating…" : "Create invoice"}
+                  hint="and download the PDF"
+                  label={create.isPending ? "Creating…" : "Create invoice & download PDF"}
+                  busy={create.isPending}
+                  disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
+                />
+                <Button type="button" variant="outline" asChild>
+                  <Link href="/dashboard/invoices">Cancel</Link>
+                </Button>
+              </div>
             </div>
-          </>
+          </div>
         )}
       </PageShell>
     </form>

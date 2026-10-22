@@ -9,7 +9,7 @@ export function SummaryRow({ label, value, hint }: { label: string; value: strin
         {label}
         {hint && <span className="block text-muted-foreground text-xs">{hint}</span>}
       </dt>
-      <dd className="shrink-0 font-mono font-semibold text-base tabular-nums">{value}</dd>
+      <dd className="shrink-0 font-bold font-display text-xl tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -38,7 +38,7 @@ export function Section({
     );
   }
   return (
-    <section aria-label={title} className="overflow-hidden rounded-xl border bg-card">
+    <section aria-label={title} className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
       <div className="border-b bg-band-2 px-4 py-3">
         <CardTitle title={title} note={note} />
       </div>

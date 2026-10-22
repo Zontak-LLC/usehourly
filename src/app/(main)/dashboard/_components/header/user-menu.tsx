@@ -4,9 +4,10 @@ import { useRef } from "react";
 
 import Link from "next/link";
 
-import { ChevronDown, ImagePlus, LogOut, Trash2, User } from "lucide-react";
+import { ImagePlus, LogOut, Trash2, User } from "lucide-react";
 
 import { AvatarCropper } from "@/components/avatar-cropper";
+import { Caret } from "@/components/caret";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +49,7 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
           >
             <UserAvatar name={user.name} avatar={user.avatar} />
             <span className="max-w-32 truncate font-medium text-sm max-sm:hidden">{user.name}</span>
-            <ChevronDown className="size-4 text-muted-foreground max-sm:hidden" aria-hidden />
+            <Caret className="max-sm:hidden" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-56">
