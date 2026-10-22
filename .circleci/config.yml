@@ -90,7 +90,14 @@ jobs:
       - run:
           name: Roll back to the previous version
           when: on_fail
-          command: node scripts/rollback-previous.mjs
+          # Automatic rollback is switched on with the project variable SMOKE_ROLLBACK=1, after the smoke job has
+          # passed on a real deploy at least once. Until then a failure only turns the job red.
+          command: |
+            if [ "$SMOKE_ROLLBACK" = "1" ]; then
+              node scripts/rollback-previous.mjs
+            else
+              echo "The smoke test failed. Automatic rollback is OFF (set SMOKE_ROLLBACK=1 in the project variables). Roll back by hand: node scripts/rollback-previous.mjs"
+            fi
       - run:
           name: Check the site after the rollback
           when: on_fail
