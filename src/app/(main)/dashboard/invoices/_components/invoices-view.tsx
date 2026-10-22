@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageSize } from "@/components/use-page-size";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
-import { formatMoney, totalsByCurrency } from "@/lib/money";
+import { totalsByCurrency } from "@/lib/money";
 import { paginate } from "@/lib/paginate";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -23,6 +23,7 @@ import { useToday } from "@/lib/use-today";
 
 import { INVOICE_COLS, type InvoiceActionHandlers, InvoiceLine } from "./invoice-card";
 import { InvoiceFilterBar } from "./invoice-filter-bar";
+import { InvoiceHero } from "./invoice-hero";
 import { InvoiceTotals } from "./invoice-totals";
 import type { InvoiceRow } from "./invoice-types";
 import { useInvoiceFilters } from "./use-invoice-filters";
@@ -100,31 +101,13 @@ export function InvoicesView() {
       ) : (
         <div className="flex flex-col gap-4">
           {groups[0] && !filtering && (
-            // How much of what you invoiced has been paid, as the same dial Today uses.
-            <section
-              aria-label="Paid so far"
-              data-headerless="a summary line above the list"
-              className="flex flex-col gap-2 rounded-3xl border bg-card px-4 py-4 shadow-[var(--shadow-sheet)]"
-            >
-              <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-                <div>
-                  <p className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">Paid</p>
-                  <p className="font-display font-extrabold text-4xl tabular-nums leading-none">
-                    {formatMoney(groups[0].total - groups[0].unpaid, groups[0].currency)}
-                  </p>
-                </div>
-                <p className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-                  {formatMoney(groups[0].unpaid, groups[0].currency)} unpaid · of{" "}
-                  {formatMoney(groups[0].total, groups[0].currency)}
-                </p>
-              </div>
-              <div aria-hidden className="h-2.5 overflow-hidden rounded-full bg-muted">
-                <span
-                  className="block h-full rounded-full bg-success-bright"
-                  style={{ width: `${((groups[0].total - groups[0].unpaid) / Math.max(1, groups[0].total)) * 100}%` }}
-                />
-              </div>
-            </section>
+            <InvoiceHero
+              invoices={invoices.data ?? []}
+              currency={groups[0].currency}
+              total={groups[0].total}
+              unpaid={groups[0].unpaid}
+              today={today}
+            />
           )}
           <section
             id="invoice-list"
