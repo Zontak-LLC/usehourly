@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { addDays } from "@/lib/dates";
-import { DAY_COLORS } from "@/lib/day-colors";
+import { DAY_COLORS, TODAY_COLOR } from "@/lib/day-colors";
 import { formatDuration } from "@/lib/duration";
 
 type Entry = {
@@ -112,13 +112,13 @@ export function DaySide({
                     className="block w-full rounded-sm"
                     style={{
                       height: grown ? `${Math.max(total ? 3 : 0, (total / scale) * 100)}%` : "0%",
-                      backgroundColor: DAY_COLORS[i],
+                      backgroundColor: isToday ? TODAY_COLOR : DAY_COLORS[i],
                       transition: "height .9s cubic-bezier(.2,.8,.2,1)",
                     }}
                   />
                 </span>
                 <span
-                  style={isToday ? { backgroundColor: DAY_COLORS[i] } : undefined}
+                  style={isToday ? { backgroundColor: TODAY_COLOR } : undefined}
                   className={`font-mono text-[11px] ${
                     isToday
                       ? "rounded-full px-1.5 font-semibold text-[#1b1405]"

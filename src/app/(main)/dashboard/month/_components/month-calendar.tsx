@@ -1,7 +1,7 @@
 "use client";
 
 import { NoDollar } from "@/components/no-dollar-icon";
-import { DAY_COLORS } from "@/lib/day-colors";
+import { DAY_COLORS, TODAY_COLOR } from "@/lib/day-colors";
 import { formatDuration } from "@/lib/duration";
 
 import type { DaySelection } from "./use-day-selection";
@@ -47,7 +47,7 @@ function DayCell({
       className={`relative flex min-h-16 cursor-pointer flex-col justify-between overflow-hidden border-r border-b p-1 text-left transition-colors hover:bg-muted sm:min-h-20 sm:p-2 ${
         inMonth ? "" : "bg-muted/30 text-muted-foreground"
       } ${isToday ? "ring-2 ring-inset" : ""} ${isPicked ? "bg-tint outline-2 outline-primary -outline-offset-2" : ""}`}
-      style={isToday ? { ["--tw-ring-color" as string]: color } : undefined}
+      style={isToday ? { ["--tw-ring-color" as string]: TODAY_COLOR } : undefined}
     >
       <span className="flex items-center justify-between text-xs">
         {/* Today is a filled day number (an outline alone is easy to miss). */}
@@ -55,7 +55,7 @@ function DayCell({
           className={
             isToday ? "inline-flex size-6 items-center justify-center rounded-full font-semibold text-[#1b1405]" : ""
           }
-          style={isToday ? { backgroundColor: color } : undefined}
+          style={isToday ? { backgroundColor: TODAY_COLOR } : undefined}
         >
           {Number(d.slice(8))}
         </span>

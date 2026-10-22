@@ -120,7 +120,6 @@ export function YearFigures({ data }: { data: AnnualReport }) {
       value: t.earnedCents,
       display: money,
       hint: "billable hours × rate",
-      tone: "text-amber-700 dark:text-amber",
     },
     {
       label: "Invoiced",
@@ -165,6 +164,8 @@ export function YearChart({ data }: { data: AnnualReport }) {
   const values = data.months.map((m) => (mode === "earned" ? m.earnedCents : m.minutes));
   const max = Math.max(1, ...values);
   const read = (v: number) => (mode === "earned" ? money(v) : hours(v));
+  // Only the latest month with time is yellow; the rest are a soft grey.
+  const latest = values.reduce((at, v, i) => (v > 0 ? i : at), -1);
   return (
     <section
       aria-label="Monthly bars"
@@ -204,7 +205,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               <button
                 type="button"
                 aria-label={`${MONTH_NAMES[m.month - 1]}: ${read(v)}`}
-                className="w-full rounded-t-lg bg-gradient-to-t from-amber to-[color-mix(in_oklab,var(--amber)_55%,white)] outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80"
+                className={`w-full rounded-t-lg outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80 ${i === latest ? "bg-amber" : "bg-foreground/30"}`}
                 style={{ height: `${pct}%`, opacity: v ? 1 : 0.18 }}
               />
             </li>

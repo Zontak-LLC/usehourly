@@ -1,2 +1,4 @@
-/** The week's bars and the Month lines all use the one accent (amber): colour is kept for the dials, not for every weekday. */
-export const DAY_COLORS = ["#F5A524", "#F5A524", "#F5A524", "#F5A524", "#F5A524", "#F5A524", "#F5A524"] as const;
+/** Yellow is small on purpose (the main button, today, the open tab). Bars and lines are a soft grey; only "today" uses the accent. */
+const SOFT = "color-mix(in oklab, var(--foreground) 32%, transparent)";
+export const DAY_COLORS = [SOFT, SOFT, SOFT, SOFT, SOFT, SOFT, SOFT] as const;
+export const TODAY_COLOR = "#F5A524";
