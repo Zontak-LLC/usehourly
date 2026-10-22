@@ -1,16 +1,4 @@
-import {
-  anonymous,
-  clearMail,
-  expect,
-  linkIn,
-  mailTo,
-  menuAction,
-  newUser,
-  seen,
-  sql,
-  startFreshAccount,
-  test,
-} from "./helpers";
+import { anonymous, expect, linkIn, mailTo, menuAction, newUser, seen, sql, startFreshAccount, test } from "./helpers";
 
 /**
  * Teams, start to finish in real browsers: an owner invites a person by email, the email arrives (the mail stand-in
@@ -23,7 +11,6 @@ test("an owner invites someone by email, they join and log time, and the owner r
   shot,
 }, info) => {
   const member = { ...newUser(), name: "Pat Assistant" };
-  await clearMail();
   const owner = await startFreshAccount(page, "Acme Studio");
 
   await test.step("the owner's address is confirmed and the account is a few days old, so UseHourly may email for them", async () => {

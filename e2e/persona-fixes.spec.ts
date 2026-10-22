@@ -60,7 +60,7 @@ test("a sign-off link must name a client or project when there are several clien
   await page.getByRole("button", { name: "New client" }).click();
   await page.getByPlaceholder("Client name").fill("Beta");
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Beta").first()).toBeVisible();
+  await expect(page.getByText("Beta").filter({ visible: true }).first()).toBeVisible();
   await page.goto("/dashboard/month");
   await page.getByRole("button", { name: "Share & export" }).click();
   await page.getByRole("menuitem", { name: /Send to a client for sign-off/ }).click();
