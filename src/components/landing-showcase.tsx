@@ -93,7 +93,6 @@ export function LandingShowcase() {
           {/* A phone gets the phone picture in light mode; the dark picture is the same for every size. */}
           <picture className="dark:hidden">
             <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp`} />
-            {/* biome-ignore lint/performance/noImgElement: a fixed local picture, sized by its own width and height */}
             <img
               src={`/landing/tour/${screen.file}.webp`}
               alt={`The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}`}

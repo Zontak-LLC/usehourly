@@ -21,7 +21,7 @@ test("navigation is along the top by default; the side menu is a choice, stays o
     await test.step("a phone has no choice to make: by default, and with Left saved, it keeps its bottom bar", async () => {
       await expect(top).toBeVisible();
       await expect(side).toBeHidden();
-      await page.context().addCookies([{ name: "nav_position", value: "left", url: page.url() }]);
+      await page.context().addCookies([{ name: "nav_position", value: "left", url: new URL("/", page.url()).href }]);
       await page.reload();
       await expect(top).toBeVisible();
       await expect(side).toBeHidden();
@@ -33,7 +33,7 @@ test("navigation is along the top by default; the side menu is a choice, stays o
     await expect(page.locator("html")).toHaveAttribute("data-nav-position", "top");
     await expect(top).toBeVisible();
     await expect(side).toBeHidden();
-    await page.context().addCookies([{ name: "nav_position", value: "left", url: page.url() }]);
+    await page.context().addCookies([{ name: "nav_position", value: "left", url: new URL("/", page.url()).href }]);
     await page.reload();
   });
 

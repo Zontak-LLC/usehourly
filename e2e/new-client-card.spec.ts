@@ -18,7 +18,7 @@ test("a new client is added from the card in place, and the title line counts cl
   });
 
   await test.step("the title line counts the clients and projects", async () => {
-    await expect(page.getByText(/1 client · 1 project/)).toBeVisible();
+    await expect(page.getByText(/1 client · 1 project/).first()).toBeVisible();
   });
 
   await test.step("the + opens the form at the top of the list, and the new client appears", async () => {
@@ -40,7 +40,7 @@ test("a new client is added from the card in place, and the title line counts cl
     await page.getByRole("button", { name: "New client" }).click();
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByRole("region", { name: "New client" })).toHaveCount(0);
-    await expect(page.getByText(/2 clients/)).toBeVisible();
+    await expect(page.getByText(/2 clients/).first()).toBeVisible();
   });
 });
 

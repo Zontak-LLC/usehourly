@@ -33,7 +33,7 @@ test.describe("public pages", () => {
     await expect(page).toHaveURL(/\/help$/);
   });
 
-  test("on a phone the landing page fits the screen: header, the three buttons and the footer links", async ({
+  test("on a phone the landing page fits the screen: header, the hero buttons and the footer links", async ({
     page,
     isMobile,
   }) => {
@@ -50,16 +50,16 @@ test.describe("public pages", () => {
         screenWidth - 8,
       );
     }
-    // The three buttons under the headline are the same width, so they line up.
+    // The redesigned hero has two buttons and a text link ("Connect your assistant") under the headline; all stay on the screen.
     const hero = page.locator("main section").first();
-    const widths = await Promise.all(
-      [
-        hero.getByRole("link", { name: "Connect your assistant" }),
-        hero.getByRole("link", { name: "Create a free account" }),
-        hero.getByRole("button", { name: /Try the demo/ }),
-      ].map(async (el) => Math.round((await el.boundingBox())?.width ?? 0)),
-    );
-    expect(new Set(widths).size, `button widths ${widths.join(", ")}`).toBe(1);
+    await expect(hero.getByRole("link", { name: "Connect your assistant" })).toBeVisible();
+    for (const el of [
+      hero.getByRole("link", { name: "Create a free account" }),
+      hero.getByRole("button", { name: /Try the demo/ }),
+    ]) {
+      const box = await el.boundingBox();
+      expect(box && box.x >= 0 && box.x + box.width <= screenWidth - 8, `hero button inside the screen`).toBe(true);
+    }
     // A footer link never breaks onto two lines.
     for (const link of await page.locator("footer a").all()) {
       const box = await link.boundingBox();
