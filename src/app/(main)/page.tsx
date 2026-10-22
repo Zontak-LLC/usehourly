@@ -64,11 +64,11 @@ export default function LandingPage() {
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-5 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-          <LogoMark className="size-8" aria-hidden />
+        <Link href="/" className="flex items-center gap-2 font-semibold text-base sm:text-lg">
+          <LogoMark className="size-7 sm:size-8" aria-hidden />
           {APP_CONFIG.name}
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
           {/* On a phone the header has no room for it: the button sits in the footer there. */}
           <span className="max-sm:hidden">
             <ThemeSwitcher />
@@ -78,7 +78,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/auth/v2/login"
-            className="whitespace-nowrap rounded-lg px-3 py-2 font-medium text-sm hover:bg-muted sm:px-4"
+            className="whitespace-nowrap rounded-lg px-2.5 py-2 font-medium text-sm hover:bg-muted sm:px-4"
           >
             Log in
           </Link>

@@ -72,7 +72,7 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
     <div
       aria-hidden={offset !== 0}
       style={cardStyle(offset)}
-      className="absolute inset-0 origin-top overflow-hidden rounded-2xl bg-card shadow-[0_30px_80px_-30px_rgba(18,21,27,0.5)] ring-1 ring-foreground/10 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none"
+      className="absolute inset-0 flex origin-top flex-col overflow-hidden rounded-2xl bg-card shadow-[0_30px_80px_-30px_rgba(18,21,27,0.5)] ring-1 ring-foreground/10 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none"
     >
       <div aria-hidden className="flex items-center gap-1.5 border-foreground/10 border-b bg-muted/60 px-4 py-2.5">
         <span className="size-2.5 rounded-full bg-[#FF5F57]" />
@@ -82,28 +82,36 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
           usehourly.app/dashboard/{screen.id === "year" ? "report" : screen.id}
         </span>
       </div>
-      {/* the light picture on a light page, the dark one on a dark page */}
-      <picture className="dark:hidden">
-        <img
-          src={`/landing/tour/${screen.file}.webp`}
-          alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
-          width={1440}
-          height={1240}
-          loading="lazy"
-          decoding="async"
-          className="h-auto w-full object-top"
-        />
-      </picture>
-      {/* biome-ignore lint/performance/noImgElement: a fixed local picture, sized by its own width and height */}
-      <img
-        src={`/landing/tour-dark/${screen.file}.webp`}
-        alt=""
-        width={1000}
-        height={862}
-        loading="lazy"
-        decoding="async"
-        className="hidden h-auto w-full dark:block"
-      />
+      {/* The light picture on a light page, the dark one on a dark page. A phone gets the phone picture of each: the
+          desktop screen shrunk to a phone is too small to read. */}
+      <div className="min-h-0 flex-1 dark:hidden">
+        <picture className="block size-full">
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp`} />
+          <img
+            src={`/landing/tour/${screen.file}.webp`}
+            alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
+            width={1440}
+            height={1240}
+            loading="lazy"
+            decoding="async"
+            className="size-full object-cover object-top"
+          />
+        </picture>
+      </div>
+      <div className="hidden min-h-0 flex-1 dark:block">
+        <picture className="block size-full">
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp`} />
+          <img
+            src={`/landing/tour-dark/${screen.file}.webp`}
+            alt=""
+            width={1000}
+            height={862}
+            loading="lazy"
+            decoding="async"
+            className="size-full object-cover object-top"
+          />
+        </picture>
+      </div>
     </div>
   );
 }
@@ -184,7 +192,7 @@ export function LandingShowcase() {
           </p>
         </div>
         <div className="relative mx-auto w-full max-w-3xl pb-24">
-          <div className="relative aspect-[1000/900] w-full">
+          <div className="relative aspect-[9/14] w-full sm:aspect-[1000/900]">
             {SCREENS.map((s, i) => (
               <Card key={s.id} screen={s} offset={i - step} />
             ))}
