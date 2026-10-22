@@ -8,7 +8,16 @@ const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short
  * many days had time. It sits under "By project" so the left column is as full as the right. It shows nothing when no day
  * has time.
  */
-export function PeriodGlance({ dayTotals, days }: { dayTotals: Record<string, number>; days: number }) {
+export function PeriodGlance({
+  dayTotals,
+  days,
+  strip = false,
+}: {
+  dayTotals: Record<string, number>;
+  days: number;
+  /** Three tiles in a row (for a full-width page) instead of a list in a narrow column. */
+  strip?: boolean;
+}) {
   const worked = Object.entries(dayTotals).filter(([, minutes]) => minutes > 0);
   if (worked.length === 0) return null;
   const [busiestDate, busiest] = worked.reduce((a, b) => (b[1] > a[1] ? b : a));
@@ -18,6 +27,24 @@ export function PeriodGlance({ dayTotals, days }: { dayTotals: Record<string, nu
     ["Average on a worked day", formatDuration(Math.round(total / worked.length)), `${worked.length} days`],
     ["Days with time", `${worked.length}`, `of ${days}`],
   ];
+  if (strip) {
+    return (
+      <section aria-label="At a glance" data-headerless="three facts in a row" className="grid gap-3 sm:grid-cols-3">
+        {facts.map(([label, value, note]) => (
+          <dl
+            key={label}
+            className="flex items-center justify-between gap-3 rounded-3xl bg-card px-5 py-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+          >
+            <div className="min-w-0">
+              <dt className="text-sm">{label}</dt>
+              <dd className="text-muted-foreground text-xs">{note}</dd>
+            </div>
+            <span className="font-bold font-display text-2xl tabular-nums">{value}</span>
+          </dl>
+        ))}
+      </section>
+    );
+  }
   return (
     <section
       aria-label="At a glance"

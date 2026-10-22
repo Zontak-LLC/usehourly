@@ -20,7 +20,6 @@ import { trpc } from "@/lib/trpc";
 
 import { MonthCalendar } from "./month-calendar";
 import { MonthToolbar } from "./month-toolbar";
-import { ProjectBreakdown } from "./project-breakdown";
 import { QuickCreate } from "./quick-create";
 import { useDaySelection } from "./use-day-selection";
 
@@ -173,24 +172,22 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </section>
           )}
 
-          <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
-            <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
-              <ProjectBreakdown rows={allRows} projectId={projectId} onProjectId={setProjectId} />
-              <PeriodGlance dayTotals={sheet.dayTotals} days={last ? Number(last.slice(8)) : 30} />
-            </div>
-            <div className="flex min-w-0 flex-col gap-4">
-              <MergeDaysPanel entries={shown} />
+          <PeriodGlance dayTotals={sheet.dayTotals} days={last ? Number(last.slice(8)) : 30} strip />
+          <div className="flex min-w-0 flex-col gap-4">
+            <MergeDaysPanel entries={shown} />
 
-              {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
-              <WorkItems
-                key={`${first}-${projectId}`}
-                entries={shown}
-                onOpenDay={setEditDate}
-                period="month"
-                editInPlace
-                nonBillable={nonBillable}
-              />
-            </div>
+            {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
+            <WorkItems
+              key={`${first}-${projectId}`}
+              entries={shown}
+              onOpenDay={setEditDate}
+              period="month"
+              editInPlace
+              nonBillable={nonBillable}
+              projects={allRows}
+              projectId={projectId}
+              onProjectId={setProjectId}
+            />
           </div>
         </>
       )}

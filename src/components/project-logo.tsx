@@ -36,5 +36,7 @@ export function ProjectMark({
       />
     );
   }
-  return <span className="shrink-0 rounded-full" style={{ width: 10, height: 10, backgroundColor: color }} />;
+  return (
+    <span className="inline-block shrink-0 rounded-full" style={{ width: 10, height: 10, backgroundColor: color }} />
+  );
 }

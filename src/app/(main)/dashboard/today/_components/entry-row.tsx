@@ -12,6 +12,7 @@ import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
+import { fromISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
@@ -33,11 +34,28 @@ export type EntryData = {
   project: { name: string; client: { name: string; color: string } };
 };
 
+const leadDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
+
+/** The words that start a row: the project and its client, or (in a list already grouped by project) the day. */
+function RowLabel({ entry, lead }: { entry: EntryData; lead: "project" | "date" }) {
+  if (lead === "date") return <span className="font-medium">{leadDate.format(fromISODate(entry.date))}</span>;
+  return (
+    <>
+      <span className="font-medium max-sm:truncate">{entry.project.name}</span>
+      <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
+        <span className="max-sm:hidden"> · </span>
+        {entry.project.client.name}
+      </span>
+    </>
+  );
+}
+
 export function EntryRow({
   entry,
   initialEditing = false,
   onEditDone,
   bare = false,
+  lead = "project",
 }: {
   entry: EntryData;
   /** Open straight into the edit form (the lists that edit an entry where it sits). */
@@ -46,6 +64,8 @@ export function EntryRow({
   onEditDone?: () => void;
   /** A borderless tile with a lighter header, for when it already sits inside a card (a card never holds a framed card). */
   bare?: boolean;
+  /** What the row starts with: the project (the default) or the day, for a list that is already grouped by project. */
+  lead?: "project" | "date";
 }) {
   const uid = useId();
   const utils = trpc.useUtils();
@@ -134,8 +154,6 @@ export function EntryRow({
   return (
     <li
       aria-busy={unconfirmed || undefined}
-      // A stripe in the project's colour down the left edge, so a long list reads by colour as well as by name.
-      style={editing ? undefined : { boxShadow: `inset 4px 0 0 ${entry.project.client.color}` }}
       className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""}`}
     >
       {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
@@ -143,13 +161,10 @@ export function EntryRow({
         className={
           editing
             ? `flex items-center justify-between gap-2 py-2 pr-2 pl-3 ${bare ? "bg-band-3" : "border-b bg-band-2"}`
-            : bare
-              ? // A table row in a day's list: project, description, then hours and buttons (from a wide screen up; below that the note drops under the project).
-                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-2 pr-2 pl-3 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_auto]"
-              : "flex items-start justify-between gap-2 py-2 pr-2 pl-3"
+            : "flex items-start justify-between gap-2 py-2 pr-2 pl-3"
         }
       >
-        <div className={`flex min-w-0 items-start gap-2 ${bare && !editing ? "" : "flex-1"}`}>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           <span className="mt-1.5 shrink-0">
             <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           </span>
@@ -176,11 +191,7 @@ export function EntryRow({
                   <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
                     {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
                     <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
-                      <span className="font-medium max-sm:truncate">{entry.project.name}</span>
-                      <span className="text-muted-foreground max-sm:truncate max-sm:text-xs">
-                        <span className="max-sm:hidden"> · </span>
-                        {entry.project.client.name}
-                      </span>
+                      <RowLabel entry={entry} lead={lead} />
                     </span>
                     <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:hidden" />
                   </p>
@@ -192,15 +203,10 @@ export function EntryRow({
                 </span>
               )}
             </div>
-            {!editing && !bare && noteBlock}
+            {!editing && noteBlock}
           </div>
         </div>
-        {!editing && bare && (
-          <div className="col-span-2 row-start-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">{noteBlock}</div>
-        )}
-        <div
-          className={`flex shrink-0 items-center gap-1 ${bare && !editing ? "col-start-2 row-start-1 lg:col-start-3" : ""}`}
-        >
+        <div className="flex shrink-0 items-center gap-1">
           {!editing && (
             // The hours are information, not a second way to edit: only the pencil opens the form (one way, no confusion).
             <span className="px-1.5 py-0.5 font-display font-extrabold text-xl tabular-nums">
