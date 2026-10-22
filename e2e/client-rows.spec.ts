@@ -20,6 +20,14 @@ test("a client with several projects is a closed row that opens, and a long list
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(northwind.getByText("Website redesign")).toBeVisible();
 
+  // On a wide screen a project is ONE line: its name and its action buttons sit at the same height.
+  if ((page.viewportSize()?.width ?? 0) >= 640) {
+    const line = northwind.getByRole("listitem").filter({ hasText: "Website redesign" }).first();
+    const name = await line.getByText("Website redesign").boundingBox();
+    const edit = await line.getByRole("button", { name: "Edit Website redesign" }).boundingBox();
+    expect(Math.abs((name?.y ?? 0) - (edit?.y ?? 99))).toBeLessThan(30);
+  }
+
   // The choice is remembered on this device.
   await page.reload();
   await expect(
