@@ -72,7 +72,7 @@ export function AccountingExport() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="grid gap-1.5">
           <Label htmlFor="acct-format">Send to</Label>
           <NativeSelect id="acct-format" value={kind} onChange={(e) => setKind(e.target.value as AccountingKind)}>
@@ -136,17 +136,18 @@ export function AccountingExport() {
           </div>
         )}
       </div>
-      <p className="text-muted-foreground text-sm">{picked.hint}</p>
-      <DocButton
-        onClick={run}
-        disabled={busy}
-        busy={busy}
-        icon={<Download />}
-        title={busy ? "Preparing…" : "Download CSV"}
-        hint="Ready to import"
-        label={busy ? "Preparing…" : "Download CSV"}
-        className="self-start"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <p className="min-w-0 flex-1 basis-64 text-muted-foreground text-sm">{picked.hint}</p>
+        <DocButton
+          onClick={run}
+          disabled={busy}
+          busy={busy}
+          icon={<Download />}
+          title={busy ? "Preparing…" : "Download CSV"}
+          hint="Ready to import"
+          label={busy ? "Preparing…" : "Download CSV"}
+        />
+      </div>
     </div>
   );
 }

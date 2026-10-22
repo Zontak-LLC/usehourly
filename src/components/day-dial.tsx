@@ -22,24 +22,29 @@ const TICKS = Array.from({ length: 48 }, (_, i) => {
 
 /**
  * The day as a dial: the ring fills with the hours logged against the day's goal, the hand sits where the fill ends,
- * and the middle says the total and what is left. While a timer runs, a thin second hand sweeps. The ring sweeps in
+ * and the middle says the total and what is left. While a timer runs on the day shown, its minutes are part of the
+ * total (the title says "Logged + timer") and a thin second hand sweeps: there is one clock for the day, not two. The ring sweeps in
  * from empty on first show, so a person sees the day add up.
  */
 export function DayDial({
   minutes,
   weekMinutes,
   timerRunning,
+  timerCounted = false,
   goal = DAY_GOAL_MINUTES,
 }: {
+  /** Logged minutes, plus the running timer's minutes when `timerCounted`. */
   minutes: number;
   weekMinutes: number | null;
   timerRunning: boolean;
+  /** The running timer is part of `minutes` (it runs on the day shown): the dial says so and grows with it. */
+  timerCounted?: boolean;
   goal?: number;
 }) {
   return (
     <Dial
       label="Today's hours"
-      title="Logged"
+      title={timerCounted ? "Logged + timer" : "Logged"}
       minutes={minutes}
       goal={goal}
       timerRunning={timerRunning}
@@ -141,7 +146,7 @@ export function Dial({
           <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">{title}</span>
           <span
             className={`font-display font-extrabold tabular-nums leading-none ${center ? "text-4xl" : "text-5xl"}`}
-            aria-live="polite"
+            aria-live={timerRunning ? "off" : "polite"}
           >
             {center ?? formatDuration(minutes)}
           </span>

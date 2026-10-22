@@ -13,9 +13,9 @@ import { AccountChecklist } from "./account-checklist";
 import { Section } from "./account-section";
 import { AccountTabs, useAccountTab } from "./account-tabs";
 import { BusinessDetailsCard } from "./business-details-card";
+import { ConnectAssistant } from "./connect-assistant";
 import { CurrencyCard } from "./currency-card";
 import { DataHub } from "./data-hub";
-import { AssistantLink, DataVault } from "./data-vault";
 import { FridayReminderCard } from "./friday-reminder-card";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
@@ -70,7 +70,6 @@ export function AccountView() {
             title="Your data"
             description="Keep a copy of everything you have logged, or bring your history in from another tool."
           >
-            <DataVault />
             <DataHub account={account} />
           </Section>
         )}
@@ -78,7 +77,7 @@ export function AccountView() {
           <Section
             id="ai"
             title="AI assistants"
-            description="Let an assistant such as Claude read your time, log new entries and prepare invoices, or use your own AI key to polish descriptions."
+            description="Connect an assistant such as Claude or ChatGPT to UseHourly."
           >
             {account.is_demo ? (
               <SectionCard
@@ -87,7 +86,7 @@ export function AccountView() {
               />
             ) : (
               <>
-                <AssistantLink />
+                <ConnectAssistant />
                 <ApiTokensCard />
                 <AiPolishCard />
               </>

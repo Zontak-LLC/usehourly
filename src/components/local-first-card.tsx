@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 
-import { SectionCard } from "@/components/section-card";
+import { DeviceScene } from "@/components/device-scene";
 import { Button } from "@/components/ui/button";
 import { clearLocalCopy, getActiveEngine, localFirstOn, setLocalFirst, subscribeStatus } from "@/lib/local-sync/active";
 
@@ -35,11 +35,19 @@ export function LocalFirstCard() {
   }
 
   return (
-    <SectionCard
-      title="Keep a copy on this device (experimental)"
-      description="Your time entries are kept in this browser and shown from there, so the app opens and responds instantly and keeps working with no connection. Changes are sent to UseHourly in the background."
+    <section
+      aria-label="This device"
+      className="grid items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6"
     >
-      <div className="flex flex-col gap-3">
+      <DeviceScene className="mx-auto w-44 sm:w-56" />
+      <div className="grid gap-3">
+        <h3 className="font-bold font-display text-2xl leading-tight">
+          Keep a copy on this device <span className="font-normal text-base text-muted-foreground">(experimental)</span>
+        </h3>
+        <p className="max-w-xl text-foreground/75">
+          Your time entries are kept in this browser and shown from there, so the app opens and responds instantly and
+          keeps working with no connection. Changes are sent to UseHourly in the background.
+        </p>
         <p className="text-muted-foreground text-sm">
           {on
             ? status.state === "off"
@@ -57,10 +65,16 @@ export function LocalFirstCard() {
           Only time entries are kept this way for now. Timers, invoices, clients and projects still need a connection.
           The copy lives only in this browser and is removed when you log out.
         </p>
-        <Button className="self-start" disabled={busy} onClick={() => void change(!on)} type="button">
+        <Button
+          className="h-11 justify-self-start rounded-full px-5"
+          variant={on ? "outline" : "primary"}
+          disabled={busy}
+          onClick={() => void change(!on)}
+          type="button"
+        >
           {on ? "Turn off" : "Turn on"}
         </Button>
       </div>
-    </SectionCard>
+    </section>
   );
 }

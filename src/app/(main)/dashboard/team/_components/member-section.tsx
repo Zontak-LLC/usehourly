@@ -131,7 +131,7 @@ function TeamLog({ team }: { team: Team }) {
       </div>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={log.isPending || !projectId || !duration.trim()}>
-          Add to the day
+          Log time
         </Button>
         <Button type="button" variant="outline" onClick={stop}>
           Leave this team

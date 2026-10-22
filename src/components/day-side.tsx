@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { addDays } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
@@ -24,7 +24,6 @@ export function DaySide({
   date,
   today,
   onPick,
-  after,
   row = false,
 }: {
   /** Every entry of the week. */
@@ -33,8 +32,6 @@ export function DaySide({
   date: string;
   today: string | null;
   onPick: (d: string) => void;
-  /** Shown under the week bars (the live timer sits there while it runs). */
-  after?: ReactNode;
   /** From a wide screen up the two cards sit side by side (a band across the page) instead of one under the other. */
   row?: boolean;
 }) {
@@ -131,7 +128,6 @@ export function DaySide({
           })}
         </div>
       </section>
-      {after && <div className={row ? "md:col-span-2" : ""}>{after}</div>}
     </div>
   );
 }

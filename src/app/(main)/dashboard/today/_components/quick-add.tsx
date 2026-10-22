@@ -310,7 +310,7 @@ export function QuickAdd({
           <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/15 group-disabled:text-foreground/60">
             <Plus className="size-4" strokeWidth={3} aria-hidden />
           </span>
-          Add to the day
+          Log time
           <Kbd className="hidden bg-[#1b1405]/15 text-inherit md:inline-flex">↵</Kbd>
         </button>
         {/* The timer is the second way: a quiet button under Add (an amber play disc, two short lines). Only for today. */}
@@ -352,7 +352,7 @@ export function QuickAdd({
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
       <div className="border-b bg-band-2 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">
-          Add to the day
+          Log time
           {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
         </h2>
       </div>
