@@ -25,6 +25,14 @@ import { trpc } from "@/lib/trpc";
 import { notifyPending, useOnline } from "@/lib/use-offline";
 import { useToday } from "@/lib/use-today";
 
+/** What a time chip writes in the box: "30m", "1h", "1h30", "2h" (never "120m"). parseDuration reads all of them. */
+function chipText(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
+}
+
 const LAST_PROJECT_KEY = "hourly:lastProject";
 function readLast(): string {
   try {
@@ -79,7 +87,7 @@ export function QuickAdd({
 
   // Land in the time field on a computer (on a phone that would pop the keyboard before you asked).
   useEffect(() => {
-    if (window.matchMedia("(pointer: fine)").matches) durationRef.current?.focus();
+    if (window.matchMedia("(pointer: fine)").matches) durationRef.current?.focus({ preventScroll: true }); // never scroll the page to the form on load
   }, []);
 
   // "n" focuses the duration field from anywhere (unless typing in a field).
@@ -206,12 +214,6 @@ export function QuickAdd({
           </div>
         )}
 
-        {budget && (
-          <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
-            <BudgetBar status={budget} />
-          </ClientCurrency>
-        )}
-
         <div className="flex flex-col gap-2">
           <Input
             id="quick-duration"
@@ -241,7 +243,7 @@ export function QuickAdd({
                   const again = chipRun?.minutes === c.minutes && parsed === c.minutes * chipRun.taps;
                   const taps = again ? chipRun.taps + 1 : 1;
                   setChipRun({ minutes: c.minutes, taps });
-                  setDuration(`${c.minutes * taps}m`);
+                  setDuration(chipText(c.minutes * taps));
                   durationRef.current?.focus();
                 }}
               >
@@ -303,6 +305,12 @@ export function QuickAdd({
               <Play className="size-3.5" aria-hidden /> {timerRunning ? "Switch timer to this" : "Start timer"}
             </button>
           </p>
+        )}
+        {/* At the foot, so picking a project with a budget never moves the controls above it. */}
+        {budget && (
+          <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
+            <BudgetBar status={budget} />
+          </ClientCurrency>
         )}
       </form>
     </div>

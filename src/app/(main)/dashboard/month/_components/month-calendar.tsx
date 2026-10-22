@@ -100,7 +100,7 @@ export function MonthCalendar({
 
   return (
     <div className="overflow-x-auto rounded-xl border bg-card">
-      <div className="grid select-none grid-cols-7 text-sm sm:min-w-[680px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
+      <div className="grid select-none grid-cols-7 text-sm sm:min-w-[560px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
         {[...weekdayNames, "Week"].map((n) => (
           <div
             key={n}

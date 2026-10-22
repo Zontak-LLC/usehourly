@@ -6,22 +6,22 @@ test("tapping a time chip again adds its time again; typing or another chip star
   const chip = (name: string) => page.getByRole("button", { name, exact: true });
 
   await chip("2 hours").click();
-  await expect(time).toHaveValue("120m");
+  await expect(time).toHaveValue("2h");
   await chip("2 hours").click();
-  await expect(time).toHaveValue("240m"); // 2 hours, again = 4 hours
+  await expect(time).toHaveValue("4h"); // 2 hours, again = 4 hours
   await chip("2 hours").click();
-  await expect(time).toHaveValue("360m");
+  await expect(time).toHaveValue("6h");
 
   await chip("30 min").click(); // another chip starts over
   await expect(time).toHaveValue("30m");
   await chip("30 min").click();
-  await expect(time).toHaveValue("60m");
+  await expect(time).toHaveValue("1h");
 
   await time.fill("1:30"); // typing starts over: the chip fills, it does not add to what was typed
   await chip("1 hour").click();
-  await expect(time).toHaveValue("60m");
+  await expect(time).toHaveValue("1h");
   await chip("1 hour").click();
-  await expect(time).toHaveValue("120m");
+  await expect(time).toHaveValue("2h");
 
   // the doubled time is what is saved
   await page.getByRole("button", { name: /^Add to the day/ }).click();

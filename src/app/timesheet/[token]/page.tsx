@@ -10,6 +10,7 @@ import { parseSnapshot, type ShareSnapshot } from "@/lib/timesheet-share";
 import { findShareByToken } from "@/server/timesheet-share";
 
 import { ApproveForm } from "./_components/approve-form";
+import { NotesTable } from "./_components/notes-table";
 import { PrintButton } from "./_components/print-button";
 
 // A private link: never indexed, never followed, and the address is not passed on when someone clicks out.
@@ -173,21 +174,7 @@ export default async function SharedTimesheetPage({ params }: { params: Promise<
 
       <Grid s={snapshot} />
 
-      {snapshot.notes && snapshot.notes.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-xl border bg-card p-4">
-          <h2 className="font-semibold text-base">What was worked on</h2>
-          <ul className="flex flex-col gap-2 text-sm">
-            {snapshot.notes.map((n) => (
-              <li key={`${n.date}|${n.client}|${n.project}|${n.note}`} className="grid gap-0.5">
-                <span className="text-muted-foreground tabular-nums">
-                  {dayLabel(n.date)} · {n.project} · {formatDuration(n.minutes)}
-                </span>
-                <span className="whitespace-pre-wrap break-words">{n.note}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {snapshot.notes && snapshot.notes.length > 0 && <NotesTable notes={snapshot.notes} />}
 
       {share.approved_at !== null ? (
         <section className="flex flex-col gap-1 rounded-xl border border-success/40 bg-success-soft p-4">

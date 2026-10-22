@@ -42,7 +42,7 @@ export function ShareTimesheet({
   const revoke = trpc.timesheetShare.revoke.useMutation();
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
-  // "" = everything, "c:<id>" = one client, "p:<id>" = one project
+  // "" = nothing chosen yet, "all" = everything, "c:<id>" = one client, "p:<id>" = one project
   const [scope, setScope] = useState(initialProject ? `p:${initialProject}` : "");
   const [includeNotes, setIncludeNotes] = useState(true);
   const [expiresInDays, setExpiresInDays] = useState<number>(DEFAULT_SHARE_EXPIRY_DAYS);
@@ -51,9 +51,12 @@ export function ShareTimesheet({
   const shares = trpc.timesheetShare.list.useQuery();
 
   const check = checkRange(from, to);
+  // With several clients the page must not start on "Everything": that link names every client to each of them.
+  const many = (clients.data?.length ?? 0) > 1;
+  const needsChoice = many && scope === "";
 
   async function make() {
-    if (!check.ok) return;
+    if (!check.ok || needsChoice) return;
     try {
       const out = await create.mutateAsync({
         from,
@@ -147,7 +150,16 @@ export function ShareTimesheet({
               onChange={(e) => setScope(e.target.value)}
               className="h-9 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             >
-              <option value="">Everything</option>
+              {many ? (
+                <>
+                  <option value="" disabled>
+                    Choose a client or project…
+                  </option>
+                  <option value="all">Everything (every client)</option>
+                </>
+              ) : (
+                <option value="">Everything</option>
+              )}
               {clients.data?.map((c) => (
                 <optgroup key={c.id} label={c.name}>
                   <option value={`c:${c.id}`}>All of {c.name}</option>
@@ -159,6 +171,11 @@ export function ShareTimesheet({
                 </optgroup>
               ))}
             </select>
+            {scope === "all" && many && (
+              <p className="text-muted-foreground text-xs">
+                This link lists every client and project. To send one client only their own work, choose that client.
+              </p>
+            )}
           </div>
 
           <label className="flex items-center gap-2 text-sm">
@@ -186,7 +203,7 @@ export function ShareTimesheet({
             {check.ok ? describeRange(from, to) : check.message}
           </p>
 
-          <Button onClick={make} disabled={!check.ok || create.isPending}>
+          <Button onClick={make} disabled={!check.ok || needsChoice || create.isPending}>
             <Send /> {create.isPending ? "Making the link…" : "Make a link"}
           </Button>
         </>

@@ -154,9 +154,8 @@ export function CalendarSuggestions({
         Private calendar address
       </label>
       <p className="text-muted-foreground text-xs">
-        Google Calendar: Settings, your calendar, <strong>Integrate calendar</strong>, then copy the{" "}
-        <strong>Secret address in iCal format</strong>. Outlook and iCloud work too. Anyone with this address can read
-        the calendar, so it is only kept in this browser.
+        Google: Settings, your calendar, <strong>Integrate calendar</strong>,{" "}
+        <strong>Secret address in iCal format</strong>. Outlook and iCloud work too. It stays in this browser.
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
@@ -178,70 +177,53 @@ export function CalendarSuggestions({
         </Button>
       </div>
     </form>
-  ) : (
-    <button
-      type="button"
-      className="self-start py-1 text-muted-foreground text-xs underline"
-      onClick={() => setTyping(true)}
-    >
-      Or connect with a private calendar address
-    </button>
-  );
+  ) : null;
 
   if (!cal.calendar) {
-    // An optional offer, not data: a dashed outline with an icon, so it cannot be mistaken for the timesheet above it.
+    // An optional offer, not data: a dashed outline, with the ways to connect side by side in their own columns.
     return (
       <section
         aria-label="From your calendar"
         data-headerless="an optional offer, dashed on purpose"
         className="flex flex-col gap-3 rounded-xl border border-foreground/30 border-dashed p-3 sm:p-4"
       >
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <CalendarPlus className="size-5" aria-hidden />
-          </span>
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-base">Turn meetings into time entries</h2>
-            <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
-          </div>
+        <div className="flex items-center gap-2">
+          <CalendarPlus className="size-5 text-muted-foreground" aria-hidden />
+          <h2 className="font-semibold text-base">Turn meetings into time entries</h2>
+          <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
         </div>
         {input}
-        {googleClientId ? (
-          <>
-            <p className="text-muted-foreground text-sm">
-              Each day shows your meetings ready to log in one tap. Read-only, straight from Google: UseHourly's servers
-              never see it. Nothing is added unless you tap Add.
-            </p>
-            <Button type="button" className="h-11 self-start" disabled={cal.busy} onClick={connectGoogle}>
-              <CalendarPlus aria-hidden /> {cal.busy ? "Connecting…" : "Connect Google Calendar"}
-            </Button>
-            <button
-              type="button"
-              className="self-start py-1 text-muted-foreground text-xs underline"
-              disabled={cal.busy}
-              onClick={() => file.current?.click()}
-            >
-              Or add a calendar file (.ics) from Apple, Outlook or another calendar
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="text-muted-foreground text-sm">
-              Add a calendar file (.ics) from Google, Apple or Outlook and each day shows its meetings ready to log in
-              one tap. Read on this device; nothing is added unless you tap Add.
-            </p>
+        <ul className={`grid gap-3 ${googleClientId ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+          {googleClientId && (
+            <Way title="Google Calendar" hint="Read-only. UseHourly's servers never see it.">
+              <Button type="button" className="h-10 w-full" disabled={cal.busy} onClick={connectGoogle}>
+                {cal.busy ? "Connecting…" : "Connect Google Calendar"}
+              </Button>
+            </Way>
+          )}
+          <Way title="Calendar file" hint="From Google, Apple or Outlook (.ics).">
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="self-start"
+              className="h-10 w-full"
               disabled={cal.busy}
               onClick={() => file.current?.click()}
             >
-              <CalendarPlus aria-hidden /> {cal.busy ? "Reading…" : "Add a calendar file"}
+              {cal.busy ? "Reading…" : "Add a calendar file"}
             </Button>
-          </>
-        )}
+          </Way>
+          <Way title="Private address" hint="A secret iCal link; refreshes by itself.">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 w-full"
+              aria-expanded={typing}
+              onClick={() => setTyping(!typing)}
+            >
+              Use a private address
+            </Button>
+          </Way>
+        </ul>
         {linkForm}
       </section>
     );
@@ -377,6 +359,19 @@ function SuggestionRow({
           </Button>
         </div>
       </SwipeArea>
+    </li>
+  );
+}
+
+/** One way to connect a calendar: its own column with a title, one line of help and its button. */
+function Way({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+  return (
+    <li className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10">
+      <div>
+        <p className="font-medium text-sm">{title}</p>
+        <p className="text-muted-foreground text-xs">{hint}</p>
+      </div>
+      <div className="mt-auto">{children}</div>
     </li>
   );
 }

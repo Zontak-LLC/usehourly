@@ -13,7 +13,7 @@ import type { SheetEntry } from "@/lib/timesheet";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-const LAST_PROJECT_KEY = "hourly:lastProject"; // shared with the Today page's quick-add
+const LAST_PROJECT_KEY = "hourly:lastProject"; // written only by the Today add form; this panel just starts on it
 
 function readLast(): string {
   try {
@@ -85,11 +85,6 @@ export function QuickCreate({
     if (!canCreate || minutes === null) return;
     try {
       const res = await createMany.mutateAsync({ projectId, dates, minutes, note, skipExisting });
-      try {
-        localStorage.setItem(LAST_PROJECT_KEY, projectId);
-      } catch {
-        // Remembering the project is a convenience only.
-      }
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       if (res.skipped.length) {
         toast.warning(

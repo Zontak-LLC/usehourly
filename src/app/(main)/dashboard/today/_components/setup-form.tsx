@@ -30,6 +30,8 @@ export function SetupForm({
   const createClient = trpc.clients.create.useMutation();
   const createProject = trpc.project.create.useMutation();
   const [pending, setPending] = useState(false);
+  // Work you do not bill (admin, your own business): no rate, and it never shows "No hourly rate yet".
+  const [unbilled, setUnbilled] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,10 +44,12 @@ export function SetupForm({
       const project = await createProject.mutateAsync({
         clientId: id,
         name: String(fd.get("project")),
-        hourlyRate: Number.isFinite(rate) ? rate : 0,
+        hourlyRate: unbilled || !Number.isFinite(rate) ? 0 : rate,
+        billable: !unbilled,
       });
       await utils.clients.list.invalidate();
       form.reset();
+      setUnbilled(false);
       toast.success("Project added.");
       onDone?.(project.id);
     } catch (err) {
@@ -93,8 +97,14 @@ export function SetupForm({
         aria-label={`Hourly rate in ${currency}`}
         onKeyDown={escapeToCancel}
         placeholder={`Rate ${currencySymbol(currency)}/h`}
+        disabled={unbilled}
         className={bar ? "shrink-0 max-sm:w-full sm:w-28" : "w-28 shrink-0"}
       />
+      {bar && (
+        <label className="flex min-h-10 items-center gap-1.5 text-sm max-sm:col-span-2">
+          <input type="checkbox" checked={unbilled} onChange={(e) => setUnbilled(e.target.checked)} /> Not billable
+        </label>
+      )}
       <Button type="submit" disabled={pending} className={bar ? "px-6" : undefined}>
         {pending ? "Saving…" : "Add"}
       </Button>
