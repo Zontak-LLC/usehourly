@@ -22,13 +22,22 @@ function Item({ item, active }: { item: NavLink; active: boolean }) {
     <Link
       href={item.url}
       aria-current={active ? "page" : undefined}
-      className={`relative flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm transition-colors ${
+      className={`group/item relative flex min-h-11 items-center gap-3 rounded-full px-3 text-sm outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-amber/40 ${
         active
-          ? "bg-muted font-semibold text-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-primary"
-          : "font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          ? "bg-gradient-to-b from-amber to-[color-mix(in_oklab,var(--amber)_80%,#b45309)] font-bold text-[#1b1405] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_8px_18px_-8px_color-mix(in_oklab,var(--amber)_80%,transparent)]"
+          : "font-medium text-foreground/75 hover:bg-muted hover:text-foreground motion-safe:hover:translate-x-0.5"
       }`}
     >
-      <item.icon className="size-5 shrink-0" aria-hidden />
+      <span
+        aria-hidden
+        className={`grid size-7 shrink-0 place-items-center rounded-full transition-colors ${
+          active
+            ? "bg-[#1b1405] text-amber"
+            : "bg-muted text-foreground/75 group-hover/item:bg-amber/20 group-hover/item:text-foreground"
+        }`}
+      >
+        <item.icon className="size-4" />
+      </span>
       <span className="truncate">{item.title}</span>
     </Link>
   );
@@ -51,18 +60,29 @@ export function SideNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const isActive = (url: string) => pathname === url || pathname.startsWith(`${url}/`);
 
   return (
-    <nav aria-label="Side menu" className={`${SHOW} sticky top-0 h-dvh w-60 shrink-0 flex-col gap-1 bg-background p-3`}>
-      <Link href="/dashboard/today" className="mb-2 flex items-center gap-2 px-2 py-1 font-semibold text-base">
-        <LogoMark className="size-6 shrink-0" aria-hidden />
-        UseHourly
-      </Link>
-      {groups.map((g) => (
-        <div key={g.title} className="not-first:mt-4 flex flex-col gap-1">
-          {g.items.map((l) => (
-            <Item key={l.id} item={l} active={isActive(l.url)} />
-          ))}
-        </div>
-      ))}
+    <nav aria-label="Side menu" className={`${SHOW} sticky top-0 h-dvh w-64 shrink-0 flex-col p-3`}>
+      <div className="flex h-full flex-col gap-1 overflow-y-auto rounded-3xl bg-card p-3 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
+        <Link
+          href="/dashboard/today"
+          className="mb-3 flex items-center gap-2.5 rounded-2xl px-2 py-2 font-display font-extrabold text-xl tracking-tight outline-none focus-visible:ring-4 focus-visible:ring-amber/40"
+        >
+          <LogoMark className="size-7 shrink-0" aria-hidden />
+          UseHourly
+        </Link>
+        {groups.map((g) => (
+          <div
+            key={g.title}
+            className="not-first:mt-3 flex flex-col gap-1 not-first:border-foreground/10 not-first:border-t not-first:pt-3"
+          >
+            {g.items.map((l) => (
+              <Item key={l.id} item={l} active={isActive(l.url)} />
+            ))}
+          </div>
+        ))}
+        <p className="mt-auto px-3 pt-4 font-mono text-[10px] text-foreground/60 uppercase tracking-widest">
+          Free · open source
+        </p>
+      </div>
     </nav>
   );
 }
