@@ -1,17 +1,18 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
-test("the non-billable day button shows a check mark and a selected look when it is on", async ({ page }) => {
+test("the non-billable day button shows a check mark and a selected look when it is on", async ({ page, shot }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/week");
   const button = page.getByRole("button", { name: /Mark day non-billable|Non-billable day/ }).first();
   await expect(button).toHaveAttribute("aria-pressed", "false");
-  await expect(button.locator("svg.lucide-ban")).toBeVisible();
+  await expect(button.locator("svg[data-icon='no-dollar']")).toBeVisible();
+  await shot("non-billable-off");
   const before = await button.evaluate((el) => getComputedStyle(el).borderColor);
 
   await button.click();
   await expect(button).toHaveAttribute("aria-pressed", "true");
   await expect(button.locator("svg.lucide-check")).toBeVisible(); // the check mark
-  await expect(button.locator("svg.lucide-ban")).toHaveCount(0);
+  await expect(button.locator("svg[data-icon='no-dollar']")).toHaveCount(0);
   // it looks selected: the outline is darker than when it is off
   expect(await button.evaluate((el) => getComputedStyle(el).borderColor)).not.toBe(before);
   // the check takes the button's own text colour (not the global green)
@@ -23,7 +24,7 @@ test("the non-billable day button shows a check mark and a selected look when it
 
   await button.click(); // click again to clear it
   await expect(button).toHaveAttribute("aria-pressed", "false");
-  await expect(button.locator("svg.lucide-ban")).toBeVisible();
+  await expect(button.locator("svg[data-icon='no-dollar']")).toBeVisible();
 });
 
 test("the dark-mode choice lives in the gear menu, not as a second button in the top bar", async ({ page }) => {

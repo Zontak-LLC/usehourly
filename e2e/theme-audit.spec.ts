@@ -24,6 +24,9 @@ const PAGES = [
   "/dashboard/clients",
   "/dashboard/report",
   "/dashboard/account",
+  "/dashboard/account#invoices",
+  "/dashboard/account#data",
+  "/dashboard/account#ai",
 ];
 
 type Finding = {

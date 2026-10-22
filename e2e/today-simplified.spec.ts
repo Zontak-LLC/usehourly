@@ -23,7 +23,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
   await test.step("until a time is typed the Add button is quiet and a line says what to do", async () => {
     const add = page.getByRole("button", { name: /^Add to the day/ });
     await expect(add).toBeDisabled();
-    await expect(page.getByText("Type a time or tap one, then add it.")).toBeVisible();
+    await expect(page.getByText("Type a time or tap one (tap again to add more), then add it.")).toBeVisible();
     // not a grey slab: the background is transparent while it waits
     expect(await add.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
     await page.getByRole("button", { name: "1 hour", exact: true }).click();

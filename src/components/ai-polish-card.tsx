@@ -8,11 +8,11 @@ import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { useAiSetup } from "@/components/use-ai-key";
 import { AiError, testKey } from "@/lib/ai-polish";
 import { defaultModel, detectProvider, isModelId, PROVIDER_IDS, PROVIDERS, type ProviderId } from "@/lib/ai-provider";
 
-const selectClass = "h-10 w-full max-w-xl rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30";
 const CUSTOM = "__custom";
 
 /** A model choice: one of the service's cheap presets, or "Other" with a model name typed in. */
@@ -38,9 +38,8 @@ function ModelPicker({
   const [text, setText] = useState(isPreset ? "" : value);
   return (
     <div className="grid gap-1.5">
-      <select
+      <NativeSelect
         id={id}
-        className={selectClass}
         value={custom ? CUSTOM : value}
         disabled={disabled}
         onChange={(e) => {
@@ -58,7 +57,7 @@ function ModelPicker({
           </option>
         ))}
         <option value={CUSTOM}>Other model…</option>
-      </select>
+      </NativeSelect>
       {custom && (
         <Input
           aria-label="Model name"
@@ -66,7 +65,6 @@ function ModelPicker({
           placeholder="Model name, as the service lists it"
           autoComplete="off"
           spellCheck={false}
-          className="max-w-xl"
           disabled={disabled}
           onChange={(e) => {
             setText(e.target.value);
@@ -203,9 +201,8 @@ export function AiPolishCard() {
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label htmlFor="ai-provider">AI service</Label>
-            <select
+            <NativeSelect
               id="ai-provider"
-              className={selectClass}
               value={provider}
               onChange={(e) => chooseProvider(e.target.value as ProviderId)}
             >
@@ -214,7 +211,7 @@ export function AiPolishCard() {
                   {PROVIDERS[id].label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="ai-model">Model</Label>
@@ -222,7 +219,7 @@ export function AiPolishCard() {
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="ai-key">API key</Label>
-            <div className="flex max-w-xl flex-wrap gap-2">
+            <div className="grid max-w-md gap-2">
               <Input
                 id="ai-key"
                 name="ai-key"
@@ -232,9 +229,8 @@ export function AiPolishCard() {
                 placeholder={info.keyHint}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                className="min-w-0 flex-1"
               />
-              <Button type="submit" disabled={testing || draft.trim() === ""}>
+              <Button type="submit" className="justify-self-start" disabled={testing || draft.trim() === ""}>
                 {testing ? "Checking…" : "Check and save"}
               </Button>
             </div>

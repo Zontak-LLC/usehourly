@@ -1,7 +1,6 @@
 "use client";
 
-import { Ban } from "lucide-react";
-
+import { NoDollar } from "@/components/no-dollar-icon";
 import { formatDuration } from "@/lib/duration";
 
 import type { DaySelection } from "./use-day-selection";
@@ -65,7 +64,7 @@ function DayCell({
         >
           {Number(d.slice(8))}
         </span>
-        {nonBillable && <Ban className="size-3" aria-hidden />}
+        {nonBillable && <NoDollar className="size-3" />}
       </span>
       <span className="text-right font-medium font-mono text-foreground text-xs tabular-nums sm:text-sm">
         {mins ? formatDuration(mins) : ""}
@@ -101,7 +100,7 @@ export function MonthCalendar({
 
   return (
     <div className="overflow-x-auto rounded-xl border bg-card">
-      <div className="grid select-none grid-cols-7 text-sm sm:min-w-[680px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
+      <div className="grid select-none grid-cols-7 text-sm sm:min-w-[560px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
         {[...weekdayNames, "Week"].map((n) => (
           <div
             key={n}

@@ -20,7 +20,7 @@ test("a private calendar address shows the day's meetings, refreshes, and is for
   });
 
   await test.step("an address from another kind of site is refused before anything is sent", async () => {
-    await card.getByRole("button", { name: "Or connect with a private calendar address" }).click();
+    await card.getByRole("button", { name: "Use a private address" }).click();
     await card.getByLabel("Private calendar address").fill("https://evil.example.com/x.ics");
     await card.getByRole("button", { name: "Connect", exact: true }).click();
     await expect(page.getByText(/Only Google, Outlook and iCloud/)).toBeVisible();

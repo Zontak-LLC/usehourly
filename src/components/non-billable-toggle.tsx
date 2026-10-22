@@ -1,7 +1,8 @@
 "use client";
 
-import { Ban, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
+import { NoDollar } from "@/components/no-dollar-icon";
 import { Button } from "@/components/ui/button";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { toastError } from "@/lib/toast-error";
@@ -68,7 +69,7 @@ export function NonBillableToggle({
       disabled={set.isPending || days.isLoading}
       onClick={toggle}
     >
-      {on ? <Check className="text-current" /> : <Ban />}
+      {on ? <Check className="text-current" /> : <NoDollar />}
       {labelled && "Non-billable day"}
     </Button>
   );

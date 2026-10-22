@@ -24,6 +24,9 @@ const APP = [
   "/dashboard/clients",
   "/dashboard/report",
   "/dashboard/account",
+  "/dashboard/account#invoices",
+  "/dashboard/account#data",
+  "/dashboard/account#ai",
 ];
 
 type Found = { kind: "small-text" | "small-target"; page: string; size: string; text: string; html: string };

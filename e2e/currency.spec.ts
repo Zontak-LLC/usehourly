@@ -7,7 +7,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
   await startFreshAccount(page);
 
   await test.step("the account starts in US dollars, and changing it is allowed before any invoice", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#invoices");
     const select = page.getByLabel("Currency", { exact: true });
     await expect(select).toHaveValue("USD");
     await expect(select).toBeEnabled();
@@ -36,7 +36,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
     await page.getByRole("button", { name: "Create invoice" }).click();
     await expect(page.getByText("€170.00").first()).toBeVisible(); // 2 hours at €85
 
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#invoices");
     const select = page.getByLabel("Currency", { exact: true });
     await expect(select).toBeDisabled();
     await expect(page.getByText(/fixed because you have made an invoice/)).toBeVisible();

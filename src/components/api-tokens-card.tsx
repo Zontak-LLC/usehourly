@@ -9,12 +9,10 @@ import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { EXPIRY_CHOICES, type ExpiryKey, type TokenAccess } from "@/lib/api-token";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 function when(epoch: number | null): string {
   return epoch
@@ -107,33 +105,23 @@ export function ApiTokensCard() {
             required
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          <div className="grid gap-1.5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="grid w-full gap-1.5 sm:w-52">
             <Label htmlFor="token-access">Access</Label>
-            <select
-              id="token-access"
-              className={selectClass}
-              value={access}
-              onChange={(e) => setAccess(e.target.value as TokenAccess)}
-            >
+            <NativeSelect id="token-access" value={access} onChange={(e) => setAccess(e.target.value as TokenAccess)}>
               <option value="write">Read and change</option>
               <option value="read">Read only</option>
-            </select>
+            </NativeSelect>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid w-32 gap-1.5">
             <Label htmlFor="token-expires">Expires</Label>
-            <select
-              id="token-expires"
-              className={selectClass}
-              value={expires}
-              onChange={(e) => setExpires(e.target.value as ExpiryKey)}
-            >
+            <NativeSelect id="token-expires" value={expires} onChange={(e) => setExpires(e.target.value as ExpiryKey)}>
               {EXPIRY_CHOICES.map((c) => (
                 <option key={c.key} value={c.key}>
                   {c.label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <Button type="submit" disabled={create.isPending}>
             Make token

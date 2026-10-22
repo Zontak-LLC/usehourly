@@ -125,7 +125,12 @@ function InvoiceActions({
   );
 }
 
-export function InvoiceCard({
+/** The columns of the invoice table on a wide screen (the header row and every invoice row share them). */
+export const INVOICE_COLS =
+  "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_6.5rem_15rem]";
+
+/** One invoice as a row of the table: who and what, status, period, total, then the actions (cards group, rows list). */
+export function InvoiceLine({
   invoice: i,
   today,
   handlers,
@@ -136,38 +141,30 @@ export function InvoiceCard({
 }) {
   const [panel, setPanel] = useState<Panel>(null);
   return (
-    <li className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/25">
-      {/* Header: which invoice, and the actions pinned on the right (same shape as the entry cards). */}
-      <div className="flex items-center justify-between gap-3 border-b bg-band-3 px-4 py-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5">
-          <p className="min-w-0 truncate">
+    <li className="border-t first:border-t-0">
+      <div className={`${INVOICE_COLS} items-center gap-x-3 gap-y-1 px-3 py-3 text-sm sm:px-4`}>
+        <div className="min-w-0 sm:col-start-1 sm:row-start-1">
+          <p className="truncate">
             <span className="font-semibold">{i.number}</span>
             <span className="text-muted-foreground"> · {i.client_name}</span>
           </p>
-          {/* The status is the first thing wanted about an invoice, so it sits in the header, not under the summary. */}
-          <p className="text-sm">
-            <InvoiceStatus invoice={i} today={today} />
-          </p>
+          {i.summary && <p className="line-clamp-1 break-words text-muted-foreground text-xs">{i.summary}</p>}
         </div>
-        <div className="flex shrink-0 max-sm:hidden">
+        <p className="max-sm:col-span-2 max-sm:row-start-2 sm:col-start-2 sm:row-start-1">
+          <InvoiceStatus invoice={i} today={today} />
+        </p>
+        <p className="text-muted-foreground text-xs max-sm:col-span-2 max-sm:row-start-3 sm:col-start-3 sm:row-start-1">
+          {fmt(i.period_from)} – {fmt(i.period_to)} · {formatDecimalHours(i.total_minutes)} h
+          <span className="sm:hidden"> · issued {fmt(i.issue_date)}</span>
+        </p>
+        <p className="text-right font-mono font-semibold text-base tabular-nums max-sm:col-start-2 max-sm:row-start-1 sm:col-start-4 sm:row-start-1">
+          {formatMoney(i.total_cents, i.currency)}
+        </p>
+        <div className="flex justify-end max-sm:hidden sm:col-start-5 sm:row-start-1">
           <InvoiceActions invoice={i} panel={panel} onPanel={setPanel} handlers={handlers} />
         </div>
       </div>
-      <div className="flex flex-col gap-2 px-4 py-3">
-        {i.summary && <p className="line-clamp-2 break-words text-sm">{i.summary}</p>}
-        <div className="flex items-end justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-muted-foreground text-xs">
-              {fmt(i.period_from)} – {fmt(i.period_to)} · {formatDecimalHours(i.total_minutes)} h · issued{" "}
-              {fmt(i.issue_date)}
-            </p>
-          </div>
-          <p className="shrink-0 font-mono font-semibold text-lg tabular-nums">
-            {formatMoney(i.total_cents, i.currency)}
-          </p>
-        </div>
-      </div>
-      {/* The forms open here, in the card, not in a popup. */}
+      {/* The forms open here, under the row, not in a popup. */}
       {panel === "paid" && (
         <PaidPanel
           invoice={i}
@@ -180,7 +177,7 @@ export function InvoiceCard({
       {panel === "send" && <SendInvoicePanel invoice={i} onClose={() => setPanel(null)} />}
       {panel === "delete" && <DeleteInvoiceConfirm invoice={i} onClose={() => setPanel(null)} />}
       {/* On a phone the actions get words and a full-width row; tooltips do not exist on touch. */}
-      <div className="border-t p-2 sm:hidden">
+      <div className="px-3 pb-3 sm:hidden">
         <InvoiceActions invoice={i} words panel={panel} onPanel={setPanel} handlers={handlers} />
       </div>
     </li>

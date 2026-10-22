@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 
-import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { Archive, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { useClientLogos } from "@/components/client-logo";
+import { MoreMenu } from "@/components/more-menu";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toISODate } from "@/lib/dates";
@@ -15,7 +19,6 @@ import { formatDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-import { ArchivedSection } from "./archived-section";
 import { ClientCard } from "./client-card";
 import type { ClientRow } from "./client-types";
 import { NewClientCard } from "./new-client-card";
@@ -108,7 +111,11 @@ export function ClientsView() {
           onClick: async () => {
             try {
               await (kind === "client" ? unarchiveClient : unarchiveProject).mutateAsync({ id });
-              await Promise.all([utils.clients.list.invalidate(), utils.project.listArchived.invalidate()]);
+              await Promise.all([
+                utils.clients.list.invalidate(),
+                utils.project.listArchived.invalidate(),
+                utils.clients.listArchived.invalidate(),
+              ]);
             } catch (err) {
               toastError(err, "Couldn't undo that.");
             }
@@ -121,8 +128,46 @@ export function ClientsView() {
   }
 
   const openClients = useOpenClients();
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const router = useRouter();
   return (
-    <PageShell nav="clients" title="Clients" description={description} descriptionOnPhone>
+    <PageShell
+      nav="clients"
+      title="Clients"
+      description={description}
+      descriptionOnPhone
+      actions={
+        // The way to add a client: a + in the header (the form opens at the top of the list). The big dashed card is only for an empty page.
+        <div className="flex items-center gap-1">
+          {clientCount > 0 && (
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-10"
+              aria-label="New client"
+              aria-expanded={newClientOpen}
+              title="New client"
+              onClick={() => setNewClientOpen((open) => !open)}
+            >
+              <Plus />
+            </Button>
+          )}
+          {/* The archive is one step away, not a link at the foot of a long page. */}
+          <MoreMenu
+            label="More actions for Clients"
+            className="size-10"
+            items={[
+              {
+                label: "Archived clients and projects",
+                icon: <Archive />,
+                onSelect: () => router.push("/dashboard/clients/archived"),
+              },
+            ]}
+          />
+        </div>
+      }
+    >
       {/* Search only earns its place once there are more clients than fit in a glance. */}
       {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
 
@@ -133,6 +178,11 @@ export function ClientsView() {
 
       {words.length > 0 && visibleClients.length === 0 && (
         <p className="py-6 text-center text-muted-foreground text-sm">No client or project matches that.</p>
+      )}
+
+      {/* The form (or, on an empty page, the big card) sits at the top; not while searching or before the list loads. */}
+      {clients.data && words.length === 0 && (
+        <NewClientCard clientCount={clients.data.length} open={newClientOpen} onOpenChange={setNewClientOpen} />
       )}
 
       {visibleClients.map((c) => (
@@ -154,10 +204,6 @@ export function ClientsView() {
           onArchiveProject={(p) => void archive({ kind: "project", ...p })}
         />
       ))}
-
-      {/* Not while searching (the card would sit among the matches) and not before the list has loaded. */}
-      {clients.data && words.length === 0 && <NewClientCard clientCount={clients.data.length} />}
-      <ArchivedSection />
     </PageShell>
   );
 }

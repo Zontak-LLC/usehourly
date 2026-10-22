@@ -25,6 +25,14 @@ import { trpc } from "@/lib/trpc";
 import { notifyPending, useOnline } from "@/lib/use-offline";
 import { useToday } from "@/lib/use-today";
 
+/** What a time chip writes in the box: "30m", "1h", "1h30", "2h" (never "120m"). parseDuration reads all of them. */
+function chipText(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
+}
+
 const LAST_PROJECT_KEY = "hourly:lastProject";
 function readLast(): string {
   try {
@@ -60,6 +68,8 @@ export function QuickAdd({
   const [projectId, setProjectId] = useState("");
   const [duration, setDuration] = useState("");
   const [note, setNote] = useState("");
+  // Tapping the same chip again adds its time again (2 hours, again = 4 hours); typing or another chip starts over.
+  const [chipRun, setChipRun] = useState<{ minutes: number; taps: number } | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
   // "Today" is the browser's date (the server runs in UTC), so it is worked out after the page loads.
   const isToday = useToday() === date;
@@ -77,7 +87,7 @@ export function QuickAdd({
 
   // Land in the time field on a computer (on a phone that would pop the keyboard before you asked).
   useEffect(() => {
-    if (window.matchMedia("(pointer: fine)").matches) durationRef.current?.focus();
+    if (window.matchMedia("(pointer: fine)").matches) durationRef.current?.focus({ preventScroll: true }); // never scroll the page to the form on load
   }, []);
 
   // "n" focuses the duration field from anywhere (unless typing in a field).
@@ -204,18 +214,15 @@ export function QuickAdd({
           </div>
         )}
 
-        {budget && (
-          <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
-            <BudgetBar status={budget} />
-          </ClientCurrency>
-        )}
-
         <div className="flex flex-col gap-2">
           <Input
             id="quick-duration"
             ref={durationRef}
             value={duration}
-            onChange={(e) => setDuration(e.target.value)}
+            onChange={(e) => {
+              setDuration(e.target.value);
+              setChipRun(null);
+            }}
             placeholder="Time: 1.5, 1:30 or 90m"
             aria-label="Time to add"
             aria-invalid={invalid}
@@ -232,7 +239,11 @@ export function QuickAdd({
                 aria-pressed={parsed === c.minutes}
                 className="h-9 px-1 text-sm sm:h-10 sm:text-base"
                 onClick={() => {
-                  setDuration(`${c.minutes}m`);
+                  // Same chip, field still untouched since the last tap: add the chip's time once more.
+                  const again = chipRun?.minutes === c.minutes && parsed === c.minutes * chipRun.taps;
+                  const taps = again ? chipRun.taps + 1 : 1;
+                  setChipRun({ minutes: c.minutes, taps });
+                  setDuration(chipText(c.minutes * taps));
                   durationRef.current?.focus();
                 }}
               >
@@ -248,7 +259,7 @@ export function QuickAdd({
               ? "Try 1.5, 1:30 or 90m"
               : parsed
                 ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`
-                : "Type a time or tap one, then add it."}
+                : "Type a time or tap one (tap again to add more), then add it."}
           </p>
         </div>
 
@@ -294,6 +305,12 @@ export function QuickAdd({
               <Play className="size-3.5" aria-hidden /> {timerRunning ? "Switch timer to this" : "Start timer"}
             </button>
           </p>
+        )}
+        {/* At the foot, so picking a project with a budget never moves the controls above it. */}
+        {budget && (
+          <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
+            <BudgetBar status={budget} />
+          </ClientCurrency>
         )}
       </form>
     </div>

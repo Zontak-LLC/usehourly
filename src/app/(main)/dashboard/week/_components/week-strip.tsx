@@ -1,7 +1,8 @@
 "use client";
 
-import { Ban, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 
+import { NoDollar } from "@/components/no-dollar-icon";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -57,7 +58,7 @@ export function DayTiles({
                   : "bg-card hover:bg-muted"
             }`}
           >
-            {nonBillable.has(d) && <Ban className="absolute top-1 right-1 size-3" aria-hidden />}
+            {nonBillable.has(d) && <NoDollar className="absolute top-1 right-1 size-3" />}
             <span
               className={`font-medium text-xs uppercase tracking-normal max-sm:text-[0.7rem] sm:tracking-wide ${on ? "text-foreground/75" : "text-muted-foreground"}`}
             >
@@ -119,7 +120,8 @@ export function WeekTotalCard({
         <p className="text-foreground/75 text-sm">({formatDecimalHours(sheet.total)} h)</p>
       </div>
       {sheet.rows.length > 0 && (
-        <ul className="flex flex-wrap gap-2 max-sm:flex-col max-sm:gap-1.5">
+        // One row per project, full width inside the card: dot, project and client, hours. A row filters the week.
+        <ul className="-mx-4 -mb-4 divide-y border-t">
           {sheet.rows.map((r) => {
             const on = projectId === r.projectId;
             return (
@@ -129,18 +131,14 @@ export function WeekTotalCard({
                   aria-pressed={on}
                   onClick={() => onProjectId(toggleProjectFilter(projectId, r.projectId))}
                   title={on ? "Show all projects" : `Show only ${r.project}`}
-                  className={`flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm hover:bg-muted max-sm:w-full max-sm:rounded-lg ${
-                    on ? "border-foreground/60 ring-1 ring-foreground/30" : ""
+                  className={`flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                    on ? "bg-tint" : projectId ? "text-muted-foreground" : ""
                   }`}
                 >
                   <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
-                  {/* On a phone: the project, its client under it in small type, the hours pushed to the right. */}
-                  <span className="flex min-w-0 items-baseline gap-1 max-sm:flex-1 max-sm:flex-col max-sm:items-start max-sm:gap-0">
-                    <span className="font-medium max-sm:max-w-full max-sm:truncate">{r.project}</span>
-                    <span className="text-muted-foreground max-sm:max-w-full max-sm:truncate max-sm:text-xs">
-                      <span className="max-sm:hidden">· </span>
-                      {r.client}
-                    </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{r.project}</span>
+                    <span className="block truncate text-muted-foreground text-xs">{r.client}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1 font-mono tabular-nums">
                     <Clock className="size-3.5" aria-hidden />

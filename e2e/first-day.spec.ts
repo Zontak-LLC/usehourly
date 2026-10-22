@@ -83,7 +83,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("log a second entry with a quick-pick chip", async () => {
     await page.getByRole("button", { name: "1 hour", exact: true }).click();
-    await expect(page.getByLabel("Time to add")).toHaveValue("60m");
+    await expect(page.getByLabel("Time to add")).toHaveValue("1h");
     await page.getByRole("button", { name: /Add to the day/ }).click();
   });
 
@@ -370,7 +370,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#data");
     await expect(page.getByText("Send invoices to your accounting app")).toBeVisible();
     await shot("accounting-export");
     await audit("account, accounting export");
@@ -402,7 +402,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("delete the account; the details no longer work", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#data");
     await page.getByRole("button", { name: /Delete my account/ }).click();
     await page.getByLabel(/Type your password/).fill(user.password);
     await page.getByRole("button", { name: "Delete everything" }).click();

@@ -1,4 +1,16 @@
-import { anonymous, clearMail, expect, linkIn, mailTo, newUser, seen, sql, startFreshAccount, test } from "./helpers";
+import {
+  anonymous,
+  clearMail,
+  expect,
+  linkIn,
+  mailTo,
+  menuAction,
+  newUser,
+  seen,
+  sql,
+  startFreshAccount,
+  test,
+} from "./helpers";
 
 /**
  * Teams, start to finish in real browsers: an owner invites a person by email, the email arrives (the mail stand-in
@@ -30,14 +42,14 @@ test("an owner invites someone by email, they join and log time, and the owner r
     await page.goto("/dashboard/team");
     await expect(page.getByRole("heading", { name: "Team", level: 1 })).toBeVisible();
     await expect(page.getByText("Nobody on your team yet")).toBeVisible();
-    await page.getByRole("button", { name: /Invite someone/ }).click(); // the card turns into the form, in place
+    await page.getByRole("button", { name: "Invite someone" }).click(); // the empty-state button opens the form
     await expect(page.getByText("Nobody on your team yet")).toBeHidden();
     await page.getByLabel("Their email address").fill(member.email);
     await page.getByLabel("Their name (optional)").fill("Pat");
     await page.getByRole("button", { name: "Acme Studio", pressed: false }).click(); // a toggle button, not a tick box
     await page.getByRole("button", { name: "Send the invitation" }).click();
     await expect(page.getByText(`We emailed ${member.email}.`)).toBeVisible();
-    await expect(page.getByText(/Invitation sent, not accepted yet/)).toBeVisible();
+    await expect(page.getByText(/Invitation sent, waiting to accept/)).toBeVisible();
 
     const mail = await mailTo(member.email, /invited you to a team/);
     expect(mail.html).toContain("Join the team"); // the button; the plain-text part carries the bare link
@@ -45,16 +57,20 @@ test("an owner invites someone by email, they join and log time, and the owner r
     joinPath = new URL(linkIn(mail.text, "/team/join/")).pathname;
   });
 
-  await test.step("the Invite someone card sits beside one person and spans the row under two, so there is never empty space", async () => {
-    await page.getByRole("button", { name: "Done" }).click(); // closes the sent-invitation message and shows the card again
+  await test.step("people are rows in one list, and the + in the header invites another", async () => {
+    await page.getByRole("button", { name: "Done" }).click(); // closes the sent-invitation message
     const people = page.getByRole("region", { name: "Your team" });
-    const cell = () =>
-      people.getByRole("button", { name: "Invite someone", exact: true }).locator("xpath=ancestor::li[1]");
-    await expect(cell()).not.toHaveClass(/sm:col-span-2/); // one person: the card shares the row with them
-    await expect(people.getByRole("button", { name: "Acme Studio", pressed: true })).toHaveCount(1); // the person's clients are toggle buttons, pressed when allowed
+    await expect(people.getByRole("listitem")).toHaveCount(1);
+    const allowed = people.getByText("Acme Studio", { exact: true });
+    await expect(allowed).toBeVisible(); // small chips of words, not tick boxes
+    // The pencil opens the client toggles in the row, and closes them again.
+    const edit = people.getByRole("button", { name: "Edit clients for Pat" });
+    await edit.click();
+    await expect(edit).toHaveAttribute("aria-expanded", "true");
+    const pill = people.getByRole("button", { name: "Acme Studio", pressed: true });
+    await expect(pill).toHaveCount(1); // a toggle button, pressed when allowed
     // The pressed pill follows the theme: its check mark has the pill's own text colour (not the global green), and the
     // pill is filled with the soft tint rather than solid black.
-    const pill = people.getByRole("button", { name: "Acme Studio", pressed: true });
     const colours = await pill.evaluate((el) => {
       const icon = el.querySelector("svg");
       return {
@@ -65,39 +81,27 @@ test("an owner invites someone by email, they join and log time, and the owner r
     });
     expect(colours.icon).toBe(colours.text);
     expect(colours.fill).not.toBe("rgb(24, 24, 27)");
+    await edit.click();
+    await expect(allowed).toBeVisible();
     await shot("team-one-person");
-    await people.getByRole("button", { name: "Invite someone", exact: true }).click();
+
+    const plus = page.getByRole("button", { name: "Invite someone" });
+    await plus.click();
+    await expect(plus).toHaveAttribute("aria-expanded", "true");
     const form = page.locator("form", { has: page.getByLabel("Their email address") });
-    await expect(form.locator("xpath=ancestor::li[1]")).not.toHaveClass(/sm:col-span-2/); // the form opens in the card's own cell
-    await form.getByLabel("Their email address").fill(newUser().email);
+    const unnamed = newUser().email;
+    await form.getByLabel("Their email address").fill(unnamed);
     await form.getByRole("button", { name: "Acme Studio", pressed: false }).click();
     await page.getByRole("button", { name: "Send the invitation" }).click();
-    await expect(page.getByText(/Invitation sent, not accepted yet/)).toHaveCount(2);
-    await expect(form.locator("xpath=ancestor::li[1]")).not.toHaveClass(/sm:col-span-2/); // sending did not make the cell jump wider
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(cell()).toHaveClass(/sm:col-span-2/); // two people: the slim card spans both columns
+    await expect(people.getByRole("listitem")).toHaveCount(2);
+    await expect(people.getByText(unnamed, { exact: true })).toHaveCount(1); // no name given: the address is the title and is not repeated under it
+    await expect(people.getByText(/Invitation sent, waiting to accept/)).toHaveCount(2);
     await shot("team-two-people");
     if (info.project.name === "phone") {
-      // On a phone the people are a row to swipe through, one card at a time with the next one peeking in.
-      const row = people.getByRole("list").first();
-      expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-      const first = await people.getByRole("listitem").first().boundingBox();
-      const viewport = page.viewportSize()?.width ?? 400;
-      const rowBox = await row.boundingBox();
-      expect((first?.width ?? 0) >= (rowBox?.width ?? 999) - 2).toBe(true); // a card fills the whole width, no piece of the next one
-      expect((first?.width ?? 0) <= viewport).toBe(true);
-      await row.evaluate((el) => el.scrollTo({ left: 0 })); // back to the first card, as a visitor first sees it
-      await shot("team-swipe-row-start");
-      // Dots show where you are and jump to a card: the last one is the invite card.
-      await expect(people.getByRole("button", { name: "Go to person 1 of 2" })).toHaveAttribute("aria-current", "true");
-      await people.getByRole("button", { name: "Go to Invite someone" }).click();
-      await expect(people.getByRole("button", { name: "Invite someone", exact: true })).toBeInViewport();
-      await expect(people.getByRole("button", { name: "Go to Invite someone" })).toHaveAttribute(
-        "aria-current",
-        "true",
-      );
-      await expect(page).toHaveURL(/\/dashboard\/team$/);
-      await shot("team-swipe-row");
+      // No swipe row any more: the rows stack, and the page does not scroll sideways.
+      await expect(people.getByRole("button", { name: /Go to person/ })).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     }
   });
 
@@ -164,9 +168,8 @@ test("an owner invites someone by email, they join and log time, and the owner r
 
   await test.step("the owner removes Pat, who can no longer log time; the entry stays", async () => {
     await page.goto("/dashboard/team");
-    const pat = page.locator("li", { has: page.getByRole("heading", { name: /^Pat/ }) });
-    await pat.getByRole("button", { name: "Remove", exact: true }).click();
-    await pat.getByRole("button", { name: "Yes, remove" }).click();
+    await menuAction(page, "More actions for Pat", "Remove from team");
+    await page.getByRole("region", { name: "Remove Pat?" }).getByRole("button", { name: "Remove" }).click();
     await expect(page.getByRole("heading", { name: /^Pat/ })).toHaveCount(0); // the other invitation (still pending) stays
     await patPage.reload();
     await expect(patPage.getByText(/Log time for/)).toHaveCount(0);

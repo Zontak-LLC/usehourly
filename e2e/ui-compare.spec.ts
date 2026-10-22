@@ -19,6 +19,9 @@ const SCREENS: [name: string, url: string][] = [
   ["month", "/dashboard/month"],
   ["invoices", "/dashboard/invoices"],
   ["clients", "/dashboard/clients"],
+  ["report", "/dashboard/report"],
+  ["account", "/dashboard/account"],
+  ["team", "/dashboard/team"],
 ];
 
 test("photograph the main screens", async ({ page }, info) => {

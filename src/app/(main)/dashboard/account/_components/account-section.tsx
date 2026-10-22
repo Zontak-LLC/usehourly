@@ -11,7 +11,6 @@ export const SECTIONS = [
   { id: "invoices", label: "Invoices" },
   { id: "data", label: "Your data" },
   { id: "ai", label: "AI assistants" },
-  { id: "support", label: "Support" },
 ] as const;
 
 export type AccountMe = Outputs["account"]["me"];

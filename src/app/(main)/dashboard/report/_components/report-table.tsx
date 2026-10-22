@@ -1,16 +1,42 @@
 import { CardTitle } from "@/components/card-title";
+import { CollapsibleSection } from "@/components/collapsible-section";
 
-export function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+/** One line of the summary: the label (with a muted hint under it) on the left, the figure on the right. */
+export function SummaryRow({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border bg-card px-4 py-3">
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-mono font-semibold text-lg tabular-nums sm:text-xl">{value}</p>
-      {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
+    <div className="flex items-baseline justify-between gap-3 border-t px-4 py-2.5 first:border-t-0">
+      <dt className="min-w-0 text-sm">
+        {label}
+        {hint && <span className="block text-muted-foreground text-xs">{hint}</span>}
+      </dt>
+      <dd className="shrink-0 font-mono font-semibold text-base tabular-nums">{value}</dd>
     </div>
   );
 }
 
-export function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+/** A section of the year summary. `foldId` makes it fold (with `summary` shown while folded); without it it is plain. */
+export function Section({
+  title,
+  note,
+  foldId,
+  summary,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  note?: string;
+  foldId?: string;
+  summary?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  if (foldId) {
+    return (
+      <CollapsibleSection id={`report:${foldId}`} title={title} note={note} summary={summary} defaultOpen={defaultOpen}>
+        {children}
+      </CollapsibleSection>
+    );
+  }
   return (
     <section aria-label={title} className="overflow-hidden rounded-xl border bg-card">
       <div className="border-b bg-band-2 px-4 py-3">

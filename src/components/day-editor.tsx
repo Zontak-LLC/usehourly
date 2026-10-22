@@ -175,7 +175,7 @@ function DayCard({
     >
       {rows.length > 0 && (
         <>
-          <ul className="flex flex-col gap-2">
+          <ul className="divide-y border-y">
             {rows.map((e) => (
               <EntryRow key={e.id} entry={e} bare />
             ))}

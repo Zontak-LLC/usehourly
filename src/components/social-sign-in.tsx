@@ -61,6 +61,9 @@ export function SocialSignIn() {
   }, []);
 
   const providers = (["google", "github"] as const).filter((p) => enabled.data?.[p]);
+  // While the answer is on its way, keep the room the two buttons and the "or with email" line will take, so the form
+  // does not jump down under the person's cursor when they appear.
+  if (enabled.isLoading) return <div aria-hidden className="h-32" />;
   if (providers.length === 0) return null;
 
   return (

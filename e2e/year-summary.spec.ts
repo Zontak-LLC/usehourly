@@ -37,3 +37,30 @@ test("the year summary hides empty months until asked, writes empties as dashes,
     await expect(months.locator("ul.sm\\:hidden > li").first().locator("p").nth(1)).toContainText("worked");
   }
 });
+
+test("year summary sections fold behind a chevron, show a summary while folded, and remember the choice", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: /try the demo/i })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/dashboard/);
+  await page.goto("/dashboard/report");
+  const quarters = page.getByRole("button", { name: /^By quarter/ });
+  // the table is drawn twice (wide and phone); only the visible copy counts
+  const q4 = () => page.getByText("Q4 · Oct–Dec").locator("visible=true");
+  await expect(quarters).toHaveAttribute("aria-expanded", "true"); // open on first visit
+  await expect(q4()).toHaveCount(1);
+
+  await quarters.click();
+  await expect(quarters).toHaveAttribute("aria-expanded", "false");
+  await expect(quarters).toContainText("earned"); // a folded section still says its total
+  await expect(q4()).toHaveCount(0);
+
+  await page.reload(); // remembered on this device
+  await expect(page.getByRole("button", { name: /^By quarter/ })).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: /^By quarter/ }).click();
+  await expect(q4()).toHaveCount(1);
+});

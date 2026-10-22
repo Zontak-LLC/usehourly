@@ -8,7 +8,6 @@ import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
-import { HeaderCard } from "@/components/header-card";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { Pagination } from "@/components/pagination";
@@ -22,7 +21,7 @@ import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
-import { type InvoiceActionHandlers, InvoiceCard } from "./invoice-card";
+import { INVOICE_COLS, type InvoiceActionHandlers, InvoiceLine } from "./invoice-card";
 import { InvoiceFilterBar } from "./invoice-filter-bar";
 import { InvoiceTotals } from "./invoice-totals";
 import type { InvoiceRow } from "./invoice-types";
@@ -85,57 +84,67 @@ export function InvoicesView() {
       title="Invoices"
       description="Every invoice you've issued, saved exactly as sent."
       actions={
-        <Button asChild size="lg" variant="primary" className="h-10 max-sm:w-10 max-sm:rounded-xl max-sm:px-0">
-          <Link href="/dashboard/invoices/new" title="New invoice">
-            <Plus className="max-sm:size-5" /> <span className="max-sm:sr-only">New invoice</span>
+        <Button asChild size="icon" variant="outline" className="size-10">
+          <Link href="/dashboard/invoices/new" aria-label="New invoice" title="New invoice">
+            <Plus />
           </Link>
         </Button>
       }
     >
-      {showFilters && (
-        <>
-          {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
-          <HeaderCard label="Find an invoice" header={<h2 className="font-semibold text-base">Find an invoice</h2>}>
-            <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
-          </HeaderCard>
-        </>
-      )}
-
-      {invoices.error ? (
-        <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
-      ) : invoices.isLoading ? (
-        <Skeleton className="h-48 w-full" />
-      ) : invoices.data?.length === 0 ? (
+      {invoices.data?.length === 0 && !filtering && !showFilters ? (
         <EmptyState className="flex flex-col items-center gap-2 py-14">
           <FileText className="size-8 text-muted-foreground" />
-          <p className="font-medium">{filtering ? "No invoices match that search." : "No invoices yet."}</p>
-          {!filtering && (
-            <p className="text-muted-foreground text-sm">Create one from the time you've already logged.</p>
-          )}
+          <p className="font-medium">No invoices yet.</p>
+          <p className="text-muted-foreground text-sm">Create one from the time you've already logged.</p>
         </EmptyState>
       ) : (
-        <InvoiceList
-          invoices={invoices.data ?? []}
-          pageNo={pageNo}
-          pageSize={pageSize}
-          onPage={(n) => {
-            setPageNo(n);
-            // Landing on the new page at its top, not wherever the buttons were.
-            document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
-          }}
-          today={today}
-          handlers={handlers}
-        />
+        <section
+          id="invoice-list"
+          aria-label="Your invoices"
+          className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
+        >
+          <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
+            <h2 className="font-semibold text-base">Your invoices</h2>
+            {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
+          </header>
+          {/* Search and filters sit right above the list they narrow. */}
+          {showFilters && (
+            <div className="border-b px-3 py-3 sm:px-4">
+              <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
+            </div>
+          )}
+          {invoices.error ? (
+            <div className="p-3 sm:p-4">
+              <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
+            </div>
+          ) : invoices.isLoading ? (
+            <Skeleton className="m-3 h-32 sm:m-4" />
+          ) : invoices.data?.length === 0 ? (
+            <p className="px-3 py-10 text-center text-muted-foreground text-sm sm:px-4">
+              No invoices match that search.
+            </p>
+          ) : (
+            <InvoiceTable
+              invoices={invoices.data ?? []}
+              pageNo={pageNo}
+              pageSize={pageSize}
+              onPage={(n) => {
+                setPageNo(n);
+                // Landing on the new page at its top, not wherever the buttons were.
+                document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
+              }}
+              today={today}
+              handlers={handlers}
+            />
+          )}
+        </section>
       )}
     </PageShell>
   );
 }
 
-/**
- * All the invoices in ONE card with a header, like every other page's sections: the invoices are tiles inside it, a few
- * per page (3 on a phone, 10 on a wide screen) with Previous and Next underneath.
- */
-function InvoiceList({
+/** The invoices as table rows, a few per page (3 on a phone, 10 on a wide screen) with Previous and Next underneath. */
+function InvoiceTable({
   invoices,
   pageNo,
   pageSize,
@@ -152,25 +161,27 @@ function InvoiceList({
 }) {
   const page = paginate(invoices, pageNo, pageSize);
   return (
-    <section
-      id="invoice-list"
-      aria-label="Your invoices"
-      className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
-    >
-      <header className="bg-band-2 px-3 py-3 sm:px-4">
-        <h2 className="font-semibold text-base">Your invoices</h2>
-        <p className="text-foreground/75 text-sm">
-          {invoices.length} invoice{invoices.length === 1 ? "" : "s"}, newest first unless you sort otherwise.
-        </p>
-      </header>
-      <div className="flex flex-col gap-3 p-3 sm:p-4">
-        <ul className="flex flex-col gap-3">
-          {page.items.map((i) => (
-            <InvoiceCard key={i.id} invoice={i} today={today} handlers={handlers} />
-          ))}
-        </ul>
-        <Pagination page={page} noun="invoices" onPage={onPage} />
+    <>
+      <div
+        aria-hidden
+        className={`${INVOICE_COLS} gap-x-3 border-b bg-band-3 px-4 py-2 text-muted-foreground text-xs max-sm:hidden`}
+      >
+        <span>Invoice</span>
+        <span>Status</span>
+        <span>Period</span>
+        <span className="text-right">Total</span>
+        <span />
       </div>
-    </section>
+      <ul>
+        {page.items.map((i) => (
+          <InvoiceLine key={i.id} invoice={i} today={today} handlers={handlers} />
+        ))}
+      </ul>
+      {page.pages > 1 && (
+        <div className="border-t p-3 sm:p-4">
+          <Pagination page={page} noun="invoices" onPage={onPage} />
+        </div>
+      )}
+    </>
   );
 }

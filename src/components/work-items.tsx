@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-import { Ban, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
+import { NoDollar } from "@/components/no-dollar-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePageSize } from "@/components/use-page-size";
@@ -106,7 +107,7 @@ export function WorkItems({
                     </HoursChip>
                     {nonBillable?.has(g.date) && (
                       <span className="flex shrink-0 items-center gap-1 rounded-full border border-rose-600/40 px-2 py-0.5 font-medium text-foreground/80 text-xs dark:border-rose-400/40">
-                        <Ban className="size-3" aria-hidden /> Non-billable
+                        <NoDollar className="size-3" /> Non-billable
                       </span>
                     )}
                   </h3>
@@ -133,8 +134,8 @@ export function WorkItems({
                     <Pencil /> {editInPlace && dayEditing(g.items) ? "Done editing" : "Edit day"}
                   </Button>
                 </div>
-                {/* One card per entry, the same card as on Today: its header carries Move, Edit and Delete (which asks first). */}
-                <ul className="flex flex-col gap-2">
+                {/* The day is the card; its entries are rows in one list (cards group, rows list). Each row carries Edit and a ··· menu. */}
+                <ul className="divide-y border-y">
                   {g.items.map((e) => (
                     <EntryRow
                       // The card reads "start in edit mode" only when it is first shown, so a change of that flag (the

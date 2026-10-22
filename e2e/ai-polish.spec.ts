@@ -57,7 +57,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   });
 
   await test.step("a key that is not an Anthropic key is refused before any call", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#ai");
     await page.getByLabel("API key", { exact: true }).fill("hunter2");
     await page.getByRole("button", { name: "Check and save" }).click();
     await expect(page.getByText(/doesn't look like an Anthropic API key/)).toBeVisible();
@@ -135,7 +135,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   });
 
   await test.step("the model can be changed without entering the key again", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#ai");
     await expect(page.getByLabel("Model", { exact: true })).toHaveValue("claude-haiku-5-5"); // the cheapest is the default
     const before = calls.length;
     await page.getByLabel("Model", { exact: true }).selectOption("claude-sonnet-5-5");
@@ -150,7 +150,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   });
 
   await test.step("a model that fails the check is refused, and the old one stays", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#ai");
     await page.getByLabel("Model", { exact: true }).selectOption({ label: "Other model…" });
     await page.getByLabel("Model name").fill("nonexistent-model");
     await page.getByLabel("Model name").press("Enter");
@@ -160,7 +160,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   });
 
   await test.step("an OpenAI key works the same way, on its own default model", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#ai");
     await page.getByRole("button", { name: "Remove key" }).click();
     await page.getByLabel("AI service").selectOption("openai");
     await expect(page.getByLabel("Model", { exact: true })).toHaveValue("gpt-4.1-nano");
@@ -183,7 +183,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
   });
 
   await test.step("removing the key takes Polish away again", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#ai");
     await page.getByRole("button", { name: "Remove key" }).click();
     await expect(page.getByLabel("API key", { exact: true })).toBeVisible();
     await page.goto("/dashboard/today");

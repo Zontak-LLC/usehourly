@@ -1,44 +1,23 @@
 "use client";
 
-import { CircleAlert, CircleCheck } from "lucide-react";
-
 import { type CurrencyTotals, formatMoney } from "@/lib/money";
 
-/** Invoiced / Unpaid / Paid figures under the page title: one set per currency, never added across currencies. */
+/**
+ * Invoiced / unpaid / paid as ONE line of words (no tiles): "$2,347.50 invoiced · $1,155.00 unpaid · $1,192.50 paid".
+ * One line per currency, never added across currencies.
+ */
 export function InvoiceTotals({ groups, filtering }: { groups: CurrencyTotals[]; filtering: boolean }) {
-  const several = groups.length > 1;
   return (
-    <div className="flex flex-col gap-2 sm:gap-3">
+    <div className="flex flex-col gap-0.5 text-foreground/75 text-sm">
       {groups.map(({ currency, count, total, unpaid }) => {
         const money = (cents: number) => formatMoney(cents, currency);
         return (
-          <dl
-            key={currency}
-            aria-label={several ? `Totals in ${currency}` : undefined}
-            className="grid grid-cols-3 gap-2 sm:gap-3"
-          >
-            <div className="rounded-xl border bg-card px-3 py-3">
-              <dt className="text-muted-foreground text-xs">
-                Invoiced{several ? ` in ${currency}` : ""} · {count} invoice{count === 1 ? "" : "s"}
-                {filtering ? " (filtered)" : ""}
-              </dt>
-              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{money(total)}</dd>
-            </div>
-            <div className="rounded-xl border bg-card px-3 py-3">
-              <dt className="flex items-center gap-1 text-muted-foreground text-xs">
-                {unpaid > 0 && <CircleAlert aria-hidden className="size-3.5 text-destructive" />} Unpaid
-              </dt>
-              <dd className="font-mono font-semibold text-base tabular-nums sm:text-xl">{money(unpaid)}</dd>
-            </div>
-            <div className="rounded-xl border bg-card px-3 py-3">
-              <dt className="flex items-center gap-1 text-muted-foreground text-xs">
-                <CircleCheck aria-hidden className="size-3.5 text-success-bright" /> Paid
-              </dt>
-              <dd className="font-mono font-semibold text-base text-success tabular-nums sm:text-xl">
-                {money(total - unpaid)}
-              </dd>
-            </div>
-          </dl>
+          <p key={currency}>
+            {count} invoice{count === 1 ? "" : "s"}
+            {filtering ? " (filtered)" : ""} · <span className="font-medium text-foreground">{money(total)}</span>{" "}
+            invoiced · <span className="font-medium text-foreground">{money(unpaid)}</span> unpaid ·{" "}
+            <span className="font-medium text-success">{money(total - unpaid)}</span> paid
+          </p>
         );
       })}
     </div>

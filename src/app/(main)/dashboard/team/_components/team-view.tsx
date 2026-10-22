@@ -1,10 +1,16 @@
 "use client";
 
+import { useState } from "react";
+
+import { Plus, UsersRound } from "lucide-react";
+
+import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
-import { InviteSlot } from "./invite-slot";
+import { InviteCard } from "./invite-form";
 import { MemberSection } from "./member-section";
 import { PeopleList } from "./people-list";
 
@@ -12,9 +18,11 @@ import { PeopleList } from "./people-list";
 export function TeamView() {
   const people = trpc.team.list.useQuery();
   const teams = trpc.member.teams.useQuery();
+  const [inviting, setInviting] = useState(false);
   const shown = (people.data ?? []).filter((p) => p.status !== "removed");
   const active = shown.filter((p) => p.status === "active").length;
   const waiting = shown.filter((p) => p.status === "pending").length; // an expired invitation is not "waiting"
+  const empty = !people.isLoading && shown.length === 0;
   return (
     <PageShell
       nav="team"
@@ -24,11 +32,41 @@ export function TeamView() {
           ? `${active} on your team · ${waiting} invitation${waiting === 1 ? "" : "s"} waiting`
           : "Let someone log time on your clients, without giving them your invoices or rates."
       }
+      actions={
+        shown.length > 0 && (
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="size-10"
+            aria-label="Invite someone"
+            aria-expanded={inviting}
+            title="Invite someone"
+            onClick={() => setInviting((open) => !open)}
+          >
+            <Plus />
+          </Button>
+        )
+      }
     >
+      {inviting && <InviteCard onClose={() => setInviting(false)} />}
       {people.isLoading ? (
         <Skeleton className="h-40 w-full rounded-xl" />
+      ) : empty ? (
+        !inviting && (
+          <EmptyState className="flex flex-col items-center gap-2 p-8">
+            <UsersRound className="size-6" aria-hidden />
+            <span className="font-medium text-foreground">Nobody on your team yet</span>
+            <span className="max-w-md">
+              They can log time on the clients you choose. Each person you invite gets a row here.
+            </span>
+            <Button type="button" variant="primary" onClick={() => setInviting(true)}>
+              <Plus /> Invite someone
+            </Button>
+          </EmptyState>
+        )
       ) : (
-        <PeopleList people={people.data ?? []} footer={<InviteSlot people={shown.length} />} />
+        <PeopleList people={people.data ?? []} />
       )}
       {(teams.data?.length ?? 0) > 0 && <MemberSection teams={teams.data ?? []} />}
     </PageShell>

@@ -124,11 +124,7 @@ export function EntryRow({
   return (
     <li
       aria-busy={unconfirmed || undefined}
-      className={`${
-        bare
-          ? "overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10"
-          : "overflow-hidden rounded-xl border bg-card"
-      } ${unconfirmed ? "opacity-70" : ""}`}
+      className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""}`}
     >
       {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
       <header
