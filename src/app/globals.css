@@ -605,6 +605,53 @@ textarea,
   }
 }
 
+/* The "Accounting app" scene is the quiet one: the invoice stays put, its rows and ticks fade in once, one after the
+   other, and the total bar breathes very slowly. No sliding, no looping pops. Reduced motion shows the finished picture. */
+@keyframes acct-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes acct-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.acct-scene .is-file {
+  animation: none;
+  opacity: 1;
+}
+.acct-scene .is-bar {
+  transform: none;
+  animation: acct-in 0.7s ease-out both;
+}
+.acct-scene .is-tick {
+  transform: none;
+  animation: acct-in 0.7s ease-out both;
+}
+.acct-scene .is-total {
+  animation:
+    acct-in 0.7s ease-out 0.9s both,
+    acct-breathe 4.5s ease-in-out 1.8s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .acct-scene .is-bar,
+  .acct-scene .is-tick,
+  .acct-scene .is-total {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* The "This device" scene: a screen fills with entries with no connection, and a tick says they are safe. */
 .device-scene .is-bar {
   transform-box: fill-box;

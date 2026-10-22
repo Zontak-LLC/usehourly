@@ -53,7 +53,7 @@ export function DataHub({ account }: { account: AccountMe }) {
           in files any tool can open.
         </p>
       )}
-      <fieldset className="-m-1 flex min-w-0 gap-2 overflow-x-auto border-0 p-1 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
+      <fieldset className="flex min-w-0 gap-1 overflow-x-auto border-0 border-b p-0 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
         <legend className="sr-only">What do you want to do with your data?</legend>
         {tiles.map((t) => {
           const on = t.id === choice;
@@ -64,14 +64,15 @@ export function DataHub({ account }: { account: AccountMe }) {
               type="button"
               aria-pressed={on}
               onClick={() => setChoice(t.id)}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 font-semibold text-sm ring-1 transition-colors ${
+              // Tabs, not pills: square-ish, joined to a line under the row; the open one sits on the line with an ink top edge.
+              className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-t-lg border border-b-0 px-4 font-semibold text-sm transition-colors ${
                 on
                   ? t.danger
-                    ? "bg-destructive text-white ring-transparent"
-                    : "bg-foreground text-background ring-transparent"
+                    ? "border-destructive/50 border-t-2 border-t-destructive bg-card text-destructive"
+                    : "border-foreground/15 border-t-2 border-t-foreground bg-card text-foreground"
                   : t.danger
-                    ? "text-destructive ring-destructive/40 hover:bg-destructive/10"
-                    : "ring-foreground/15 hover:bg-muted"
+                    ? "border-transparent text-destructive/80 hover:bg-destructive/10"
+                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <Icon className="size-4" aria-hidden />
@@ -102,22 +103,23 @@ export function DataHub({ account }: { account: AccountMe }) {
         {choice === "accounting" && (
           <section
             aria-label="Send invoices to your accounting app"
-            className="overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+            className="grid overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 md:grid-cols-[minmax(0,1fr)_17rem]"
           >
-            <div className="grid items-center gap-5 p-5 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6">
-              <AccountingScene className="mx-auto w-44 sm:mx-0 sm:w-56" />
-              <div className="grid gap-3">
-                <h3 className="inline-flex items-center gap-2 font-bold font-display text-2xl leading-tight">
-                  Send your invoices to the books.
-                  <GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />
-                </h3>
-                <p className="max-w-xl text-foreground/75">
-                  Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you
-                  marked non-billable are already left off every invoice.
-                </p>
-              </div>
+            {/* The form comes first: it is the job. The picture and the explanation sit beside it (below on a phone). */}
+            <div className="flex min-w-0 flex-col">
+              <h3 className="inline-flex items-center gap-2 p-5 pb-4 font-bold font-display text-2xl leading-tight sm:p-6 sm:pb-5">
+                Send your invoices to the books.
+                <GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />
+              </h3>
+              <AccountingExport />
             </div>
-            <AccountingExport />
+            <aside className="flex flex-col items-center justify-center gap-4 border-t bg-band-2 p-5 text-center md:border-t-0 md:border-l md:p-6">
+              <AccountingScene className="w-40" />
+              <p className="text-foreground/75 text-sm">
+                Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you
+                marked non-billable are already left off every invoice.
+              </p>
+            </aside>
           </section>
         )}
         {choice === "import" && <ImportTime />}

@@ -33,16 +33,7 @@ export function AccountingScene({ className }: { className?: string }) {
           />
         </g>
       ))}
-      <rect
-        className="is-bar"
-        style={{ animationDelay: "0.9s" }}
-        x="106"
-        y="112"
-        width="72"
-        height="8"
-        rx="4"
-        fill="#8A6CFF"
-      />
+      <rect className="is-bar is-total" x="106" y="112" width="72" height="8" rx="4" fill="#8A6CFF" />
       <g className="is-file">
         <rect x="14" y="34" width="46" height="70" rx="6" fill="var(--card)" stroke="var(--border)" strokeWidth="2" />
         <text x="22" y="48" fontSize="8" fontWeight="700" fill="var(--amber)">
