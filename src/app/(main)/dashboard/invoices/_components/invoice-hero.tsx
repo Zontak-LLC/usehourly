@@ -38,7 +38,7 @@ export function InvoiceHero({
       data-headerless="a summary above the list"
       className="grid items-center gap-6 rounded-3xl border bg-card p-5 shadow-[var(--shadow-sheet)] sm:grid-cols-[auto_1fr]"
     >
-      <div className="relative mx-auto size-36">
+      <div className="relative mx-auto size-36 max-sm:hidden">
         <svg viewBox="0 0 128 128" role="img" aria-label={`${percent} percent paid`} className="size-full -rotate-90">
           <title>{`${percent} percent paid`}</title>
           <circle cx="64" cy="64" r={R} fill="none" stroke="var(--muted)" strokeWidth="12" />

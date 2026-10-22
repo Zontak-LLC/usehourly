@@ -38,7 +38,7 @@ export function ClientsHero({
     <section
       aria-label="This month"
       data-headerless="the month at a glance, above the list"
-      className="grid items-stretch gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]"
+      className="grid items-stretch gap-4 max-md:hidden md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]"
     >
       <Dial
         label="This month"

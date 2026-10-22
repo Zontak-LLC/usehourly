@@ -209,7 +209,10 @@ export function ReportBody({ data, year }: { data: AnnualReport; year: number })
     <>
       {/* The year at a glance: the dial and its goal slider on the left, the six figures and a month-by-month chart beside it. */}
       <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
-        <YearDial data={data} year={year} />
+        {/* The goal dial is for a wide screen; on a phone the figures come first. */}
+        <div className="max-lg:hidden">
+          <YearDial data={data} year={year} />
+        </div>
         <div className="min-w-0">
           <YearFigures data={data} />
         </div>

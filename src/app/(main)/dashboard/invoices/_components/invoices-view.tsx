@@ -116,7 +116,10 @@ export function InvoicesView() {
           >
             <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
               <h2 className="font-semibold text-base">Your invoices</h2>
-              {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
+              {/* With one currency the summary above already says it; with several, each currency gets its own line. */}
+              {(invoices.data?.length ?? 0) > 0 && groups.length > 1 && (
+                <InvoiceTotals groups={groups} filtering={filtering} />
+              )}
             </header>
             {/* Search and filters sit right above the list they narrow. */}
             {showFilters && (

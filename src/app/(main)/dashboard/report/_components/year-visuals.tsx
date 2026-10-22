@@ -141,7 +141,7 @@ export function YearFigures({ data }: { data: AnnualReport }) {
     },
   ];
   return (
-    <div className="grid h-full auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+    <div className="grid h-full auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3">
       {items.map((i) => (
         <StatTile
           key={i.label}

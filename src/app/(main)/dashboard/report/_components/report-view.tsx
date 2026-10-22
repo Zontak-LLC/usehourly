@@ -115,22 +115,25 @@ export function ReportView() {
               ))}
             </select>
           )}
-          <Button
-            variant="outline"
-            className="h-10 w-full sm:order-first sm:w-auto"
-            onClick={exportXlsx}
-            disabled={!data || exporting}
-          >
-            <Download /> {exporting ? "Exporting…" : "Export Excel"}
-          </Button>
-          <Button
-            variant="outline"
-            className="h-10 w-full sm:order-first sm:w-auto"
-            onClick={sendByEmail}
-            disabled={!data || emailIt.isPending}
-          >
-            <Mail /> {emailIt.isPending ? "Sending…" : "Email me this"}
-          </Button>
+          {/* The two actions share a row on a phone. */}
+          <div className="grid grid-cols-2 gap-2 sm:contents">
+            <Button
+              variant="outline"
+              className="h-10 w-full sm:order-first sm:w-auto"
+              onClick={exportXlsx}
+              disabled={!data || exporting}
+            >
+              <Download /> {exporting ? "Exporting…" : "Export Excel"}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 w-full sm:order-first sm:w-auto"
+              onClick={sendByEmail}
+              disabled={!data || emailIt.isPending}
+            >
+              <Mail /> {emailIt.isPending ? "Sending…" : "Email me this"}
+            </Button>
+          </div>
         </div>
       }
     >
