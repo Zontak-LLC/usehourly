@@ -1,15 +1,15 @@
 import Link from "next/link";
 
-import { ArrowRight, Bot, Code2, FileText, Heart, KeyRound, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Code2, Heart, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
+import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingHero } from "@/components/landing-hero";
 import { LandingScenes } from "@/components/landing-scenes";
 import { LandingShowcase } from "@/components/landing-showcase";
 import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
-import { McpAnimation } from "@/components/mcp-animation";
 import { Reveal } from "@/components/reveal";
 import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
@@ -49,33 +49,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const primary =
-  "inline-flex h-12 items-center justify-center rounded-lg border border-tint-edge bg-tint px-6 font-medium text-base text-foreground transition-colors hover:bg-tint-hover";
 const secondary =
   "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border bg-background/60 px-6 font-medium text-base backdrop-blur transition-colors hover:bg-muted";
-
-const AI_POINTS = [
-  {
-    Icon: MessageSquare,
-    title: "Ask in plain words",
-    body: "Log 1h30 on a project, move an entry, or get hours per project for the month.",
-  },
-  {
-    Icon: FileText,
-    title: "Timesheets and invoices, not just entries",
-    body: "Ask for the week as a grid, have gaps pointed out, get a link your client can read and approve, or have an invoice prepared. It asks before it shares, sends or deletes.",
-  },
-  {
-    Icon: KeyRound,
-    title: "You hold the key",
-    body: "Log in and approve, or make an access token on your Account page. Choose read only or read and change, and revoke it any time.",
-  },
-  {
-    Icon: ShieldCheck,
-    title: "Only your own data",
-    body: "An assistant sees just your account, and it can't change your password or make more tokens.",
-  },
-];
 
 export default function LandingPage() {
   return (
@@ -166,68 +141,21 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="ai-assistants" className="border-t">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2">
-            <div className="min-w-0">
-              <p className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 font-medium text-sm">
-                <Bot className="size-4" aria-hidden />
-                AI first
-              </p>
-              <h2 className="mt-4 font-semibold text-3xl tracking-tight md:text-4xl">
-                Ask your assistant. It&rsquo;s in your timesheet.
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                UseHourly has a built-in server for <strong className="text-foreground">MCP</strong>, the open standard
-                that lets AI assistants such as Claude, ChatGPT and Cursor work with your apps. If you spend your day in
-                an assistant, you can log time, run the timer, build a client&rsquo;s timesheet and prepare an invoice
-                without opening UseHourly at all.
-              </p>
-              <ul className="mt-6 grid gap-4">
-                {AI_POINTS.map(({ Icon, title, body }) => (
-                  <li key={title} className="flex gap-3">
-                    <Icon className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
-                    <div>
-                      <p className="font-semibold">{title}</p>
-                      <p className="text-muted-foreground">{body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 rounded-xl border bg-card p-4 text-sm">
-                <p className="font-semibold">Connect in a minute</p>
-                <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
-                  <li>
-                    Add this server to your assistant:{" "}
-                    <code className="break-all rounded bg-muted px-1.5 py-0.5 text-foreground">
-                      https://usehourly.app/api/mcp
-                    </code>
-                  </li>
-                  <li>Log in to UseHourly and approve. Choose read only or read and change.</li>
-                  <li>Ask it to log your time or prepare this week&rsquo;s timesheet.</li>
-                </ol>
-                <p className="mt-3 text-muted-foreground">
-                  Claude Code:{" "}
-                  <code className="break-all rounded bg-muted px-1.5 py-0.5 text-foreground">
-                    claude mcp add --transport http usehourly https://usehourly.app/api/mcp
-                  </code>
-                </p>
-              </div>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Link href="/auth/v2/register" className={primary}>
-                  Create a free account
-                </Link>
-                <Link href="/help/ai-assistants" className={secondary}>
-                  Setup guide
-                </Link>
-              </div>
-              <p className="mt-3 text-muted-foreground text-sm">
-                Works with Claude, ChatGPT, Cursor and other MCP-compatible assistants. Free, like the rest of
-                UseHourly.
-              </p>
-            </div>
-
-            <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
-              <McpAnimation />
+        <section id="ai-assistants" aria-labelledby="ai-heading" className="border-t">
+          <div className="mx-auto max-w-4xl px-6 py-16 md:py-24">
+            <h2 id="ai-heading" className="sr-only">
+              Ask your AI assistant. It&rsquo;s in your timesheet.
+            </h2>
+            <Reveal>
+              <AssistantTerminal />
+            </Reveal>
+            <div className="mt-6 flex flex-col items-center gap-3 text-center">
+              <code className="max-w-full break-all rounded-lg bg-muted px-3 py-2 text-foreground text-sm">
+                claude mcp add --transport http usehourly https://usehourly.app/api/mcp
+              </code>
+              <Link href="/help/ai-assistants" className="text-muted-foreground text-sm underline underline-offset-4">
+                Works with Claude, ChatGPT, Cursor and other MCP assistants. Setup guide
+              </Link>
             </div>
           </div>
         </section>
