@@ -18,7 +18,7 @@ const serverEntries = async (page: import("@playwright/test").Page) => {
 
 test("entries added, edited and deleted offline reach the server once the connection returns", async ({ page }) => {
   await startFreshAccount(page);
-  await page.goto("/dashboard/account");
+  await page.goto("/dashboard/account#data");
   await expect(page.getByText("Keep a copy on this device (experimental)")).toBeVisible();
   await page.getByRole("button", { name: "Turn on" }).click(); // reloads the page with the copy switched on
   await expect(page.getByText("Everything is sent.")).toBeVisible({ timeout: 20_000 });

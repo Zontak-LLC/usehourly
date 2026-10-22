@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   ACCOUNTING_KINDS,
   type AccountingKind,
@@ -20,8 +21,6 @@ import {
 } from "@/lib/accounting-export";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
-
-const selectClass = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm dark:bg-input/30";
 
 /**
  * Invoices as a file Xero or QuickBooks Online can import, or a list of payments received: pick a year, a format and
@@ -76,22 +75,17 @@ export function AccountingExport() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1.5">
           <Label htmlFor="acct-format">Send to</Label>
-          <select
-            id="acct-format"
-            className={selectClass}
-            value={kind}
-            onChange={(e) => setKind(e.target.value as AccountingKind)}
-          >
+          <NativeSelect id="acct-format" value={kind} onChange={(e) => setKind(e.target.value as AccountingKind)}>
             {ACCOUNTING_KINDS.map((k) => (
               <option key={k.kind} value={k.kind}>
                 {k.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="acct-year">Invoices issued in</Label>
-          <select id="acct-year" className={selectClass} value={year} onChange={(e) => setYear(e.target.value)}>
+          <NativeSelect id="acct-year" value={year} onChange={(e) => setYear(e.target.value)}>
             <option value="this">{thisYear}</option>
             {years.slice(1).map((y) => (
               <option key={y} value={y}>
@@ -99,39 +93,29 @@ export function AccountingExport() {
               </option>
             ))}
             <option value="all">All time</option>
-          </select>
+          </NativeSelect>
         </div>
         {chosenCurrency && (
           <div className="grid gap-1.5">
             <Label htmlFor="acct-currency">Currency</Label>
-            <select
-              id="acct-currency"
-              className={selectClass}
-              value={chosenCurrency}
-              onChange={(e) => setCurrency(e.target.value)}
-            >
+            <NativeSelect id="acct-currency" value={chosenCurrency} onChange={(e) => setCurrency(e.target.value)}>
               {currencies.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         )}
         <div className="grid gap-1.5">
           <Label htmlFor="acct-dates">Date format</Label>
-          <select
-            id="acct-dates"
-            className={selectClass}
-            value={dateStyle}
-            onChange={(e) => setDateStyle(e.target.value as DateStyle)}
-          >
+          <NativeSelect id="acct-dates" value={dateStyle} onChange={(e) => setDateStyle(e.target.value as DateStyle)}>
             {DATE_STYLES.map((d) => (
               <option key={d.value} value={d.value}>
                 {d.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         {kind === "xero" && (
           <>

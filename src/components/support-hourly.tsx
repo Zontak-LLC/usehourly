@@ -4,7 +4,7 @@ import { SectionCard } from "@/components/section-card";
 import { DONATE_PLATFORM, donateUrl } from "@/lib/donate";
 
 /** "Support UseHourly": renders nothing until a donation address is set in src/lib/donate.ts. */
-export function SupportHourly({ variant = "card" }: { variant?: "band" | "card" }) {
+export function SupportHourly({ variant = "card" }: { variant?: "band" | "card" | "line" }) {
   const url = donateUrl();
   if (!url) return null;
 
@@ -31,6 +31,24 @@ export function SupportHourly({ variant = "card" }: { variant?: "band" | "card" 
           <div className="mt-6">{button}</div>
         </div>
       </section>
+    );
+  }
+
+  if (variant === "line") {
+    // A slim footer line for the Account page: it says it once and offers the link, with no card around it.
+    return (
+      <p className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1 text-muted-foreground text-sm">
+        <span>UseHourly is free, with no paywall and no ads. If it saves you time, you can chip in.</span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-9 items-center gap-2 rounded-lg border bg-card px-3 font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          <Heart className="size-4 text-rose-500" aria-hidden />
+          Support on {DONATE_PLATFORM}
+        </a>
+      </p>
     );
   }
 

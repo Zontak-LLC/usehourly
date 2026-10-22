@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
+import { NativeSelect } from "@/components/ui/native-select";
 import { CURRENCIES, type CurrencyCode, currencySymbol, formatMoney } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -31,11 +32,10 @@ export function CurrencyCard({ me }: { me: AccountMe }) {
         <label className="sr-only" htmlFor="currency-select">
           Currency
         </label>
-        <select
+        <NativeSelect
           id="currency-select"
           value={me.currency}
           disabled={locked || setCurrency.isPending}
-          className="h-10 rounded-lg border border-input bg-card px-2 text-sm dark:bg-input/30"
           onChange={async (e) => {
             try {
               const { currency } = await setCurrency.mutateAsync({ currency: e.target.value as CurrencyCode });
@@ -52,7 +52,7 @@ export function CurrencyCard({ me }: { me: AccountMe }) {
               {c.code} · {c.name} ({currencySymbol(c.code)})
             </option>
           ))}
-        </select>
+        </NativeSelect>
         <p className="text-muted-foreground text-sm">Example: {formatMoney(123456, me.currency)}</p>
       </div>
       {!locked && (
