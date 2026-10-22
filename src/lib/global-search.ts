@@ -59,7 +59,7 @@ const SETTINGS: Target[] = [
   { title: "Send invoices to Xero or QuickBooks", href: "/dashboard/account#data", keywords: "accounting books" },
   { title: "Import from Toggl or Clockify", href: "/dashboard/account#data", keywords: "csv history" },
   { title: "Keep a copy on this device", href: "/dashboard/account#data", keywords: "offline" },
-  { title: "Delete account", href: "/dashboard/account#data", keywords: "remove erase privacy" },
+  { title: "Delete account", href: "/dashboard/account#account", keywords: "remove erase privacy" },
   { title: "Connect an AI assistant", href: "/dashboard/account#ai", keywords: "claude chatgpt cursor mcp" },
   { title: "Access tokens", href: "/dashboard/account#ai", keywords: "api key" },
   { title: "Polish descriptions with your own AI key", href: "/dashboard/account#ai", keywords: "openai anthropic" },

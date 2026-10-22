@@ -30,6 +30,28 @@ function useDebounced<T>(value: T, ms: number): T {
   return v;
 }
 
+const OPEN_EVENT = "hourly:open-search";
+
+/**
+ * A box that looks like a text field and opens the site search. Used in the top bar (wide screens) and at the top of
+ * the Account page. It is a button, not an input: the search itself lives in one panel, so there is only one search.
+ */
+export function SearchField({ placeholder, className = "" }: { placeholder: string; className?: string }) {
+  return (
+    <button
+      type="button"
+      aria-label="Search"
+      title="Search (Ctrl or Cmd + K)"
+      onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
+      className={`flex h-10 items-center gap-2 rounded-lg border bg-background px-3 text-left text-foreground/70 text-sm hover:bg-muted ${className}`}
+    >
+      <Search aria-hidden className="size-4 shrink-0" />
+      <span className="min-w-0 flex-1 truncate">{placeholder}</span>
+      <kbd className="hidden rounded border px-1.5 font-mono text-[11px] sm:inline">Ctrl K</kbd>
+    </button>
+  );
+}
+
 /**
  * The search in the top bar, on every signed-in page. One box finds pages, settings, clients, projects, time entries
  * and invoices; choosing a result goes straight there (a setting scrolls to its section, an entry opens its day).
@@ -56,8 +78,13 @@ export function GlobalSearch() {
         setOpen(true);
       }
     };
+    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_EVENT, onOpen);
+    };
   }, []);
 
   const groups = useMemo(() => {
@@ -107,9 +134,11 @@ export function GlobalSearch() {
         aria-label="Search"
         title="Search (Ctrl or Cmd + K)"
         onClick={() => setOpen(true)}
+        className="lg:hidden"
       >
         <Search />
       </Button>
+      <SearchField placeholder="Search everything…" className="hidden w-52 lg:flex" />
       <Dialog
         open={open}
         onOpenChange={(o) => {

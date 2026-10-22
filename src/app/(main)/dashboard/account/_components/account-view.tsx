@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { AiPolishCard } from "@/components/ai-polish-card";
 import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
+import { DeleteAccountCard } from "@/components/delete-account-card";
+import { SearchField } from "@/components/global-search";
 import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
 import { SupportHourly } from "@/components/support-hourly";
@@ -71,6 +73,7 @@ export function AccountView() {
                 <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />
                 {account.has_password ? <ChangePasswordCard me={account} /> : <PasswordNote />}
                 <SignOutCard />
+                <DeleteAccountCard hasPassword={account.has_password} email={account.email} />
               </div>
             </div>
           </div>
@@ -84,11 +87,7 @@ export function AccountView() {
       </Section>
     ),
     data: (
-      <Section
-        id="data"
-        title="Your data"
-        description="Keep a copy of everything you have logged, or bring your history in from another tool."
-      >
+      <Section id="data" title="Your data" description="Export it, import it, or keep a copy.">
         <DataHub account={account} />
       </Section>
     ),
@@ -112,11 +111,12 @@ export function AccountView() {
 
   return (
     <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
+      <SearchField placeholder="Search settings: password, currency, export, delete…" className="w-full max-w-xl" />
       <AccountJump onJump={jump} />
 
       {/* On a wide screen related sections sit side by side (profile next to your data); the two with wide forms
           (invoices, with its preview, and the assistants) take the whole row. */}
-      <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-2">
+      <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-2 xl:items-stretch">
         {SECTIONS.map((s) => (
           <div key={s.id} className={`flex min-w-0 flex-col gap-10 ${WIDE[s.id] ? "xl:col-span-2" : ""}`}>
             {blocks[s.id]}
