@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-import { Ban, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
+import { NoDollar } from "@/components/no-dollar-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePageSize } from "@/components/use-page-size";
@@ -106,7 +107,7 @@ export function WorkItems({
                     </HoursChip>
                     {nonBillable?.has(g.date) && (
                       <span className="flex shrink-0 items-center gap-1 rounded-full border border-rose-600/40 px-2 py-0.5 font-medium text-foreground/80 text-xs dark:border-rose-400/40">
-                        <Ban className="size-3" aria-hidden /> Non-billable
+                        <NoDollar className="size-3" /> Non-billable
                       </span>
                     )}
                   </h3>

@@ -1,7 +1,8 @@
 "use client";
 
-import { Ban, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 
+import { NoDollar } from "@/components/no-dollar-icon";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
@@ -57,7 +58,7 @@ export function DayTiles({
                   : "bg-card hover:bg-muted"
             }`}
           >
-            {nonBillable.has(d) && <Ban className="absolute top-1 right-1 size-3" aria-hidden />}
+            {nonBillable.has(d) && <NoDollar className="absolute top-1 right-1 size-3" />}
             <span
               className={`font-medium text-xs uppercase tracking-normal max-sm:text-[0.7rem] sm:tracking-wide ${on ? "text-foreground/75" : "text-muted-foreground"}`}
             >
