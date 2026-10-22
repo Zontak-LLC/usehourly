@@ -49,6 +49,13 @@ function InvoiceStatus({ invoice: i, today }: { invoice: InvoiceRow; today: stri
   );
 }
 
+/** The colour of the stripe at the row's left edge: green paid, red overdue, amber waiting (a quiet hint, the words say it too). */
+function stripeColour(i: InvoiceRow, today: string | null) {
+  if (i.paid_date) return "var(--success-bright)";
+  if (today && i.due_date && i.due_date < today) return "var(--destructive)";
+  return "var(--amber)";
+}
+
 export type InvoiceActionHandlers = {
   busyId: string | null;
   /** Saving a payment date (null = mark unpaid) is in flight. */
@@ -141,7 +148,10 @@ export function InvoiceLine({
 }) {
   const [panel, setPanel] = useState<Panel>(null);
   return (
-    <li className="border-t first:border-t-0">
+    <li
+      className="border-t first:border-t-0"
+      style={{ boxShadow: `inset 3px 0 0 0 color-mix(in oklab, ${stripeColour(i, today)} 70%, transparent)` }}
+    >
       <div className={`${INVOICE_COLS} items-center gap-x-3 gap-y-1 px-3 py-3 text-sm sm:px-4`}>
         <div className="min-w-0 sm:col-start-1 sm:row-start-1">
           <p className="truncate">
