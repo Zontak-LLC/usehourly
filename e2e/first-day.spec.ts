@@ -97,8 +97,13 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
       .getByRole("button", { name: "Edit", exact: true });
     // On a phone there is no hover, so the controls have to be showing already. A miss here is a finding, not a crash.
     if (isPhone) await expect.soft(edit, "entry actions must be visible without hover on a phone").toBeVisible();
-    await edit.click({ force: true });
-    await page.getByLabel("Time", { exact: true }).fill("2:00");
+    // A card the server has not confirmed yet is replaced when it is, and that closes the form: so click again until it is open.
+    const timeBox = page.getByLabel("Time", { exact: true });
+    await expect(async () => {
+      if (!(await timeBox.isVisible())) await edit.click({ force: true });
+      await expect(timeBox).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 20_000 });
+    await timeBox.fill("2:00");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(seen(page, "3:00")).toBeVisible(); // 1:00 + the 1:30 entry changed to 2:00
     await shot("edited");

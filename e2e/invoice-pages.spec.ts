@@ -10,6 +10,10 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
     .first()
     .click();
   await expect(page).toHaveURL(/dashboard/);
+  // This test's own account (not "the newest sample account", which another test running at the same time may have made).
+  const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
+  const userId = session.user?.id ?? "";
+  expect(userId).toMatch(/^[0-9a-f-]{20,}$/);
   // The sample data has two invoices; copy one nine times (numbers INV-2099-001 to 009) so there are eleven: more than
   // one wide-screen page of ten and four phone pages of three.
   sql(
@@ -19,7 +23,7 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
     SELECT lower(hex(randomblob(16))), i.user_id, i.client_id, i.client_name, 'INV-2099-' || printf('%03d', n.n), i.issue_date,
       i.due_date, i.paid_date, i.period_from, i.period_to, i.total_minutes, i.total_cents, i.currency, i.notes, i.snapshot,
       i.search_text, i.summary, 0, 0, i.created_at
-    FROM (SELECT * FROM invoices WHERE user_id = (SELECT id FROM auth_users WHERE is_demo = 1 ORDER BY created_at DESC LIMIT 1) LIMIT 1) i,
+    FROM (SELECT * FROM invoices WHERE user_id = '${userId}' LIMIT 1) i,
       n`.replace(/\s+/g, " "),
   );
   await page.goto("/dashboard/invoices");
