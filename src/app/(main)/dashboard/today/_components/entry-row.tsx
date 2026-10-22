@@ -121,6 +121,16 @@ export function EntryRow({
     </optgroup>
   ));
 
+  const noteBlock = (
+    <div className="pb-0.5 pl-1">
+      {entry.note ? (
+        <FoldedNote note={entry.note} />
+      ) : (
+        <p className="text-muted-foreground/70 text-sm italic">No description</p>
+      )}
+    </div>
+  );
+
   return (
     <li
       aria-busy={unconfirmed || undefined}
@@ -133,10 +143,13 @@ export function EntryRow({
         className={
           editing
             ? `flex items-center justify-between gap-2 py-2 pr-2 pl-3 ${bare ? "bg-band-3" : "border-b bg-band-2"}`
-            : "flex items-start justify-between gap-2 py-2 pr-2 pl-3"
+            : bare
+              ? // A table row in a day's list: project, description, then hours and buttons (from a wide screen up; below that the note drops under the project).
+                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-2 pr-2 pl-3 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_auto]"
+              : "flex items-start justify-between gap-2 py-2 pr-2 pl-3"
         }
       >
-        <div className="flex min-w-0 flex-1 items-start gap-2">
+        <div className={`flex min-w-0 items-start gap-2 ${bare && !editing ? "" : "flex-1"}`}>
           <span className="mt-1.5 shrink-0">
             <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           </span>
@@ -179,18 +192,15 @@ export function EntryRow({
                 </span>
               )}
             </div>
-            {!editing && (
-              <div className="pb-0.5 pl-1">
-                {entry.note ? (
-                  <FoldedNote note={entry.note} />
-                ) : (
-                  <p className="text-muted-foreground/70 text-sm italic">No description</p>
-                )}
-              </div>
-            )}
+            {!editing && !bare && noteBlock}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        {!editing && bare && (
+          <div className="col-span-2 row-start-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">{noteBlock}</div>
+        )}
+        <div
+          className={`flex shrink-0 items-center gap-1 ${bare && !editing ? "col-start-2 row-start-1 lg:col-start-3" : ""}`}
+        >
           {!editing && (
             // The hours are information, not a second way to edit: only the pencil opens the form (one way, no confusion).
             <span className="px-1.5 py-0.5 font-display font-extrabold text-xl tabular-nums">
