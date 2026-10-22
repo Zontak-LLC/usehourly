@@ -67,16 +67,24 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
             {goal} h
           </span>
         </label>
-        <input
-          id="year-goal"
-          type="range"
-          min={200}
-          max={2400}
-          step={100}
-          value={goal}
-          onChange={(e) => change(Number(e.target.value))}
-          className={`mt-2 w-full ${RANGE_INPUT_CLASS}`}
-        />
+        <div className="relative mt-2 h-6">
+          <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-amber transition-[width] duration-200"
+              style={{ width: `calc(12px + (100% - 24px) * ${(goal - 200) / 2200})` }}
+            />
+          </div>
+          <input
+            id="year-goal"
+            type="range"
+            min={200}
+            max={2400}
+            step={100}
+            value={goal}
+            onChange={(e) => change(Number(e.target.value))}
+            className={RANGE_INPUT_CLASS}
+          />
+        </div>
       </div>
     </div>
   );
@@ -99,9 +107,12 @@ export function YearFigures({ data }: { data: AnnualReport }) {
     ["Outstanding", money(data.outstanding.totalCents), `${data.outstanding.count} unpaid at year end`],
   ];
   return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-3">
+    <dl className="grid h-full auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3">
       {items.map(([label, value, hint], i) => (
-        <div key={label} className="flex flex-col border-amber/70 border-t-2 pt-3">
+        <div
+          key={label}
+          className="flex flex-col justify-center rounded-3xl border-amber/70 border-t-2 bg-card p-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+        >
           <dd
             className={`order-1 font-display font-extrabold text-3xl tabular-nums leading-none sm:text-4xl ${i === 2 ? "text-amber-700 dark:text-amber" : ""}`}
           >

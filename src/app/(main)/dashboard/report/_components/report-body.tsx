@@ -208,13 +208,13 @@ export function ReportBody({ data, year }: { data: AnnualReport; year: number })
   return (
     <>
       {/* The year at a glance: the dial and its goal slider on the left, the six figures and a month-by-month chart beside it. */}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
         <YearDial data={data} year={year} />
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="min-w-0">
           <YearFigures data={data} />
-          <YearChart data={data} />
         </div>
       </div>
+      <YearChart data={data} />
       <div className="flex min-w-0 flex-col gap-4">
         <PeriodSections data={data} />
         <ClientProjectSection data={data} />
