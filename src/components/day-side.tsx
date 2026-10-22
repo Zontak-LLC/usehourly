@@ -13,10 +13,12 @@ type Entry = {
 };
 
 const LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+/** Each day of the week has its own colour, Monday to Sunday, so the week reads as a little spectrum. */
+const DAY_COLORS = ["#F5A524", "#ff7a45", "#ec5f9a", "#8A6CFF", "#4f8cff", "#2fc5d6", "#3DDC97"];
 
 /**
  * Under the dial: where today's hours went (a coloured row per project with a bar) and the week as seven small bars,
- * today in amber. A bar is a button: it opens that day. Both draw in from empty on first show.
+ * each day in its own colour, today's letter on a pill of that colour. A bar is a button: it opens that day. Both draw in from empty on first show.
  */
 export function DaySide({
   entries,
@@ -44,7 +46,6 @@ export function DaySide({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const perDay = (d: string) => entries.filter((e) => e.date === d).reduce((s, e) => s + e.minutes, 0);
   const scale = Math.max(480, ...days.map(perDay));
-
   const byProject = new Map<string, { name: string; color: string; minutes: number }>();
   for (const e of entries) {
     if (e.date !== date) continue;
@@ -108,15 +109,24 @@ export function DaySide({
               >
                 <span className="flex min-h-28 w-full flex-1 items-end justify-center rounded-lg bg-muted/60 px-1 group-hover:bg-muted">
                   <span
-                    className={`block w-full rounded-sm ${isToday ? "bg-amber" : "bg-foreground/70"}`}
+                    data-testid="day-bar"
+                    className="block w-full rounded-sm"
                     style={{
                       height: grown ? `${Math.max(total ? 3 : 0, (total / scale) * 100)}%` : "0%",
+                      backgroundColor: DAY_COLORS[i],
                       transition: "height .9s cubic-bezier(.2,.8,.2,1)",
                     }}
                   />
                 </span>
                 <span
-                  className={`font-mono text-[11px] ${d === date ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                  style={isToday ? { backgroundColor: DAY_COLORS[i] } : undefined}
+                  className={`font-mono text-[11px] ${
+                    isToday
+                      ? "rounded-full px-1.5 font-semibold text-[#1b1405]"
+                      : d === date
+                        ? "font-semibold text-foreground"
+                        : "text-muted-foreground"
+                  }`}
                 >
                   {LETTERS[i]}
                 </span>
