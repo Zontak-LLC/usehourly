@@ -24,7 +24,6 @@ export function TeamView() {
           ? `${active} on your team · ${waiting} invitation${waiting === 1 ? "" : "s"} waiting`
           : "Let someone log time on your clients, without giving them your invoices or rates."
       }
-      descriptionOnPhone
     >
       {people.isLoading ? (
         <Skeleton className="h-40 w-full rounded-xl" />

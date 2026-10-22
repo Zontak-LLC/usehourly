@@ -9,7 +9,7 @@ import { adminLinks, type NavLink, navLinks } from "@/navigation/sidebar/sidebar
 // The menu is always in the page; CSS on <html> decides whether it shows (data-nav-position=left, from 1024px wide),
 // so the first paint is right and nothing flickers or mismatches.
 const SHOW = "hidden lg:[html[data-nav-position=left]_&]:flex";
-// Pages grouped by what they are for, with a small heading each.
+// Pages grouped by what they are for. The groups are only spaced apart: no headings (they were noise for nine links).
 const GROUPS = [
   { title: "Track", ids: ["today", "week", "month"] },
   { title: "Bill", ids: ["invoices", "report"] },
@@ -36,8 +36,8 @@ function Item({ item, active }: { item: NavLink; active: boolean }) {
 
 /**
  * The left-hand navigation, shown on a wide screen by default (Settings gear > Navigation lets someone choose the tab
- * strip along the top instead). Same pages as the tab strip, plus the rest, grouped under small headings by what they
- * are for (Track, Bill, Manage, Settings); the signed-in person and Log out are in the top bar. The current page has a
+ * strip along the top instead). Same pages as the tab strip, plus the rest, in groups spaced apart (Today, Week, Month;
+ * Invoices, Year summary; Clients, Team; Account, Guide), without headings; the signed-in person and Log out are in the top bar. The current page has a
  * bar in the accent colour beside it. Never on a phone, which keeps its bottom bar. It is always open: there is no
  * icons-only mode.
  */
@@ -57,10 +57,7 @@ export function SideNav({ isAdmin = false }: { isAdmin?: boolean }) {
         UseHourly
       </Link>
       {groups.map((g) => (
-        <div key={g.title} className="flex flex-col gap-1">
-          <p className="mt-3 mb-1 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-            {g.title}
-          </p>
+        <div key={g.title} className="not-first:mt-4 flex flex-col gap-1">
           {g.items.map((l) => (
             <Item key={l.id} item={l} active={isActive(l.url)} />
           ))}
