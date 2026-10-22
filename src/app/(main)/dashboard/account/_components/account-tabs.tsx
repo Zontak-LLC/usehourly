@@ -15,13 +15,6 @@ const ICONS = { account: UserRound, invoices: FileText, data: Database, ai: Spar
 /** The open tab glows in the one accent colour. */
 const COLORS = { account: PALETTE.accent, invoices: PALETTE.accent, data: PALETTE.accent, ai: PALETTE.accent } as const;
 
-const CAPTIONS = {
-  account: "You and how you sign in",
-  invoices: "What every invoice says",
-  data: "Export, import, delete",
-  ai: "Connect your assistant",
-} as const;
-
 /** An old or shorter address fragment still lands on the right tab (the demo banner links to #claim). */
 function tabFromHash(hash: string): SectionId {
   const id = hash.replace(/^#/, "");
@@ -88,26 +81,23 @@ export function AccountTabs({ tab, onTab }: { tab: SectionId; onTab: (next: Sect
               onClick={() => onTab(s.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
               style={{ "--tab": COLORS[s.id] } as React.CSSProperties}
-              className={`group flex min-h-[4.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-xs leading-tight outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[var(--tab)] active:scale-[0.98] motion-reduce:transition-none sm:min-h-20 sm:text-sm ${
+              className={`group flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-center text-xs leading-tight outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[var(--tab)] active:scale-[0.98] motion-reduce:transition-none sm:min-h-14 sm:flex-row sm:gap-2 sm:text-sm ${
                 on
-                  ? "bg-muted font-semibold text-foreground ring-1 ring-foreground/15"
+                  ? "bg-muted font-semibold text-foreground"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               }`}
             >
               <span
                 aria-hidden
-                className={`grid size-9 place-items-center rounded-xl transition-all duration-300 group-hover:scale-105 motion-reduce:transition-none ${
+                className={`grid size-8 place-items-center rounded-lg transition-all duration-300 group-hover:scale-105 motion-reduce:transition-none ${
                   on
                     ? "bg-[var(--tab)] text-[#1b1405] motion-safe:animate-[tab-pop_0.4s_ease-out]"
                     : "bg-muted text-foreground/70"
                 }`}
               >
-                <Icon className="size-5" />
+                <Icon className="size-4" />
               </span>
               {s.label}
-              <span aria-hidden className="font-normal text-[11px] opacity-70 max-sm:hidden">
-                {CAPTIONS[s.id]}
-              </span>
             </button>
           );
         })}
