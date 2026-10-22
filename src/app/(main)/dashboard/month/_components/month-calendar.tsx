@@ -55,10 +55,21 @@ function DayCell({
       }
     >
       <span className="flex items-center justify-between text-xs">
-        {Number(d.slice(8))}
+        {/* Today is a filled day number (an outline alone is easy to miss). */}
+        <span
+          className={
+            isToday
+              ? "inline-flex size-6 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground"
+              : ""
+          }
+        >
+          {Number(d.slice(8))}
+        </span>
         {nonBillable && <Ban className="size-3" aria-hidden />}
       </span>
-      <span className="text-right font-mono text-xs tabular-nums sm:text-sm">{mins ? formatDuration(mins) : ""}</span>
+      <span className="text-right font-medium font-mono text-foreground text-xs tabular-nums sm:text-sm">
+        {mins ? formatDuration(mins) : ""}
+      </span>
     </button>
   );
 }
@@ -151,7 +162,7 @@ export function MonthCalendar({
                   }}
                 />
               ))}
-              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-medium font-mono tabular-nums sm:flex">
+              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-mono font-semibold text-foreground tabular-nums sm:flex">
                 {weekTotal ? formatDuration(weekTotal) : ""}
               </div>
             </div>

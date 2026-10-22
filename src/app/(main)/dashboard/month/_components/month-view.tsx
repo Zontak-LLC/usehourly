@@ -73,7 +73,15 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
       onSwipe={(direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1))}
       inlineDescription
       title={monthTitle.format(fromISODate(first))}
-      description={`${formatDuration(sheet.total)} logged (${formatDecimalHours(sheet.total)} h)`}
+      description={
+        // The month's total is the number people came for: a figure, not small print.
+        <>
+          <span className="font-mono font-semibold text-base text-foreground tabular-nums">
+            {formatDuration(sheet.total)}
+          </span>{" "}
+          logged ({formatDecimalHours(sheet.total)} h)
+        </>
+      }
     >
       <MonthToolbar
         first={first}

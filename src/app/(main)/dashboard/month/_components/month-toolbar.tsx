@@ -43,14 +43,6 @@ export function MonthToolbar({
         data-testid="timesheet-toolbar"
         className="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap sm:*:min-w-0 sm:*:flex-1"
       >
-        <Button
-          variant={selectMode ? "default" : "outline"}
-          className="h-10 max-sm:flex-1"
-          onClick={onToggleSelectMode}
-          aria-pressed={selectMode}
-        >
-          <CalendarPlus /> Add to several days
-        </Button>
         <ProjectFilter className="h-10 max-sm:flex-1" value={projectId} onChange={onProjectId} />
         <ShareExportMenu
           className="h-10 max-sm:flex-1"
@@ -60,6 +52,14 @@ export function MonthToolbar({
           period="month"
           onPanel={choose}
         />
+        <Button
+          variant={selectMode ? "default" : "outline"}
+          className="h-10 max-sm:flex-1"
+          onClick={onToggleSelectMode}
+          aria-pressed={selectMode}
+        >
+          <CalendarPlus /> Add to several days
+        </Button>
         <div className="flex items-center overflow-hidden rounded-lg border bg-card max-sm:w-full sm:min-w-44">
           <Button
             size="icon"
@@ -72,9 +72,11 @@ export function MonthToolbar({
           </Button>
           <Button
             variant="ghost"
-            className="h-10 flex-1 rounded-none border-x"
-            // Already showing this month: nothing to go back to (like the Today button on the Today page).
+            className="h-10 flex-1 rounded-none border-x disabled:font-semibold disabled:opacity-100"
+            // Already showing this month: nothing to go back to (like the Today button on the Today page). It stays fully
+            // readable, because it says where you are, instead of fading like a broken control.
             disabled={!today || first === `${today.slice(0, 7)}-01`}
+            aria-current={today && first === `${today.slice(0, 7)}-01` ? "date" : undefined}
             onClick={() => today && onFirst(`${today.slice(0, 7)}-01`)}
           >
             This month
