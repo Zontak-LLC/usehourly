@@ -49,6 +49,7 @@ export function QuickAdd({
   dayMinutes,
   showDate = true,
   bare = false,
+  wide = false,
 }: {
   date: string;
   timerRunning: boolean;
@@ -57,6 +58,8 @@ export function QuickAdd({
   showDate?: boolean;
   /** Without its own card and header: the Week page puts the form inside the day's card. */
   bare?: boolean;
+  /** From a wide screen up the form is two columns (project and description at the left, time and the buttons at the right) for a page that gives it the full width. */
+  wide?: boolean;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -193,15 +196,20 @@ export function QuickAdd({
   const onlyProject = projects.length === 1 ? projects[0] : null;
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
+  const wc = (classes: string) => (wide ? classes : "");
   const body = (
     <div className={bare ? "flex flex-col gap-3" : "flex flex-col gap-3 p-3 sm:p-4"}>
-      <form method="post" onSubmit={submit} className="flex flex-col gap-2.5">
+      <form
+        method="post"
+        onSubmit={submit}
+        className={`flex flex-col gap-2.5 ${wc("lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-3")}`}
+      >
         {onlyProject ? (
-          <p className="text-base">
+          <p className={`text-base ${wc("lg:col-start-1 lg:row-start-1")}`}>
             {onlyClient?.name} · {onlyProject.name}
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className={`flex flex-col gap-2 ${wc("lg:col-start-1 lg:row-start-1")}`}>
             <p id="quick-project-label" className="font-medium text-sm">
               Pick your project
             </p>
@@ -215,7 +223,7 @@ export function QuickAdd({
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className={`flex flex-col gap-2 ${wc("lg:col-start-2 lg:row-span-2 lg:row-start-1")}`}>
           <Input
             id="quick-duration"
             ref={durationRef}
@@ -272,30 +280,32 @@ export function QuickAdd({
           </p>
         </div>
 
-        <NoteTextarea
-          value={note}
-          onChange={setNote}
-          polish={polishContext}
-          onKeyDown={(e) => {
-            // Enter saves when a time is typed, otherwise goes back to the time field.
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              if (parsed !== null) void submit();
-              else durationRef.current?.focus();
-            }
-          }}
-          placeholder="What did you work on? (optional)"
-          aria-label="Description"
-          rows={2}
-          className="min-h-[4.5rem] resize-none py-3 text-base"
-        />
+        <div className={wc("lg:col-start-1 lg:row-start-2")}>
+          <NoteTextarea
+            value={note}
+            onChange={setNote}
+            polish={polishContext}
+            onKeyDown={(e) => {
+              // Enter saves when a time is typed, otherwise goes back to the time field.
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                if (parsed !== null) void submit();
+                else durationRef.current?.focus();
+              }
+            }}
+            placeholder="What did you work on? (optional)"
+            aria-label="Description"
+            rows={2}
+            className="min-h-[4.5rem] resize-none py-3 text-base"
+          />
+        </div>
 
         <button
           type="submit"
           disabled={create.isPending || parsed === null}
           // The main event: a big amber button with a plus disc, a soft glow and a lift. While no time is typed it is a
           // quiet dashed outline (not a grey slab that looks broken), and it comes alive when there is something to add.
-          className="group relative flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:border-2 disabled:border-foreground/25 disabled:border-dashed disabled:bg-transparent disabled:font-bold disabled:text-foreground/60 disabled:shadow-none"
+          className={`group relative flex h-14 w-full items-center justify-center gap-3 ${wc("lg:col-start-2 lg:row-start-3")} rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:border-2 disabled:border-foreground/25 disabled:border-dashed disabled:bg-transparent disabled:font-bold disabled:text-foreground/60 disabled:shadow-none`}
         >
           <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/15 group-disabled:text-foreground/60">
             <Plus className="size-4" strokeWidth={3} aria-hidden />
@@ -310,7 +320,7 @@ export function QuickAdd({
             onClick={startTimer}
             disabled={start.isPending || !online}
             title={online ? undefined : "A timer needs a connection"}
-            className="group flex w-full items-center gap-3 rounded-2xl border border-amber/40 bg-[linear-gradient(90deg,var(--amber-soft),var(--card)_70%)] px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-amber disabled:opacity-50"
+            className={`group flex w-full items-center gap-3 ${wc("lg:col-start-1 lg:row-start-3")} rounded-2xl border border-amber/40 bg-[linear-gradient(90deg,var(--amber-soft),var(--card)_70%)] px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-amber disabled:opacity-50`}
           >
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-amber text-[#1b1405] shadow-[0_0_0_5px_color-mix(in_oklab,var(--amber)_22%,transparent)] transition-transform group-hover:scale-105">
               <Play className="size-4" fill="currentColor" aria-hidden />
@@ -327,9 +337,11 @@ export function QuickAdd({
         )}
         {/* At the foot, so picking a project with a budget never moves the controls above it. */}
         {budget && (
-          <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
-            <BudgetBar status={budget} />
-          </ClientCurrency>
+          <div className={wc("lg:col-span-2")}>
+            <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
+              <BudgetBar status={budget} />
+            </ClientCurrency>
+          </div>
         )}
       </form>
     </div>

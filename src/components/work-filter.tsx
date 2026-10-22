@@ -20,11 +20,14 @@ export function WorkFilter({
   onProjectId: (id: string) => void;
 }) {
   const chip = (on: boolean) =>
-    `inline-flex min-h-9 items-center gap-2 rounded-full px-3 text-sm ring-1 transition-colors ${
+    `inline-flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-sm ring-1 transition-colors ${
       on ? "bg-foreground/10 font-semibold ring-2 ring-amber" : "bg-card ring-foreground/15 hover:bg-muted"
     }`;
   return (
-    <fieldset aria-label="Filter by project" className="m-0 flex flex-wrap gap-2 border-0 p-0">
+    <fieldset
+      aria-label="Filter by project"
+      className="m-0 -mx-1 flex gap-2 overflow-x-auto border-0 px-1 py-1.5 [scrollbar-width:thin]"
+    >
       <button
         type="button"
         aria-pressed={projectId === ""}
@@ -139,7 +142,7 @@ export function WorkToolbar({
   onProjectId?: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b px-3 py-3 sm:px-4">
+    <div className="flex flex-col gap-4 border-b px-3 py-4 sm:px-4">
       <div className="flex flex-wrap items-center gap-2">
         <WorkModeSwitch mode={mode} onMode={onMode} />
         <p className="text-muted-foreground text-xs">

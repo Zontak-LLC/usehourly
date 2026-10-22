@@ -123,9 +123,9 @@ export function TodayView() {
       ) : !hasProjects ? (
         <FirstRun />
       ) : (
-        // The dial on the left (it stays in view while the list grows), the add form and the day's rows on the right.
-        <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
-          <div className="flex flex-col gap-4">
+        // A band across the top (the dial, the day by project, the week), then the add form and the day's rows at the full width.
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
             <DayDial
               minutes={sum(dayEntries)}
               weekMinutes={week.data ? sum(week.data) : null}
@@ -133,6 +133,7 @@ export function TodayView() {
             />
             {week.data && weekStart && (
               <DaySide
+                row
                 entries={week.data}
                 weekStart={weekStart}
                 date={date}
@@ -142,29 +143,28 @@ export function TodayView() {
               />
             )}
           </div>
-          <div className="flex min-w-0 flex-col gap-4">
-            <QuickAdd date={date} showDate={false} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} />
 
-            {/* A connected calendar has meetings to log: they sit right under the add form. Not connected, the card waits at the foot. */}
-            {calendarFirst && clients.data && (
-              <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
-            )}
+          <QuickAdd date={date} showDate={false} timerRunning={!!running.data} dayMinutes={sum(dayEntries)} wide />
 
-            {week.error ? (
-              <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
-            ) : week.isLoading ? (
-              <Skeleton className="h-32 w-full" />
-            ) : dayEntries.length === 0 ? null : (
-              <>
-                <EntryList entries={dayEntries} date={date} today={today} />
-                <MergeEntriesBar entries={dayEntries} />
-              </>
-            )}
+          {/* A connected calendar has meetings to log: they sit right under the add form. Not connected, the card waits at the foot. */}
+          {calendarFirst && clients.data && (
+            <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+          )}
 
-            {!calendarFirst && clients.data && (
-              <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
-            )}
-          </div>
+          {week.error ? (
+            <Notice tone="danger">Couldn't load entries: {week.error.message}</Notice>
+          ) : week.isLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : dayEntries.length === 0 ? null : (
+            <>
+              <EntryList entries={dayEntries} date={date} today={today} />
+              <MergeEntriesBar entries={dayEntries} />
+            </>
+          )}
+
+          {!calendarFirst && clients.data && (
+            <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+          )}
         </div>
       )}
     </PageShell>

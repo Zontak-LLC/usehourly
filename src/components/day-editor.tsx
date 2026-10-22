@@ -185,7 +185,7 @@ function DayCard({
       )}
       {/* The add form lives in the same card (one card for the day, not two). */}
       {hasProjects ? (
-        <QuickAdd date={date} timerRunning={timerRunning} dayMinutes={total} showDate={false} bare />
+        <QuickAdd date={date} timerRunning={timerRunning} dayMinutes={total} showDate={false} bare wide />
       ) : (
         !projectsLoading && <NoProjects />
       )}

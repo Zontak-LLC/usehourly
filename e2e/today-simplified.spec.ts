@@ -39,7 +39,14 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     const timer = page.getByRole("button", { name: /Start timer/ });
     const addBox = await add.boundingBox();
     const timerBox = await timer.boundingBox();
-    expect(timerBox?.y ?? 0).toBeGreaterThan((addBox?.y ?? 0) + (addBox?.height ?? 0));
+    const wide = (page.viewportSize()?.width ?? 0) >= 1024;
+    if (wide) {
+      // the form is two columns on a wide screen: the timer sits in the left one, on the row of the Add button
+      expect(Math.abs((timerBox?.y ?? 0) - (addBox?.y ?? 0))).toBeLessThan(80);
+      expect((timerBox?.x ?? 0) + (timerBox?.width ?? 0)).toBeLessThan(addBox?.x ?? 0);
+    } else {
+      expect(timerBox?.y ?? 0).toBeGreaterThan((addBox?.y ?? 0) + (addBox?.height ?? 0));
+    }
     expect(timerBox?.height ?? 99).toBeLessThan(80); // a quiet row, not a big solid button
     await expect(timer).not.toHaveAttribute("data-variant", /.+/); // not one of the app's solid or outline buttons
   });
