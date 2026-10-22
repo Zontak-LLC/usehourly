@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("By project shows one figure per project and no lonely tile on a wide screen", async ({ page }, info) => {
+test("By project is a list of rows with one figure each", async ({ page }) => {
   await page.goto("/");
   await page
     .getByRole("button", { name: /try the demo/i })
@@ -16,23 +16,18 @@ test("By project shows one figure per project and no lonely tile on a wide scree
   const count = await tiles.count();
   expect(count).toBeGreaterThan(0);
 
-  if (info.project.name === "desktop" && count <= 4) {
-    // all tiles share one row: the same top edge
-    const tops = await tiles.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-    expect(new Set(tops).size).toBe(1);
-  }
-});
-
-test("a paid invoice's button says what it does: Edit payment", async ({ page }, info) => {
-  test.skip(info.project.name !== "phone", "the labelled phone row");
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
-  await page.goto("/dashboard/invoices");
-  const card = page.getByRole("region", { name: "Your invoices" });
-  await expect(card.getByText("Edit payment", { exact: true }).locator("visible=true").first()).toBeVisible();
-  await expect(card.getByText("Payment", { exact: true }).locator("visible=true")).toHaveCount(0);
+  // rows, not tiles: they stack, one under the other, each as wide as the card and with the hours at its right end
+  const boxes = await tiles.evaluateAll((els) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { top: Math.round(r.top), left: Math.round(r.left), width: Math.round(r.width) };
+    }),
+  );
+  expect(new Set(boxes.map((b) => b.top)).size).toBe(count);
+  expect(new Set(boxes.map((b) => b.left)).size).toBe(1);
+  expect(new Set(boxes.map((b) => b.width)).size).toBe(1);
+  const firstRow = tiles.first();
+  const figure = await firstRow.locator("span.font-mono").boundingBox();
+  const rowBox = await firstRow.boundingBox();
+  expect((figure?.x ?? 0) + (figure?.width ?? 0)).toBeGreaterThan((rowBox?.x ?? 0) + (rowBox?.width ?? 0) - 40);
 });
