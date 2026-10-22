@@ -34,32 +34,38 @@ export function LocalFirstCard() {
     window.location.reload(); // the app starts (or stops) using the copy from a clean page
   }
 
+  const statusText = on
+    ? status.state === "off"
+      ? "On. Starting…"
+      : status.state === "copying"
+        ? "On. Making the first copy…"
+        : `On. ${status.offline ? "No connection right now. " : ""}${
+            status.pending > 0
+              ? `${status.pending} change${status.pending === 1 ? " is" : "s are"} waiting to be sent.`
+              : "Everything is sent."
+          }${status.last ? ` Last checked ${new Date(status.last).toLocaleTimeString()}.` : ""}`
+    : "Off. The app asks UseHourly for your entries each time.";
+
   return (
     <section
       aria-label="This device"
-      className="grid items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6"
+      className="grid items-center gap-6 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6 md:grid-cols-[minmax(0,26rem)_1fr] md:gap-10"
     >
-      <DeviceScene className="mx-auto w-44 sm:w-56" />
+      {/* A narrow block of text (about 26rem), not a long line; the small picture sits beside it. */}
       <div className="grid gap-3">
         <h3 className="font-bold font-display text-2xl leading-tight">
           Keep a copy on this device <span className="font-normal text-base text-muted-foreground">(experimental)</span>
         </h3>
-        <p className="max-w-xl text-foreground/75">
-          Your time entries are kept in this browser and shown from there, so the app opens and responds instantly and
-          keeps working with no connection. Changes are sent to UseHourly in the background.
+        <p className="text-foreground/75">
+          Your time entries are kept in this browser and shown from there, so the app opens fast and keeps working with
+          no connection. Changes are sent to UseHourly in the background.
         </p>
-        <p className="text-muted-foreground text-sm">
-          {on
-            ? status.state === "off"
-              ? "On. Starting…"
-              : status.state === "copying"
-                ? "On. Making the first copy…"
-                : `On. ${status.offline ? "No connection right now. " : ""}${
-                    status.pending > 0
-                      ? `${status.pending} change${status.pending === 1 ? " is" : "s are"} waiting to be sent.`
-                      : "Everything is sent."
-                  }${status.last ? ` Last checked ${new Date(status.last).toLocaleTimeString()}.` : ""}`
-            : "Off. The app asks UseHourly for your entries each time."}
+        <p className="flex items-start gap-2 rounded-xl bg-band-2 px-3 py-2 text-foreground/85 text-sm">
+          <span
+            aria-hidden
+            className={`mt-1.5 size-2 shrink-0 rounded-full ${on ? "bg-success-bright" : "bg-foreground/30"}`}
+          />
+          {statusText}
         </p>
         <p className="text-muted-foreground text-xs">
           Only time entries are kept this way for now. Timers, invoices, clients and projects still need a connection.
@@ -75,6 +81,7 @@ export function LocalFirstCard() {
           {on ? "Turn off" : "Turn on"}
         </Button>
       </div>
+      <DeviceScene className="mx-auto w-32 md:w-40 md:justify-self-center" />
     </section>
   );
 }
