@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Square } from "lucide-react";
 
+import { round3 } from "@/lib/round3";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -21,10 +22,10 @@ const TICKS = Array.from({ length: 60 }, (_, i) => {
   const r2 = long ? 88 : 92;
   return {
     key: i,
-    x1: 100 + 96 * Math.sin(a),
-    y1: 100 - 96 * Math.cos(a),
-    x2: 100 + r2 * Math.sin(a),
-    y2: 100 - r2 * Math.cos(a),
+    x1: round3(100 + 96 * Math.sin(a)),
+    y1: round3(100 - 96 * Math.cos(a)),
+    x2: round3(100 + r2 * Math.sin(a)),
+    y2: round3(100 - r2 * Math.cos(a)),
     long,
   };
 });

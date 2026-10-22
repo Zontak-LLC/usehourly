@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { LogoMark } from "@/components/logo";
+import { round3 } from "@/lib/round3";
 
 // The form, centered on paper: a big pale clock ring and an amber glow behind it, the logo in the corner. The ring is
 // drawing only (hidden from screen readers, never in the way of a click).
@@ -25,10 +26,10 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
           return (
             <line
               key={i}
-              x1={100 + 96 * Math.sin(a)}
-              y1={100 - 96 * Math.cos(a)}
-              x2={100 + r2 * Math.sin(a)}
-              y2={100 - r2 * Math.cos(a)}
+              x1={round3(100 + 96 * Math.sin(a))}
+              y1={round3(100 - 96 * Math.cos(a))}
+              x2={round3(100 + r2 * Math.sin(a))}
+              y2={round3(100 - r2 * Math.cos(a))}
               stroke="currentColor"
               strokeWidth={i % 5 === 0 ? 2 : 1}
             />

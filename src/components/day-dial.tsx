@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { DAY_GOAL_MINUTES, DIAL_LENGTH, dialFraction, dialLeft } from "@/lib/day-dial";
 import { formatDuration } from "@/lib/duration";
+import { round3 } from "@/lib/round3";
 
 const TICKS = Array.from({ length: 48 }, (_, i) => {
   const a = (i / 48) * Math.PI * 2;
@@ -11,10 +12,10 @@ const TICKS = Array.from({ length: 48 }, (_, i) => {
   const r2 = long ? 88 : 92;
   return {
     key: i,
-    x1: 100 + 96 * Math.sin(a),
-    y1: 100 - 96 * Math.cos(a),
-    x2: 100 + r2 * Math.sin(a),
-    y2: 100 - r2 * Math.cos(a),
+    x1: round3(100 + 96 * Math.sin(a)),
+    y1: round3(100 - 96 * Math.cos(a)),
+    x2: round3(100 + r2 * Math.sin(a)),
+    y2: round3(100 - r2 * Math.cos(a)),
     long,
   };
 });

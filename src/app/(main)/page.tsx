@@ -22,6 +22,7 @@ import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
 import { APP_CONFIG } from "@/config/app-config";
 import { DONATE_PLATFORM, donateUrl } from "@/lib/donate";
+import { round3 } from "@/lib/round3";
 
 const JSON_LD = {
   "@context": "https://schema.org",
@@ -97,10 +98,10 @@ function ClaudeSpark({ className }: { className?: string }) {
         return (
           <line
             key={`ray-${deg}`}
-            x1={24 + 6 * Math.cos(a)}
-            y1={24 + 6 * Math.sin(a)}
-            x2={24 + r2 * Math.cos(a)}
-            y2={24 + r2 * Math.sin(a)}
+            x1={round3(24 + 6 * Math.cos(a))}
+            y1={round3(24 + 6 * Math.sin(a))}
+            x2={round3(24 + r2 * Math.cos(a))}
+            y2={round3(24 + r2 * Math.sin(a))}
           />
         );
       })}
@@ -422,10 +423,10 @@ export default function LandingPage() {
                 return (
                   <line
                     key={i}
-                    x1={100 + 96 * Math.sin(angle)}
-                    y1={100 - 96 * Math.cos(angle)}
-                    x2={100 + inner * Math.sin(angle)}
-                    y2={100 - inner * Math.cos(angle)}
+                    x1={round3(100 + 96 * Math.sin(angle))}
+                    y1={round3(100 - 96 * Math.cos(angle))}
+                    x2={round3(100 + inner * Math.sin(angle))}
+                    y2={round3(100 - inner * Math.cos(angle))}
                     stroke="currentColor"
                     strokeWidth={i % 5 === 0 ? 2.5 : 1}
                   />
