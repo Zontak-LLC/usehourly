@@ -7,7 +7,7 @@ import { formatDuration } from "@/lib/duration";
 import type { ClientRow, ProjectTotals } from "./client-types";
 
 const MONTH_GOAL_MINUTES = 160 * 60;
-const MAX_TILES = 6;
+const MAX_TILES = 4;
 
 /** This month as a dial, beside one tile per client (biggest first): its hours, its share of the month and its projects. */
 export function ClientsHero({
@@ -19,18 +19,15 @@ export function ClientsHero({
   totals: ProjectTotals;
   monthMinutes: number;
 }) {
-  const rows = clients
+  const all = clients
     .map((c) => ({ c, minutes: c.projects.reduce((sum, p) => sum + (totals[p.id]?.range ?? 0), 0) }))
-    .sort((a, b) => b.minutes - a.minutes)
-    .slice(0, MAX_TILES);
-  const cols =
-    rows.length === 1
-      ? "sm:grid-cols-1"
-      : rows.length === 2
-        ? "sm:grid-cols-2"
-        : rows.length === 3
-          ? "xl:grid-cols-3"
-          : "sm:grid-cols-2 xl:grid-cols-3";
+    .sort((a, b) => b.minutes - a.minutes);
+  // Four tiles at most, so the block keeps one size with ten clients as with three: the top clients, then everyone else in one.
+  const rows = all.length > MAX_TILES ? all.slice(0, MAX_TILES - 1) : all;
+  const rest = all.length > MAX_TILES ? all.slice(MAX_TILES - 1) : [];
+  const restMinutes = rest.reduce((sum, r) => sum + r.minutes, 0);
+  const tiles = rows.length + (rest.length ? 1 : 0);
+  const cols = tiles === 1 ? "sm:grid-cols-1" : tiles === 3 ? "xl:grid-cols-3" : "sm:grid-cols-2";
   const projectCount = clients.reduce((n, c) => n + c.projects.length, 0);
   return (
     <section
@@ -68,6 +65,19 @@ export function ClientsHero({
             <TileRing fraction={monthMinutes ? minutes / monthMinutes : 0} label={`${c.name}'s share of the month`} />
           </StatTile>
         ))}
+        {rest.length > 0 && (
+          <StatTile
+            label={`${rest.length} other clients · this month`}
+            value={restMinutes}
+            display={formatDuration}
+            title={<span className="truncate">Everyone else</span>}
+          >
+            <TileRing
+              fraction={monthMinutes ? restMinutes / monthMinutes : 0}
+              label="Share of the month from the other clients"
+            />
+          </StatTile>
+        )}
       </div>
     </section>
   );
