@@ -8,6 +8,7 @@ import { DayEditorPanel, longDateLabel } from "@/components/day-editor";
 import { GoalMeter } from "@/components/goal-meter";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
+import { PeriodGlance } from "@/components/period-glance";
 import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -175,6 +176,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
             <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
               <ProjectBreakdown rows={allRows} projectId={projectId} onProjectId={setProjectId} />
+              <PeriodGlance dayTotals={sheet.dayTotals} days={last ? Number(last.slice(8)) : 30} />
             </div>
             <div className="flex min-w-0 flex-col gap-4">
               <MergeDaysPanel entries={shown} />

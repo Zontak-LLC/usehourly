@@ -27,7 +27,8 @@ export function ClientsHero({
   const rest = all.length > MAX_TILES ? all.slice(MAX_TILES - 1) : [];
   const restMinutes = rest.reduce((sum, r) => sum + r.minutes, 0);
   const tiles = rows.length + (rest.length ? 1 : 0);
-  const cols = tiles === 1 ? "sm:grid-cols-1" : tiles === 3 ? "xl:grid-cols-3" : "sm:grid-cols-2";
+  // Up to three tiles are rows stacked beside the dial (each fills its row, names are never cut off); four make a 2 by 2.
+  const cols = tiles <= 3 ? "" : "sm:grid-cols-2";
   const projectCount = clients.reduce((n, c) => n + c.projects.length, 0);
   return (
     <section
