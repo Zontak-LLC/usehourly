@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { DAY_GOAL_MINUTES, DIAL_LENGTH, dialFraction, dialLeft } from "@/lib/day-dial";
+import { formatDuration } from "@/lib/duration";
+
+const TICKS = Array.from({ length: 48 }, (_, i) => {
+  const a = (i / 48) * Math.PI * 2;
+  const long = i % 6 === 0;
+  const r2 = long ? 88 : 92;
+  return {
+    key: i,
+    x1: 100 + 96 * Math.sin(a),
+    y1: 100 - 96 * Math.cos(a),
+    x2: 100 + r2 * Math.sin(a),
+    y2: 100 - r2 * Math.cos(a),
+    long,
+  };
+});
+
+/**
+ * The day as a dial: the ring fills with the hours logged against the day's goal, the hand sits where the fill ends,
+ * and the middle says the total and what is left. While a timer runs, a thin second hand sweeps. The ring sweeps in
+ * from empty on first show, so a person sees the day add up.
+ */
+export function DayDial({
+  minutes,
+  weekMinutes,
+  timerRunning,
+  goal = DAY_GOAL_MINUTES,
+}: {
+  minutes: number;
+  weekMinutes: number | null;
+  timerRunning: boolean;
+  goal?: number;
+}) {
+  const [shown, setShown] = useState(0);
+  // After the first paint, move to the real value: the CSS transition draws the sweep.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(minutes));
+    return () => cancelAnimationFrame(id);
+  }, [minutes]);
+  const fraction = dialFraction(shown, goal);
+
+  return (
+    <section
+      aria-label="Today's hours"
+      className="relative flex flex-col items-center gap-3 overflow-hidden rounded-3xl border bg-card p-5 shadow-[var(--shadow-sheet)]"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[-20%] bottom-[-45%] h-[70%] bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--amber)_22%,transparent),transparent)]"
+      />
+      <div className="relative aspect-square w-full max-w-[210px] sm:max-w-[300px]">
+        <svg viewBox="0 0 200 200" className="size-full overflow-visible" aria-hidden>
+          {TICKS.map((t) => (
+            <line
+              key={t.key}
+              x1={t.x1}
+              y1={t.y1}
+              x2={t.x2}
+              y2={t.y2}
+              stroke="var(--border)"
+              strokeWidth={t.long ? 2 : 1}
+            />
+          ))}
+          <circle cx="100" cy="100" r="78" fill="none" stroke="var(--muted)" strokeWidth="16" />
+          <circle
+            cx="100"
+            cy="100"
+            r="78"
+            fill="none"
+            stroke="var(--amber)"
+            strokeWidth="16"
+            strokeLinecap="round"
+            strokeDasharray={DIAL_LENGTH}
+            strokeDashoffset={DIAL_LENGTH * (1 - fraction)}
+            transform="rotate(-90 100 100)"
+            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)" }}
+          />
+          <g
+            style={{
+              transformOrigin: "100px 100px",
+              transform: `rotate(${fraction * 360}deg)`,
+              transition: "transform 1.1s cubic-bezier(.2,.8,.2,1)",
+            }}
+          >
+            <line x1="100" y1="40" x2="100" y2="8" stroke="var(--foreground)" strokeWidth="3" strokeLinecap="round" />
+            <circle cx="100" cy="22" r="4" fill="var(--card)" stroke="var(--foreground)" strokeWidth="2" />
+          </g>
+          {timerRunning && (
+            <g
+              className="origin-center motion-safe:animate-[spin_60s_linear_infinite]"
+              style={{ transformOrigin: "100px 100px" }}
+            >
+              <line x1="100" y1="44" x2="100" y2="4" stroke="var(--amber)" strokeWidth="1.5" strokeLinecap="round" />
+            </g>
+          )}
+        </svg>
+        <div className="absolute inset-0 grid place-content-center text-center">
+          <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">Logged</span>
+          <span className="font-display font-extrabold text-5xl tabular-nums leading-none" aria-live="polite">
+            {formatDuration(minutes)}
+          </span>
+          <span className="mt-1 font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+            {dialLeft(minutes, goal)}
+          </span>
+        </div>
+      </div>
+      <div className="relative flex w-full items-center justify-between font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+        <span>Goal {formatDuration(goal)}</span>
+        {weekMinutes !== null && <span>Week {formatDuration(weekMinutes)}</span>}
+      </div>
+    </section>
+  );
+}

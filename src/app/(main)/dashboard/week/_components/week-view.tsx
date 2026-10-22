@@ -12,7 +12,6 @@ import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
-import { dayDots } from "@/lib/week-dots";
 
 import { DayTiles, longDayLabel, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
@@ -58,7 +57,6 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
-  const dots = useMemo(() => dayDots(shown), [shown]);
 
   if (!start) return <Skeleton className="h-64 w-full" />;
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -127,7 +125,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             selected={selected}
             today={today}
             dayTotals={sheet.dayTotals}
-            dots={dots}
+            rows={sheet.rows}
             nonBillable={nonBillable}
             onPick={pickDay}
           />

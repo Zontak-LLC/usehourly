@@ -62,51 +62,59 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-ink: var(--foreground);
 }
 
 /* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
 These serve as the fallback; there is no separate default.css file. */
 :root {
-  /* Palette: near-black (primary; the amber "Sunshine" accent is an optional preset), a quiet neutral off-white page (so white cards stand out without the background being noticed), warm ink (text), mint (success only). */
-  --radius: 0.625rem;
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.21 0.006 286);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.006 286);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.006 286);
-  --primary: oklch(0.21 0.006 286);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286);
-  --secondary-foreground: oklch(0.21 0.006 286);
-  --muted: oklch(0.967 0.001 286);
-  --muted-foreground: oklch(0.5 0.016 286);
-  --accent: oklch(0.967 0.001 286);
-  --accent-foreground: oklch(0.21 0.006 286);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* The ink-and-paper look (2026-10-22): a cool paper page, white sheets, ink text, ONE amber (the hour hand) that does
+     the pointing, green only for good news. Hex values come straight from the redesign demo. */
+  --radius: 0.875rem;
+  --background: #f2f4f7;
+  --foreground: #12151b;
+  --card: #ffffff;
+  --card-foreground: #12151b;
+  --popover: #ffffff;
+  --popover-foreground: #12151b;
+  --primary: #12151b;
+  --primary-foreground: #f2f4f7;
+  --secondary: #e9ecf1;
+  --secondary-foreground: #12151b;
+  --muted: #e9ecf1;
+  --muted-foreground: #666e7c;
+  --accent: #e9ecf1;
+  --accent-foreground: #12151b;
+  --destructive: #d8452f;
+  --amber: #e8920b;
+  --amber-soft: #fdefd3;
   /* Success is Bright Optimistic Green #50B83C. On white it is only 2.5:1, too pale for words, so it is used for icons,
      bars and fills (--success-bright) and the same hue, darker, writes the words (--success, 7:1). */
   --success-bright: #50b83c;
   --success: oklch(0.45 0.13 141);
   --success-soft: oklch(0.955 0.05 141);
-  --border: oklch(0.92 0.004 286);
-  --input: oklch(0.92 0.004 286);
-  --ring: oklch(0.21 0.006 286);
-  --chart-1: oklch(0.21 0.006 286);
-  --chart-2: oklch(0.7 0.13 170);
-  --chart-3: oklch(0.62 0.12 60);
-  --chart-4: oklch(0.55 0.08 170);
-  --chart-5: oklch(0.4 0.04 75);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.21 0.006 286);
-  --sidebar-primary: oklch(0.21 0.006 286);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286);
-  --sidebar-accent-foreground: oklch(0.21 0.006 286);
-  --sidebar-border: oklch(0.92 0.004 286);
-  --sidebar-ring: oklch(0.21 0.006 286);
+  --border: #dde1e8;
+  --input: #dde1e8;
+  --ring: #12151b;
+  --chart-1: #12151b;
+  --chart-2: #4f6bf5;
+  --chart-3: #e8920b;
+  --chart-4: #1fa971;
+  --chart-5: #666e7c;
+  --sidebar: #f2f4f7;
+  --sidebar-foreground: #12151b;
+  --sidebar-primary: #12151b;
+  --sidebar-primary-foreground: #f2f4f7;
+  --sidebar-accent: #e9ecf1;
+  --sidebar-accent-foreground: #12151b;
+  --sidebar-border: #dde1e8;
+  --sidebar-ring: #12151b;
+  --shadow-sheet: 0 1px 0 rgb(18 21 27 / 0.04), 0 12px 32px -18px rgb(18 21 27 / 0.25);
 
   /* Header shades. A card's header is a light tint of its text colour over the card colour (2026-10-21: white headers
      made a project tile's header look like its body). Subtle on purpose (the 8-12% greys looked heavy). One place. */
@@ -126,8 +134,9 @@ These serve as the fallback; there is no separate default.css file. */
   --tint-edge: color-mix(in oklch, var(--primary) var(--tint-edge-strength), var(--background));
 
   /* fonts */
-  --font-sans: var(--font-geist);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-instrument-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-bricolage);
 }
 
 :root:not([data-theme-preset]),
@@ -141,40 +150,43 @@ These serve as the fallback; there is no separate default.css file. */
 }
 
 .dark {
-  --background: oklch(0.141 0.005 286);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 286);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 286);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.93 0 0);
-  --primary-foreground: oklch(0.2 0.006 286);
-  --secondary: oklch(0.274 0.006 286);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286);
-  --muted-foreground: oklch(0.705 0.015 286);
-  --accent: oklch(0.274 0.006 286);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --background: #0c0d11;
+  --foreground: #ecebe7;
+  --card: #14161c;
+  --card-foreground: #ecebe7;
+  --popover: #14161c;
+  --popover-foreground: #ecebe7;
+  --primary: #ecebe7;
+  --primary-foreground: #12151b;
+  --secondary: #1b1e25;
+  --secondary-foreground: #ecebe7;
+  --muted: #1b1e25;
+  --muted-foreground: #8c909b;
+  --accent: #1b1e25;
+  --accent-foreground: #ecebe7;
+  --destructive: #ff7a63;
+  --amber: #f5a524;
+  --amber-soft: #2a2112;
   --success-bright: #50b83c;
   --success: oklch(0.8 0.17 141);
   --success-soft: oklch(0.3 0.07 141);
-  --border: oklch(0.274 0.006 286);
-  --input: oklch(0.32 0.006 286);
-  --ring: oklch(0.93 0 0);
-  --chart-1: oklch(0.93 0 0);
-  --chart-2: oklch(0.75 0.12 170);
-  --chart-3: oklch(0.68 0.12 60);
-  --chart-4: oklch(0.6 0.08 170);
-  --chart-5: oklch(0.5 0.04 75);
-  --sidebar: oklch(0.17 0.005 286);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.93 0 0);
-  --sidebar-primary-foreground: oklch(0.2 0.006 286);
-  --sidebar-accent: oklch(0.274 0.006 286);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.274 0.006 286);
-  --sidebar-ring: oklch(0.93 0 0);
+  --border: #242830;
+  --input: #2b2f38;
+  --ring: #ecebe7;
+  --chart-1: #ecebe7;
+  --chart-2: #7f93ff;
+  --chart-3: #f5a524;
+  --chart-4: #3ddc97;
+  --chart-5: #8c909b;
+  --sidebar: #0f1116;
+  --sidebar-foreground: #ecebe7;
+  --sidebar-primary: #ecebe7;
+  --sidebar-primary-foreground: #12151b;
+  --sidebar-accent: #1b1e25;
+  --sidebar-accent-foreground: #ecebe7;
+  --sidebar-border: #242830;
+  --sidebar-ring: #ecebe7;
+  --shadow-sheet: 0 12px 32px -18px rgb(0 0 0 / 0.7);
 }
 
 @layer base {
@@ -188,6 +200,19 @@ These serve as the fallback; there is no separate default.css file. */
   }
   html {
     @apply font-sans;
+  }
+  /* Headings use the display face, a little tighter. Small card titles included, so the page reads as one voice. */
+  h1,
+  h2 {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  h1 {
+    letter-spacing: -0.03em;
+  }
+  .font-display {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.03em;
   }
 
   /* Icon colours: neutral by default (an icon takes its text colour), and coloured only where the colour carries a
@@ -250,6 +275,12 @@ These serve as the fallback; there is no separate default.css file. */
     box-shadow: var(--shadow-2xl);
   }
 
+  html[data-font="instrumentSans"] body {
+    --font-sans: var(--font-instrument-sans);
+  }
+  html[data-font="bricolage"] body {
+    --font-sans: var(--font-bricolage);
+  }
   html[data-font="inter"] body {
     --font-sans: var(--font-inter);
   }

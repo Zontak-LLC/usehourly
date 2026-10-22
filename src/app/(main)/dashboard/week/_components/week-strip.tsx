@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Clock } from "lucide-react";
 
 import { NoDollar } from "@/components/no-dollar-icon";
@@ -22,7 +24,7 @@ export function DayTiles({
   selected,
   today,
   dayTotals,
-  dots,
+  rows,
   nonBillable,
   onPick,
 }: {
@@ -30,12 +32,20 @@ export function DayTiles({
   selected: string;
   today: string | null;
   dayTotals: Sheet["dayTotals"];
-  /** Client colours per day (see lib/week-dots.ts): a dot for each client with time that day, none for an empty day. */
-  dots: Record<string, string[]>;
+  /** The week's projects with their minutes per day: each day's tile stacks them as coloured bars. */
+  rows: Sheet["rows"];
   /** Dates marked non-billable: the tile carries a small mark and says so to screen readers. */
   nonBillable: ReadonlySet<string>;
   onPick: (d: string) => void;
 }) {
+  // The bars grow in from nothing on first show (the transition runs once the first frame is painted).
+  const [grown, setGrown] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  // One scale for the week: a day of eight hours (or the busiest day, if longer) fills the bar area.
+  const scale = Math.max(480, ...days.map((d) => dayTotals[d] ?? 0));
   return (
     <div role="tablist" aria-label="Days of the week" className="grid grid-cols-7 gap-1 sm:gap-2">
       {days.map((d) => {
@@ -50,7 +60,7 @@ export function DayTiles({
             aria-selected={on}
             aria-label={`${longDayLabel.format(date)}, ${total ? formatDuration(total) : "nothing logged"}${nonBillable.has(d) ? ", non-billable" : ""}`}
             onClick={() => onPick(d)}
-            className={`relative flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-0 py-3 transition-colors sm:min-h-24 sm:px-1 sm:py-3 ${
+            className={`relative flex min-h-36 flex-col items-center justify-end gap-1 rounded-2xl border px-0 py-3 transition-colors sm:min-h-40 sm:px-1 sm:py-3 ${
               on
                 ? "border-primary bg-tint shadow-sm ring-2 ring-primary/40"
                 : d === today
@@ -64,22 +74,27 @@ export function DayTiles({
             >
               {weekdayShort.format(date)}
             </span>
-            <span className="font-semibold text-xl leading-none">{date.getDate()}</span>
+            <span className="font-display font-extrabold text-xl leading-none">{date.getDate()}</span>
+            <span aria-hidden="true" className="flex h-14 w-full flex-col-reverse justify-start gap-0.5 px-1 sm:px-2">
+              {rows
+                .filter((r) => (r.cells[d]?.minutes ?? 0) > 0)
+                .map((r) => (
+                  <span
+                    key={r.projectId}
+                    data-dot=""
+                    className="block w-full rounded-md"
+                    style={{
+                      backgroundColor: r.color,
+                      height: grown ? `${Math.max(4, ((r.cells[d]?.minutes ?? 0) / scale) * 56)}px` : "0px",
+                      transition: "height .8s cubic-bezier(.2,.8,.2,1)",
+                    }}
+                  />
+                ))}
+            </span>
             <span
               className={`font-mono text-xs tabular-nums max-sm:text-[0.7rem] sm:text-sm ${total ? "font-medium" : "text-muted-foreground"}`}
             >
               {total ? formatDuration(total) : "–"}
-            </span>
-            <span aria-hidden="true" className="flex h-1.5 items-center gap-0.5">
-              {(dots[d] ?? []).map((color, i) => (
-                <span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: at most three dots that never reorder
-                  key={i}
-                  data-dot=""
-                  className="size-1.5 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
             </span>
             <span
               className={`font-semibold text-foreground/80 text-xs uppercase ${d === today ? "" : "invisible"} max-sm:hidden`}
@@ -124,6 +139,7 @@ export function WeekTotalCard({
         <ul className="-mx-4 -mb-4 divide-y border-t">
           {sheet.rows.map((r) => {
             const on = projectId === r.projectId;
+            const longest = Math.max(1, ...sheet.rows.map((x) => x.total));
             return (
               <li key={r.projectId}>
                 <button
@@ -139,6 +155,13 @@ export function WeekTotalCard({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{r.project}</span>
                     <span className="block truncate text-muted-foreground text-xs">{r.client}</span>
+                  </span>
+                  {/* A bar for how much of the week this project took, next to the busiest one. */}
+                  <span aria-hidden className="hidden h-2 w-40 overflow-hidden rounded-full bg-muted sm:block">
+                    <span
+                      className="block h-full rounded-full"
+                      style={{ width: `${(r.total / longest) * 100}%`, backgroundColor: r.color }}
+                    />
                   </span>
                   <span className="flex shrink-0 items-center gap-1 font-mono tabular-nums">
                     <Clock className="size-3.5" aria-hidden />

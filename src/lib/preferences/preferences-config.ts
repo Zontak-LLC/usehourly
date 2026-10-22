@@ -70,7 +70,7 @@ export const PREFERENCE_REGISTRY = {
 
   font: definePreference({
     values: fontKeys,
-    defaultValue: "geist",
+    defaultValue: "instrumentSans",
     persistence: "client-cookie",
     attribute: "data-font",
   }),
@@ -91,7 +91,7 @@ export const PREFERENCE_REGISTRY = {
 
   nav_position: definePreference({
     values: NAV_POSITION_VALUES,
-    defaultValue: "left",
+    defaultValue: "top",
     persistence: "client-cookie",
     attribute: "data-nav-position",
   }),

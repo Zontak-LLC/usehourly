@@ -1,8 +1,10 @@
 import {
+  Bricolage_Grotesque,
   DM_Sans,
   Figtree,
   Geist,
   Geist_Mono,
+  Instrument_Sans,
   Inter,
   JetBrains_Mono,
   Lora,
@@ -19,6 +21,17 @@ import {
 } from "next/font/google";
 
 import { GeistPixelSquare } from "geist/font/pixel";
+
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-instrument-sans",
+});
+
+/** The display face: headings and the big numbers (the day dial, totals). */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -108,6 +121,14 @@ const playfairDisplay = Playfair_Display({
 });
 
 const fontRegistry = {
+  instrumentSans: {
+    label: "Instrument Sans",
+    font: instrumentSans,
+  },
+  bricolage: {
+    label: "Bricolage Grotesque",
+    font: bricolage,
+  },
   geist: {
     label: "Geist",
     font: geist,
