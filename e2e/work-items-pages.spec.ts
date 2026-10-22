@@ -1,13 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 /** "What you worked on" shows 3 entries per page on a phone and 10 on a wide screen (issue: 7 was too many for a phone). */
 test("the work list is paginated 3 per page on a phone and 10 on a wide screen", async ({ page }, info) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/month");
 
   const list = page.getByRole("region", { name: "What you worked on" });

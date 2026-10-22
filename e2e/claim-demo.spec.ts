@@ -1,12 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 test("on a sample account the sign-up card is one line and a button until you want it", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/account");
 
   const card = page.locator("#claim");

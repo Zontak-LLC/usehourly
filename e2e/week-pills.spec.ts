@@ -1,15 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 test("on a phone the week's project rows are plain rows: name and client on the left, hours on the right", async ({
   page,
 }, info) => {
   test.skip(info.project.name !== "phone", "the pills are rows only on a phone");
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/week");
 
   const rows = page.getByRole("region", { name: "This week" }).getByRole("button");

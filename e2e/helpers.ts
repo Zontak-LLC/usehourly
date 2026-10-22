@@ -68,6 +68,21 @@ export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   return user;
 }
 
+/**
+ * Opens the landing page and starts the sample-data demo, ending on the dashboard. The button only works once the page's
+ * script has loaded, which on a slow machine (a cold CircleCI container compiling the page) can take a while: a click
+ * before that does nothing. So wait for the page to settle, and click again if nothing happened.
+ */
+export async function startDemo(page: Page) {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const button = page.getByRole("button", { name: /try the demo/i }).first();
+  await expect(async () => {
+    await button.click();
+    await expect(page).toHaveURL(/dashboard/, { timeout: 20_000 });
+  }).toPass({ timeout: 90_000, intervals: [1000] });
+}
+
 export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>

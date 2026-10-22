@@ -1,12 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import { startDemo } from "./helpers";
+
 test("What you worked on: project chips narrow the list, and it can be read by day or by project", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/month");
 
   const list = page.getByRole("region", { name: "What you worked on" });

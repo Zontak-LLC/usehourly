@@ -1,14 +1,9 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, startDemo, startFreshAccount, test } from "./helpers";
 
 test("a client with several projects is a closed row that opens, and a long list is cut after four", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/clients");
 
   // Northwind Studio has two projects in the sample data: closed to start, one click opens it.

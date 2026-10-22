@@ -24,6 +24,10 @@ const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-contro
 const PHONE_SPECS =
   /(first-day|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal)\.spec\.ts$/;
 
+// A CircleCI container is about twice as slow as a laptop (2 workers, a cold app that compiles each page the first time),
+// so the waits are doubled there. A real regression still fails; a slow machine does not.
+const SLOW = process.env.CIRCLECI ? 2 : 1;
+
 export default defineConfig({
   testDir: "./e2e",
   // The "every control does something" sweep is slow (minutes), so the normal run skips it; `npm run e2e:sweep` runs it.
@@ -42,10 +46,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: Number(process.env.E2E_WORKERS ?? (process.env.CIRCLECI ? 2 : process.env.CI ? 3 : 4)),
   timeout: 180_000,
-  expect: { timeout: 15_000 },
+  expect: { timeout: 15_000 * SLOW },
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: external ? undefined : "./e2e/global-teardown.ts",
-  use: { baseURL: BASE, trace: "retain-on-failure", actionTimeout: 20_000 },
+  use: { baseURL: BASE, trace: "retain-on-failure", actionTimeout: 20_000 * SLOW, navigationTimeout: 30_000 * SLOW },
   projects: [
     // The spec that switches a setting every account sees (the "chip in" note): it runs first and alone.
     {

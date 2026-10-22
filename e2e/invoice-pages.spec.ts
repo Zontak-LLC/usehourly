@@ -1,15 +1,10 @@
-import { expect, sql, test } from "./helpers";
+import { expect, sql, startDemo, test } from "./helpers";
 
 /** The invoices sit in one card with a header; a phone shows 3 at a time, a wide screen 10, with Previous and Next. */
 test("invoices are in one headed card and paginated: 3 per page on a phone, 10 on a wide screen", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   // This test's own account (not "the newest sample account", which another test running at the same time may have made).
   const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
   const userId = session.user?.id ?? "";
@@ -62,12 +57,7 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
 test("an invoice shows its status in its header, labelled buttons on a wide screen, and the filters start folded", async ({
   page,
 }, info) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page);
   await page.goto("/dashboard/invoices");
 
   const first = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
