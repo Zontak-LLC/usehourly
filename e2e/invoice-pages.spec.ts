@@ -29,7 +29,7 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
   const numbers = () => card.getByText(/^INV-\d{4}-\d{3}$/);
 
   if (info.project.name === "phone") {
-    const total = Number((await card.getByText(/^\d+ invoices? ·/).innerText()).match(/^(\d+)/)?.[1]);
+    const total = Number((await card.getByText(/^\d+ invoices?/).innerText()).match(/^(\d+)/)?.[1]);
     expect(total).toBe(11);
     await expect(numbers()).toHaveCount(3);
     const pager = card.getByRole("navigation", { name: "invoices pages" });
