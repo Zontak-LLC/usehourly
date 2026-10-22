@@ -120,7 +120,7 @@ export function ClientCard({
           {c.projects.length === 0 && !adding && (
             <p className="px-3 pt-3 text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
           )}
-          {c.projects.length > 0 && (
+          {c.projects.length > 0 && !c.projects.some((p) => editing.editingId === p.id) && (
             // Column titles, wide screens only: the projects below are rows of a table, not tiles.
             <div
               className={`${PROJECT_COLS} gap-x-3 px-3 pt-2 pb-1 text-muted-foreground text-xs max-sm:hidden`}
