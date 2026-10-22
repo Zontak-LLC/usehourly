@@ -2,8 +2,15 @@
 
 import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
-import { formatDecimalHours, formatDuration } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
 import type { buildSheet } from "@/lib/timesheet";
+
+const COLS: Record<number, string> = {
+  1: "lg:grid-cols-1",
+  2: "lg:grid-cols-2",
+  3: "lg:grid-cols-3",
+  4: "lg:grid-cols-4",
+};
 
 export function ProjectBreakdown({
   rows,
@@ -31,7 +38,8 @@ export function ProjectBreakdown({
       {rows.length === 0 ? (
         <p className="py-4 text-center text-muted-foreground text-sm">No time logged this month.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        // No lonely tile in the last row: up to four projects share one row on a wide screen.
+        <div className={`grid gap-3 sm:grid-cols-2 ${COLS[Math.min(rows.length, 4)] ?? "lg:grid-cols-3"}`}>
           {rows.map((r) => {
             const on = r.projectId === projectId;
             return (
@@ -52,10 +60,8 @@ export function ProjectBreakdown({
                     <span className="block truncate text-muted-foreground text-xs">{r.client}</span>
                   </span>
                 </span>
-                <span className="flex items-baseline justify-between gap-2 font-mono tabular-nums">
-                  <span className="font-semibold text-lg">{formatDuration(r.total)}</span>
-                  <span className="text-muted-foreground text-xs">{formatDecimalHours(r.total)} h</span>
-                </span>
+                {/* One figure: the hours and minutes (the decimal says the same thing a second time). */}
+                <span className="font-mono font-semibold text-lg tabular-nums">{formatDuration(r.total)}</span>
               </button>
             );
           })}
