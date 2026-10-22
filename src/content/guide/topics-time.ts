@@ -108,9 +108,11 @@ A bar appears under the project and above the time box when you add time. It tur
       "link",
       "sync",
     ],
-    body: `The quickest way is **Connect Google Calendar** on **Today** (when it is switched on for this site): Google's own window asks you to allow UseHourly to read your events, read-only, and your browser then reads them straight from Google, so nothing passes through UseHourly's servers. The permission lasts about an hour, so press **Refresh** to read newer meetings (a Google window opens again, usually just to confirm). **Disconnect** forgets the meetings, and you can remove the access any time at myaccount.google.com/permissions. The file and private-address options below work with any calendar.
+    body: `On **Today**, the box **Turn meetings into time entries** shows up to three ways to connect, side by side: **Google Calendar**, **Calendar file** and **Private address**. Pick one.
 
-With a file instead: on **Today**, press **Add a calendar file** and choose a calendar file (**.ics**). Each day then shows **From your calendar**: the day's meetings, each with its length and a project. Press **Add** to log it (the meeting's title becomes the description), or **Skip** to hide it for good. Nothing is added unless you press Add.
+The quickest is **Connect Google Calendar** (when it is switched on for this site): Google's own window asks you to allow UseHourly to read your events, read-only, and your browser then reads them straight from Google, so nothing passes through UseHourly's servers. The permission lasts about an hour, so press **Refresh** to read newer meetings (a Google window opens again, usually just to confirm). **Disconnect** forgets the meetings, and you can remove the access any time at myaccount.google.com/permissions. The file and private-address options below work with any calendar.
+
+With a file instead: press **Add a calendar file** and choose a calendar file (**.ics**). Each day then shows **From your calendar**: the day's meetings, each with its length and a project. Press **Add** to log it (the meeting's title becomes the description), or **Skip** to hide it for good. Nothing is added unless you press Add.
 
 ## Getting the file
 - **Google Calendar:** on a computer, Settings, **Import & export**, **Export**. You get a zip; open it and use the .ics file for your calendar.
@@ -120,7 +122,7 @@ With a file instead: on **Today**, press **Add a calendar file** and choose a ca
 Choose **Update** on Today to read a newer file. **Remove calendar** forgets it.
 
 ## Keeping it up to date by itself
-Instead of a file, press **Or connect with a private calendar address** and paste your calendar's private address. UseHourly then reads it again whenever you open Today and the last read is older than half an hour, and **Refresh** reads it right away.
+Instead of a file, press **Use a private address** and paste your calendar's private address. UseHourly then reads it again whenever you open Today and the last read is older than half an hour, and **Refresh** reads it right away.
 - **Google Calendar:** on a computer, Settings, choose your calendar, **Integrate calendar**, and copy the **Secret address in iCal format**.
 - **Outlook and iCloud:** publish the calendar and copy its address. Only Google, Outlook and iCloud addresses work; for another calendar, add a file.
 - Anyone who has the address can read that calendar. If it leaks, use Google's **Reset** next to it, then paste the new one.
