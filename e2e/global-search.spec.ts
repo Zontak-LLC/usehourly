@@ -6,7 +6,7 @@ import { expect, startFreshAccount, test } from "./helpers";
  */
 test("the top-bar search finds a setting, a client and an entry, and takes you there", async ({ page }) => {
   await startFreshAccount(page, "Zebra Studio");
-  const search = page.getByRole("button", { name: "Search", exact: true });
+  const search = page.locator("header").getByRole("button", { name: "Search", exact: true });
   const box = page.getByRole("combobox", { name: /Search pages, settings/ });
 
   // an entry to find later
@@ -64,4 +64,19 @@ test("the Account page is one page with quick links that jump to a section", asy
   await expect(page.getByRole("heading", { name: "AI assistants", level: 2 })).toBeInViewport();
   await page.goto("/dashboard/account#data");
   await expect(page.getByRole("heading", { name: "Your data", level: 2 })).toBeInViewport({ timeout: 15_000 });
+});
+
+test("the search shows as a field: in the top bar on a wide screen and at the top of Account", async ({ page }) => {
+  await startFreshAccount(page);
+  await page.goto("/dashboard/account");
+  const box = page.getByRole("combobox", { name: /Search pages, settings/ });
+  // the Account page's field opens the same search, and a setting found there jumps to its section
+  await page
+    .getByRole("button", { name: "Search", exact: true })
+    .filter({ hasText: /Search settings/ })
+    .click();
+  await box.fill("currency");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#invoices$/);
+  await expect(page.getByRole("heading", { name: "Invoices", level: 2 })).toBeInViewport({ timeout: 15_000 });
 });

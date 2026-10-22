@@ -39,7 +39,7 @@ export function LocalFirstCard() {
   return (
     <section
       aria-label="This device"
-      className="grid gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
+      className="grid content-start gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
     >
       <DataPanelHead
         icon={HardDrive}

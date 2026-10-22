@@ -31,7 +31,7 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-20">
+    <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-20 xl:flex xl:flex-1 xl:flex-col">
       <div className="px-1 pb-4">
         <h2 id={`${id}-heading`} className="font-display font-extrabold text-3xl leading-none sm:text-4xl">
           {title}
@@ -40,7 +40,7 @@ export function Section({
       </div>
       <SectionGroupProvider value>
         {/* The page is as wide as the others, but a text box stays a comfortable length: fields stop at 28rem. */}
-        <div className="flex flex-col gap-4 [&_input:not([type=checkbox]):not([type=radio]):not([type=file])]:max-w-md [&_select]:max-w-md [&_textarea]:max-w-md">
+        <div className="flex flex-col gap-4 xl:flex-1 xl:[&>*:last-child]:flex-1 [&_input:not([type=checkbox]):not([type=radio]):not([type=file])]:max-w-md [&_select]:max-w-md [&_textarea]:max-w-md">
           {children}
         </div>
       </SectionGroupProvider>

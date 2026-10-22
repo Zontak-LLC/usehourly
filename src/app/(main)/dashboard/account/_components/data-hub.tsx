@@ -4,7 +4,6 @@ import { Archive, FileSpreadsheet } from "lucide-react";
 
 import { AccountingExport } from "@/components/accounting-export";
 import { DataPanelHead } from "@/components/data-panel-head";
-import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
 import { GuideLink } from "@/components/guide-link";
 import { ImportTime } from "@/components/import-time";
@@ -17,14 +16,14 @@ const CARD = "rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreg
 
 /**
  * "Your data" is ONE page: the things you can do with your data as plain sections one under the other (export, send to
- * an accounting app, import, keep a copy on this device) and Delete account last. No tabs inside the tab: everything
+ * an accounting app, import, keep a copy on this device) (Delete account lives under Profile). No tabs inside the tab: everything
  * is where you scroll to. Sample accounts have no device copy and nothing to delete.
  */
 export function DataHub({ account }: { account: AccountMe }) {
   const clients = trpc.clients.list.useQuery();
   const projects = clients.data?.reduce((n, c) => n + c.projects.length, 0);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 [&>*:last-child]:grow">
       {clients.data && (
         <p className="text-foreground/75 text-sm">
           <strong className="text-foreground">{clients.data.length}</strong> clients ·{" "}
@@ -58,7 +57,6 @@ export function DataHub({ account }: { account: AccountMe }) {
 
       <ImportTime />
       {!account.is_demo && <LocalFirstCard />}
-      {!account.is_demo && <DeleteAccountCard hasPassword={account.has_password} email={account.email} />}
     </div>
   );
 }
