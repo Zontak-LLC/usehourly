@@ -133,8 +133,8 @@ export function WorkItems({
                     <Pencil /> {editInPlace && dayEditing(g.items) ? "Done editing" : "Edit day"}
                   </Button>
                 </div>
-                {/* One card per entry, the same card as on Today: its header carries Move, Edit and Delete (which asks first). */}
-                <ul className="flex flex-col gap-2">
+                {/* The day is the card; its entries are rows in one list (cards group, rows list). Each row carries Edit and a ··· menu. */}
+                <ul className="divide-y border-y">
                   {g.items.map((e) => (
                     <EntryRow
                       // The card reads "start in edit mode" only when it is first shown, so a change of that flag (the

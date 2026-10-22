@@ -46,7 +46,7 @@ export function EntryList({
         </div>
       }
     >
-      <ul className="flex flex-col gap-2">
+      <ul className="divide-y border-y">
         {entries.map((e) => (
           <EntryRow key={e.id} entry={e} bare />
         ))}
