@@ -29,7 +29,8 @@ model AuthUser {
   invoice_branding Boolean @default(true)
   // Weekly "log your hours" email (opt-in; needs a confirmed email address and the email service).
   weekly_reminder Boolean @default(false)
-  // Colour (theme preset) and light/dark mode, saved so they follow the account to other devices; null = never chosen.
+  // Light/dark mode (theme_mode) is saved so it follows the account to other devices; null = never chosen.
+  // theme_preset is no longer read or written (colour presets were removed 2026-10-22); the column stays so the migration is additive.
   theme_preset  String?
   currency      String    @default("USD") // ISO 4217, one per account (lib/money.ts); locked once an invoice exists
   theme_mode    String?
