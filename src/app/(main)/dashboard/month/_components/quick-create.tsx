@@ -119,10 +119,11 @@ export function QuickCreate({
       >
         <X />
       </Button>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium text-sm">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+        {/* Two lines tall either way, so the calendar below does not jump when the first day is picked. */}
+        <p className="min-h-10 font-medium text-sm">
           {dates.length === 0
-            ? "Pick the days: click them, or drag across them. Clicking a day no longer opens it while this is open; close it with the X."
+            ? "Pick the days: click them or drag across them. Close this with the X."
             : `${dates.length} day${dates.length === 1 ? "" : "s"} selected`}
         </p>
         <div className="flex gap-3 text-xs">

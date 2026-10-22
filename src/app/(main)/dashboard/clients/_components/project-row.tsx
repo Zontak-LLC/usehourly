@@ -133,7 +133,10 @@ export function ProjectEditCard({
             inputMode="decimal"
             min="0"
             step="0.01"
-            defaultValue={(p.hourly_rate / 100).toFixed(2)}
+            // No rate yet is an empty box with a hint (a real "0.00" turned a typed 95 into 0.0095); a click selects what is there.
+            defaultValue={p.hourly_rate > 0 ? (p.hourly_rate / 100).toFixed(2) : ""}
+            placeholder="0.00"
+            onFocus={(e) => e.currentTarget.select()}
             className="w-24"
             aria-label="Rate per hour"
           />
