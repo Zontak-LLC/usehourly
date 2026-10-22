@@ -7,8 +7,8 @@ type Outputs = inferRouterOutputs<AppRouter>;
 
 export const SECTIONS = [
   { id: "account", label: "Profile" },
-  { id: "invoices", label: "Invoices" },
   { id: "data", label: "Your data" },
+  { id: "invoices", label: "Invoices" },
   { id: "ai", label: "AI assistants" },
 ] as const;
 

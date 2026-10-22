@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { AiPolishCard } from "@/components/ai-polish-card";
 import { ApiTokensCard } from "@/components/api-tokens-card";
@@ -9,13 +9,11 @@ import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
 import { SupportHourly } from "@/components/support-hourly";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useReorderAnimation } from "@/components/use-reorder-animation";
-import { type AccountSectionId, rankSections } from "@/lib/account-search";
 import { trpc } from "@/lib/trpc";
 
 import { AccountChecklist } from "./account-checklist";
-import { AccountSearch } from "./account-search";
-import { Section } from "./account-section";
+import { AccountJump } from "./account-jump";
+import { SECTIONS, Section } from "./account-section";
 import { BusinessDetailsCard } from "./business-details-card";
 import { ConnectAssistant } from "./connect-assistant";
 import { CurrencyCard } from "./currency-card";
@@ -24,17 +22,15 @@ import { FridayReminderCard } from "./friday-reminder-card";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
 
+type SectionId = (typeof SECTIONS)[number]["id"];
+
 /** Sections that need the full width on a wide screen. */
-const WIDE: Record<AccountSectionId, boolean> = { account: false, invoices: true, data: false, ai: true };
+const WIDE: Record<SectionId, boolean> = { account: false, invoices: true, data: false, ai: true };
 
 export function AccountView() {
-  const [query, setQuery] = useState("");
-  const order = rankSections(query);
   const me = trpc.account.me.useQuery();
   const emailEnabled = trpc.account.emailEnabled.useQuery();
   const loaded = Boolean(me.data);
-  // The sections only exist once the account has loaded, so that counts as a change too (it records where they are).
-  const slideRef = useReorderAnimation(`${loaded}:${order.map((s) => s.id).join()}`);
 
   // A link such as /dashboard/account#data (or a quick link) scrolls to its section once the page has drawn it.
   useEffect(() => {
@@ -47,7 +43,7 @@ export function AccountView() {
     window.addEventListener("hashchange", go);
     return () => window.removeEventListener("hashchange", go);
   }, [loaded]);
-  const jump = (id: AccountSectionId) => {
+  const jump = (id: SectionId) => {
     window.history.replaceState(null, "", `#${id}`);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -58,7 +54,7 @@ export function AccountView() {
   }
   const account = me.data;
 
-  const blocks: Record<AccountSectionId, React.ReactNode> = {
+  const blocks: Record<SectionId, React.ReactNode> = {
     account: (
       <Section id="account" title="Profile" description="Your name, your email, and how you sign in.">
         {account.is_demo ? (
@@ -113,29 +109,16 @@ export function AccountView() {
       </Section>
     ),
   };
-  const typing = query.trim() !== "";
-  const matchCount = order.filter((s) => s.matches).length;
 
   return (
     <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
-      <AccountSearch query={query} onQuery={setQuery} onJump={jump} />
+      <AccountJump onJump={jump} />
 
-      {/* On a wide screen related sections sit side by side (your account next to your data); the two with wide forms
-          (invoices, with its preview, and the assistants) take the whole row. Matches come first, so the best match is
-          always top left. */}
+      {/* On a wide screen related sections sit side by side (profile next to your data); the two with wide forms
+          (invoices, with its preview, and the assistants) take the whole row. */}
       <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-2">
-        {order.map((s, i) => (
-          <div
-            key={s.id}
-            ref={slideRef(s.id)}
-            className={`flex min-w-0 flex-col gap-10 ${WIDE[s.id] ? "xl:col-span-2" : ""}`}
-          >
-            {/* A quiet divider where the matches stop and the rest of the settings begin. */}
-            {typing && i === matchCount && matchCount > 0 && (
-              <p className="border-t pt-4 font-mono text-[11px] text-foreground/70 uppercase tracking-widest">
-                Everything else
-              </p>
-            )}
+        {SECTIONS.map((s) => (
+          <div key={s.id} className={`flex min-w-0 flex-col gap-10 ${WIDE[s.id] ? "xl:col-span-2" : ""}`}>
             {blocks[s.id]}
           </div>
         ))}
