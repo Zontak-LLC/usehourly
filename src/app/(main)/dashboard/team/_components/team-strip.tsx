@@ -18,22 +18,25 @@ export function TeamStrip({ people }: { people: Person[] }) {
     ["Clients they can log on", covered],
   ];
   return (
-    <section
-      aria-label="The team at a glance"
-      className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 px-1 py-2"
-    >
-      <dl className="grid flex-1 grid-cols-3 gap-x-4 sm:gap-x-8">
-        {figures.map(([label, value]) => (
-          <div key={label} className="border-amber/70 border-t-2 pt-3">
-            <dd className="font-display font-extrabold text-3xl tabular-nums leading-none sm:text-5xl">{value}</dd>
-            <dt className="mt-2 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">{label}</dt>
-          </div>
-        ))}
-      </dl>
-      <div aria-hidden className="flex -space-x-3">
-        {people.slice(0, 5).map((p) => (
-          <Avatar key={p.id} label={p.label} className="size-11 ring-2 ring-card" />
-        ))}
+    <section aria-label="The team at a glance" className="grid grid-cols-3 gap-3 lg:grid-cols-4">
+      {figures.map(([label, value]) => (
+        <dl
+          key={label}
+          className="flex flex-col justify-center rounded-3xl border-amber/70 border-t-2 bg-card p-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+        >
+          <dd className="order-1 font-display font-extrabold text-4xl tabular-nums leading-none">{value}</dd>
+          <dt className="order-2 mt-2 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">{label}</dt>
+        </dl>
+      ))}
+      <div
+        aria-hidden
+        className="flex items-center justify-center rounded-3xl bg-card p-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 max-lg:hidden"
+      >
+        <div className="flex -space-x-3">
+          {people.slice(0, 5).map((p) => (
+            <Avatar key={p.id} label={p.label} className="size-12 ring-2 ring-card" />
+          ))}
+        </div>
       </div>
     </section>
   );
