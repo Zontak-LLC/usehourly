@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { KeyRound } from "lucide-react";
+import { Eye, FileText, KeyRound, type LucideIcon, PencilLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,36 @@ import { EXPIRY_CHOICES, type ExpiryKey, type TokenAccess } from "@/lib/api-toke
 
 const APP_NAMES = ["Claude Code", "Cursor", "Another app"];
 
-const ACCESS: { id: TokenAccess; title: string; text: string }[] = [
-  { id: "read", title: "Read only", text: "It can look at your time, clients and invoices." },
-  { id: "write", title: "Read and change", text: "It can also log time, start timers and make invoices." },
+const ACCESS: { id: TokenAccess; title: string; text: string; Badge: LucideIcon }[] = [
+  { id: "read", title: "Read only", text: "It can look at your time, clients and invoices.", Badge: Eye },
+  {
+    id: "write",
+    title: "Read and change",
+    text: "It can also log time, start timers and make invoices.",
+    Badge: PencilLine,
+  },
 ];
+
+/** A small picture of what the choice means: a page, with an eye on it (look) or a pencil on it (look and write). */
+function AccessPicture({ Badge, on }: { Badge: LucideIcon; on: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`relative grid size-12 shrink-0 place-items-center rounded-2xl transition-colors ${
+        on ? "bg-foreground text-background" : "bg-muted text-foreground"
+      }`}
+    >
+      <FileText className="size-6 opacity-70" strokeWidth={1.5} />
+      <span
+        className={`absolute -right-1.5 -bottom-1.5 grid size-6 place-items-center rounded-full ring-2 ring-card ${
+          on ? "bg-background text-foreground" : "bg-foreground text-background"
+        }`}
+      >
+        <Badge className="size-3.5" strokeWidth={2.25} />
+      </span>
+    </span>
+  );
+}
 
 const pill = (on: boolean) =>
   `min-h-10 rounded-full px-4 text-sm font-medium ring-1 transition-colors ${
@@ -71,7 +97,7 @@ export function TokenForm({
           {ACCESS.map((a) => (
             <label
               key={a.id}
-              className={`flex cursor-pointer flex-col gap-0.5 rounded-2xl p-3 ring-1 transition-colors has-[:focus-visible]:ring-2 ${
+              className={`flex cursor-pointer items-center gap-3 rounded-2xl p-3 ring-1 transition-colors has-[:focus-visible]:ring-2 ${
                 access === a.id ? "bg-muted/60 ring-2 ring-foreground" : "ring-foreground/15 hover:bg-muted/60"
               }`}
             >
@@ -83,8 +109,11 @@ export function TokenForm({
                 onChange={() => setAccess(a.id)}
                 className="sr-only"
               />
-              <span className="font-semibold text-sm">{a.title}</span>
-              <span className="text-muted-foreground text-sm">{a.text}</span>
+              <AccessPicture Badge={a.Badge} on={access === a.id} />
+              <span className="grid min-w-0 gap-0.5">
+                <span className="font-semibold text-sm">{a.title}</span>
+                <span className="text-muted-foreground text-sm">{a.text}</span>
+              </span>
             </label>
           ))}
         </div>
