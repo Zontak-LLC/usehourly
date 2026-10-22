@@ -10,6 +10,9 @@ const MONTH_GOAL_MINUTES = 160 * 60;
 const MAX_TILES = 4;
 
 /** This month as a dial, beside one tile per client (biggest first): its hours, its share of the month and its projects. */
+/** The month dial blends ultramarine, a warm red and a fresh green (the day dial on Today keeps the brand blend). */
+const MONTH_RING = ["#3d5afe", "#ff4d6d", "#2fd6a0"] as const;
+
 export function ClientsHero({
   clients,
   totals,
@@ -38,6 +41,7 @@ export function ClientsHero({
     >
       <Dial
         label="This month"
+        ring={MONTH_RING}
         title="Logged"
         minutes={monthMinutes}
         goal={MONTH_GOAL_MINUTES}
@@ -63,7 +67,11 @@ export function ClientsHero({
               </>
             }
           >
-            <TileRing fraction={monthMinutes ? minutes / monthMinutes : 0} label={`${c.name}'s share of the month`} />
+            <TileRing
+              fraction={monthMinutes ? minutes / monthMinutes : 0}
+              label={`${c.name}'s share of the month`}
+              colour={c.color ?? MONTH_RING[0]}
+            />
           </StatTile>
         ))}
         {rest.length > 0 && (
@@ -76,6 +84,7 @@ export function ClientsHero({
             <TileRing
               fraction={monthMinutes ? restMinutes / monthMinutes : 0}
               label="Share of the month from the other clients"
+              colour={MONTH_RING[0]}
             />
           </StatTile>
         )}

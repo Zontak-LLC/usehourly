@@ -5,7 +5,15 @@ import type { ReactNode } from "react";
 const RING = 2 * Math.PI * 22;
 
 /** A small ring that fills to `fraction` (0 to 1): the drawing for a figure that is a share of something. */
-export function TileRing({ fraction, label }: { fraction: number; label: string }) {
+export function TileRing({
+  fraction,
+  label,
+  colour = "var(--amber)",
+}: {
+  fraction: number;
+  label: string;
+  colour?: string;
+}) {
   const f = Math.min(1, Math.max(0, Number.isFinite(fraction) ? fraction : 0));
   return (
     <svg viewBox="0 0 56 56" role="img" aria-label={label} className="size-14 -rotate-90">
@@ -16,7 +24,7 @@ export function TileRing({ fraction, label }: { fraction: number; label: string 
         cy="28"
         r="22"
         fill="none"
-        stroke="var(--amber)"
+        stroke={colour}
         strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={RING}
