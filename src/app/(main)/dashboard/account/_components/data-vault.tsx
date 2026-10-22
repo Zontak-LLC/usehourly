@@ -88,23 +88,41 @@ export function DataVault() {
   );
 }
 
-/** A small drawing: an assistant on the left, UseHourly on the right, a line of light between them. */
+/** How an assistant gets connected, in three steps drawn as a path from the assistant to UseHourly. */
 export function AssistantLink() {
+  const steps = [
+    ["1", "Make a token", "Below: name it, choose read only or read and change."],
+    ["2", "Give it to your assistant", "Paste the command or the file it shows you, once."],
+    [
+      "3",
+      "Ask for what you need",
+      "\u201cLog 2 hours on Acme today.\u201d \u201cMake last month\u2019s invoice.\u201d",
+    ],
+  ];
   return (
-    <div className="flex items-center gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
-      <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-amber/15">
-        <Bot className="size-7" aria-hidden />
-      </span>
-      <svg viewBox="0 0 200 12" aria-hidden className="h-3 min-w-0 flex-1">
-        <line x1="4" y1="6" x2="196" y2="6" stroke="var(--border)" strokeWidth="2" strokeDasharray="4 6" />
-        <circle r="5" cy="6" fill="var(--amber)" />
-      </svg>
-      <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
-        <Plug className="size-7" aria-hidden />
-      </span>
-      <p className="hidden min-w-0 flex-1 text-foreground/75 text-sm sm:block">
-        Your assistant talks to UseHourly through a private key. You choose what it may read or change.
-      </p>
+    <div className="grid gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
+      <div className="flex items-center gap-3">
+        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber/15">
+          <Bot className="size-6" aria-hidden />
+        </span>
+        <span aria-hidden className="h-0.5 flex-1 border-foreground/25 border-t-2 border-dashed" />
+        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
+          <Plug className="size-6" aria-hidden />
+        </span>
+      </div>
+      <ol className="grid gap-4 sm:grid-cols-3">
+        {steps.map(([n, title, text]) => (
+          <li key={n} className="flex gap-3">
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber font-bold text-[#1b1405] text-sm">
+              {n}
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold font-display">{title}</span>
+              <span className="block text-foreground/75 text-sm">{text}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
