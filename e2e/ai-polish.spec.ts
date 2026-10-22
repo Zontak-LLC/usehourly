@@ -122,7 +122,12 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
       .hover();
     const row = page.getByRole("listitem").filter({ hasText: "Reworked the homepage layout" });
     await expect(row).not.toHaveAttribute("aria-busy", "true"); // a row the server has not confirmed yet cannot be edited
-    await row.getByRole("button", { name: "Edit", exact: true }).click({ force: true });
+    const edit = row.getByRole("button", { name: "Edit", exact: true });
+    // the list is refreshed after a save and the row is swapped for the confirmed one: let that finish, or the form closes again
+    await page.waitForLoadState("networkidle");
+    await edit.focus(); // by keyboard: a toast can sit over the pencil and take a mouse click
+    await page.keyboard.press("Enter");
+    await expect(edit).toHaveAttribute("aria-expanded", "true");
     // one in the add form and one in the entry's own edit form
     await expect(
       page.getByRole("region", { name: "Today's timesheet" }).getByRole("button", { name: /Polish/ }),
