@@ -10,8 +10,8 @@ const MONTH_GOAL_MINUTES = 160 * 60;
 const MAX_TILES = 4;
 
 /** This month as a dial, beside one tile per client (biggest first): its hours, its share of the month and its projects. */
-/** The month dial blends ultramarine, a warm red and a fresh green (the day dial on Today keeps the brand blend). */
-const MONTH_RING = ["#3d5afe", "#ff4d6d", "#2fd6a0"] as const;
+/** The month dial blends ultramarine, a hot pink and an ultraviolet (the day dial on Today keeps the brand blend). */
+const MONTH_RING = ["#3d5afe", "#ff4d8d", "#a64dff"] as const;
 
 export function ClientsHero({
   clients,
