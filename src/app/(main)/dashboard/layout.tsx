@@ -94,7 +94,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
               <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
               {session?.user?.demo === true && <DemoBanner />}
-              <header className="sticky top-0 z-40 shrink-0 border-b bg-background/85 backdrop-blur-md">
+              {/* No backdrop-filter on a phone: it would make the fixed bottom tab bar (inside this header) position itself against the header instead of the screen. */}
+              <header className="sticky top-0 z-40 shrink-0 border-b max-sm:bg-background sm:bg-background/85 sm:backdrop-blur-md">
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 px-4 py-2 lg:px-6">
                   <div className="flex min-w-0 items-center gap-1 lg:flex-1 lg:gap-2">
                     <Link

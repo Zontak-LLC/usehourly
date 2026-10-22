@@ -56,7 +56,7 @@ export function LandingShowcase() {
       <div
         role="tablist"
         aria-label="Screens of the app"
-        className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-1 rounded-full bg-muted p-1"
+        className="mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-muted p-1 [scrollbar-width:none] sm:flex-wrap sm:justify-center [&::-webkit-scrollbar]:hidden"
       >
         {SCREENS.map((s) => (
           <button
@@ -67,7 +67,7 @@ export function LandingShowcase() {
             aria-selected={s.id === on}
             aria-controls="shot-panel"
             onClick={() => setOn(s.id)}
-            className={`min-h-10 rounded-full px-4 font-semibold text-sm transition-colors ${
+            className={`min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 font-semibold text-sm transition-colors ${
               s.id === on ? "bg-amber text-[#1b1405]" : "text-foreground/75 hover:text-foreground"
             }`}
           >
@@ -90,16 +90,20 @@ export function LandingShowcase() {
             </span>
           </div>
           {/* the light picture on a light page, the dark one on a dark page */}
-          {/* biome-ignore lint/performance/noImgElement: a fixed local picture, sized by its own width and height */}
-          <img
-            src={`/landing/tour/${screen.file}.webp`}
-            alt={`The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}`}
-            width={1440}
-            height={1240}
-            loading="lazy"
-            decoding="async"
-            className="h-auto w-full dark:hidden"
-          />
+          {/* A phone gets the phone picture in light mode; the dark picture is the same for every size. */}
+          <picture className="dark:hidden">
+            <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp`} />
+            {/* biome-ignore lint/performance/noImgElement: a fixed local picture, sized by its own width and height */}
+            <img
+              src={`/landing/tour/${screen.file}.webp`}
+              alt={`The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}`}
+              width={1440}
+              height={1240}
+              loading="lazy"
+              decoding="async"
+              className="h-auto w-full"
+            />
+          </picture>
           {/* biome-ignore lint/performance/noImgElement: a fixed local picture, sized by its own width and height */}
           <img
             src={`/landing/tour-dark/${screen.file}.webp`}
