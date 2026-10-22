@@ -1,7 +1,8 @@
 name: Browser tests
 
-# The Playwright suite (desktop and phone) runs on every pull request (a change that breaks something a person can click
-# is caught before it is merged and deployed), every night, and on demand. Nightly it also runs the slower sweep that
+# The Playwright suite runs on every pull request in CircleCI (the `e2e` job, split across 4 containers, and a release
+# waits for it). This workflow is the nightly run and the on-demand run: it runs EVERY spec on the phone too
+# (E2E_FULL_PHONE=1). Nightly it also runs the slower sweep that
 # clicks every control on every page and fails on any that does nothing.
 # It starts its own copy of the app against a throwaway local database; nothing here touches production.
 
@@ -9,8 +10,6 @@ permissions:
   contents: read
 
 on:
-  pull_request:
-    branches: [main]
   schedule:
     - cron: "23 4 * * *"
   workflow_dispatch:
@@ -41,6 +40,8 @@ jobs:
           cp .dev.vars .env.local
       - run: npm run d1:migrate:local
       - run: npm run e2e
+        env:
+          E2E_FULL_PHONE: "1"
       - name: Click every control (nightly and on demand)
         if: github.event_name != 'pull_request'
         run: npm run e2e:sweep

@@ -1,6 +1,6 @@
 version: 2.1
 
-# Checks run on every push and pull request. The deploy job runs only on main, after the checks pass.
+# Checks and the browser tests run on every push and pull request. The deploy job runs only on main, after both pass.
 #
 # The deploy token lives in a CircleCI CONTEXT named usehourly-production (Organization Settings > Contexts),
 # restricted to `pipeline.git.branch == "main"`, so branches, pull requests and the check job never see it:
@@ -44,6 +44,41 @@ jobs:
           command: npm run ci -- --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml
       - store_test_results:
           path: test-results
+
+  # The browser tests (Playwright, desktop and phone), split across 4 containers: each one starts its own copy of the app on
+  # a throwaway local database and runs its share of the spec files. CircleCI learns how long each file takes from the
+  # JUnit results and balances the next run by it. A release must pass these before the deploy job starts.
+  e2e:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.64.1-jammy
+    resource_class: large
+    parallelism: 4
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "package-lock.json" }}
+      - run: npm ci
+      - run:
+          name: Local config with throwaway secrets
+          command: |
+            cp wrangler.example.jsonc wrangler.jsonc
+            secret=$(openssl rand -hex 32)
+            printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\nAUTH_GITHUB_ID=e2e\nAUTH_GITHUB_SECRET=e2e\nAUTH_GOOGLE_ID=e2e\nAUTH_GOOGLE_SECRET=e2e\n' "$secret" > .dev.vars
+            cp .dev.vars .env.local
+      - run: npm run d1:migrate:local
+      - run:
+          name: Browser tests (this container's share of the spec files)
+          command: |
+            FILES=$(circleci tests glob "e2e/*.spec.ts" | grep -v every-control | circleci tests split --split-by=timings --timings-type=classname)
+            echo "$FILES"
+            npx playwright test $FILES
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: e2e/report
+          destination: e2e-report
+          when: always
 
   deploy:
     executor: node
@@ -111,10 +146,12 @@ workflows:
   build-and-deploy:
     jobs:
       - check
+      - e2e
       - deploy:
           context: usehourly-production
           requires:
             - check
+            - e2e
           filters:
             branches:
               only: main

@@ -97,8 +97,13 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
       .getByRole("button", { name: "Edit", exact: true });
     // On a phone there is no hover, so the controls have to be showing already. A miss here is a finding, not a crash.
     if (isPhone) await expect.soft(edit, "entry actions must be visible without hover on a phone").toBeVisible();
-    await edit.click({ force: true });
-    await page.getByLabel("Time", { exact: true }).fill("2:00");
+    // A card the server has not confirmed yet is replaced when it is, and that closes the form: so click again until it is open.
+    const timeBox = page.getByLabel("Time", { exact: true });
+    await expect(async () => {
+      if (!(await timeBox.isVisible())) await edit.click({ force: true });
+      await expect(timeBox).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 20_000 });
+    await timeBox.fill("2:00");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(seen(page, "3:00")).toBeVisible(); // 1:00 + the 1:30 entry changed to 2:00
     await shot("edited");
@@ -252,9 +257,17 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   let invoiceUrl = "";
   await test.step("get a private link to the invoice and open it as the client", async () => {
-    await page.getByRole("button", { name: /^Send INV-/ }).click();
-    await page.getByRole("button", { name: "Make a link" }).click();
-    invoiceUrl = await page.getByLabel("Invoice link").inputValue();
+    // The list refreshes when the link is saved and can close the panel for a moment on a busy machine: open it again if so.
+    const linkBox = page.getByLabel("Invoice link");
+    const makeLink = page.getByRole("button", { name: "Make a link" });
+    await expect(async () => {
+      if (!(await linkBox.isVisible())) {
+        if (!(await makeLink.isVisible())) await page.getByRole("button", { name: /^Send INV-/ }).click();
+        await makeLink.click();
+      }
+      await expect(linkBox).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 30_000 });
+    invoiceUrl = await linkBox.inputValue();
     expect(invoiceUrl).toMatch(/\/invoice\/\S{40,}/);
     const anon = await anonymous(browser, info);
     const client = await anon.newPage();
