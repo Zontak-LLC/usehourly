@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const SCREENS = [
   {
@@ -47,63 +47,60 @@ const SCREENS = [
   },
 ] as const;
 
-/** The real app in a window: six tabs, each a picture of the screen (light or dark to match the page) with a line on what it is for. */
-export function LandingShowcase() {
-  const [on, setOn] = useState<(typeof SCREENS)[number]["id"]>("today");
-  const screen = SCREENS.find((s) => s.id === on) ?? SCREENS[0];
+type Screen = (typeof SCREENS)[number];
+
+/** Where a card sits relative to the front one: flown away, the front, or waiting behind it (peeking at the foot). */
+function cardStyle(offset: number): React.CSSProperties {
+  if (offset < 0) {
+    return {
+      transform: "translate(-14%, -16%) rotate(-7deg) scale(0.94)",
+      opacity: 0,
+      pointerEvents: "none",
+      zIndex: 40,
+    };
+  }
+  const behind = Math.min(offset, 4);
+  return {
+    transform: `translateY(${behind * 22}px) scale(${1 - behind * 0.05})`,
+    opacity: offset > 3 ? 0 : 1 - behind * 0.16,
+    zIndex: 30 - offset,
+  };
+}
+
+function Card({ screen, offset }: { screen: Screen; offset: number }) {
   return (
-    <div className="mx-auto max-w-5xl">
-      <div
-        role="tablist"
-        aria-label="Screens of the app"
-        className="mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-muted p-1 [scrollbar-width:none] sm:flex-wrap sm:justify-center [&::-webkit-scrollbar]:hidden"
-      >
-        {SCREENS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            id={`shot-tab-${s.id}`}
-            aria-selected={s.id === on}
-            aria-controls="shot-panel"
-            onClick={() => setOn(s.id)}
-            className={`min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 font-semibold text-sm transition-colors ${
-              s.id === on ? "bg-amber text-[#1b1405]" : "text-foreground/75 hover:text-foreground"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+    <div
+      aria-hidden={offset !== 0}
+      style={cardStyle(offset)}
+      className="absolute inset-0 flex origin-top flex-col overflow-hidden rounded-2xl bg-card shadow-[0_30px_80px_-30px_rgba(18,21,27,0.5)] ring-1 ring-foreground/10 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none"
+    >
+      <div aria-hidden className="flex items-center gap-1.5 border-foreground/10 border-b bg-muted/60 px-4 py-2.5">
+        <span className="size-2.5 rounded-full bg-[#FF5F57]" />
+        <span className="size-2.5 rounded-full bg-[#FEBC2E]" />
+        <span className="size-2.5 rounded-full bg-[#28C840]" />
+        <span className="ml-3 rounded-md bg-card px-3 py-0.5 font-mono text-[11px] text-foreground/70">
+          usehourly.app/dashboard/{screen.id === "year" ? "report" : screen.id}
+        </span>
       </div>
-      <div id="shot-panel" role="tabpanel" aria-labelledby={`shot-tab-${screen.id}`} className="mt-6">
-        <p className="text-center">
-          <span className="font-bold font-display text-xl">{screen.title}</span>
-          <span className="mx-auto mt-1 block max-w-xl text-muted-foreground">{screen.text}</span>
-        </p>
-        <div className="mt-5 overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
-          <div aria-hidden className="flex items-center gap-1.5 border-foreground/10 border-b bg-muted/60 px-4 py-2.5">
-            <span className="size-2.5 rounded-full bg-foreground/20" />
-            <span className="size-2.5 rounded-full bg-foreground/20" />
-            <span className="size-2.5 rounded-full bg-foreground/20" />
-            <span className="ml-3 rounded-md bg-card px-3 py-0.5 font-mono text-[11px] text-foreground/70">
-              usehourly.app
-            </span>
-          </div>
-          {/* the light picture on a light page, the dark one on a dark page */}
-          {/* A phone gets the phone picture in light mode; the dark picture is the same for every size. */}
-          <picture className="dark:hidden">
-            <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp`} />
-            <img
-              src={`/landing/tour/${screen.file}.webp`}
-              alt={`The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}`}
-              width={1440}
-              height={1240}
-              loading="lazy"
-              decoding="async"
-              className="h-auto w-full"
-            />
-          </picture>
-          {/* biome-ignore lint/performance/noImgElement: a fixed local picture, sized by its own width and height */}
+      {/* The light picture on a light page, the dark one on a dark page. A phone gets the phone picture of each: the
+          desktop screen shrunk to a phone is too small to read. */}
+      <div className="min-h-0 flex-1 dark:hidden">
+        <picture className="block size-full">
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp`} />
+          <img
+            src={`/landing/tour/${screen.file}.webp`}
+            alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
+            width={1440}
+            height={1240}
+            loading="lazy"
+            decoding="async"
+            className="size-full object-cover object-top"
+          />
+        </picture>
+      </div>
+      <div className="hidden min-h-0 flex-1 dark:block">
+        <picture className="block size-full">
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp`} />
           <img
             src={`/landing/tour-dark/${screen.file}.webp`}
             alt=""
@@ -111,8 +108,103 @@ export function LandingShowcase() {
             height={862}
             loading="lazy"
             decoding="async"
-            className="hidden h-auto w-full dark:block"
+            className="size-full object-cover object-top"
           />
+        </picture>
+      </div>
+    </div>
+  );
+}
+
+/** Which screen is in front, from how far the tall track has scrolled past the top of the window. */
+function useScrollStep(count: number) {
+  const track = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const el = track.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const span = Math.max(1, rect.height - window.innerHeight);
+      const progress = Math.min(1, Math.max(0, -rect.top / span));
+      setStep(Math.min(count - 1, Math.floor(progress * count)));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
+    read();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [count]);
+  const goTo = useCallback(
+    (i: number) => {
+      const el = track.current;
+      if (!el) return;
+      const span = Math.max(1, el.offsetHeight - window.innerHeight);
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: top + ((i + 0.5) / count) * span, behavior: "smooth" });
+    },
+    [count],
+  );
+  return { track, step, goTo };
+}
+
+/**
+ * The real app as a deck of windows. The stage stays pinned while the page scrolls past it: each screen lifts off the
+ * stack and the next one comes forward, with the captions on the left following along. Tapping a caption scrolls to it.
+ */
+export function LandingShowcase() {
+  const { track, step, goTo } = useScrollStep(SCREENS.length);
+  const screen = SCREENS[step];
+  return (
+    <div ref={track} className="relative" style={{ height: `${SCREENS.length * 70 + 30}vh` }}>
+      <div className="sticky top-16 mx-auto grid max-w-6xl items-center gap-8 py-4 lg:min-h-[calc(100dvh-6rem)] lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
+        <ol className="hidden flex-col gap-1 lg:flex" aria-label="Screens of the app">
+          {SCREENS.map((s, i) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => goTo(i)}
+                aria-current={i === step ? "step" : undefined}
+                className={`w-full rounded-xl border-l-4 py-2.5 pr-3 pl-4 text-left transition-colors ${
+                  i === step
+                    ? "border-amber bg-muted/60"
+                    : "border-transparent text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                <span className="block font-bold font-display text-lg">{s.title}</span>
+                {i === step && <span className="mt-1 block text-muted-foreground text-sm">{s.text}</span>}
+              </button>
+            </li>
+          ))}
+        </ol>
+        <div className="lg:hidden">
+          <p className="text-center">
+            <span className="font-bold font-display text-xl">{screen.title}</span>
+            <span className="mx-auto mt-1 block max-w-xl text-muted-foreground text-sm">{screen.text}</span>
+          </p>
+        </div>
+        <div className="relative mx-auto w-full max-w-3xl pb-24">
+          <div className="relative aspect-[9/14] w-full sm:aspect-[1000/900]">
+            {SCREENS.map((s, i) => (
+              <Card key={s.id} screen={s} offset={i - step} />
+            ))}
+          </div>
+          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2" aria-hidden>
+            {SCREENS.map((s, i) => (
+              <span
+                key={s.id}
+                className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-amber" : "w-1.5 bg-foreground/25"}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
