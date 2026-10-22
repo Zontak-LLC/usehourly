@@ -15,15 +15,12 @@ import type { AccountMe } from "./account-section";
 
 export function PasswordNote() {
   return (
-    <SectionCard
-      title="Password"
-      description={
-        <>
-          You sign in with GitHub or Google, so there is no password to change. If you also want one, use "Forgot
-          password" on the log-in page.
-        </>
-      }
-    />
+    <SectionCard title="Password">
+      <p className="text-foreground/75 text-sm">
+        You sign in with GitHub or Google, so there is no password to change. If you also want one, use "Forgot
+        password" on the log-in page.
+      </p>
+    </SectionCard>
   );
 }
 

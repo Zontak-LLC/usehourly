@@ -9,6 +9,7 @@ import { SupportHourly } from "@/components/support-hourly";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
+import { AccountChecklist } from "./account-checklist";
 import { Section } from "./account-section";
 import { AccountTabs, useAccountTab } from "./account-tabs";
 import { BusinessDetailsCard } from "./business-details-card";
@@ -38,12 +39,27 @@ export function AccountView() {
       <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-8">
         {tab === "account" && (
           <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
-            {!account.is_demo && <MemberBadge me={account} />}
-            {account.is_demo ? <ClaimDemoCard /> : <ProfileCard me={account} emailEnabled={emailEnabled.data} />}
-            {!account.is_demo && !account.has_password && <PasswordNote />}
-            {!account.is_demo && account.has_password && <ChangePasswordCard me={account} />}
-            <SignOutCard />
-            {!account.is_demo && <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />}
+            {account.is_demo ? (
+              <>
+                <ClaimDemoCard />
+                <SignOutCard />
+              </>
+            ) : (
+              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+                <div className="lg:sticky lg:top-32">
+                  <MemberBadge me={account} />
+                </div>
+                <div className="flex min-w-0 flex-col gap-6">
+                  <AccountChecklist me={account} />
+                  <ProfileCard me={account} emailEnabled={emailEnabled.data} />
+                  <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />
+                  <div className="grid items-start gap-6 xl:grid-cols-2">
+                    {account.has_password ? <ChangePasswordCard me={account} /> : <PasswordNote />}
+                    <SignOutCard />
+                  </div>
+                </div>
+              </div>
+            )}
           </Section>
         )}
         {tab === "invoices" && (
