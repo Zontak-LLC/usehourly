@@ -171,7 +171,7 @@ export function EntryRow({
                         {entry.project.client.name}
                       </span>
                     </span>
-                    <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:opacity-100" />
+                    <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:hidden" />
                   </p>
                 </div>
               )}
