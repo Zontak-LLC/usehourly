@@ -4,10 +4,11 @@ import { useEffect, useId, useState } from "react";
 
 import { DAY_GOAL_MINUTES, DIAL_LENGTH, dialFraction, dialLeft } from "@/lib/day-dial";
 import { formatDuration } from "@/lib/duration";
+import { PALETTE } from "@/lib/palette";
 import { round3 } from "@/lib/round3";
 
 /** The day dial's ring blends the brand colours (amber, coral, pink, violet), the same blend as the home page headline. */
-const DAY_RING = ["#F5A524", "#ff7a45", "#ec5f9a", "#8A6CFF"] as const;
+const DAY_RING = PALETTE.brandBlend;
 
 const TICKS = Array.from({ length: 48 }, (_, i) => {
   const a = (i / 48) * Math.PI * 2;

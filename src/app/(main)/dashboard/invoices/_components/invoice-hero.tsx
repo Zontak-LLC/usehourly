@@ -1,7 +1,7 @@
 "use client";
 
-import { INVOICE_COLORS } from "@/lib/invoice-colors";
 import { formatMoney } from "@/lib/money";
+import { PALETTE } from "@/lib/palette";
 
 import type { InvoiceRow } from "./invoice-types";
 
@@ -47,7 +47,7 @@ export function InvoiceHero({
             cy="64"
             r={R}
             fill="none"
-            stroke={INVOICE_COLORS.paid}
+            stroke={PALETTE.money.paid}
             strokeWidth="12"
             strokeLinecap="round"
             strokeDasharray={LENGTH}
@@ -84,20 +84,20 @@ export function InvoiceHero({
         </dl>
         <div>
           <div aria-hidden className="flex h-3 overflow-hidden rounded-full bg-muted">
-            <span className="h-full" style={{ width: share(paid), background: INVOICE_COLORS.paid }} />
-            <span className="h-full" style={{ width: share(soon), background: INVOICE_COLORS.waiting }} />
-            <span className="h-full" style={{ width: share(late), background: INVOICE_COLORS.late }} />
+            <span className="h-full" style={{ width: share(paid), background: PALETTE.money.paid }} />
+            <span className="h-full" style={{ width: share(soon), background: PALETTE.money.waiting }} />
+            <span className="h-full" style={{ width: share(late), background: PALETTE.money.late }} />
           </div>
           <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 font-mono text-[11px] text-foreground/75">
             <li className="flex items-center gap-1.5">
-              <span aria-hidden className="size-2 rounded-full" style={{ background: INVOICE_COLORS.paid }} /> Paid
+              <span aria-hidden className="size-2 rounded-full" style={{ background: PALETTE.money.paid }} /> Paid
             </li>
             <li className="flex items-center gap-1.5">
-              <span aria-hidden className="size-2 rounded-full" style={{ background: INVOICE_COLORS.waiting }} />{" "}
-              Waiting {money(soon)}
+              <span aria-hidden className="size-2 rounded-full" style={{ background: PALETTE.money.waiting }} /> Waiting{" "}
+              {money(soon)}
             </li>
             <li className="flex items-center gap-1.5">
-              <span aria-hidden className="size-2 rounded-full" style={{ background: INVOICE_COLORS.late }} /> Late{" "}
+              <span aria-hidden className="size-2 rounded-full" style={{ background: PALETTE.money.late }} /> Late{" "}
               {money(late)}
             </li>
           </ul>

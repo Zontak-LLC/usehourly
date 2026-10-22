@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { Database, FileText, Sparkles, UserRound } from "lucide-react";
 
+import { PALETTE } from "@/lib/palette";
+
 import { SECTIONS } from "./account-section";
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -11,7 +13,7 @@ type SectionId = (typeof SECTIONS)[number]["id"];
 const ICONS = { account: UserRound, invoices: FileText, data: Database, ai: Sparkles } as const;
 
 /** The open tab glows in the one accent colour. */
-const COLORS = { account: "#F5A524", invoices: "#F5A524", data: "#F5A524", ai: "#F5A524" } as const;
+const COLORS = { account: PALETTE.accent, invoices: PALETTE.accent, data: PALETTE.accent, ai: PALETTE.accent } as const;
 
 const CAPTIONS = {
   account: "You and how you sign in",

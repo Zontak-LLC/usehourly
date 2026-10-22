@@ -3,6 +3,7 @@
 import { Dial } from "@/components/day-dial";
 import { StatTile, TileRing } from "@/components/stat-tile";
 import { formatDuration } from "@/lib/duration";
+import { PALETTE } from "@/lib/palette";
 
 import type { ClientRow, ProjectTotals } from "./client-types";
 
@@ -11,7 +12,7 @@ const MAX_TILES = 4;
 
 /** This month as a dial, beside one tile per client (biggest first): its hours, its share of the month and its projects. */
 /** The month dial runs from a deep ultramarine through violet and pink to a pale lilac, dark to light (the day dial on Today keeps the brand blend). */
-const MONTH_RING = ["#2230c4", "#7a4dff", "#ff6fb4", "#f6e3ff"] as const;
+const MONTH_RING = PALETTE.monthDial;
 
 export function ClientsHero({
   clients,
