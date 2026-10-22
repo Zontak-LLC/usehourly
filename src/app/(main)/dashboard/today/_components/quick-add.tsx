@@ -270,32 +270,31 @@ export function QuickAdd({
           className="min-h-[4.5rem] resize-none py-3 text-base"
         />
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            type="submit"
-            size="lg"
-            variant="primary"
-            disabled={create.isPending || parsed === null}
-            // Until a time is typed it is a quiet outline (not a grey slab that looks broken); the line above says what to do.
-            className="h-12 w-full text-base disabled:border disabled:bg-transparent disabled:text-muted-foreground disabled:opacity-100 sm:flex-1"
-          >
-            Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
-          </Button>
-          {/* A timer only makes sense for today; on another day the row is just Add to the day. */}
-          {isToday && (
-            <Button
+        <Button
+          type="submit"
+          size="lg"
+          variant="primary"
+          disabled={create.isPending || parsed === null}
+          // Until a time is typed it is a clear outline (not a grey slab that looks broken); it turns solid when it can be used.
+          className="h-12 w-full text-base disabled:border disabled:border-foreground/30 disabled:bg-transparent disabled:text-foreground/70 disabled:opacity-100"
+        >
+          Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
+        </Button>
+        {/* The timer is the second way, not a rival button: a small link under Add. It only makes sense for today. */}
+        {isToday && (
+          <p className="text-muted-foreground text-sm">
+            Haven't done it yet?{" "}
+            <button
               type="button"
-              size="lg"
-              variant="outline"
               onClick={startTimer}
               disabled={start.isPending || !online}
               title={online ? undefined : "A timer needs a connection"}
-              className="h-12 w-full text-base sm:w-auto sm:px-6"
+              className="inline-flex min-h-8 items-center gap-1 font-medium text-foreground underline underline-offset-2 disabled:no-underline disabled:opacity-50"
             >
-              <Play className="size-4" /> {timerRunning ? "Switch timer to this" : "Start timer"}
-            </Button>
-          )}
-        </div>
+              <Play className="size-3.5" aria-hidden /> {timerRunning ? "Switch timer to this" : "Start timer"}
+            </button>
+          </p>
+        )}
       </form>
     </div>
   );

@@ -34,6 +34,16 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     );
   });
 
+  await test.step("the timer is a small link under Add, not a rival button", async () => {
+    const add = page.getByRole("button", { name: /^Add to the day/ });
+    const timer = page.getByRole("button", { name: /Start timer/ });
+    const addBox = await add.boundingBox();
+    const timerBox = await timer.boundingBox();
+    expect(timerBox?.y ?? 0).toBeGreaterThan((addBox?.y ?? 0) + (addBox?.height ?? 0));
+    expect(timerBox?.height ?? 99).toBeLessThan(40); // a line of text, not a 48px button
+    await expect(timer).not.toHaveAttribute("data-variant", /.+/); // not one of the app's solid or outline buttons
+  });
+
   await test.step("not connected, the calendar card sits below the day's entries", async () => {
     const entries = page.getByRole("region", { name: /^What you worked on|timesheet/i }).first();
     const calendarY = (await card.boundingBox())?.y ?? 0;
