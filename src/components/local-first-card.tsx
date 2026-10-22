@@ -2,7 +2,9 @@
 
 import { useState, useSyncExternalStore } from "react";
 
-import { DeviceScene } from "@/components/device-scene";
+import { HardDrive } from "lucide-react";
+
+import { DataPanelHead } from "@/components/data-panel-head";
 import { Button } from "@/components/ui/button";
 import { clearLocalCopy, getActiveEngine, localFirstOn, setLocalFirst, subscribeStatus } from "@/lib/local-sync/active";
 
@@ -37,18 +39,21 @@ export function LocalFirstCard() {
   return (
     <section
       aria-label="This device"
-      className="grid items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6"
+      className="grid gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
     >
-      <DeviceScene className="mx-auto w-44 sm:w-56" />
+      <DataPanelHead
+        icon={HardDrive}
+        title={
+          <>
+            Keep a copy on this device{" "}
+            <span className="font-normal text-base text-muted-foreground">(experimental)</span>
+          </>
+        }
+      >
+        Your time entries are kept in this browser and shown from there. The app opens fast and keeps working with no
+        connection. Changes are sent to UseHourly in the background.
+      </DataPanelHead>
       <div className="grid gap-3">
-        <h3 className="font-bold font-display text-2xl leading-tight">
-          Keep a copy on this device <span className="font-normal text-base text-muted-foreground">(experimental)</span>
-        </h3>
-        {/* A tidy block: short sentences in a narrow column, not one long line. */}
-        <p className="max-w-md text-foreground/75 leading-relaxed">
-          Your time entries are kept in this browser and shown from there. The app opens fast and keeps working with no
-          connection. Changes are sent to UseHourly in the background.
-        </p>
         <p className="text-muted-foreground text-sm">
           {on
             ? status.state === "off"

@@ -5,10 +5,9 @@ import { type ComponentType, useState } from "react";
 import { Archive, FileSpreadsheet, HardDrive, Trash2, Upload } from "lucide-react";
 
 import { AccountingExport } from "@/components/accounting-export";
-import { AccountingScene } from "@/components/accounting-scene";
+import { DataPanelHead } from "@/components/data-panel-head";
 import { DeleteAccountCard } from "@/components/delete-account-card";
 import { ExportEverything } from "@/components/export-everything";
-import { ExportScene } from "@/components/export-scene";
 import { GuideLink } from "@/components/guide-link";
 import { ImportTime } from "@/components/import-time";
 import { LocalFirstCard } from "@/components/local-first-card";
@@ -20,7 +19,10 @@ type Choice = "export" | "accounting" | "import" | "device" | "delete";
 
 type Tile = {
   id: Choice;
+  /** The full name (screen readers, tests). */
   label: string;
+  /** The short word shown on the tab, so all five fit at half a browser width. */
+  short: string;
   icon: ComponentType<{ className?: string }>;
   danger?: boolean;
   /** Sample accounts have no device copy and nothing to delete. */
@@ -28,11 +30,11 @@ type Tile = {
 };
 
 const TILES: Tile[] = [
-  { id: "export", label: "Export", icon: Archive },
-  { id: "accounting", label: "Accounting app", icon: FileSpreadsheet },
-  { id: "import", label: "Import history", icon: Upload },
-  { id: "device", label: "This device", icon: HardDrive, realOnly: true },
-  { id: "delete", label: "Delete account", icon: Trash2, danger: true, realOnly: true },
+  { id: "export", label: "Export", short: "Export", icon: Archive },
+  { id: "accounting", label: "Accounting app", short: "Accounting", icon: FileSpreadsheet },
+  { id: "import", label: "Import history", short: "Import", icon: Upload },
+  { id: "device", label: "This device", short: "Device", icon: HardDrive, realOnly: true },
+  { id: "delete", label: "Delete account", short: "Delete", icon: Trash2, danger: true, realOnly: true },
 ];
 
 /**
@@ -53,7 +55,7 @@ export function DataHub({ account }: { account: AccountMe }) {
           in files any tool can open.
         </p>
       )}
-      <fieldset className="flex min-w-0 gap-6 overflow-x-auto border-0 border-b p-0 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
+      <fieldset className="flex min-w-0 gap-4 overflow-x-auto border-0 border-b p-0 sm:gap-6 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
         <legend className="sr-only">What do you want to do with your data?</legend>
         {tiles.map((t) => {
           const on = t.id === choice;
@@ -63,6 +65,7 @@ export function DataHub({ account }: { account: AccountMe }) {
               key={t.id}
               type="button"
               aria-pressed={on}
+              aria-label={t.label}
               onClick={() => setChoice(t.id)}
               // Standard tabs: plain labels on one line, an underline under the open one. No boxes, no rounded corners.
               className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-0.5 font-semibold text-sm transition-colors ${
@@ -76,7 +79,7 @@ export function DataHub({ account }: { account: AccountMe }) {
               }`}
             >
               <Icon className="size-4" aria-hidden />
-              {t.label}
+              {t.short}
             </button>
           );
         })}
@@ -86,40 +89,32 @@ export function DataHub({ account }: { account: AccountMe }) {
         {choice === "export" && (
           <section
             aria-label="Download everything"
-            className="grid items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6"
+            className="grid gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
           >
-            <ExportScene className="mx-auto w-44 sm:mx-0 sm:w-56" />
-            <div className="grid gap-3">
-              <h3 className="font-bold font-display text-2xl leading-tight">Take it all with you.</h3>
-              <p className="max-w-xl text-foreground/75">
-                One zip with everything you have ever logged: a workbook with every client and every day,
-                {clients.data ? ` ${clients.data.length} sheets, one for each client,` : " a sheet for each client,"}{" "}
-                and plain CSV files that any tool can open.
-              </p>
-              <ExportEverything big className="justify-self-start" />
-            </div>
+            <DataPanelHead icon={Archive} title="Take it all with you.">
+              One zip with everything you have ever logged: a workbook with every client and every day,
+              {clients.data ? ` ${clients.data.length} sheets, one for each client,` : " a sheet for each client,"} and
+              plain CSV files that any tool can open.
+            </DataPanelHead>
+            <ExportEverything big className="justify-self-start" />
           </section>
         )}
         {choice === "accounting" && (
           <section
             aria-label="Send invoices to your accounting app"
-            className="grid overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 md:grid-cols-[minmax(0,1fr)_17rem]"
+            className="overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
           >
-            {/* The form comes first: it is the job. The picture and the explanation sit beside it (below on a phone). */}
-            <div className="flex min-w-0 flex-col">
-              <h3 className="inline-flex items-center gap-2 p-5 pb-4 font-bold font-display text-2xl leading-tight sm:p-6 sm:pb-5">
-                Send your invoices to the books.
-                <GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />
-              </h3>
-              <AccountingExport />
-            </div>
-            <aside className="flex flex-col items-center justify-center gap-4 border-t bg-band-2 p-5 text-center md:border-t-0 md:border-l md:p-6">
-              <AccountingScene className="w-40" />
-              <p className="text-foreground/75 text-sm">
+            <div className="p-5 pb-4 sm:p-6 sm:pb-5">
+              <DataPanelHead
+                icon={FileSpreadsheet}
+                title="Send your invoices to the books."
+                aside={<GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />}
+              >
                 Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you
                 marked non-billable are already left off every invoice.
-              </p>
-            </aside>
+              </DataPanelHead>
+            </div>
+            <AccountingExport />
           </section>
         )}
         {choice === "import" && <ImportTime />}

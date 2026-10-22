@@ -12,6 +12,9 @@ Look at the real thing first: the pages are the reference, this file is the expl
 3. **UX is the product.** Logging a day takes seconds; every screen is judged on how few actions a job takes **[checked: action budgets in the first-day test]**.
 4. **Works for everyone:** keyboard, screen reader, phone, offline, dark mode.
 
+## The main priority: simple and intuitive (2026-10-22, from the owner)
+**A person must understand a screen at once and finish the job without help. That comes before anything that looks nice.** Colour is a small extra. Rules that follow: form or action first, explanation second and short; no decoration that pushes the job down (big illustrations, looping animations); controls look like what they are (tabs are flat with an underline, buttons are buttons); no control is hidden or cut off at any width. **Judge every screen at three widths: phone 390, half a browser about 720, wide 1280, in light and dark.** Review checklist: What is this page for? What is the one main action, and is it the most visible thing? Is anything cut off, wrapped badly or hidden? Could a first-time user get it wrong? Could this be shorter or greyer?
+
 ## Colour legend (the one list; change it here first)
 Yellow is small on purpose. Colour is for dials, the main button, "now", and money. Everything else is neutral. The named colours live in `src/lib/palette.ts`; screens use them from there or use theme tokens (`bg-amber`, `text-foreground`, `var(--muted)`). **A file may not gain hard-coded hex colours: `scripts/check-colours.mjs` (part of `npm run ci`) fails, and `scripts/colour-baseline.json` may only ever go down.** To add a colour: add it to `palette.ts` AND to this table, in the same pull request.
 
