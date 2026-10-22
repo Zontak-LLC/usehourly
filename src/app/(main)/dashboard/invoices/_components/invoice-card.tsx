@@ -86,7 +86,8 @@ function InvoiceActions({
       <IconAction
         label={i.paid_date ? `Edit payment for ${i.number}` : `Mark ${i.number} as paid`}
         tip={i.paid_date ? "Edit payment" : "Mark as paid"}
-        text={words ? (i.paid_date ? "Payment" : "Mark paid") : undefined}
+        text={i.paid_date ? "Payment" : "Mark paid"}
+        inline={!words}
         expanded={panel === "paid"}
         // Green means "this invoice is paid": only the paid state is green; marking it paid is a plain action.
         className={
@@ -99,7 +100,8 @@ function InvoiceActions({
       <IconAction
         label={`Send ${i.number}`}
         tip="Send to client"
-        text={words ? "Send" : undefined}
+        text="Send"
+        inline={!words}
         expanded={panel === "send"}
         onClick={() => toggle("send")}
       >
@@ -137,10 +139,16 @@ export function InvoiceCard({
     <li className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/25">
       {/* Header: which invoice, and the actions pinned on the right (same shape as the entry cards). */}
       <div className="flex items-center justify-between gap-3 border-b bg-band-3 px-4 py-2">
-        <p className="min-w-0 truncate">
-          <span className="font-semibold">{i.number}</span>
-          <span className="text-muted-foreground"> · {i.client_name}</span>
-        </p>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5">
+          <p className="min-w-0 truncate">
+            <span className="font-semibold">{i.number}</span>
+            <span className="text-muted-foreground"> · {i.client_name}</span>
+          </p>
+          {/* The status is the first thing wanted about an invoice, so it sits in the header, not under the summary. */}
+          <p className="text-sm">
+            <InvoiceStatus invoice={i} today={today} />
+          </p>
+        </div>
         <div className="flex shrink-0 max-sm:hidden">
           <InvoiceActions invoice={i} panel={panel} onPanel={setPanel} handlers={handlers} />
         </div>
@@ -149,9 +157,6 @@ export function InvoiceCard({
         {i.summary && <p className="line-clamp-2 break-words text-sm">{i.summary}</p>}
         <div className="flex items-end justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-sm">
-              <InvoiceStatus invoice={i} today={today} />
-            </p>
             <p className="text-muted-foreground text-xs">
               {fmt(i.period_from)} – {fmt(i.period_to)} · {formatDecimalHours(i.total_minutes)} h · issued{" "}
               {fmt(i.issue_date)}
