@@ -139,7 +139,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 
 ## Forms and states
 - Every `<form>` declares `method="post"` **[checked]**. Every control has a visible or accessible name **[checked]**. Inputs are white.
-- Destructive actions ask first and **name what they will remove** (`DeleteEntryDialog`, the archive and delete-invoice dialogs); archiving offers Undo.
+- Destructive actions that cannot be undone ask first, **inside the card they belong to** (`InlineConfirm`: it names what will go, the safe choice comes first and is focused, Escape cancels): deleting an entry, deleting an invoice. Reversible ones do not ask: archiving a client or project happens at once and the toast offers Undo.
 - Loading: skeletons, not spinners. Errors: `Notice tone="danger"` or a toast; network errors say "No connection. That needs you to be online."
 - Offline: a banner; adding time still works; everything else says it needs a connection.
 
