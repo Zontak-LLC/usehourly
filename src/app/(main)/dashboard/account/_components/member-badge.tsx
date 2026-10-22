@@ -1,30 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { UserAvatar } from "@/components/user-avatar";
 import { toISODate } from "@/lib/dates";
 import { trpc } from "@/lib/trpc";
+import { useCountUp } from "@/lib/use-count-up";
 
 const since = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
-
-/** A number that counts up from zero the first time it shows (the same trick the invoice total uses). */
-function useCountUp(value: number, ms = 900): number {
-  const [shown, setShown] = useState(0);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setShown(value);
-    const t0 = performance.now();
-    let id = 0;
-    const tick = (now: number) => {
-      const k = Math.min(1, (now - t0) / ms);
-      setShown(Math.round(value * (1 - (1 - k) ** 3)));
-      if (k < 1) id = requestAnimationFrame(tick);
-    };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [value, ms]);
-  return shown;
-}
 
 /** Bars for the barcode, drawn from the account id so every badge has its own (decoration only). */
 function barsFor(id: string): number[] {
