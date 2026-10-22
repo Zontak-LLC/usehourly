@@ -372,7 +372,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
     await page.goto("/dashboard/account#data");
     await page.getByRole("button", { name: /Accounting app/ }).click(); // the data tiles: one panel at a time
-    await expect(page.getByText("Send invoices to your accounting app")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Send invoices to your accounting app" })).toBeVisible();
     await shot("accounting-export");
     await audit("account, accounting export");
 

@@ -16,7 +16,6 @@ import { BusinessDetailsCard } from "./business-details-card";
 import { ConnectAssistant } from "./connect-assistant";
 import { CurrencyCard } from "./currency-card";
 import { DataHub } from "./data-hub";
-import { DataVault } from "./data-vault";
 import { FridayReminderCard } from "./friday-reminder-card";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
@@ -71,7 +70,6 @@ export function AccountView() {
             title="Your data"
             description="Keep a copy of everything you have logged, or bring your history in from another tool."
           >
-            <DataVault />
             <DataHub account={account} />
           </Section>
         )}
