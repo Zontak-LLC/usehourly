@@ -10,6 +10,10 @@ import { entryAction, expect, test } from "../helpers";
  *   E2E_BASE_URL=https://usehourly.app npx playwright test e2e/smoke --project=desktop --project=phone
  */
 test.describe.configure({ retries: 1 });
+// The real site can be slow on a first request (a cold Worker, a cold database): wait longer than the usual 5 seconds
+// before calling anything a failure, so a slow load never causes a rollback.
+test.setTimeout(120_000);
+expect.configure({ timeout: 30_000 });
 
 test("public pages and the health check answer", async ({ page, request }) => {
   const health = await request.get("/api/health");
