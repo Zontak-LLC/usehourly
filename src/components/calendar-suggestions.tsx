@@ -189,16 +189,22 @@ export function CalendarSuggestions({
   );
 
   if (!cal.calendar) {
+    // An optional offer, not data: a dashed outline with an icon, so it cannot be mistaken for the timesheet above it.
     return (
-      <HeaderCard
-        label="From your calendar"
-        header={
+      <section
+        aria-label="From your calendar"
+        data-headerless="an optional offer, dashed on purpose"
+        className="flex flex-col gap-3 rounded-xl border border-foreground/30 border-dashed p-3 sm:p-4"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <CalendarPlus className="size-5" aria-hidden />
+          </span>
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-base">Turn meetings into time entries</h2>
             <GuideLink topic="calendar-suggestions" label="Time entries from your calendar" />
           </div>
-        }
-      >
+        </div>
         {input}
         {googleClientId ? (
           <>
@@ -237,13 +243,15 @@ export function CalendarSuggestions({
           </>
         )}
         {linkForm}
-      </HeaderCard>
+      </section>
     );
   }
 
   return (
     <HeaderCard
       label="From your calendar"
+      // Tinted, so the meetings waiting to be logged do not melt into the timesheet card above.
+      className="border-tint-edge bg-tint"
       header={
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-base">From your calendar</h2>

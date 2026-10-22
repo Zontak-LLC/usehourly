@@ -60,6 +60,8 @@ export function QuickAdd({
   const [projectId, setProjectId] = useState("");
   const [duration, setDuration] = useState("");
   const [note, setNote] = useState("");
+  // Tapping the same chip again adds its time again (2 hours, again = 4 hours); typing or another chip starts over.
+  const [chipRun, setChipRun] = useState<{ minutes: number; taps: number } | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
   // "Today" is the browser's date (the server runs in UTC), so it is worked out after the page loads.
   const isToday = useToday() === date;
@@ -215,7 +217,10 @@ export function QuickAdd({
             id="quick-duration"
             ref={durationRef}
             value={duration}
-            onChange={(e) => setDuration(e.target.value)}
+            onChange={(e) => {
+              setDuration(e.target.value);
+              setChipRun(null);
+            }}
             placeholder="Time: 1.5, 1:30 or 90m"
             aria-label="Time to add"
             aria-invalid={invalid}
@@ -232,7 +237,11 @@ export function QuickAdd({
                 aria-pressed={parsed === c.minutes}
                 className="h-9 px-1 text-sm sm:h-10 sm:text-base"
                 onClick={() => {
-                  setDuration(`${c.minutes}m`);
+                  // Same chip, field still untouched since the last tap: add the chip's time once more.
+                  const again = chipRun?.minutes === c.minutes && parsed === c.minutes * chipRun.taps;
+                  const taps = again ? chipRun.taps + 1 : 1;
+                  setChipRun({ minutes: c.minutes, taps });
+                  setDuration(`${c.minutes * taps}m`);
                   durationRef.current?.focus();
                 }}
               >
@@ -248,7 +257,7 @@ export function QuickAdd({
               ? "Try 1.5, 1:30 or 90m"
               : parsed
                 ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`
-                : "Type a time or tap one, then add it."}
+                : "Type a time or tap one (tap again to add more), then add it."}
           </p>
         </div>
 
