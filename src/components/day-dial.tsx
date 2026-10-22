@@ -6,8 +6,8 @@ import { DAY_GOAL_MINUTES, DIAL_LENGTH, dialFraction, dialLeft } from "@/lib/day
 import { formatDuration } from "@/lib/duration";
 import { round3 } from "@/lib/round3";
 
-/** The day dial's ring is a little spectrum, sky to violet to pink, so it brightens the page. */
-const DAY_RING = ["#4f8cff", "#8A6CFF", "#ec5f9a"] as const;
+/** The day dial's ring blends the brand colours (amber, coral, pink, violet), the same blend as the home page headline. */
+const DAY_RING = ["#F5A524", "#ff7a45", "#ec5f9a", "#8A6CFF"] as const;
 
 const TICKS = Array.from({ length: 48 }, (_, i) => {
   const a = (i / 48) * Math.PI * 2;
@@ -83,8 +83,8 @@ export function Dial({
   caption?: string;
   footLeft?: string;
   footRight?: string;
-  /** Three colours for the ring (a gradient round the dial); the amber of the brand when left out. */
-  ring?: readonly [string, string, string];
+  /** Colours for the ring (a gradient round the dial); plain amber when left out. */
+  ring?: readonly string[];
 }) {
   const gradientId = useId();
   const [shown, setShown] = useState(0);
@@ -108,10 +108,10 @@ export function Dial({
         <svg viewBox="0 0 200 200" className="size-full overflow-visible" aria-hidden>
           {ring && (
             <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor={ring[0]} />
-                <stop offset="0.55" stopColor={ring[1]} />
-                <stop offset="1" stopColor={ring[2]} />
+              <linearGradient id={gradientId} x1="1" y1="0" x2="0" y2="1">
+                {ring.map((c, i) => (
+                  <stop key={c} offset={i / (ring.length - 1)} stopColor={c} />
+                ))}
               </linearGradient>
             </defs>
           )}
