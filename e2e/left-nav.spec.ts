@@ -44,8 +44,9 @@ test("navigation sits down the left by default, stays open, and survives a reloa
     ]) {
       await expect(side.getByRole("link", { name })).toBeVisible();
     }
+    // the groups are only spaced apart: no small headings above them
     for (const heading of ["Track", "Bill", "Manage", "Settings"])
-      await expect(side.getByText(heading, { exact: true })).toBeVisible();
+      await expect(side.getByText(heading, { exact: true })).toHaveCount(0);
     await expect(side.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
   });
 
@@ -58,7 +59,6 @@ test("navigation sits down the left by default, stays open, and survives a reloa
 
   await test.step("the menu is always open: there is no collapse button and no way to fold it to icons", async () => {
     await expect(side.getByRole("button", { name: /Collapse menu/ })).toHaveCount(0);
-    await expect(side.getByText("Track", { exact: true })).toBeVisible();
     expect((await side.boundingBox())?.width ?? 0).toBeGreaterThan(200);
     await side.getByRole("link", { name: "Month" }).dblclick(); // a double click goes to the page and folds nothing
     await expect(page).toHaveURL(/dashboard\/month/);

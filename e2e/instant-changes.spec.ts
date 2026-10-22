@@ -80,9 +80,11 @@ test("deleting an entry removes it at once, and an edit shows its new time at on
   await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await page.getByLabel("Time", { exact: true }).fill("3h");
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("button", { name: "3:00" })).toBeVisible({ timeout: 1500 }); // new time, form closed
+  await expect(page.getByText("3:00", { exact: true }).locator("visible=true").first()).toBeVisible({ timeout: 1500 }); // new time, form closed
   await page.unroute("**/api/trpc/entry.update*");
-  await expect(page.getByRole("button", { name: "3:00" })).toBeVisible({ timeout: SLOW + 6000 }); // and it stays
+  await expect(page.getByText("3:00", { exact: true }).locator("visible=true").first()).toBeVisible({
+    timeout: SLOW + 6000,
+  }); // and it stays
 
   await hold(page, "entry.delete");
   await entryAction(page, "Delete");

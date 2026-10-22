@@ -60,7 +60,8 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
                   </Link>
                 </>
               )}
-              <ThemeSwitcher />
+              {/* A signed-in person has the Light, Dark and System choice in the gear menu; a visitor has no gear. */}
+              {!signedIn && <ThemeSwitcher />}
             </div>
           </div>
         </header>
