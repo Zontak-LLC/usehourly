@@ -17,6 +17,10 @@ const BASE = external ?? `http://localhost:${PORT}`;
 // Where the test copy keeps its database. Helpers and teardown read the same variable (workers inherit it).
 if (!external) process.env.E2E_PERSIST ??= ".wrangler/state-e2e";
 
+const SERIAL_SPECS = /support-notice\.spec\.ts$/;
+const PHONE_SPECS =
+  /(first-day|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal)\.spec\.ts$/;
+
 export default defineConfig({
   testDir: "./e2e",
   // The "every control does something" sweep is slow (minutes), so the normal run skips it; `npm run e2e:sweep` runs it.
@@ -26,17 +30,42 @@ export default defineConfig({
     ["list"],
     ["html", { outputFolder: "e2e/report/html", open: "never" }],
     ["json", { outputFile: "e2e/report/results.json" }],
+    // CircleCI reads this to learn how long each spec takes, and splits the files evenly across containers by it.
+    ...(process.env.CIRCLECI ? ([["junit", { outputFile: "test-results/e2e-junit.xml" }]] as const) : []),
   ],
+  // Spec FILES run side by side (the tests inside one file still run in order, and every test makes its own account, so
+  // they never share data). Override with E2E_WORKERS. The one spec that flips a global setting runs first, alone
+  // (the "serial" project below).
   fullyParallel: false,
-  workers: 1,
+  workers: Number(process.env.E2E_WORKERS ?? (process.env.CIRCLECI ? 2 : process.env.CI ? 3 : 4)),
   timeout: 180_000,
   expect: { timeout: 15_000 },
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: external ? undefined : "./e2e/global-teardown.ts",
   use: { baseURL: BASE, trace: "retain-on-failure", actionTimeout: 20_000 },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
-    { name: "phone", use: { ...devices["Pixel 7"] } },
+    // The spec that switches a setting every account sees (the "chip in" note): it runs first and alone.
+    {
+      name: "serial",
+      testMatch: SERIAL_SPECS,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
+      name: "desktop",
+      dependencies: ["serial"],
+      testIgnore: SERIAL_SPECS,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
+      // A phone runs the specs that look or behave differently on one (layout, touch, the on-screen keyboard); the
+      // rest do the same thing on any screen, so running them twice only costs time. E2E_FULL_PHONE=1 (the nightly
+      // run) runs every spec on the phone as well.
+      name: "phone",
+      dependencies: ["serial"],
+      testMatch: process.env.E2E_FULL_PHONE ? /.*\.spec\.ts$/ : PHONE_SPECS,
+      testIgnore: SERIAL_SPECS,
+      use: { ...devices["Pixel 7"] },
+    },
   ],
   webServer: external
     ? undefined
