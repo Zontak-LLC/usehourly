@@ -6,11 +6,14 @@ import { toast } from "sonner";
 
 import { ConnectSnippets } from "@/components/connect-snippets";
 import { CopyBox } from "@/components/copy-box";
+import { Pagination } from "@/components/pagination";
 import { SectionCard } from "@/components/section-card";
 import { TokenForm } from "@/components/token-form";
 import { TokenRow } from "@/components/token-row";
 import { Button } from "@/components/ui/button";
+import { usePageSize } from "@/components/use-page-size";
 import type { ExpiryKey, TokenAccess } from "@/lib/api-token";
+import { paginate } from "@/lib/paginate";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -22,6 +25,10 @@ export function ApiTokensCard() {
   const revoke = trpc.account.revokeApiToken.useMutation();
   const [fresh, setFresh] = useState<{ token: string; name: string } | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+  // A long list is paged like the invoices: 3 to a page on a phone, 10 on a wide screen.
+  const [pageNo, setPageNo] = useState(1);
+  const pageSize = usePageSize();
+  const page = paginate(tokens.data ?? [], pageNo, pageSize);
 
   const endpoint = typeof window === "undefined" ? "/api/mcp" : `${window.location.origin}/api/mcp`;
 
@@ -72,7 +79,7 @@ export function ApiTokensCard() {
       {tokens.data?.length === 0 && <p className="text-muted-foreground text-sm">No tokens yet.</p>}
       {(tokens.data?.length ?? 0) > 0 && (
         <ul className="divide-y divide-foreground/10 overflow-hidden rounded-2xl ring-1 ring-foreground/10">
-          {tokens.data?.map((t) => (
+          {page.items.map((t) => (
             <TokenRow
               key={t.id}
               token={t}
@@ -85,6 +92,7 @@ export function ApiTokensCard() {
           ))}
         </ul>
       )}
+      <Pagination page={page} noun="tokens" onPage={setPageNo} />
 
       <p className="text-muted-foreground text-xs">
         Server address: <span className="font-mono">{endpoint}</span>. An assistant can see and change only your own
