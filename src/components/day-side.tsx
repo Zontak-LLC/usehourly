@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { addDays } from "@/lib/dates";
-import { DAY_COLORS } from "@/lib/day-colors";
+import { DAY_COLORS, TODAY_COLOR } from "@/lib/day-colors";
 import { formatDuration } from "@/lib/duration";
-import { brightLine } from "@/lib/line-color";
 
 type Entry = {
   date: string;
@@ -58,13 +57,11 @@ export function DaySide({
 
   return (
     <div className={row ? "grid gap-4 md:grid-cols-2" : "flex flex-1 flex-col gap-4"}>
-      <section aria-label="Today by project" className="rounded-3xl border bg-card p-4">
-        <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
-          By project
-        </h2>
-        {rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Your day fills in here as you add time.</p>
-        ) : (
+      {rows.length > 0 && (
+        <section aria-label="Today by project" className="rounded-3xl border bg-card p-4">
+          <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
+            By project
+          </h2>
           <ul className="flex flex-col gap-3">
             {rows.map((r) => (
               <li
@@ -79,7 +76,7 @@ export function DaySide({
                     className="block h-full rounded-full"
                     style={{
                       width: grown ? `${(r.minutes / longest) * 100}%` : "0%",
-                      ...brightLine(r.color),
+                      backgroundColor: "color-mix(in oklab, var(--foreground) 45%, transparent)",
                       transition: "width 1s cubic-bezier(.2,.8,.2,1)",
                     }}
                   />
@@ -87,8 +84,8 @@ export function DaySide({
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       <section aria-label="This week" className="flex flex-1 flex-col rounded-3xl border bg-card p-4 md:max-h-[26rem]">
         <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
@@ -113,13 +110,13 @@ export function DaySide({
                     className="block w-full rounded-sm"
                     style={{
                       height: grown ? `${Math.max(total ? 3 : 0, (total / scale) * 100)}%` : "0%",
-                      backgroundColor: DAY_COLORS[i],
+                      backgroundColor: isToday ? TODAY_COLOR : DAY_COLORS[i],
                       transition: "height .9s cubic-bezier(.2,.8,.2,1)",
                     }}
                   />
                 </span>
                 <span
-                  style={isToday ? { backgroundColor: DAY_COLORS[i] } : undefined}
+                  style={isToday ? { backgroundColor: TODAY_COLOR } : undefined}
                   className={`font-mono text-[11px] ${
                     isToday
                       ? "rounded-full px-1.5 font-semibold text-[#1b1405]"

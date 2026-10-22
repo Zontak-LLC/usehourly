@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 import { useMoney } from "@/components/currency-provider";
 import { Dial } from "@/components/day-dial";
-import { StatTile, TileRing } from "@/components/stat-tile";
-import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
+import { RANGE_INPUT_CLASS } from "@/components/range-input";
+import { StatTile } from "@/components/stat-tile";
 import { formatDecimalHours } from "@/lib/duration";
 
 import type { AnnualReport } from "./report-body";
@@ -91,19 +91,16 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
   );
 }
 
-/** Six stat tiles: each figure counts up and carries a ring for the share it is of the figure it comes from. */
+/** Six stat tiles: each figure counts up. */
 export function YearFigures({ data }: { data: AnnualReport }) {
   const money = useMoney();
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
   const t = data.totals;
-  const share = (part: number, whole: number) => (whole > 0 ? part / whole : 0);
   const items: {
     label: string;
     value: number;
     display: (n: number) => string;
     hint: string;
-    ring: number;
-    ringLabel: string;
     tone?: string;
   }[] = [
     {
@@ -111,57 +108,50 @@ export function YearFigures({ data }: { data: AnnualReport }) {
       value: t.minutes,
       display: hours,
       hint: plural(t.workedDays, "day"),
-      ring: share(t.minutes, 1800 * 60),
-      ringLabel: "Share of the yearly goal",
     },
     {
       label: "Billable hours",
       value: t.billableMinutes,
       display: hours,
       hint: t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it",
-      ring: share(t.billableMinutes, t.minutes),
-      ringLabel: "Share of hours that are billable",
     },
     {
       label: "Earned",
       value: t.earnedCents,
       display: money,
       hint: "billable hours × rate",
-      ring: share(data.invoices.totalCents, t.earnedCents),
-      ringLabel: "Share of earnings invoiced",
-      tone: "text-amber-700 dark:text-amber",
     },
     {
       label: "Invoiced",
       value: data.invoices.totalCents,
       display: money,
       hint: `${plural(data.invoices.count, "invoice")} issued`,
-      ring: share(data.received.totalCents, data.invoices.totalCents),
-      ringLabel: "Share of invoiced money received",
     },
     {
       label: "Received",
       value: data.received.totalCents,
       display: money,
       hint: `${plural(data.received.count, "payment")} · by paid date`,
-      ring: share(data.received.totalCents, data.invoices.totalCents),
-      ringLabel: "Share of invoiced money received",
     },
     {
       label: "Outstanding",
       value: data.outstanding.totalCents,
       display: money,
       hint: `${data.outstanding.count} unpaid at year end`,
-      ring: share(data.outstanding.totalCents, data.invoices.totalCents),
-      ringLabel: "Share of invoiced money still unpaid",
     },
   ];
   return (
-    <div className="grid h-full auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+    <div className="grid h-full auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3">
       {items.map((i) => (
-        <StatTile key={i.label} label={i.label} value={i.value} display={i.display} hint={i.hint} tone={i.tone} corner>
-          <TileRing fraction={i.ring} label={i.ringLabel} />
-        </StatTile>
+        <StatTile
+          key={i.label}
+          label={i.label}
+          value={i.value}
+          display={i.display}
+          hint={i.hint}
+          tone={i.tone}
+          corner
+        />
       ))}
     </div>
   );
@@ -174,6 +164,8 @@ export function YearChart({ data }: { data: AnnualReport }) {
   const values = data.months.map((m) => (mode === "earned" ? m.earnedCents : m.minutes));
   const max = Math.max(1, ...values);
   const read = (v: number) => (mode === "earned" ? money(v) : hours(v));
+  // Only the latest month with time is yellow; the rest are a soft grey.
+  const latest = values.reduce((at, v, i) => (v > 0 ? i : at), -1);
   return (
     <section
       aria-label="Monthly bars"
@@ -213,7 +205,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               <button
                 type="button"
                 aria-label={`${MONTH_NAMES[m.month - 1]}: ${read(v)}`}
-                className="w-full rounded-t-lg bg-gradient-to-t from-amber to-[color-mix(in_oklab,var(--amber)_55%,white)] outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80"
+                className={`w-full rounded-t-lg outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80 ${i === latest ? "bg-amber" : "bg-foreground/30"}`}
                 style={{ height: `${pct}%`, opacity: v ? 1 : 0.18 }}
               />
             </li>

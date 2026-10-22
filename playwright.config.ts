@@ -22,7 +22,7 @@ const SERIAL_SPECS = /support-notice\.spec\.ts$/;
 // testIgnore replaces the top-level one, so it is listed here too.
 const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-control/])];
 const PHONE_SPECS =
-  /(first-day|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal)\.spec\.ts$/;
+  /(first-day|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal|global-search)\.spec\.ts$/;
 
 // A CircleCI container is about twice as slow as a laptop (2 workers, a cold app that compiles each page the first time),
 // so the waits are doubled there. A real regression still fails; a slow machine does not.
@@ -48,6 +48,9 @@ export default defineConfig({
   // they never share data). Override with E2E_WORKERS. The one spec that flips a global setting runs first, alone
   // (the "serial" project below).
   fullyParallel: false,
+  // A slow shared CI machine now and then times a test out that passes alone (issue #197). One retry there; a test that
+  // needs it is listed as "flaky" in the report, so it is never hidden. Locally a failure is a failure.
+  retries: process.env.CIRCLECI ? 1 : 0,
   workers: Number(process.env.E2E_WORKERS ?? (process.env.CIRCLECI ? 2 : process.env.CI ? 3 : 4)),
   timeout: 180_000,
   expect: { timeout: 15_000 * SLOW },

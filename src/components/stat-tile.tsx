@@ -77,7 +77,7 @@ export function StatTile({
           </p>
         )}
         <dd
-          className={`order-1 font-display font-extrabold ${corner ? "text-3xl" : "truncate text-4xl"} tabular-nums leading-none ${tone}`}
+          className={`order-1 font-display font-extrabold ${corner ? "text-2xl sm:text-3xl" : "truncate text-4xl"} tabular-nums leading-none ${tone}`}
         >
           {display(value)}
         </dd>

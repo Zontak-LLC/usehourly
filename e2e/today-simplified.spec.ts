@@ -24,10 +24,13 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     const add = page.getByRole("button", { name: /^Log time/ });
     await expect(add).toBeDisabled();
     await expect(page.getByText("Type a time or tap one (tap again to add more), then add it.")).toBeVisible();
-    // not a grey slab: the background is transparent while it waits
-    expect(await add.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+    // while it waits it is a plain grey (not brown, not amber); it turns the one amber once a time is typed
+    const background = () => add.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const waiting = await background();
+    expect(waiting).not.toMatch(/^rgb\((23\d|24\d), (1[3-7]\d)/); // not an amber
     await page.getByRole("button", { name: "1 hour", exact: true }).click();
     await expect(add).toBeEnabled();
+    await expect.poll(background).not.toBe(waiting); // it comes alive: the amber (light and dark themes differ a little)
     await add.click();
     await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText(
       "1:00 this day · 1:00 this week",

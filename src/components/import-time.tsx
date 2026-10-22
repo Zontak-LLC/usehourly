@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 
-import { FileUp } from "lucide-react";
+import { FileUp, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-import { ImportScene } from "@/components/import-scene";
+import { DataPanelHead } from "@/components/data-panel-head";
 import { Button } from "@/components/ui/button";
 import { type DateOrder, IMPORT_CHUNK, type ImportFormat, MAX_IMPORT_BYTES, readTimeCsv } from "@/lib/import-csv";
 import { trpc } from "@/lib/trpc";
@@ -105,14 +105,12 @@ export function ImportTime() {
       aria-label="Import history"
       className="grid gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
     >
-      <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr] sm:gap-8">
-        <ImportScene className="mx-auto w-44 sm:w-56" />
+      <div className="grid gap-3">
+        <DataPanelHead icon={Upload} title="Bring your history over.">
+          Import a CSV export from Toggl, Clockify or anywhere else. Clients and projects are created for you, and
+          importing the same file twice never doubles anything.
+        </DataPanelHead>
         <div className="grid gap-3">
-          <h3 className="font-bold font-display text-2xl leading-tight">Bring your history over.</h3>
-          <p className="max-w-xl text-foreground/75">
-            Import a CSV export from Toggl, Clockify or anywhere else. Clients and projects are created for you, and
-            importing the same file twice never doubles anything.
-          </p>
           <details className="text-sm">
             <summary className="cursor-pointer text-muted-foreground">How to export the file</summary>
             <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted-foreground">

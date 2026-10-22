@@ -19,12 +19,10 @@ const serverEntries = async (page: import("@playwright/test").Page) => {
 test("entries added, edited and deleted offline reach the server once the connection returns", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/account#data");
-  await page.getByRole("button", { name: /This device/ }).click(); // the data tiles: one panel at a time
   await expect(page.getByText("Keep a copy on this device (experimental)")).toBeVisible();
   await page.getByRole("button", { name: "Turn on" }).click(); // reloads the page with the copy switched on
   await page.waitForLoadState("load");
   await expect(page.locator("html")).toHaveAttribute("data-local-first", "ready", { timeout: 20_000 });
-  await page.getByRole("button", { name: /This device/ }).click(); // the page reloaded: the first tile is open again
   await expect(page.getByText("Everything is sent.")).toBeVisible({ timeout: 20_000 });
 
   await page.goto("/dashboard/today");

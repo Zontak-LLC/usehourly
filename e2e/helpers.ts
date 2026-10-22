@@ -119,7 +119,9 @@ export type Mail = {
   headers?: Record<string, string>;
 };
 
-export const clearMail = () => fetch(`${MAIL}/__emails`, { method: "DELETE" });
+/** Forgets one address's messages (never everyone's: specs run side by side and share the mailbox). */
+export const clearMail = (address: string) =>
+  fetch(`${MAIL}/__emails?to=${encodeURIComponent(address)}`, { method: "DELETE" });
 
 /** The newest message to `address` (optionally with a subject matching `subject`), waiting a few seconds for it. */
 export async function mailTo(address: string, subject?: RegExp): Promise<Mail> {

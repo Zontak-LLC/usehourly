@@ -29,7 +29,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   const count = (job: keyof typeof actions, n = 1) => {
     actions[job] += n;
   };
-  await clearMail();
 
   await test.step("sign up from the landing page", async () => {
     await page.goto("/");
@@ -178,7 +177,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await audit("account");
     await shot("account");
     // Sign-up already sent one confirmation link; asking again replaces it, so wait for the NEW message only.
-    await clearMail();
+    await clearMail(user.email);
     await page.getByRole("button", { name: /send me a confirmation email/i }).click();
     const mail = await mailTo(user.email, /Confirm your email/);
     expect(mail.html).toContain("<!doctype html>"); // styled version
@@ -285,7 +284,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("share the week for sign-off, the client approves, the owner is emailed", async () => {
-    await clearMail();
     await page.goto("/dashboard/week");
     // The toolbar is the filter, one Share & export menu and the date arrows (usability pass #38).
     const toolbar = await page.getByTestId("timesheet-toolbar").locator("button:visible, select:visible").count();
@@ -323,7 +321,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.getByRole("button", { name: "Save client" }).click();
     await expect(page.getByText("Client updated.")).toBeVisible(); // wait for the save before leaving the page
     await page.goto("/dashboard/invoices");
-    await clearMail();
     await page.getByRole("button", { name: /^Send INV-/ }).click();
     await expect(page.getByText("Loading…")).toBeHidden();
     await shot("email-panel");
@@ -384,7 +381,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
     await page.goto("/dashboard/account#data");
-    await page.getByRole("button", { name: /Accounting app/ }).click(); // the data tiles: one panel at a time
     await expect(page.getByRole("region", { name: "Send invoices to your accounting app" })).toBeVisible();
     await shot("accounting-export");
     await audit("account, accounting export");
@@ -417,7 +413,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("delete the account; the details no longer work", async () => {
     await page.goto("/dashboard/account#data");
-    await page.getByRole("button", { name: /^Delete account/ }).click(); // the data tiles: one panel at a time
     await page.getByRole("button", { name: /Delete my account/ }).click();
     await page.getByLabel(/Type your password/).fill(user.password);
     await page.getByRole("button", { name: "Delete everything" }).click();

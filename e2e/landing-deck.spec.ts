@@ -6,11 +6,19 @@ test.describe("landing screens deck", () => {
     test.skip(isMobile, "the caption list is for wide screens; a phone shows one caption that follows the scroll");
     await page.goto("/");
     const section = page.locator("#see-it");
-    await section.scrollIntoViewIfNeeded();
+    await section.waitFor();
     const list = page.getByRole("list", { name: "Screens of the app" });
-    await expect(list.getByRole("button", { name: /Log a day in seconds/ })).toHaveAttribute("aria-current", "step", {
-      timeout: 15_000,
-    });
+    // Go to the very top of the section (scrollIntoViewIfNeeded can stop part way down the tall track, which
+    // opens a later screen), then the first screen is the open one.
+    await expect(async () => {
+      await page.evaluate(() => {
+        const el = document.querySelector("#see-it") as HTMLElement;
+        window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY);
+      });
+      await expect(list.getByRole("button", { name: /Log a day in seconds/ })).toHaveAttribute("aria-current", "step", {
+        timeout: 3_000,
+      });
+    }).toPass({ timeout: 30_000 });
 
     // Scroll a little way into the tall track: the second screen comes to the front. A busy machine can drop the
     // first scroll event, so the scroll is repeated until the screen flips.

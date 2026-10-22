@@ -1,7 +1,7 @@
 "use client";
 
-import { INVOICE_COLORS } from "@/lib/invoice-colors";
 import { type CurrencyTotals, formatMoney } from "@/lib/money";
+import { PALETTE } from "@/lib/palette";
 
 /** One small chip: a coloured dot, the amount, and what it is. */
 function Chip({ colour, value, label }: { colour: string; value: string; label: string }) {
@@ -29,9 +29,13 @@ export function InvoiceTotals({ groups, filtering }: { groups: CurrencyTotals[];
               {count} invoice{count === 1 ? "" : "s"}
               {filtering ? " (filtered)" : ""}
             </span>
-            <Chip colour="var(--amber)" value={money(total)} label="invoiced" />
-            <Chip colour={INVOICE_COLORS.waiting} value={money(unpaid)} label="unpaid" />
-            <Chip colour={INVOICE_COLORS.paid} value={money(total - unpaid)} label="paid" />
+            <Chip
+              colour="color-mix(in oklab, var(--foreground) 45%, transparent)"
+              value={money(total)}
+              label="invoiced"
+            />
+            <Chip colour={PALETTE.money.waiting} value={money(unpaid)} label="unpaid" />
+            <Chip colour={PALETTE.money.paid} value={money(total - unpaid)} label="paid" />
           </div>
         );
       })}

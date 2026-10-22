@@ -6,9 +6,9 @@ import type { AppRouter } from "@/server/routers/_app";
 type Outputs = inferRouterOutputs<AppRouter>;
 
 export const SECTIONS = [
-  { id: "account", label: "Your account" },
-  { id: "invoices", label: "Invoices" },
+  { id: "account", label: "Profile" },
   { id: "data", label: "Your data" },
+  { id: "invoices", label: "Invoices" },
   { id: "ai", label: "AI assistants" },
 ] as const;
 

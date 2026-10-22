@@ -29,10 +29,10 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
   const numbers = () => card.getByText(/^INV-\d{4}-\d{3}$/);
 
   if (info.project.name === "phone") {
-    const total = Number((await card.getByText(/^\d+ invoices?/).innerText()).match(/^(\d+)/)?.[1]);
+    const pager = card.getByRole("navigation", { name: "invoices pages" });
+    const total = Number((await pager.innerText()).match(/of (\d+) invoices/)?.[1]);
     expect(total).toBe(11);
     await expect(numbers()).toHaveCount(3);
-    const pager = card.getByRole("navigation", { name: "invoices pages" });
     await expect(pager).toContainText(`1 to 3 of ${total} invoices`);
     await expect(pager.getByRole("button", { name: "Previous" })).toBeDisabled();
     const firstPage = await numbers().allInnerTexts();

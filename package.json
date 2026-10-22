@@ -37,7 +37,7 @@
     "mcp:catalog": "UPDATE_MCP_CATALOG=1 vitest run src/__tests__/mcp-bridge.test.ts",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "knip": "knip",
-    "check:rules": "node scripts/check-rules.mjs",
+    "check:rules": "node scripts/check-rules.mjs && node scripts/check-colours.mjs",
     "dupes": "jscpd",
     "knip:blocking": "knip --include files,dependencies,unlisted --no-progress",
     "prepare": "git config core.hooksPath .githooks || true",

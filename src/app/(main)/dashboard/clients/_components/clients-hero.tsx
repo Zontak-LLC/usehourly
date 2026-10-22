@@ -3,6 +3,7 @@
 import { Dial } from "@/components/day-dial";
 import { StatTile, TileRing } from "@/components/stat-tile";
 import { formatDuration } from "@/lib/duration";
+import { PALETTE } from "@/lib/palette";
 
 import type { ClientRow, ProjectTotals } from "./client-types";
 
@@ -11,7 +12,7 @@ const MAX_TILES = 4;
 
 /** This month as a dial, beside one tile per client (biggest first): its hours, its share of the month and its projects. */
 /** The month dial runs from a deep ultramarine through violet and pink to a pale lilac, dark to light (the day dial on Today keeps the brand blend). */
-const MONTH_RING = ["#2230c4", "#7a4dff", "#ff6fb4", "#f6e3ff"] as const;
+const MONTH_RING = PALETTE.monthDial;
 
 export function ClientsHero({
   clients,
@@ -37,7 +38,7 @@ export function ClientsHero({
     <section
       aria-label="This month"
       data-headerless="the month at a glance, above the list"
-      className="grid items-stretch gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]"
+      className="grid items-stretch gap-4 max-md:hidden md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]"
     >
       <Dial
         label="This month"
@@ -55,7 +56,6 @@ export function ClientsHero({
             label={`${c.projects.length} project${c.projects.length === 1 ? "" : "s"} · this month`}
             value={minutes}
             display={formatDuration}
-            accent={c.color ?? "var(--amber)"}
             title={
               <>
                 <span
@@ -67,11 +67,7 @@ export function ClientsHero({
               </>
             }
           >
-            <TileRing
-              fraction={monthMinutes ? minutes / monthMinutes : 0}
-              label={`${c.name}'s share of the month`}
-              colour={c.color ?? MONTH_RING[0]}
-            />
+            <TileRing fraction={monthMinutes ? minutes / monthMinutes : 0} label={`${c.name}'s share of the month`} />
           </StatTile>
         ))}
         {rest.length > 0 && (
@@ -84,7 +80,6 @@ export function ClientsHero({
             <TileRing
               fraction={monthMinutes ? restMinutes / monthMinutes : 0}
               label="Share of the month from the other clients"
-              colour={MONTH_RING[0]}
             />
           </StatTile>
         )}

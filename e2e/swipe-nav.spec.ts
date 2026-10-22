@@ -125,6 +125,7 @@ test("on Month a swipe on the calendar moves a month", async ({ page }, info) =>
   await swipe(page, [w - 40, y], [40, y]);
   await expect(title).not.toHaveText(thisMonth);
   const nextMonth = await title.innerText();
+  await expect(title).toHaveText(nextMonth); // the move is finished before the swipe back
   await settle(page);
   await swipe(page, [40, y], [w - 40, y]);
   await expect(title).toHaveText(thisMonth);

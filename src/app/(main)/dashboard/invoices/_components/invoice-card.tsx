@@ -9,8 +9,8 @@ import { MoreMenu } from "@/components/more-menu";
 import { SendInvoicePanel } from "@/components/send-invoice-panel";
 import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
-import { INVOICE_COLORS } from "@/lib/invoice-colors";
 import { formatMoney } from "@/lib/money";
+import { PALETTE } from "@/lib/palette";
 
 import { DeleteInvoiceConfirm } from "./delete-invoice-dialog";
 import type { InvoiceRow } from "./invoice-types";
@@ -45,9 +45,9 @@ function InvoiceStatus({ invoice: i, today }: { invoice: InvoiceRow; today: stri
 
 /** The colour of the stripe at the row's left edge: teal paid, coral overdue, violet waiting (a quiet hint, the words say it too). */
 function stripeColour(i: InvoiceRow, today: string | null) {
-  if (i.paid_date) return INVOICE_COLORS.paid;
-  if (today && i.due_date && i.due_date < today) return INVOICE_COLORS.late;
-  return INVOICE_COLORS.waiting;
+  if (i.paid_date) return PALETTE.money.paid;
+  if (today && i.due_date && i.due_date < today) return PALETTE.money.late;
+  return PALETTE.money.waiting;
 }
 
 export type InvoiceActionHandlers = {
@@ -144,7 +144,11 @@ export function InvoiceLine({
   return (
     <li
       className="border-t first:border-t-0"
-      style={{ boxShadow: `inset 3px 0 0 0 color-mix(in oklab, ${stripeColour(i, today)} 70%, transparent)` }}
+      style={
+        stripeColour(i, today) === PALETTE.money.late
+          ? { boxShadow: `inset 3px 0 0 0 color-mix(in oklab, ${PALETTE.money.late} 70%, transparent)` }
+          : undefined
+      }
     >
       <div className={`${INVOICE_COLS} items-center gap-x-3 gap-y-1 px-3 py-3 text-sm sm:px-4`}>
         <div className="min-w-0 sm:col-start-1 sm:row-start-1">

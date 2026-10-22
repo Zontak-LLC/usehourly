@@ -9,7 +9,7 @@ test("Email me this sends the year summary to your own confirmed address", async
 
   await test.step("an unconfirmed address is told to confirm first, and nothing is sent", async () => {
     await page.goto("/dashboard/report");
-    await clearMail();
+    await clearMail(user.email);
     await page.getByRole("button", { name: "Email me this" }).click();
     await expect(page.getByText(/Confirm your email address first/)).toBeVisible();
   });
@@ -19,7 +19,7 @@ test("Email me this sends the year summary to your own confirmed address", async
       `UPDATE auth_users SET email_verified_at = strftime('%Y-%m-%dT%H:%M:%f+00:00','now') WHERE email='${user.email}'`,
     );
     await page.reload();
-    await clearMail();
+    await clearMail(user.email);
     await page.getByRole("button", { name: "Email me this" }).click();
     await expect(page.getByText(`Sent to ${user.email}.`)).toBeVisible();
     const mail = await mailTo(user.email, /year summary/);

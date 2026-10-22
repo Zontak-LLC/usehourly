@@ -522,3 +522,54 @@ describe("managing multiple projects", () => {
     expect(prisma.project.findFirst).not.toHaveBeenCalled();
   });
 });
+
+/** The global search (top bar) looks through the signed-in account's own entries only. */
+describe("entry search journey", () => {
+  const rows = [
+    { id: "e2", user_id: "u1", project_id: "p1", date: "2026-10-19", minutes: 120, note: "Invoice maths for Acme" },
+    { id: "e1", user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 30, note: "Invoice layout" },
+  ];
+  const project = { id: "p1", name: "Website", client: { name: "Acme" } };
+
+  it("finds entries by every typed word, newest first, with their project and client, for the caller only", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findMany.mockResolvedValue(rows as never);
+    prisma.project.findMany.mockResolvedValue([project] as never);
+    const found = await asCaller(prisma, "u1").entry.search({ q: "  invoice  maths " });
+    expect(found).toEqual([
+      {
+        id: "e2",
+        date: "2026-10-19",
+        minutes: 120,
+        note: "Invoice maths for Acme",
+        project: "Website",
+        client: "Acme",
+      },
+      { id: "e1", date: "2026-10-12", minutes: 30, note: "Invoice layout", project: "Website", client: "Acme" },
+    ]);
+    // the account filter is the isolation boundary, on the entries AND on the projects
+    expect(prisma.timeEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { user_id: "u1", AND: [{ note: { contains: "invoice" } }, { note: { contains: "maths" } }] },
+        take: 8,
+      }),
+    );
+    expect(prisma.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { user_id: "u1", id: { in: ["p1"] } } }),
+    );
+  });
+
+  it("returns nothing without asking for projects when no entry matches", async () => {
+    const prisma = mockPrisma();
+    expect(await asCaller(prisma, "u1").entry.search({ q: "zzzz" })).toEqual([]);
+    expect(prisma.project.findMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses a signed-out caller and a search that is too short or too long (and never reads)", async () => {
+    const prisma = mockPrisma();
+    await expect(asCaller(prisma, null).entry.search({ q: "invoice" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(asCaller(prisma, "u1").entry.search({ q: "a" })).rejects.toBeInstanceOf(TRPCError);
+    await expect(asCaller(prisma, "u1").entry.search({ q: "x".repeat(101) })).rejects.toBeInstanceOf(TRPCError);
+    expect(prisma.timeEntry.findMany).not.toHaveBeenCalled();
+  });
+});

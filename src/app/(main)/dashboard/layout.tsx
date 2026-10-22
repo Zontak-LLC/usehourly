@@ -7,6 +7,7 @@ import { cn } from "cn";
 
 import { CurrencyProvider } from "@/components/currency-provider";
 import { DemoBanner } from "@/components/demo-banner";
+import { GlobalSearch } from "@/components/global-search";
 import { GoogleCalendarProvider } from "@/components/google-calendar-config";
 import { GuideKeeper } from "@/components/guide-keeper";
 import { LocalFirst } from "@/components/local-first";
@@ -108,6 +109,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                   </div>
                   <MobileNav isAdmin={isAdmin} />
                   <div className="flex items-center justify-end gap-2 lg:flex-1">
+                    <GlobalSearch />
                     <GuideButton />
                     <LayoutControls />
                     <UserMenu user={user} />

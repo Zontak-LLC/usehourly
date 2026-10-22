@@ -12,7 +12,28 @@ Look at the real thing first: the pages are the reference, this file is the expl
 3. **UX is the product.** Logging a day takes seconds; every screen is judged on how few actions a job takes **[checked: action budgets in the first-day test]**.
 4. **Works for everyone:** keyboard, screen reader, phone, offline, dark mode.
 
-## Colour
+## The main priority: simple and intuitive (2026-10-22, from the owner)
+**A person must understand a screen at once and finish the job without help. That comes before anything that looks nice.** Colour is a small extra. Rules that follow: form or action first, explanation second and short; no decoration that pushes the job down (big illustrations, looping animations); controls look like what they are (tabs are flat with an underline, buttons are buttons); no control is hidden or cut off at any width. **Judge every screen at three widths: phone 390, half a browser about 720, wide 1280, in light and dark.** Review checklist: What is this page for? What is the one main action, and is it the most visible thing? Is anything cut off, wrapped badly or hidden? Could a first-time user get it wrong? Could this be shorter or greyer?
+
+## Colour legend (the one list; change it here first)
+Yellow is small on purpose. Colour is for dials, the main button, "now", and money. Everything else is neutral. The named colours live in `src/lib/palette.ts`; screens use them from there or use theme tokens (`bg-amber`, `text-foreground`, `var(--muted)`). **A file may not gain hard-coded hex colours: `scripts/check-colours.mjs` (part of `npm run ci`) fails, and `scripts/colour-baseline.json` may only ever go down.** To add a colour: add it to `palette.ts` AND to this table, in the same pull request.
+
+| Colour | Where | Means |
+|---|---|---|
+| **Amber** `PALETTE.accent` | the one solid button (Log time, New client...), today (week bar, Month day, Today pill), the open Account tab, the latest month on the Year chart, focus | "act here" or "now" |
+| **Brand blend** (amber, coral, pink, violet) `PALETTE.brandBlend` | Today's day dial, the goal meters, Today's timesheet line, the Month "This month" bar, the home page | time and progress |
+| **Dark to light** (ultramarine, violet, pink, lilac) `PALETTE.monthDial` | the Clients month dial only | this month's share |
+| **Teal** `PALETTE.money.paid` | Invoices: paid ring, bar, Paid pill | money received |
+| **Violet** `PALETTE.money.waiting` | Invoices: waiting part of the bar, Unpaid pill | money expected |
+| **Coral** `PALETTE.money.late` | Invoices: late, the overdue row stripe | money overdue |
+| **Soft grey** `PALETTE.soft` | every other bar and line (week bars, Month day lines, By project bars, Year bars) | "has time", nothing more |
+| **Project colour** (the user's own) | a small dot beside a project or client name, never a bar | which project |
+| **Green** (`success`) | check icons and the word Paid | done, confirmed |
+| **Red** (`destructive`) | delete, stop, errors | remove, problem |
+
+Rules: **no rainbow of weekdays**, no per-tab colours, no coloured stat-tile tops or rings, and nothing is yellow because it "needs to stand out". Check a new screen by asking "could this be grey?". Money colours are used for money only.
+
+## Colour (older notes, still valid where the legend is silent)
 - **Accent (the one amber, the hour hand; there are no colour presets since 2026-10-22):** only for **the one main button** (`variant="primary"`), **the current page** (tab underline, side-menu bar) and focus. Other presets (Sunshine, Mint, Coral, Sky, Lilac, Azure, Cream, Mono) change the accent only; Azure also sets cool-grey surfaces.
 - **One solid button per screen** **[checked: `auditPage`]**. Everything else is the soft tint (`default`) or an outline.
 - **Status colours carry meaning only:** green = done, paid, confirmed; red = remove, stop, problem; yellow = warning. Icons are neutral grey otherwise; the status colours are applied to icons by class in `globals.css`. A check icon on a dark or accent surface sets its own colour.

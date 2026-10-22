@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { DeleteScene } from "@/components/delete-scene";
+import { DataPanelHead } from "@/components/data-panel-head";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,15 +33,13 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
   return (
     <section
       aria-label="Delete account"
-      className="grid items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-destructive/40 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-6"
+      className="grid gap-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-destructive/40 sm:p-6"
     >
-      <DeleteScene className="mx-auto w-40 sm:w-48" />
       <div className="grid gap-3">
-        <h3 className="font-bold font-display text-2xl leading-tight">Delete my account</h3>
-        <p className="max-w-xl text-foreground/75">
+        <DataPanelHead icon={Trash2} title="Delete my account" danger>
           This removes your clients, projects, time entries, invoices and settings for good, and cannot be undone. Use
           &ldquo;Export&rdquo; above first if you want a copy.
-        </p>
+        </DataPanelHead>
         {open ? (
           <form method="post" onSubmit={submit} className="flex flex-col gap-3">
             <div className="grid gap-1.5">

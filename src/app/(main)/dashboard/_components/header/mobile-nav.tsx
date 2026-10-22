@@ -32,14 +32,14 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const items = MAIN.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
   const more = [...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])];
   const tab =
-    "flex items-center justify-center gap-0.5 rounded-full font-medium transition-colors max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:text-xs sm:gap-2 sm:px-4 sm:py-1.5 sm:text-sm";
+    "flex items-center justify-center gap-0.5 whitespace-nowrap rounded-full font-medium transition-colors max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:text-xs sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm lg:gap-2 lg:px-4";
 
   return (
     <nav
       aria-label="Main pages"
       className="z-40 max-sm:fixed max-sm:inset-x-3 max-sm:bottom-[calc(0.75rem+env(safe-area-inset-bottom))] max-sm:rounded-2xl max-sm:border max-sm:bg-card max-sm:p-1 max-sm:shadow-[var(--shadow-sheet)] sm:order-last sm:w-full lg:order-none lg:w-auto lg:[html[data-nav-position=left]_&]:hidden"
     >
-      <div className="flex gap-1 sm:mx-auto sm:w-fit sm:rounded-full sm:border sm:bg-muted sm:p-1">
+      <div className="flex gap-1 sm:mx-auto sm:w-fit sm:max-w-full sm:overflow-x-auto sm:rounded-full sm:border sm:bg-muted sm:p-1 sm:[scrollbar-width:none]">
         {items.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`);
           return (
@@ -53,7 +53,7 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <item.icon className="size-5 sm:size-4" aria-hidden />
+              <item.icon className="size-5 sm:max-lg:hidden sm:size-4" aria-hidden />
               {item.short ?? item.title}
             </Link>
           );
@@ -61,7 +61,7 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button type="button" className={`${tab} text-muted-foreground aria-expanded:text-foreground`}>
-              <Menu className="size-5 sm:size-4" aria-hidden />
+              <Menu className="size-5 sm:max-lg:hidden sm:size-4" aria-hidden />
               More
             </button>
           </DropdownMenuTrigger>

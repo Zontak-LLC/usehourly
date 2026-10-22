@@ -121,7 +121,12 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
           <FormStep n={3} title="Your logo">
             <LogoPicker value={logo} onPick={pickLogo} onRemove={() => setLogo(null)} name="business logo" />
           </FormStep>
-          <Button type="submit" variant="primary" className="self-start" disabled={updateBusiness.isPending}>
+          <Button
+            type="submit"
+            variant={me.is_demo ? "default" : "primary"}
+            className="self-start"
+            disabled={updateBusiness.isPending}
+          >
             Save business details
           </Button>
         </div>

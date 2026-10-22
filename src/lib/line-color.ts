@@ -1,3 +1,5 @@
+import { PALETTE } from "@/lib/palette";
+
 /**
  * A project's colour as a bright line: a gradient from the colour to a lighter shade of it, with a soft glow. It is used on
  * the thin "by project" bars of the Today page so they catch the eye.
@@ -8,7 +10,7 @@ export const brightLine = (color: string) => ({
 });
 
 /** The brand blend (amber, coral, pink, violet) as one gradient, the same as the home page headline. */
-export const BRAND_BLEND = "linear-gradient(90deg, #F5A524, #ff7a45, #ec5f9a, #8A6CFF)";
+export const BRAND_BLEND = `linear-gradient(90deg, ${PALETTE.brandBlend.join(", ")})`;
 
 /**
  * The slice of ONE shared brand-blend gradient that belongs to a piece of a bar: the piece starts `start` (0 to 1) of the
