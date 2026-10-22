@@ -19,32 +19,25 @@ import { PaidPanel } from "./paid-panel";
 const dateFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
 const fmt = (iso: string) => dateFmt.format(fromISODate(iso));
 
+/** The status as a small tinted pill, with the due date underneath instead of wrapping beside it. */
 function InvoiceStatus({ invoice: i, today }: { invoice: InvoiceRow; today: string | null }) {
-  if (i.paid_date) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-success">
-        <CircleCheck aria-hidden className="size-4 shrink-0" />
-        Paid {fmt(i.paid_date)}
-      </span>
-    );
-  }
-  if (today && i.due_date && i.due_date < today) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-destructive">
-        <CircleAlert aria-hidden className="size-4 shrink-0" />
-        Overdue · <strong className="font-semibold">due {fmt(i.due_date)}</strong>
-      </span>
-    );
-  }
+  const late = Boolean(today && i.due_date && i.due_date < today);
+  const colour = stripeColour(i, today);
+  const word = i.paid_date ? `Paid ${fmt(i.paid_date)}` : late ? "Overdue" : "Unpaid";
+  const Icon = i.paid_date ? CircleCheck : CircleAlert;
   return (
-    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-      <CircleAlert aria-hidden className="size-4 shrink-0 text-destructive" />
-      Unpaid
-      {i.due_date && (
-        <>
-          {" "}
-          · <strong className="font-semibold text-foreground">due {fmt(i.due_date)}</strong>
-        </>
+    <span className="flex min-w-0 flex-col items-start gap-0.5">
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-foreground text-xs"
+        style={{ background: `color-mix(in oklab, ${colour} 18%, transparent)` }}
+      >
+        <Icon aria-hidden className="size-3.5 shrink-0" style={{ color: colour }} />
+        {word}
+      </span>
+      {!i.paid_date && i.due_date && (
+        <span className="text-muted-foreground text-xs">
+          due <strong className="font-semibold text-foreground">{fmt(i.due_date)}</strong>
+        </span>
       )}
     </span>
   );
