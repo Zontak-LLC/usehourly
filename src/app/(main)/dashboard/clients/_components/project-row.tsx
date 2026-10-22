@@ -6,6 +6,7 @@ import { Archive, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
 import { useCurrency, useMoney } from "@/components/currency-provider";
+import { FormStep } from "@/components/form-step";
 import { GuideLink } from "@/components/guide-link";
 import { IconAction } from "@/components/icon-action";
 import { LogoPicker } from "@/components/logo-picker";
@@ -13,6 +14,7 @@ import { MoreMenu } from "@/components/more-menu";
 import { ProjectMark } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ValueSlider } from "@/components/value-slider";
 import { type BudgetStatus, budgetInputValue } from "@/lib/budget";
@@ -123,111 +125,149 @@ export function ProjectEditCard({
   const [unit, setUnit] = useState<string>(p.budget_unit ?? "dollars");
   const hours = unit === "hours";
   return (
-    <li className="px-3 py-4">
-      <form method="post" onSubmit={(e) => editing.saveProject(e, p.id)} className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Input name="name" defaultValue={p.name} required className="w-56" autoFocus aria-label="Project name" />
-          <NativeSelect name="clientId" defaultValue={p.client_id} aria-label="Client" className="w-44">
-            {clients?.map((cl) => (
-              <option key={cl.id} value={cl.id}>
-                {cl.name}
-              </option>
-            ))}
-          </NativeSelect>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="checkbox" name="billable" defaultChecked={p.billable} className="size-4" /> Billable
-          </label>
-        </div>
+    <li className="px-1 py-3 sm:px-3">
+      <form
+        method="post"
+        onSubmit={(e) => editing.saveProject(e, p.id)}
+        className="flex flex-col gap-7 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 sm:p-6"
+      >
+        <header className="flex items-center gap-3">
+          <ProjectMark
+            projectId={p.id}
+            color={clients?.find((cl) => cl.id === p.client_id)?.color ?? "#6366f1"}
+            logos={logos}
+            size={36}
+          />
+          <div className="min-w-0">
+            <h3 className="truncate font-bold font-display text-xl leading-tight">Edit {p.name}</h3>
+            <p className="text-foreground/75 text-sm">Change the name, the rate, a budget or the picture.</p>
+          </div>
+        </header>
 
-        <div className="grid gap-1">
-          <div className="flex items-end justify-between gap-3">
-            <span className="font-medium text-sm">Hourly rate</span>
-            <span className="font-display font-extrabold text-2xl tabular-nums">
-              {currencySymbol(currency)}
-              {rate ? Number(rate) : 0}
-              <span className="font-normal text-muted-foreground text-sm">/h</span>
-            </span>
+        <FormStep n={1} title="What is it?">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto] sm:items-end">
+            <div className="grid gap-1.5">
+              <Label htmlFor={`pn-${p.id}`}>Project name</Label>
+              <Input id={`pn-${p.id}`} name="name" defaultValue={p.name} required autoFocus />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`pc-${p.id}`}>Client</Label>
+              <NativeSelect id={`pc-${p.id}`} name="clientId" defaultValue={p.client_id}>
+                {clients?.map((cl) => (
+                  <option key={cl.id} value={cl.id}>
+                    {cl.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl bg-muted px-4 ring-1 ring-foreground/10">
+              <input
+                type="checkbox"
+                name="billable"
+                defaultChecked={p.billable}
+                className="size-5 accent-[var(--amber)]"
+              />
+              <span className="text-sm">
+                <span className="font-semibold">Billable</span>
+                <span className="block text-foreground/70 text-xs">Counts on invoices</span>
+              </span>
+            </label>
           </div>
-          <div className="flex items-center gap-3">
-            <ValueSlider
-              value={Number(rate) || 0}
-              min={0}
-              max={300}
-              step={5}
-              label="Hourly rate slider"
-              valueText={`${rate || 0} per hour`}
-              onChange={(v) => setRate(v ? v.toFixed(2) : "")}
-            />
-            <Input
-              name="rate"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              value={rate}
-              // No rate yet is an empty box with a hint (a real "0.00" turned a typed 95 into 0.0095); a click selects what is there.
-              placeholder="0.00"
-              onChange={(e) => setRate(e.target.value)}
-              onFocus={(e) => e.currentTarget.select()}
-              className="w-24 font-mono"
-              aria-label="Rate per hour"
-            />
-          </div>
-        </div>
+        </FormStep>
 
-        <fieldset className="grid gap-1">
-          <legend className="sr-only">Budget</legend>
-          <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-1 font-medium text-sm">
-              Budget <GuideLink topic="budgets" label="project budgets" />
-            </span>
-            <span className="font-display font-extrabold text-2xl tabular-nums">
-              {budget ? `${hours ? "" : currencySymbol(currency)}${Number(budget)}${hours ? " h" : ""}` : "none"}
-            </span>
+        <FormStep n={2} title="What do you charge?">
+          <div className="grid gap-1">
+            <div className="flex items-end justify-between gap-3">
+              <span className="font-medium text-sm">Hourly rate</span>
+              <span className="font-display font-extrabold text-2xl tabular-nums">
+                {currencySymbol(currency)}
+                {rate ? Number(rate) : 0}
+                <span className="font-normal text-muted-foreground text-sm">/h</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <ValueSlider
+                value={Number(rate) || 0}
+                min={0}
+                max={300}
+                step={5}
+                label="Hourly rate slider"
+                valueText={`${rate || 0} per hour`}
+                onChange={(v) => setRate(v ? v.toFixed(2) : "")}
+              />
+              <Input
+                name="rate"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={rate}
+                // No rate yet is an empty box with a hint (a real "0.00" turned a typed 95 into 0.0095); a click selects what is there.
+                placeholder="0.00"
+                onChange={(e) => setRate(e.target.value)}
+                onFocus={(e) => e.currentTarget.select()}
+                className="w-24 font-mono"
+                aria-label="Rate per hour"
+              />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <ValueSlider
-              value={Number(budget) || 0}
-              min={0}
-              max={hours ? 200 : 10000}
-              step={hours ? 5 : 100}
-              label="Budget slider"
-              valueText={budget ? `${budget} ${hours ? "hours" : currency}` : "no budget"}
-              onChange={(v) => setBudget(v ? String(v) : "")}
-            />
-            <Input
-              name="budgetAmount"
-              inputMode="decimal"
-              placeholder="none"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              className="w-24 font-mono"
-              aria-label="Budget amount"
-            />
-            <NativeSelect
-              name="budgetUnit"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              aria-label="Budget unit"
-              className="w-28"
-            >
-              <option value="dollars">{currency}</option>
-              <option value="hours">hours</option>
-            </NativeSelect>
-            <NativeSelect
-              name="budgetPeriod"
-              defaultValue={p.budget_period}
-              aria-label="Budget period"
-              className="w-32"
-            >
-              <option value="month">per month</option>
-              <option value="total">in total</option>
-            </NativeSelect>
-          </div>
-          <span className="text-muted-foreground text-xs">Leave blank for no budget.</span>
-        </fieldset>
+        </FormStep>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <FormStep n={3} title="Budget (optional)">
+          <fieldset className="grid gap-1">
+            <legend className="sr-only">Budget</legend>
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1 font-medium text-sm">
+                Budget <GuideLink topic="budgets" label="project budgets" />
+              </span>
+              <span className="font-display font-extrabold text-2xl tabular-nums">
+                {budget ? `${hours ? "" : currencySymbol(currency)}${Number(budget)}${hours ? " h" : ""}` : "none"}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <ValueSlider
+                value={Number(budget) || 0}
+                min={0}
+                max={hours ? 200 : 10000}
+                step={hours ? 5 : 100}
+                label="Budget slider"
+                valueText={budget ? `${budget} ${hours ? "hours" : currency}` : "no budget"}
+                onChange={(v) => setBudget(v ? String(v) : "")}
+              />
+              <Input
+                name="budgetAmount"
+                inputMode="decimal"
+                placeholder="none"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                className="w-24 font-mono"
+                aria-label="Budget amount"
+              />
+              <NativeSelect
+                name="budgetUnit"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                aria-label="Budget unit"
+                className="w-28"
+              >
+                <option value="dollars">{currency}</option>
+                <option value="hours">hours</option>
+              </NativeSelect>
+              <NativeSelect
+                name="budgetPeriod"
+                defaultValue={p.budget_period}
+                aria-label="Budget period"
+                className="w-32"
+              >
+                <option value="month">per month</option>
+                <option value="total">in total</option>
+              </NativeSelect>
+            </div>
+            <span className="text-muted-foreground text-xs">Leave blank for no budget.</span>
+          </fieldset>
+        </FormStep>
+
+        <FormStep n={4} title="Picture">
           <LogoPicker
             compact
             value={editing.logoDraft === undefined ? logos[p.id] : editing.logoDraft}
@@ -235,11 +275,14 @@ export function ProjectEditCard({
             onRemove={editing.removeLogoDraft}
             name="project logo"
           />
-          <Button type="submit" variant="primary" disabled={editing.isSaving}>
-            Save
-          </Button>
+        </FormStep>
+
+        <div className="flex items-center justify-end gap-2 border-foreground/10 border-t pt-4">
           <Button type="button" variant="ghost" onClick={editing.stopEditing}>
             Cancel
+          </Button>
+          <Button type="submit" variant="primary" disabled={editing.isSaving}>
+            Save
           </Button>
         </div>
       </form>

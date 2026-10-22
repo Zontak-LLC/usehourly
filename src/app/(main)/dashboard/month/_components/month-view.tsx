@@ -172,7 +172,12 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </section>
           )}
 
-          <PeriodGlance dayTotals={sheet.dayTotals} days={last ? Number(last.slice(8)) : 30} strip />
+          <PeriodGlance
+            dayTotals={sheet.dayTotals}
+            days={last ? Number(last.slice(8)) : 30}
+            from={first ?? undefined}
+            strip
+          />
           <div className="flex min-w-0 flex-col gap-4">
             <MergeDaysPanel entries={shown} />
 
