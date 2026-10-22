@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { Check, ChevronDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-import { DeleteEntryDialog } from "@/components/delete-entry-dialog";
+import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
 import { FoldedNote } from "@/components/folded-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
@@ -298,7 +298,7 @@ export function EntryRow({
           </div>
         </div>
       ) : null}
-      <DeleteEntryDialog entry={confirmingDelete ? entry : null} onClose={() => setConfirmingDelete(false)} />
+      <DeleteEntryConfirm entry={confirmingDelete ? entry : null} onClose={() => setConfirmingDelete(false)} />
     </li>
   );
 }

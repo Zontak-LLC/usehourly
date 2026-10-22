@@ -22,7 +22,6 @@ import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
-import { DeleteInvoiceDialog } from "./delete-invoice-dialog";
 import { type InvoiceActionHandlers, InvoiceCard } from "./invoice-card";
 import { InvoiceFilterBar } from "./invoice-filter-bar";
 import { InvoiceTotals } from "./invoice-totals";
@@ -45,7 +44,6 @@ export function InvoicesView() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: the key is the trigger
   useEffect(() => setPageNo(1), [filterKey]);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [deleteFor, setDeleteFor] = useState<{ id: string; number: string } | null>(null);
 
   async function download(id: string) {
     setBusyId(id);
@@ -79,7 +77,6 @@ export function InvoicesView() {
     paidBusy: markPaid.isPending,
     onSavePaid: (i: { id: string; number: string }, date: string | null) => setPaid(i.id, i.number, date),
     onDownload: (i: { id: string }) => void download(i.id),
-    onDelete: (i: { id: string; number: string }) => setDeleteFor({ id: i.id, number: i.number }),
   };
 
   return (
@@ -130,8 +127,6 @@ export function InvoicesView() {
           handlers={handlers}
         />
       )}
-
-      <DeleteInvoiceDialog invoice={deleteFor} onClose={() => setDeleteFor(null)} />
     </PageShell>
   );
 }

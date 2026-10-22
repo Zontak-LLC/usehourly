@@ -11,6 +11,7 @@ import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours } from "@/lib/duration";
 import { formatMoney } from "@/lib/money";
 
+import { DeleteInvoiceConfirm } from "./delete-invoice-dialog";
 import type { InvoiceRow } from "./invoice-types";
 import { PaidPanel } from "./paid-panel";
 
@@ -54,10 +55,9 @@ export type InvoiceActionHandlers = {
   paidBusy: boolean;
   onSavePaid: (i: InvoiceRow, date: string | null) => Promise<void>;
   onDownload: (i: InvoiceRow) => void;
-  onDelete: (i: InvoiceRow) => void;
 };
 
-type Panel = "paid" | "send" | null;
+type Panel = "paid" | "send" | "delete" | null;
 
 /**
  * The two actions people use (money, send) stay visible and open a panel inside the card; the rarer ones (PDF, delete)
@@ -118,7 +118,7 @@ function InvoiceActions({
             onSelect: () => handlers.onDownload(i),
             disabled: handlers.busyId === i.id,
           },
-          { label: "Delete invoice", icon: <Trash2 />, onSelect: () => handlers.onDelete(i), destructive: true },
+          { label: "Delete invoice", icon: <Trash2 />, onSelect: () => onPanel("delete"), destructive: true },
         ]}
       />
     </div>
@@ -178,6 +178,7 @@ export function InvoiceCard({
         />
       )}
       {panel === "send" && <SendInvoicePanel invoice={i} onClose={() => setPanel(null)} />}
+      {panel === "delete" && <DeleteInvoiceConfirm invoice={i} onClose={() => setPanel(null)} />}
       {/* On a phone the actions get words and a full-width row; tooltips do not exist on touch. */}
       <div className="border-t p-2 sm:hidden">
         <InvoiceActions invoice={i} words panel={panel} onPanel={setPanel} handlers={handlers} />
