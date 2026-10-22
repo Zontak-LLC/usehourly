@@ -25,6 +25,7 @@ export function DaySide({
   today,
   onPick,
   after,
+  row = false,
 }: {
   /** Every entry of the week. */
   entries: Entry[];
@@ -34,6 +35,8 @@ export function DaySide({
   onPick: (d: string) => void;
   /** Shown under the week bars (the live timer sits there while it runs). */
   after?: ReactNode;
+  /** From a wide screen up the two cards sit side by side (a band across the page) instead of one under the other. */
+  row?: boolean;
 }) {
   const [grown, setGrown] = useState(false);
   useEffect(() => {
@@ -56,7 +59,7 @@ export function DaySide({
   const longest = Math.max(1, ...rows.map((r) => r.minutes));
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    <div className={row ? "grid gap-4 md:grid-cols-2" : "flex flex-1 flex-col gap-4"}>
       <section aria-label="Today by project" className="rounded-3xl border bg-card p-4">
         <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
           By project
@@ -128,7 +131,7 @@ export function DaySide({
           })}
         </div>
       </section>
-      {after}
+      {after && <div className={row ? "md:col-span-2" : ""}>{after}</div>}
     </div>
   );
 }

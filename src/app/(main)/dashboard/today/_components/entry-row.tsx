@@ -9,8 +9,10 @@ import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
 import { FoldedNote } from "@/components/folded-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
+import { TimeRuler } from "@/components/time-ruler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
@@ -34,6 +36,7 @@ export type EntryData = {
   project: { name: string; client: { name: string; color: string } };
 };
 
+const FIELD_LABEL = "font-mono text-[11px] text-foreground/75 uppercase tracking-widest";
 const leadDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 
 /** The words that start a row: the project and its client, or (in a list already grouped by project) the day. */
@@ -243,67 +246,82 @@ export function EntryRow({
       {editing ? (
         // Edit form: labelled fields stacked full width (project and time side by side from sm up), so
         // nothing is squeezed next to the time box; Save and Cancel are real buttons at the bottom.
-        <div className="flex flex-col gap-3 px-3 py-3">
-          <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
-            <div className="flex flex-col gap-1">
-              <label htmlFor={`${uid}-project`} className="font-medium text-muted-foreground text-xs">
+        <div className="grid gap-4 px-4 py-4 lg:grid-cols-2 lg:gap-x-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={`${uid}-project`} className={FIELD_LABEL}>
                 Project
               </label>
-              <select
-                id={`${uid}-project`}
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="h-10 rounded-lg border border-input bg-card px-2 font-normal text-foreground text-sm dark:bg-input/30"
-              >
+              <NativeSelect id={`${uid}-project`} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
                 {projectOptions}
-              </select>
+              </NativeSelect>
             </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor={`${uid}-time`} className="font-medium text-muted-foreground text-xs">
-                Time
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={`${uid}-note`} className={FIELD_LABEL}>
+                Description
               </label>
-              <Input
-                id={`${uid}-time`}
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+              <NoteTextarea
+                id={`${uid}-note`}
+                value={note}
+                onChange={setNote}
+                polish={{ project: entry.project.name, client: entry.project.client.name }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") save();
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    save();
+                  }
                   if (e.key === "Escape") setEditing(false);
                 }}
-                className="h-10 font-mono font-semibold text-base tabular-nums"
-                placeholder="1:30"
-                autoFocus
+                rows={3}
+                placeholder="What did you work on?"
+                className="min-h-24 resize-none py-2 font-normal text-foreground text-sm"
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor={`${uid}-note`} className="font-medium text-muted-foreground text-xs">
-              Description
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={`${uid}-time`} className={FIELD_LABEL}>
+              Time
             </label>
-            <NoteTextarea
-              id={`${uid}-note`}
-              value={note}
-              onChange={setNote}
-              polish={{ project: entry.project.name, client: entry.project.client.name }}
+            <Input
+              id={`${uid}-time`}
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  save();
-                }
+                if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);
               }}
-              rows={2}
-              placeholder="What did you work on?"
-              className="min-h-16 resize-none py-2 font-normal text-foreground text-sm"
+              className="h-11 font-mono font-semibold text-base tabular-nums"
+              placeholder="1:30"
+              autoFocus
             />
+            <TimeRuler
+              minutes={parseDuration(duration) ?? 0}
+              onChange={(m) => setDuration(m > 0 ? formatDuration(m) : "")}
+            />
+            <div className="grid grid-cols-3 gap-2">
+              {[15, 30, 60].map((add) => (
+                <Button
+                  key={add}
+                  type="button"
+                  variant="outline"
+                  className="h-9 rounded-full px-1 text-sm"
+                  onClick={() => setDuration(formatDuration((parseDuration(duration) ?? 0) + add))}
+                >
+                  + {add === 60 ? "1 hour" : `${add} min`}
+                </Button>
+              ))}
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditing(false)} className="max-sm:flex-1">
-              Cancel
-            </Button>
-            <Button onClick={save} disabled={update.isPending} className="max-sm:flex-1">
-              <Check /> Save
-            </Button>
+          <div className="flex items-center justify-between gap-3 border-foreground/10 border-t pt-3 lg:col-span-2">
+            <p className="text-muted-foreground text-xs max-sm:hidden">Enter saves · Esc cancels</p>
+            <div className="flex gap-2 max-sm:w-full">
+              <Button variant="ghost" onClick={() => setEditing(false)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={save} disabled={update.isPending} className="max-sm:flex-1">
+                <Check /> Save
+              </Button>
+            </div>
           </div>
         </div>
       ) : null}

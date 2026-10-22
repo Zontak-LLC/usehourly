@@ -120,9 +120,9 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
-        <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
-          {/* The dial and the projects stay on the left; the days and the picked day's editor are on the right. */}
-          <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* A band across the top (the dial, the week by project, three facts); the days and the picked day's editor use the full width below. */}
+          <div className="grid gap-4 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,1fr)]">
             <WeekDial total={sheet.total} today={today ? (sheet.dayTotals[today] ?? 0) : null} />
             <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
             <PeriodGlance dayTotals={sheet.dayTotals} days={7} />
