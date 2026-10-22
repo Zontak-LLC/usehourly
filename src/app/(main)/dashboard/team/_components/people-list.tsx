@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 
-import { Mail, Pencil, UserRound, UserX } from "lucide-react";
+import { CircleCheck, Hourglass, Mail, MailX, Pencil, UserRound, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { IconAction } from "@/components/icon-action";
 import { InlineConfirm } from "@/components/inline-confirm";
 import { MoreMenu } from "@/components/more-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -28,6 +29,28 @@ const STATUS_WORDS = {
   expired: "Invitation expired, send it again",
   removed: "Removed",
 } as const;
+
+/** One icon says where an invitation stands (hourglass = waiting, check = joined, crossed mail = expired); the words are in the tooltip and for screen readers. */
+const STATUS_ICON = { pending: Hourglass, active: CircleCheck, expired: MailX, removed: UserX } as const;
+
+function StatusIcon({ status }: { status: Person["status"] }) {
+  const Icon = STATUS_ICON[status];
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so the tooltip opens from the keyboard and on touch
+          tabIndex={0}
+          className={`inline-flex size-8 items-center justify-center rounded-full ${status === "active" ? "bg-success-soft" : "bg-muted text-foreground/80"}`}
+        >
+          <Icon className="size-4" aria-hidden />
+          <span className="sr-only">{STATUS_WORDS[status]}</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{STATUS_WORDS[status]}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 /** Everyone invited, one row each (cards group, rows list): who they are, their status, their clients, and the actions. */
 export function PeopleList({ people }: { people: Person[] }) {
@@ -119,55 +142,48 @@ function PersonRow({ person }: { person: Person }) {
             )}
           </div>
         </div>
-        {/* Two labeled lines that line up: Status, then Clients. */}
-        <dl className="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 text-sm max-sm:col-span-2 max-sm:row-start-2 sm:col-start-2 sm:row-start-1">
-          <dt className="pt-0.5 text-muted-foreground text-xs">Status</dt>
-          <dd className="flex items-center gap-2">
-            <span
-              className={`size-2 shrink-0 rounded-full ${person.status === "active" ? "bg-success-bright" : "bg-foreground/30"}`}
-              aria-hidden
-            />
-            {STATUS_WORDS[person.status]}
-          </dd>
+        {/* The middle is only who they may log time for; the status is the icon beside the buttons. */}
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm max-sm:col-span-2 max-sm:row-start-2 sm:col-start-2 sm:row-start-1">
+          {live ? (
+            <>
+              <span className="mr-1 text-muted-foreground text-xs">Logs time for</span>
+              {editing ? (
+                <ClientChecks
+                  legend="Can log time on"
+                  legendClassName="sr-only"
+                  clients={clients.data ?? []}
+                  checked={person.clientIds}
+                  onToggle={toggle}
+                />
+              ) : (
+                <>
+                  {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
+                  {allowed.map((name) => (
+                    <span key={name} className="rounded-md bg-muted px-2 py-0.5">
+                      {name}
+                    </span>
+                  ))}
+                </>
+              )}
+            </>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-1 sm:col-start-3 sm:row-start-1">
+          <StatusIcon status={person.status} />
           {live && (
             <>
-              <dt className="pt-1 text-muted-foreground text-xs">Clients</dt>
-              <dd className="min-w-0">
-                {editing ? (
-                  <ClientChecks
-                    legend="Can log time on"
-                    legendClassName="sr-only"
-                    clients={clients.data ?? []}
-                    checked={person.clientIds}
-                    onToggle={toggle}
-                  />
-                ) : (
-                  <span className="flex flex-wrap gap-1.5">
-                    {allowed.length === 0 && <span className="text-muted-foreground">No clients</span>}
-                    {allowed.map((name) => (
-                      <span key={name} className="rounded-md bg-muted px-2 py-0.5">
-                        {name}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </dd>
+              <IconAction
+                label={`Edit clients for ${person.label}`}
+                tip="Change their clients"
+                expanded={editing}
+                onClick={() => setEditing(!editing)}
+              >
+                <Pencil />
+              </IconAction>
+              <MoreMenu label={`More actions for ${person.label}`} items={menu} />
             </>
           )}
-        </dl>
-        {live && (
-          <div className="flex shrink-0 gap-1 sm:col-start-3 sm:row-start-1">
-            <IconAction
-              label={`Edit clients for ${person.label}`}
-              tip="Change their clients"
-              expanded={editing}
-              onClick={() => setEditing(!editing)}
-            >
-              <Pencil />
-            </IconAction>
-            <MoreMenu label={`More actions for ${person.label}`} items={menu} />
-          </div>
-        )}
+        </div>
       </div>
       {confirming && (
         <InlineConfirm
