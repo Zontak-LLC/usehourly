@@ -1,0 +1,34 @@
+name: Ticket for the pipeline
+description: A small, clear change Claude can build, test and ship on its own (add the "auto" label)
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep it to ONE change. Not for database changes, sign-in or security, invoices and money, email sending, or the deploy setup: those stay with a person. See docs/auto-pipeline.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: The change you want, in plain words.
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where
+      description: The page or screen. Paste a screenshot if it is visual.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Two or three things you can see or check. For example, "on a phone the list shows 3 items".
+    validations:
+      required: true
+  - type: textarea
+    id: out
+    attributes:
+      label: Not in scope
+      description: What must not change.
