@@ -1,6 +1,6 @@
 "use client";
 
-import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
+import { RANGE_INPUT_CLASS } from "@/components/range-input";
 
 /**
  * A plain slider with an amber fill for a number (a rate, a budget). It only draws and reports: the caller keeps the

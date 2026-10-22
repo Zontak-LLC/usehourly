@@ -133,7 +133,8 @@ export function TodayView() {
       ) : (
         // A band across the top (the dial, the day by project, the week), then the add form and the day's rows at the full width.
         <div className="flex min-w-0 flex-col gap-4">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+          {/* On a phone or half a browser the job comes first: the form, then the day's rows, then this summary. */}
+          <div className="grid gap-4 max-md:order-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
             <DayDial
               minutes={dayTotal}
               timerCounted={timerOnThisDay}
@@ -166,7 +167,9 @@ export function TodayView() {
           )}
 
           {!calendarFirst && clients.data && (
-            <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+            <div className="max-md:order-4">
+              <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />
+            </div>
           )}
         </div>
       )}

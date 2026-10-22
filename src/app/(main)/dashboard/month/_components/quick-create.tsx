@@ -6,7 +6,6 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { NoteTextarea } from "@/components/note-textarea";
-import { TimeRuler } from "@/components/time-ruler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDuration, parseDuration } from "@/lib/duration";
@@ -189,9 +188,6 @@ export function QuickCreate({
           className="min-h-9 resize-none py-2"
         />
       </div>
-
-      {/* The hours per day on a ruler, in 15 minute steps, with the box above kept in step. */}
-      <TimeRuler minutes={minutes ?? 0} onChange={(m) => setDuration(m > 0 ? formatDuration(m) : "")} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="flex items-center gap-2 text-sm">

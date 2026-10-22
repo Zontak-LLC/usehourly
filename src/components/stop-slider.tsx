@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
+import { RANGE_INPUT_CLASS } from "@/components/range-input";
 
 /**
  * A slider with named stops, for a choice from a short list (round to 0, 6, 15 or 30 minutes). The amber line grows to

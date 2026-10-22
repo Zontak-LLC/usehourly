@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 import { useMoney } from "@/components/currency-provider";
 import { Dial } from "@/components/day-dial";
+import { RANGE_INPUT_CLASS } from "@/components/range-input";
 import { StatTile } from "@/components/stat-tile";
-import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
 import { formatDecimalHours } from "@/lib/duration";
 
 import type { AnnualReport } from "./report-body";

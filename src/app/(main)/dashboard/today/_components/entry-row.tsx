@@ -9,7 +9,6 @@ import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
 import { FoldedNote } from "@/components/folded-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
-import { TimeRuler } from "@/components/time-ruler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -293,10 +292,6 @@ export function EntryRow({
               className="h-11 font-mono font-semibold text-base tabular-nums"
               placeholder="1:30"
               autoFocus
-            />
-            <TimeRuler
-              minutes={parseDuration(duration) ?? 0}
-              onChange={(m) => setDuration(m > 0 ? formatDuration(m) : "")}
             />
             <div className="grid grid-cols-3 gap-2">
               {[15, 30, 60].map((add) => (

@@ -10,7 +10,6 @@ import { ClientCurrency } from "@/components/currency-provider";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
-import { TimeRuler } from "@/components/time-ruler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -239,13 +238,6 @@ export function QuickAdd({
             inputMode="decimal"
             enterKeyHint="next"
             className="h-11 text-base"
-          />
-          <TimeRuler
-            minutes={parsed ?? 0}
-            onChange={(m) => {
-              setChipRun(null);
-              setDuration(m > 0 ? chipText(m) : "");
-            }}
           />
           <div className="grid grid-cols-3 gap-2">
             {DURATION_CHIPS.map((c) => (

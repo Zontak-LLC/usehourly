@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
+import { RANGE_INPUT_CLASS } from "@/components/range-input";
 import { formatDuration } from "@/lib/duration";
 import { blendSlice } from "@/lib/line-color";
 

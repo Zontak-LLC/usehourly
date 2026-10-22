@@ -1,7 +1,7 @@
 "use client";
 
 import { FormStep } from "@/components/form-step";
-import { RANGE_INPUT_CLASS } from "@/components/time-ruler";
+import { RANGE_INPUT_CLASS } from "@/components/range-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";

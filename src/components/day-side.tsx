@@ -57,13 +57,11 @@ export function DaySide({
 
   return (
     <div className={row ? "grid gap-4 md:grid-cols-2" : "flex flex-1 flex-col gap-4"}>
-      <section aria-label="Today by project" className="rounded-3xl border bg-card p-4">
-        <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
-          By project
-        </h2>
-        {rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Your day fills in here as you add time.</p>
-        ) : (
+      {rows.length > 0 && (
+        <section aria-label="Today by project" className="rounded-3xl border bg-card p-4">
+          <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
+            By project
+          </h2>
           <ul className="flex flex-col gap-3">
             {rows.map((r) => (
               <li
@@ -86,8 +84,8 @@ export function DaySide({
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       <section aria-label="This week" className="flex flex-1 flex-col rounded-3xl border bg-card p-4 md:max-h-[26rem]">
         <h2 className="mb-3 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
