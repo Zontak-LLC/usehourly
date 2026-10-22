@@ -35,6 +35,44 @@ export function DayDial({
   timerRunning: boolean;
   goal?: number;
 }) {
+  return (
+    <Dial
+      label="Today's hours"
+      title="Logged"
+      minutes={minutes}
+      goal={goal}
+      timerRunning={timerRunning}
+      footLeft={`Goal ${formatDuration(goal)}`}
+      footRight={weekMinutes !== null ? `Week ${formatDuration(weekMinutes)}` : undefined}
+    />
+  );
+}
+
+/**
+ * The dial every page's left column uses: the ring fills with `minutes` against `goal`, the hand sits where the fill
+ * ends and the middle names the figure. `center` replaces the time in the middle (the Invoices dial shows money).
+ */
+export function Dial({
+  label,
+  title,
+  minutes,
+  goal,
+  timerRunning = false,
+  center,
+  caption,
+  footLeft,
+  footRight,
+}: {
+  label: string;
+  title: string;
+  minutes: number;
+  goal: number;
+  timerRunning?: boolean;
+  center?: string;
+  caption?: string;
+  footLeft?: string;
+  footRight?: string;
+}) {
   const [shown, setShown] = useState(0);
   // After the first paint, move to the real value: the CSS transition draws the sweep.
   useEffect(() => {
@@ -45,7 +83,7 @@ export function DayDial({
 
   return (
     <section
-      aria-label="Today's hours"
+      aria-label={label}
       className="relative flex flex-col items-center gap-3 overflow-hidden rounded-3xl border bg-card p-5 shadow-[var(--shadow-sheet)]"
     >
       <div
@@ -99,18 +137,21 @@ export function DayDial({
           )}
         </svg>
         <div className="absolute inset-0 grid place-content-center text-center">
-          <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">Logged</span>
-          <span className="font-display font-extrabold text-5xl tabular-nums leading-none" aria-live="polite">
-            {formatDuration(minutes)}
+          <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">{title}</span>
+          <span
+            className={`font-display font-extrabold tabular-nums leading-none ${center ? "text-4xl" : "text-5xl"}`}
+            aria-live="polite"
+          >
+            {center ?? formatDuration(minutes)}
           </span>
           <span className="mt-1 font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-            {dialLeft(minutes, goal)}
+            {caption ?? dialLeft(minutes, goal)}
           </span>
         </div>
       </div>
       <div className="relative flex w-full items-center justify-between font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-        <span>Goal {formatDuration(goal)}</span>
-        {weekMinutes !== null && <span>Week {formatDuration(weekMinutes)}</span>}
+        <span>{footLeft}</span>
+        {footRight && <span>{footRight}</span>}
       </div>
     </section>
   );

@@ -290,30 +290,40 @@ export function QuickAdd({
           className="min-h-[4.5rem] resize-none py-3 text-base"
         />
 
-        <Button
+        <button
           type="submit"
-          size="lg"
-          variant="primary"
           disabled={create.isPending || parsed === null}
-          // Until a time is typed it is a clear outline (not a grey slab that looks broken); it turns solid when it can be used.
-          className="h-12 w-full text-base disabled:border disabled:border-foreground/30 disabled:bg-transparent disabled:text-foreground/70 disabled:opacity-100"
+          // The main event: a big amber button with a plus disc, a soft glow and a lift. While no time is typed it is a
+          // quiet dashed outline (not a grey slab that looks broken), and it comes alive when there is something to add.
+          className="group relative flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:border-2 disabled:border-foreground/25 disabled:border-dashed disabled:bg-transparent disabled:font-bold disabled:text-foreground/60 disabled:shadow-none"
         >
-          Add to the day <Kbd className="ml-1 hidden bg-foreground/10 text-foreground md:inline-flex">↵</Kbd>
-        </Button>
-        {/* The timer is the second way, not a rival button: a small link under Add. It only makes sense for today. */}
+          <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/15 group-disabled:text-foreground/60">
+            <Plus className="size-4" strokeWidth={3} aria-hidden />
+          </span>
+          Add to the day
+          <Kbd className="hidden bg-[#1b1405]/15 text-inherit md:inline-flex">↵</Kbd>
+        </button>
+        {/* The timer is the second way: a quiet button under Add (an amber play disc, two short lines). Only for today. */}
         {isToday && (
-          <p className="text-muted-foreground text-sm">
-            Haven't done it yet?{" "}
-            <button
-              type="button"
-              onClick={startTimer}
-              disabled={start.isPending || !online}
-              title={online ? undefined : "A timer needs a connection"}
-              className="inline-flex min-h-8 items-center gap-1 font-medium text-foreground underline underline-offset-2 disabled:no-underline disabled:opacity-50"
-            >
-              <Play className="size-3.5" aria-hidden /> {timerRunning ? "Switch timer to this" : "Start timer"}
-            </button>
-          </p>
+          <button
+            type="button"
+            onClick={startTimer}
+            disabled={start.isPending || !online}
+            title={online ? undefined : "A timer needs a connection"}
+            className="group flex w-full items-center gap-3 rounded-2xl border border-amber/40 bg-[linear-gradient(90deg,var(--amber-soft),var(--card)_70%)] px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-amber disabled:opacity-50"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-amber text-[#1b1405] shadow-[0_0_0_5px_color-mix(in_oklab,var(--amber)_22%,transparent)] transition-transform group-hover:scale-105">
+              <Play className="size-4" fill="currentColor" aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold font-display">
+                {timerRunning ? "Switch timer to this" : "Start timer"}
+              </span>
+              <span className="block text-muted-foreground text-xs">
+                Haven&apos;t done it yet? Track it as you work.
+              </span>
+            </span>
+          </button>
         )}
         {/* At the foot, so picking a project with a budget never moves the controls above it. */}
         {budget && (

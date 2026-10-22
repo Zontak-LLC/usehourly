@@ -5,11 +5,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAccountCurrency } from "@/components/currency-provider";
+import { FormStep } from "@/components/form-step";
 import { GuideLink } from "@/components/guide-link";
 import { LogoPicker } from "@/components/logo-picker";
+import { StopSlider } from "@/components/stop-slider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { fileToLogo } from "@/lib/logo";
@@ -24,38 +27,44 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
       <legend className="flex items-center gap-1 font-medium text-sm">
         Round the time on invoices <GuideLink topic="rounding" label="rounding time on invoices" />
       </legend>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <select
-          name="roundStep"
-          aria-label="Round to"
-          defaultValue={step}
-          className="h-9 rounded-lg border border-input bg-card px-2 dark:bg-input/30"
-        >
-          <option value={0}>Don't round</option>
-          <option value={6}>Every 6 minutes (0.1 h)</option>
-          <option value={15}>Every 15 minutes</option>
-          <option value={30}>Every 30 minutes</option>
-        </select>
-        <select
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-1.5">
+          <span className="text-sm">Round to</span>
+          <StopSlider
+            name="roundStep"
+            label="Round to"
+            defaultValue={step}
+            options={[
+              { value: 0, label: "Off" },
+              { value: 6, label: "6 min" },
+              { value: 15, label: "15 min" },
+              { value: 30, label: "30 min" },
+            ]}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <span className="text-sm">At least, per entry</span>
+          <StopSlider
+            name="roundMin"
+            label="Minimum per entry"
+            defaultValue={min}
+            options={[
+              { value: 0, label: "None" },
+              { value: 15, label: "15 min" },
+              { value: 30, label: "30 min" },
+              { value: 60, label: "1 h" },
+            ]}
+          />
+        </div>
+        <NativeSelect
           name="roundMode"
           aria-label="Round up or to the nearest"
           defaultValue={mode}
-          className="h-9 rounded-lg border border-input bg-card px-2 dark:bg-input/30"
+          className="sm:max-w-56"
         >
           <option value="up">Round up</option>
           <option value="nearest">Round to the nearest</option>
-        </select>
-        <select
-          name="roundMin"
-          aria-label="Minimum per entry"
-          defaultValue={min}
-          className="h-9 rounded-lg border border-input bg-card px-2 dark:bg-input/30"
-        >
-          <option value={0}>No minimum</option>
-          <option value={15}>At least 15 min per entry</option>
-          <option value={30}>At least 30 min per entry</option>
-          <option value={60}>At least 1 h per entry</option>
-        </select>
+        </NativeSelect>
       </div>
       <p className="text-muted-foreground text-xs">
         Applies when you make an invoice, entry by entry. Your logged time never changes, and the invoice says what was
@@ -75,12 +84,12 @@ function CurrencyField({ value, locked }: { value: string | null; locked: boolea
       <Label htmlFor="client-currency" className="flex items-center gap-1">
         Currency
       </Label>
-      <select
+      <NativeSelect
         id="client-currency"
         name="currency"
         defaultValue={isCurrency(value) ? value : ""}
         disabled={locked}
-        className="h-9 w-full max-w-72 rounded-lg border border-input bg-card px-2 disabled:opacity-60 dark:bg-input/30"
+        className="max-w-72"
       >
         <option value="">Same as my account ({account})</option>
         {CURRENCIES.map((c) => (
@@ -88,7 +97,7 @@ function CurrencyField({ value, locked }: { value: string | null; locked: boolea
             {c.code} · {c.name} ({currencySymbol(c.code)})
           </option>
         ))}
-      </select>
+      </NativeSelect>
       <p className="text-muted-foreground text-xs">
         {locked
           ? "Fixed, because you have made an invoice for this client."
@@ -153,56 +162,65 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
     return <p className="px-4 py-3 text-destructive text-sm">Couldn't load client: {client.error?.message}</p>;
   }
   return (
-    <form method="post" onSubmit={save} className="flex flex-col gap-3 px-4 py-3">
-      <div className="grid gap-1.5">
-        <Label htmlFor={`cn-${id}`}>Client name</Label>
-        <Input id={`cn-${id}`} name="name" defaultValue={client.data.name} required maxLength={80} />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor={`cf-${id}`}>Full name (shown on invoices)</Label>
-        <Input
-          id={`cf-${id}`}
-          name="legalName"
-          defaultValue={client.data.legal_name ?? ""}
-          placeholder={client.data.name}
-          maxLength={150}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor={`ca-${id}`}>Billing address (shown on invoices)</Label>
-        <Textarea
-          id={`ca-${id}`}
-          name="address"
-          defaultValue={client.data.address ?? ""}
-          rows={3}
-          maxLength={300}
-          placeholder={"500 Market St\nSan Francisco, CA 94105"}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor={`ce-${id}`}>Email (where you send invoices)</Label>
-        <Input
-          id={`ce-${id}`}
-          name="email"
-          type="email"
-          defaultValue={client.data.email ?? ""}
-          placeholder="accounts@client.com"
-          maxLength={254}
-          autoComplete="off"
-        />
-        <p className="text-muted-foreground text-xs">Kept private. Nothing is sent to it unless you send something.</p>
-      </div>
-      <CurrencyField value={client.data.currency} locked={client.data.currency_locked} />
-      <RoundingFields step={client.data.round_step} mode={client.data.round_mode} min={client.data.round_min} />
-      <div className="grid gap-1.5">
-        <Label>Logo</Label>
+    <form method="post" onSubmit={save} className="flex flex-col gap-6 px-2 py-3">
+      <FormStep n={1} title="Who are they?">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid content-start gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor={`cn-${id}`}>Client name</Label>
+              <Input id={`cn-${id}`} name="name" defaultValue={client.data.name} required maxLength={80} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`cf-${id}`}>Full name (shown on invoices)</Label>
+              <Input
+                id={`cf-${id}`}
+                name="legalName"
+                defaultValue={client.data.legal_name ?? ""}
+                placeholder={client.data.name}
+                maxLength={150}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`ce-${id}`}>Email (where you send invoices)</Label>
+              <Input
+                id={`ce-${id}`}
+                name="email"
+                type="email"
+                defaultValue={client.data.email ?? ""}
+                placeholder="accounts@client.com"
+                maxLength={254}
+                autoComplete="off"
+              />
+              <p className="text-muted-foreground text-xs">
+                Kept private. Nothing is sent to it unless you send something.
+              </p>
+            </div>
+          </div>
+          <div className="grid content-start gap-1.5">
+            <Label htmlFor={`ca-${id}`}>Billing address (shown on invoices)</Label>
+            <Textarea
+              id={`ca-${id}`}
+              name="address"
+              defaultValue={client.data.address ?? ""}
+              rows={6}
+              maxLength={300}
+              placeholder={"500 Market St\nSan Francisco, CA 94105"}
+            />
+          </div>
+        </div>
+      </FormStep>
+      <FormStep n={2} title="How do you bill them?">
+        <CurrencyField value={client.data.currency} locked={client.data.currency_locked} />
+        <RoundingFields step={client.data.round_step} mode={client.data.round_mode} min={client.data.round_min} />
+      </FormStep>
+      <FormStep n={3} title="Their logo">
         <LogoPicker value={logo} onPick={pickLogo} onRemove={() => setLogo(null)} name="client logo" />
-      </div>
+      </FormStep>
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={update.isPending}>
+        <Button type="submit" variant="primary" disabled={update.isPending}>
           Save client
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onDone}>
+        <Button type="button" variant="ghost" onClick={onDone}>
           Cancel
         </Button>
       </div>

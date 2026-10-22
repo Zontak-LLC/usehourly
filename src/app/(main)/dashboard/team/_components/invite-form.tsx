@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
-import { Copy, X } from "lucide-react";
+import { Copy, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { DocButton } from "@/components/doc-button";
+import { FormStep } from "@/components/form-step";
 import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,41 +82,52 @@ export function InviteCard({ onClose }: { onClose: () => void }) {
       }
       onSubmit={submit}
     >
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="invite-email">Their email address</Label>
-          <Input
-            id="invite-email"
-            type="email"
-            autoComplete="off"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            maxLength={254}
-            placeholder="sam@example.com"
-          />
+      <FormStep n={1} title="Who are you inviting?">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="invite-email">Their email address</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              autoComplete="off"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={254}
+              placeholder="sam@example.com"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="invite-name">Their name (optional)</Label>
+            <Input
+              id="invite-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={60}
+              placeholder="Sam"
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="invite-name">Their name (optional)</Label>
-          <Input
-            id="invite-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={60}
-            placeholder="Sam"
-          />
-        </div>
-      </div>
-      <ClientChecks
-        legend="Clients they can log time on"
-        clients={list}
-        checked={picked}
-        onToggle={(id, on) => setPicked((p) => (on ? [...p, id] : p.filter((x) => x !== id)))}
-        empty="Add a client first, on the Clients page."
-      />
+      </FormStep>
+      <FormStep n={2} title="What can they log time on?">
+        <ClientChecks
+          legend="Clients they can log time on"
+          clients={list}
+          checked={picked}
+          onToggle={(id, on) => setPicked((p) => (on ? [...p, id] : p.filter((x) => x !== id)))}
+          empty="Add a client first, on the Clients page."
+        />
+      </FormStep>
       <div>
-        <Button type="submit" disabled={invite.isPending || !email.includes("@") || picked.length === 0}>
-          Send the invitation
-        </Button>
+        <DocButton
+          type="submit"
+          tone="amber"
+          icon={<Send />}
+          title="Send the invitation"
+          hint="They get a private link"
+          label="Send the invitation"
+          busy={invite.isPending}
+          disabled={invite.isPending || !email.includes("@") || picked.length === 0}
+        />
       </div>
       {sent && (
         <div className="flex flex-col gap-2 rounded-lg bg-card p-3 ring-1 ring-foreground/10">

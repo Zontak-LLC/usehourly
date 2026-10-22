@@ -69,7 +69,10 @@ export function WorkItems({
   if (entries.length === 0) return null;
 
   return (
-    <section aria-label="What you worked on" className="overflow-hidden rounded-xl border bg-card">
+    <section
+      aria-label="What you worked on"
+      className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
+    >
       <header className="flex flex-wrap items-center justify-between gap-2 bg-band-2 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">
           What you worked on <span className="font-normal text-foreground/75 text-sm">({matches.length})</span>

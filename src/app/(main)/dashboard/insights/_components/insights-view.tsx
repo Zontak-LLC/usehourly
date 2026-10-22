@@ -11,10 +11,33 @@ const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / 
 
 function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-card px-3 py-3">
-      <span className="text-muted-foreground text-sm">{label}</span>
-      <span className="font-semibold text-3xl tabular-nums">{value}</span>
+    <div className="flex flex-col gap-1 rounded-3xl border bg-card px-4 py-4 shadow-[var(--shadow-sheet)]">
+      <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">{label}</span>
+      <span className="font-display font-extrabold text-5xl tabular-nums leading-none">{value}</span>
       {hint && <span className="text-muted-foreground text-xs">{hint}</span>}
+    </div>
+  );
+}
+
+/** Columns for a short series (weeks, days): the tallest is the scale, the latest is amber, a title says each value. */
+function Columns({ items }: { items: { key: string; label: string; value: number }[] }) {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return (
+    <div className="flex h-40 items-end gap-1.5">
+      {items.map((i, n) => (
+        <div
+          key={i.key}
+          className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+          title={`${i.label}: ${i.value}`}
+        >
+          <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{i.value || ""}</span>
+          <span
+            className={`w-full rounded-t-md ${n === items.length - 1 ? "bg-amber" : "bg-foreground/20"}`}
+            style={{ height: `${Math.max(i.value > 0 ? 3 : 0, (i.value / max) * 100)}%` }}
+          />
+          <span className="max-w-full truncate font-mono text-[9px] text-muted-foreground">{i.label.slice(-5)}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -26,7 +49,7 @@ function BarRow({ label, value, max, suffix }: { label: string; value: number; m
     <div className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-3 text-sm">
       <span className="truncate text-muted-foreground">{label}</span>
       <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${width}%` }} />
+        <div className="h-full rounded-full bg-amber" style={{ width: `${width}%` }} />
       </div>
       <span className="min-w-8 text-right tabular-nums">
         {value}
@@ -38,7 +61,7 @@ function BarRow({ label, value, max, suffix }: { label: string; value: number; m
 
 function Card({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-xl border bg-card">
+    <section className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
       <div className="border-b bg-band-2 px-4 py-3">
         <CardTitle title={title} note={note} />
       </div>
@@ -54,9 +77,7 @@ export function InsightsView() {
     return <p className="m-4 text-muted-foreground lg:m-6">Couldn't load the numbers. Try again in a moment.</p>;
   }
   const d = q.data;
-  const maxWeek = Math.max(0, ...d.signups.byWeek.map((w) => w.count));
   const maxPage = Math.max(0, ...d.pages.map((p) => p.views30));
-  const maxDay = Math.max(0, ...d.daily.map((x) => x.views));
   const { signedUp, withEntry, withInvoice, firstEntryWithinDay } = d.funnel;
 
   return (
@@ -104,11 +125,7 @@ export function InsightsView() {
       </Card>
 
       <Card title="New accounts per week" note="Weeks start on Monday (UTC), most recent last.">
-        <div className="flex flex-col gap-2">
-          {d.signups.byWeek.map((w) => (
-            <BarRow key={w.week} label={w.week} value={w.count} max={maxWeek} />
-          ))}
-        </div>
+        <Columns items={d.signups.byWeek.map((w) => ({ key: w.week, label: w.week, value: w.count }))} />
       </Card>
 
       <Card
@@ -123,11 +140,7 @@ export function InsightsView() {
       </Card>
 
       <Card title="Page views per day, last 14 days">
-        <div className="flex flex-col gap-2">
-          {d.daily.map((x) => (
-            <BarRow key={x.day} label={x.day} value={x.views} max={maxDay} />
-          ))}
-        </div>
+        <Columns items={d.daily.map((x) => ({ key: x.day, label: x.day, value: x.views }))} />
       </Card>
       <SupportNoticeCard />
     </PageShell>

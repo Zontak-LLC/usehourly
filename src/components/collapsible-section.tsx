@@ -50,7 +50,7 @@ export function CollapsibleSection({
   }
 
   return (
-    <section aria-label={title} className="overflow-hidden rounded-xl border bg-card">
+    <section aria-label={title} className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
       <button
         type="button"
         aria-expanded={open}

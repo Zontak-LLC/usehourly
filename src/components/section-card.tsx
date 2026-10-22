@@ -35,7 +35,10 @@ export function SectionCard({
       className={cn(
         grouped
           ? tone === "danger" && "border-l-4 border-l-destructive/50"
-          : cn("overflow-hidden rounded-xl border bg-card", tone === "danger" && "border-destructive/40"),
+          : cn(
+              "overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]",
+              tone === "danger" && "border-destructive/40",
+            ),
       )}
     >
       <div

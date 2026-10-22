@@ -1,5 +1,7 @@
 # UseHourly UI spec
 
+> **2026-10-22: the ink-and-paper redesign.** The look is a cool paper page, white sheets, ink text and ONE amber accent (the hour hand), in Instrument Sans with Bricolage Grotesque for headings and JetBrains Mono for numbers. The navigation is a pill of tabs in the top bar (the left menu is an option). Today is built around a day dial; amounts of time use the `TimeRuler` slider; a project is picked from one large row plus pills. Where this note and an older line below disagree, this note wins. Details and file names: the "ink-and-paper redesign" section of `CLAUDE.md`. Return point: git tag `pre-redesign-2026-10-22`.
+
 The one place that says how the app looks and why. **When you change a pattern, change it here in the same pull
 request.** Rules marked **[checked]** fail the build or the browser tests if broken; the others are held by review.
 Look at the real thing first: the pages are the reference, this file is the explanation.

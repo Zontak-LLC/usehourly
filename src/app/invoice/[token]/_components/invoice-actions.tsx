@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 
+import { DocButton } from "@/components/doc-button";
 import { Button } from "@/components/ui/button";
 import type { InvoiceSnapshot } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
@@ -25,10 +26,16 @@ export function InvoiceActions({ snapshot }: { snapshot: InvoiceSnapshot }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2 print:hidden">
-      <Button type="button" onClick={pdf} disabled={busy}>
-        <Download /> {busy ? "Making the PDF…" : "Download PDF"}
-      </Button>
+    <div className="flex flex-wrap items-center gap-3 print:hidden">
+      <DocButton
+        onClick={pdf}
+        disabled={busy}
+        busy={busy}
+        icon={<Download />}
+        title={busy ? "Making the PDF…" : "Download PDF"}
+        hint="A clean copy to keep"
+        label={busy ? "Making the PDF…" : "Download PDF"}
+      />
       <Button type="button" variant="outline" onClick={() => window.print()}>
         <Printer /> Print
       </Button>

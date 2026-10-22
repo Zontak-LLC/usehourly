@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 
 import { useMoney } from "@/components/currency-provider";
+import { GoalMeter } from "@/components/goal-meter";
 import { Button } from "@/components/ui/button";
 import { formatDecimalHours } from "@/lib/duration";
 import type { AppRouter } from "@/server/routers/_app";
@@ -241,10 +242,27 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
 export function ReportBody({ data, year }: { data: AnnualReport; year: number }) {
   return (
     <>
-      <ReportStats data={data} />
-      <PeriodSections data={data} />
-      <ClientProjectSection data={data} />
-      <InvoiceSections data={data} year={year} />
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
+          {/* The year as the same dial the other pages use: hours against a 1,800-hour working year. */}
+          <GoalMeter
+            id="year"
+            label={`${year}`}
+            minutes={data.totals.minutes}
+            defaultGoalHours={1800}
+            minHours={200}
+            maxHours={2400}
+            stepHours={100}
+            note={`${h(data.totals.billableMinutes)} billable · ${data.totals.workedDays} days`}
+          />
+          <ReportStats data={data} />
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <PeriodSections data={data} />
+          <ClientProjectSection data={data} />
+          <InvoiceSections data={data} year={year} />
+        </div>
+      </div>
 
       <p className="text-muted-foreground text-xs">
         “Earned” is billable hours × each project's current hourly rate: what the time is worth. “Received” is the

@@ -12,9 +12,9 @@ export const metadata: Metadata = { title: "Log in · UseHourly" };
 export default function LoginPage() {
   return (
     <>
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 rounded-2xl border bg-card p-6 sm:w-[400px] sm:p-8">
+      <div className="relative mx-auto flex w-full flex-col justify-center space-y-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)] sm:w-[420px] sm:p-8">
         <div className="space-y-2 text-center">
-          <h1 className="font-medium text-3xl">Welcome back</h1>
+          <h1 className="font-bold font-display text-4xl">Welcome back</h1>
           <p className="text-muted-foreground text-sm">Log in to track your time.</p>
         </div>
         <SocialSignIn />

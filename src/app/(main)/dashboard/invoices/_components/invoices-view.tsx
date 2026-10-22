@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageSize } from "@/components/use-page-size";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
-import { totalsByCurrency } from "@/lib/money";
+import { formatMoney, totalsByCurrency } from "@/lib/money";
 import { paginate } from "@/lib/paginate";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -98,46 +98,75 @@ export function InvoicesView() {
           <p className="text-muted-foreground text-sm">Create one from the time you've already logged.</p>
         </EmptyState>
       ) : (
-        <section
-          id="invoice-list"
-          aria-label="Your invoices"
-          className="scroll-mt-20 overflow-hidden rounded-xl border bg-card"
-        >
-          <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
-            <h2 className="font-semibold text-base">Your invoices</h2>
-            {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
-          </header>
-          {/* Search and filters sit right above the list they narrow. */}
-          {showFilters && (
-            <div className="border-b px-3 py-3 sm:px-4">
-              <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
-            </div>
+        <div className="flex flex-col gap-4">
+          {groups[0] && !filtering && (
+            // How much of what you invoiced has been paid, as the same dial Today uses.
+            <section
+              aria-label="Paid so far"
+              data-headerless="a summary line above the list"
+              className="flex flex-col gap-2 rounded-3xl border bg-card px-4 py-4 shadow-[var(--shadow-sheet)]"
+            >
+              <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+                <div>
+                  <p className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">Paid</p>
+                  <p className="font-display font-extrabold text-4xl tabular-nums leading-none">
+                    {formatMoney(groups[0].total - groups[0].unpaid, groups[0].currency)}
+                  </p>
+                </div>
+                <p className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+                  {formatMoney(groups[0].unpaid, groups[0].currency)} unpaid · of{" "}
+                  {formatMoney(groups[0].total, groups[0].currency)}
+                </p>
+              </div>
+              <div aria-hidden className="h-2.5 overflow-hidden rounded-full bg-muted">
+                <span
+                  className="block h-full rounded-full bg-success-bright"
+                  style={{ width: `${((groups[0].total - groups[0].unpaid) / Math.max(1, groups[0].total)) * 100}%` }}
+                />
+              </div>
+            </section>
           )}
-          {invoices.error ? (
-            <div className="p-3 sm:p-4">
-              <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
-            </div>
-          ) : invoices.isLoading ? (
-            <Skeleton className="m-3 h-32 sm:m-4" />
-          ) : invoices.data?.length === 0 ? (
-            <p className="px-3 py-10 text-center text-muted-foreground text-sm sm:px-4">
-              No invoices match that search.
-            </p>
-          ) : (
-            <InvoiceTable
-              invoices={invoices.data ?? []}
-              pageNo={pageNo}
-              pageSize={pageSize}
-              onPage={(n) => {
-                setPageNo(n);
-                // Landing on the new page at its top, not wherever the buttons were.
-                document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
-              }}
-              today={today}
-              handlers={handlers}
-            />
-          )}
-        </section>
+          <section
+            id="invoice-list"
+            aria-label="Your invoices"
+            className="scroll-mt-20 overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
+          >
+            <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
+              <h2 className="font-semibold text-base">Your invoices</h2>
+              {(invoices.data?.length ?? 0) > 0 && <InvoiceTotals groups={groups} filtering={filtering} />}
+            </header>
+            {/* Search and filters sit right above the list they narrow. */}
+            {showFilters && (
+              <div className="border-b px-3 py-3 sm:px-4">
+                <InvoiceFilterBar filters={filters} clients={clients.data} today={today} />
+              </div>
+            )}
+            {invoices.error ? (
+              <div className="p-3 sm:p-4">
+                <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
+              </div>
+            ) : invoices.isLoading ? (
+              <Skeleton className="m-3 h-32 sm:m-4" />
+            ) : invoices.data?.length === 0 ? (
+              <p className="px-3 py-10 text-center text-muted-foreground text-sm sm:px-4">
+                No invoices match that search.
+              </p>
+            ) : (
+              <InvoiceTable
+                invoices={invoices.data ?? []}
+                pageNo={pageNo}
+                pageSize={pageSize}
+                onPage={(n) => {
+                  setPageNo(n);
+                  // Landing on the new page at its top, not wherever the buttons were.
+                  document.getElementById("invoice-list")?.scrollIntoView({ block: "start" });
+                }}
+                today={today}
+                handlers={handlers}
+              />
+            )}
+          </section>
+        </div>
       )}
     </PageShell>
   );

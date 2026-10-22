@@ -107,12 +107,12 @@ export function MonthCalendar({
   const max = Math.max(1, ...Object.values(dayTotals));
 
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
-      <div className="grid select-none grid-cols-7 text-sm sm:min-w-[560px] sm:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
+    <div className="overflow-x-auto rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
+      <div className="grid select-none grid-cols-7 text-sm xl:grid-cols-[repeat(7,minmax(0,1fr))_5.5rem]">
         {[...weekdayNames, "Week"].map((n) => (
           <div
             key={n}
-            className={`border-b px-0.5 py-2 text-center text-muted-foreground text-xs sm:px-2 ${n === "Week" ? "hidden sm:block" : ""}`}
+            className={`border-b px-0.5 py-2 text-center text-muted-foreground text-xs sm:px-2 ${n === "Week" ? "hidden xl:block" : ""}`}
           >
             {n}
           </div>
@@ -169,7 +169,7 @@ export function MonthCalendar({
                   }}
                 />
               ))}
-              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-mono font-semibold text-foreground tabular-nums sm:flex">
+              <div className="hidden items-end justify-end border-b bg-band-2 p-2 font-bold font-display text-foreground tabular-nums xl:flex">
                 {weekTotal ? formatDuration(weekTotal) : ""}
               </div>
             </div>

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { DayEditorPanel, longDateLabel } from "@/components/day-editor";
+import { GoalMeter } from "@/components/goal-meter";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
@@ -83,7 +84,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
       description={
         // The month's total is the number people came for: a figure, not small print.
         <>
-          <span className="font-mono font-semibold text-base text-foreground tabular-nums">
+          <span className="font-display font-extrabold text-foreground text-xl tabular-nums">
             {formatDuration(sheet.total)}
           </span>{" "}
           logged ({formatDecimalHours(sheet.total)} h)
@@ -114,6 +115,16 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
         <Skeleton className="h-96 w-full" />
       ) : (
         <>
+          <GoalMeter
+            id="month"
+            label="This month"
+            minutes={sheet.total}
+            defaultGoalHours={160}
+            minHours={40}
+            maxHours={240}
+            note={`${Object.values(sheet.dayTotals).filter((m) => m > 0).length} days worked`}
+          />
+          {/* The calendar is the page: it gets the full width. The dial and the lists sit under it. */}
           {selectMode && (
             <QuickCreate
               dates={[...shownPicked].sort()}
@@ -161,19 +172,24 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             </section>
           )}
 
-          <ProjectBreakdown rows={allRows} projectId={projectId} onProjectId={setProjectId} />
+          <div className="grid gap-4 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+            <div className="flex flex-col gap-4 md:sticky md:top-32 md:self-start">
+              <ProjectBreakdown rows={allRows} projectId={projectId} onProjectId={setProjectId} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-4">
+              <MergeDaysPanel entries={shown} />
 
-          <MergeDaysPanel entries={shown} />
-
-          {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
-          <WorkItems
-            key={`${first}-${projectId}`}
-            entries={shown}
-            onOpenDay={setEditDate}
-            period="month"
-            editInPlace
-            nonBillable={nonBillable}
-          />
+              {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
+              <WorkItems
+                key={`${first}-${projectId}`}
+                entries={shown}
+                onOpenDay={setEditDate}
+                period="month"
+                editInPlace
+                nonBillable={nonBillable}
+              />
+            </div>
+          </div>
         </>
       )}
     </PageShell>

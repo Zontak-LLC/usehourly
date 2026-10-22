@@ -6,7 +6,7 @@ import { SUPPORTERS } from "@/lib/supporters";
 export function Supporters() {
   if (SUPPORTERS.length === 0) return null;
   return (
-    <section className="border-t bg-muted/30" aria-labelledby="supporters-heading">
+    <section className="border-t bg-[#8A6CFF]/5" aria-labelledby="supporters-heading">
       <div className="mx-auto max-w-3xl px-6 py-14 text-center md:py-16">
         <Heart className="mx-auto size-6 text-rose-500" aria-hidden />
         <h2 id="supporters-heading" className="mt-3 font-semibold text-2xl tracking-tight">

@@ -12,6 +12,7 @@ import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
+import { TimerPanel } from "@/components/timer-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
@@ -22,7 +23,6 @@ import { useToday } from "@/lib/use-today";
 
 import { FirstRun } from "./first-run";
 import { QuickAdd } from "./quick-add";
-import { TimerBanner } from "./timer-banner";
 
 const _longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 const shortDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -116,8 +116,6 @@ export function TodayView() {
         )
       }
     >
-      <TimerBanner />
-
       {hasProjects && totalsText && <p className="text-foreground/75 text-sm sm:hidden">{totalsText}</p>}
 
       {clients.isLoading ? (
@@ -134,7 +132,14 @@ export function TodayView() {
               timerRunning={!!running.data}
             />
             {week.data && weekStart && (
-              <DaySide entries={week.data} weekStart={weekStart} date={date} today={today} onPick={go} />
+              <DaySide
+                entries={week.data}
+                weekStart={weekStart}
+                date={date}
+                today={today}
+                onPick={go}
+                after={running.data?.started_at ? <TimerPanel /> : undefined}
+              />
             )}
           </div>
           <div className="flex min-w-0 flex-col gap-4">

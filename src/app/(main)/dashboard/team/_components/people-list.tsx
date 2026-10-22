@@ -56,7 +56,7 @@ function StatusIcon({ status }: { status: Person["status"] }) {
 export function PeopleList({ people }: { people: Person[] }) {
   const shown = people.filter((p) => p.status !== "removed");
   return (
-    <section aria-label="Your team" className="overflow-hidden rounded-xl border bg-card">
+    <section aria-label="Your team" className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
       <header className="bg-band-2 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">Your team</h2>
         <p className="text-foreground/75 text-sm">

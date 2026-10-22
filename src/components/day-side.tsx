@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { addDays } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
@@ -24,6 +24,7 @@ export function DaySide({
   date,
   today,
   onPick,
+  after,
 }: {
   /** Every entry of the week. */
   entries: Entry[];
@@ -31,6 +32,8 @@ export function DaySide({
   date: string;
   today: string | null;
   onPick: (d: string) => void;
+  /** Shown under the week bars (the live timer sits there while it runs). */
+  after?: ReactNode;
 }) {
   const [grown, setGrown] = useState(false);
   useEffect(() => {
@@ -125,6 +128,7 @@ export function DaySide({
           })}
         </div>
       </section>
+      {after}
     </div>
   );
 }

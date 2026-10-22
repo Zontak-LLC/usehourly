@@ -124,6 +124,8 @@ export function EntryRow({
   return (
     <li
       aria-busy={unconfirmed || undefined}
+      // A stripe in the project's colour down the left edge, so a long list reads by colour as well as by name.
+      style={editing ? undefined : { boxShadow: `inset 4px 0 0 ${entry.project.client.color}` }}
       className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""}`}
     >
       {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
@@ -191,7 +193,7 @@ export function EntryRow({
         <div className="flex shrink-0 items-center gap-1">
           {!editing && (
             // The hours are information, not a second way to edit: only the pencil opens the form (one way, no confusion).
-            <span className="px-1.5 py-0.5 font-mono font-semibold text-lg tabular-nums">
+            <span className="px-1.5 py-0.5 font-display font-extrabold text-xl tabular-nums">
               {isRunning ? `${formatDuration(entry.minutes)} +` : formatDuration(entry.minutes)}
             </span>
           )}

@@ -116,7 +116,13 @@ export function RegisterForm() {
         <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
       {siteKey && <RobotCheck siteKey={siteKey} onToken={setCaptcha} />}
-      <Button type="submit" disabled={pending || (siteKey !== null && captcha === "")}>
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        className="h-11 text-base"
+        disabled={pending || (siteKey !== null && captcha === "")}
+      >
         {pending ? "Creating account…" : "Create account"}
       </Button>
     </form>

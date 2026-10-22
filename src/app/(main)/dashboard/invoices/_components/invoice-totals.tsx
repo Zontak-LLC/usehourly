@@ -15,8 +15,8 @@ export function InvoiceTotals({ groups, filtering }: { groups: CurrencyTotals[];
           <p key={currency}>
             {count} invoice{count === 1 ? "" : "s"}
             {filtering ? " (filtered)" : ""} · <span className="font-medium text-foreground">{money(total)}</span>{" "}
-            invoiced · <span className="font-medium text-foreground">{money(unpaid)}</span> unpaid ·{" "}
-            <span className="font-medium text-success">{money(total - unpaid)}</span> paid
+            invoiced · <span className="font-bold font-display text-base text-foreground">{money(unpaid)}</span> unpaid
+            · <span className="font-bold font-display text-base text-success">{money(total - unpaid)}</span> paid
           </p>
         );
       })}

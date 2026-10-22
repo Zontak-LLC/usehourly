@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { Clock } from "lucide-react";
-
+import { Dial } from "@/components/day-dial";
 import { NoDollar } from "@/components/no-dollar-icon";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { fromISODate } from "@/lib/dates";
+import { dialLeft } from "@/lib/day-dial";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import type { buildSheet } from "@/lib/timesheet";
 
@@ -112,7 +112,24 @@ export function DayTiles({
   );
 }
 
-/** The week's total, with one pill per project that filters the page when clicked. */
+const WEEK_GOAL_MINUTES = 40 * 60;
+
+/** The week as a dial (hours against a 40-hour week), like the day dial on Today. */
+export function WeekDial({ total, today }: { total: number; today: number | null }) {
+  return (
+    <Dial
+      label="This week's hours"
+      title="This week"
+      minutes={total}
+      goal={WEEK_GOAL_MINUTES}
+      caption={dialLeft(total, WEEK_GOAL_MINUTES).replace("goal reached", "week full")}
+      footLeft={`Goal ${formatDuration(WEEK_GOAL_MINUTES)}`}
+      footRight={today !== null ? `Today ${formatDuration(today)}` : undefined}
+    />
+  );
+}
+
+/** One row per project: a sheet under the dial; a row filters the whole page when pressed. */
 export function WeekTotalCard({
   sheet,
   projectId,
@@ -122,24 +139,22 @@ export function WeekTotalCard({
   projectId: string;
   onProjectId: (id: string) => void;
 }) {
+  const longest = Math.max(1, ...sheet.rows.map((x) => x.total));
   return (
     <section
       aria-label="This week"
-      data-headerless="a summary strip with its big figure first"
-      className="flex flex-col gap-3 rounded-xl border bg-card p-4"
+      data-headerless="a summary list under the dial"
+      className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
     >
-      {/* A summary, not another card: no frame and no header, a big figure first, then the projects that made it up. */}
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="font-medium text-foreground/75 text-sm">Total hours this week</h2>
-        <p className="font-display font-extrabold text-4xl tabular-nums leading-none">{formatDuration(sheet.total)}</p>
-        <p className="text-foreground/75 text-sm">({formatDecimalHours(sheet.total)} h)</p>
-      </div>
-      {sheet.rows.length > 0 && (
-        // One row per project, full width inside the card: dot, project and client, hours. A row filters the week.
-        <ul className="-mx-4 -mb-4 divide-y border-t">
+      <h2 className="px-4 pt-4 pb-2 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
+        By project · {formatDecimalHours(sheet.total)} h
+      </h2>
+      {sheet.rows.length === 0 ? (
+        <p className="px-4 pb-4 text-muted-foreground text-sm">Nothing logged this week yet.</p>
+      ) : (
+        <ul className="divide-y border-t">
           {sheet.rows.map((r) => {
             const on = projectId === r.projectId;
-            const longest = Math.max(1, ...sheet.rows.map((x) => x.total));
             return (
               <li key={r.projectId}>
                 <button
@@ -147,24 +162,22 @@ export function WeekTotalCard({
                   aria-pressed={on}
                   onClick={() => onProjectId(toggleProjectFilter(projectId, r.projectId))}
                   title={on ? "Show all projects" : `Show only ${r.project}`}
-                  className={`flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                  className={`flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-muted ${
                     on ? "bg-tint" : projectId ? "text-muted-foreground" : ""
                   }`}
                 >
                   <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{r.project}</span>
-                    <span className="block truncate text-muted-foreground text-xs">{r.client}</span>
+                    <span aria-hidden className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
+                      <span
+                        className="block h-full rounded-full"
+                        style={{ width: `${(r.total / longest) * 100}%`, backgroundColor: r.color }}
+                      />
+                    </span>
+                    <span className="sr-only">{r.client}</span>
                   </span>
-                  {/* A bar for how much of the week this project took, next to the busiest one. */}
-                  <span aria-hidden className="hidden h-2 w-40 overflow-hidden rounded-full bg-muted sm:block">
-                    <span
-                      className="block h-full rounded-full"
-                      style={{ width: `${(r.total / longest) * 100}%`, backgroundColor: r.color }}
-                    />
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1 font-mono tabular-nums">
-                    <Clock className="size-3.5" aria-hidden />
+                  <span className="shrink-0 font-bold font-display text-lg tabular-nums">
                     {formatDuration(r.total)}
                   </span>
                 </button>

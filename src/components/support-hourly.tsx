@@ -22,8 +22,12 @@ export function SupportHourly({ variant = "card" }: { variant?: "band" | "card" 
 
   if (variant === "band") {
     return (
-      <section className="border-t">
-        <div className="mx-auto max-w-3xl px-6 py-14 text-center md:py-20">
+      <section className="relative overflow-hidden border-t bg-gradient-to-b from-[#ff5d8f]/10 via-[#8A6CFF]/10 to-transparent">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-20 left-1/2 size-72 -translate-x-1/2 rounded-full bg-[#ff5d8f]/20 blur-3xl"
+        />
+        <div className="relative mx-auto max-w-3xl px-6 py-14 text-center md:py-20">
           <h2 className="font-semibold text-2xl tracking-tight md:text-3xl">UseHourly is free.</h2>
           <p className="mx-auto mt-3 max-w-xl text-lg text-muted-foreground">
             No paywall, no ads. If it saves you time, you can chip in to keep it running.

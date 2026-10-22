@@ -62,8 +62,8 @@ export function ClientCard({
   const projects = hidden ? c.projects.slice(0, PROJECTS_SHOWN) : c.projects;
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
   return (
-    <section aria-label={c.name} className="overflow-hidden rounded-xl border bg-card">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 bg-band-2 px-3 py-3">
+    <section aria-label={c.name} className="border-foreground/10 border-t pt-5 first:border-t-0 first:pt-0">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 px-1 pb-2">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <ClientLogoSlot clientId={c.id} name={c.name} />
           {/* The whole name area opens and closes the card (the logo stays its own button, so this is not nested). */}
@@ -75,7 +75,7 @@ export function ClientCard({
             className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md text-left"
           >
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-semibold text-lg">{c.name}</span>
+              <span className="block truncate font-bold font-display text-2xl">{c.name}</span>
               <span className="block text-foreground/70 text-sm">
                 {c.projects.length} project{c.projects.length === 1 ? "" : "s"} · {formatDuration(monthMinutes)} this
                 month
@@ -113,7 +113,7 @@ export function ClientCard({
       <ClientCurrency currency={c.currency}>
         <div id={bodyId} hidden={!open} className="flex flex-col">
           {billingOpen && (
-            <div className="m-3 overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
+            <div className="m-1 mb-4 rounded-2xl bg-muted/40 p-3">
               <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
             </div>
           )}

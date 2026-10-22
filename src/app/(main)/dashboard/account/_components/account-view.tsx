@@ -21,6 +21,7 @@ import { BusinessDetailsCard } from "./business-details-card";
 import { CurrencyCard } from "./currency-card";
 import { FridayReminderCard } from "./friday-reminder-card";
 import { InvoiceFooterCard } from "./invoice-footer-card";
+import { MemberBadge } from "./member-badge";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
 
@@ -39,9 +40,16 @@ export function AccountView() {
     <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
       <AccountTabs tab={tab} onTab={setTab} />
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-8">
+      <div
+        key={tab}
+        role="tabpanel"
+        id={`panel-${tab}`}
+        aria-labelledby={`tab-${tab}`}
+        className="flex flex-col gap-8 motion-safe:animate-[settle_0.45s_ease-out_both]"
+      >
         {tab === "account" && (
           <Section id="account" title="Your account" description="Your name, your email, and how you sign in.">
+            {!account.is_demo && <MemberBadge me={account} />}
             {account.is_demo ? <ClaimDemoCard /> : <ProfileCard me={account} emailEnabled={emailEnabled.data} />}
             {!account.is_demo && !account.has_password && <PasswordNote />}
             {!account.is_demo && account.has_password && <ChangePasswordCard me={account} />}
