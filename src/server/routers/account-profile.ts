@@ -68,7 +68,6 @@ export const profileProcedures = {
         logo: true,
         payment_instructions: true,
         email_verified_at: true,
-        invoice_branding: true,
         is_demo: true,
         weekly_reminder: true,
         currency: true,
@@ -129,12 +128,6 @@ export const profileProcedures = {
       });
       return { enabled: true };
     }),
-
-  /** Show or hide "Made with UseHourly" on invoices issued from now on (issued ones never change). */
-  setInvoiceBranding: protectedProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => {
-    await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { invoice_branding: input.enabled } });
-    return { enabled: input.enabled };
-  }),
 
   updateProfile: protectedProcedure
     .input(z.object({ name: z.string().trim().min(1).max(80) }))

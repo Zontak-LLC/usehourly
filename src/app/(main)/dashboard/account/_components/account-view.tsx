@@ -16,7 +16,6 @@ import { CurrencyCard } from "./currency-card";
 import { DataHub } from "./data-hub";
 import { AssistantLink, DataVault } from "./data-vault";
 import { FridayReminderCard } from "./friday-reminder-card";
-import { InvoiceFooterCard } from "./invoice-footer-card";
 import { MemberBadge } from "./member-badge";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
@@ -57,7 +56,6 @@ export function AccountView() {
           <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
             <BusinessDetailsCard me={account} />
             <CurrencyCard me={account} />
-            <InvoiceFooterCard me={account} />
           </Section>
         )}
         {tab === "data" && (
