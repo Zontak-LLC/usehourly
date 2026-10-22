@@ -1,7 +1,5 @@
 "use client";
 
-import { Bot, Plug } from "lucide-react";
-
 import { trpc } from "@/lib/trpc";
 
 /** A small drawing: records drop into a vault drawer, with live counts of what is inside. */
@@ -88,41 +86,20 @@ export function DataVault() {
   );
 }
 
-/** How an assistant gets connected: the animated scene beside the three steps. */
+/** How an assistant gets connected, in three plain written steps (no picture: the words are the explanation). */
 export function AssistantLink() {
-  const steps = [
-    ["1", "Make a token", "Below: name it, choose read only or read and change."],
-    ["2", "Give it to your assistant", "Paste the command or the file it shows you, once."],
-    [
-      "3",
-      "Ask for what you need",
-      "\u201cLog 2 hours on Acme today.\u201d \u201cMake last month\u2019s invoice.\u201d",
-    ],
-  ];
   return (
-    <div>
-      <ol className="grid gap-5 rounded-3xl bg-card p-6 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
-        <li className="flex items-center gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber/15">
-            <Bot className="size-6" aria-hidden />
-          </span>
-          <span aria-hidden className="h-0.5 flex-1 border-foreground/25 border-t-2 border-dashed" />
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber text-[#1b1405]">
-            <Plug className="size-6" aria-hidden />
-          </span>
-        </li>
-        {steps.map(([n, title, text]) => (
-          <li key={n} className="flex gap-3">
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber font-bold text-[#1b1405] text-sm">
-              {n}
-            </span>
-            <span className="min-w-0">
-              <span className="block font-bold font-display">{title}</span>
-              <span className="block text-foreground/75 text-sm">{text}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <ol className="list-decimal space-y-3 pl-6 marker:font-semibold">
+      <li>
+        <strong>Make a token.</strong> Below: name it, choose read only or read and change.
+      </li>
+      <li>
+        <strong>Give it to your assistant.</strong> Paste the command or the file it shows you, once.
+      </li>
+      <li>
+        <strong>Ask for what you need.</strong> For example: &ldquo;Log 2 hours on Acme today.&rdquo; or &ldquo;Make
+        last month&rsquo;s invoice.&rdquo;
+      </li>
+    </ol>
   );
 }
