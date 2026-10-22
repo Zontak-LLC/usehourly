@@ -219,6 +219,7 @@ export function QuickAdd({
               )}
               value={projectId}
               onChange={remember}
+              onPicked={() => durationRef.current?.focus({ preventScroll: true })}
             />
           </div>
         )}
