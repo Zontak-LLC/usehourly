@@ -95,12 +95,20 @@ export function AssistantTerminal() {
         <i className="size-2.5 rounded-full bg-[#28C840]" />
         <span className="ml-2 font-mono text-[#7C8190] text-xs">claude · usehourly connected</span>
       </div>
-      {/* A fixed height (on a phone the newest line sits at the foot): the window never grows, so the page never jumps. */}
+      {/* The window is as tall as the FINISHED screen (an invisible copy sets the height), at any width, so typing never makes
+          it grow and the page never jumps. The live text fills it from the top. */}
       <pre
         aria-hidden
-        className="m-0 flex h-[41rem] flex-col justify-end overflow-hidden p-4 font-mono text-[11.5px] leading-relaxed sm:h-[35rem] sm:justify-start sm:p-5 sm:text-[13px]"
+        className="m-0 grid overflow-hidden p-4 font-mono text-[11.5px] leading-relaxed sm:p-5 sm:text-[13px]"
       >
-        <div className="whitespace-pre-wrap break-words">
+        <div className="invisible col-start-1 row-start-1 whitespace-pre-wrap break-words">
+          {FINISHED.map((p, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a fixed list that never changes
+            <span key={i}>{p.t}</span>
+          ))}
+          {"\u00a0"}
+        </div>
+        <div className="col-start-1 row-start-1 whitespace-pre-wrap break-words">
           {parts.map((p, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: the list only ever grows or resets, so an index is stable
             <span key={i} className={TONE[p.c]}>
