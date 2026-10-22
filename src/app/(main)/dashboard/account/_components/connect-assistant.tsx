@@ -80,7 +80,7 @@ export function ConnectAssistant() {
                 aria-pressed={choice === c.id}
                 onClick={() => setChoice(c.id)}
                 className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 font-semibold text-sm ring-1 ring-foreground/15 transition-colors ${
-                  choice === c.id ? "bg-amber text-[#1b1405] ring-transparent" : "hover:bg-muted"
+                  choice === c.id ? "bg-foreground text-background ring-transparent" : "hover:bg-muted"
                 }`}
               >
                 <c.Logo aria-hidden className="size-4 shrink-0" />

@@ -17,7 +17,7 @@ const ACCESS: { id: TokenAccess; title: string; text: string }[] = [
 
 const pill = (on: boolean) =>
   `min-h-10 rounded-full px-4 text-sm font-medium ring-1 transition-colors ${
-    on ? "bg-amber text-[#1b1405] ring-transparent" : "ring-foreground/15 hover:bg-muted"
+    on ? "bg-foreground text-background ring-transparent" : "ring-foreground/15 hover:bg-muted"
   }`;
 
 /**
@@ -72,7 +72,7 @@ export function TokenForm({
             <label
               key={a.id}
               className={`flex cursor-pointer flex-col gap-0.5 rounded-2xl p-3 ring-1 transition-colors has-[:focus-visible]:ring-2 ${
-                access === a.id ? "bg-amber/10 ring-2 ring-amber" : "ring-foreground/15 hover:bg-muted/60"
+                access === a.id ? "bg-muted/60 ring-2 ring-foreground" : "ring-foreground/15 hover:bg-muted/60"
               }`}
             >
               <input
