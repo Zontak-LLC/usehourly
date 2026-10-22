@@ -60,7 +60,7 @@ export function SideNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const isActive = (url: string) => pathname === url || pathname.startsWith(`${url}/`);
 
   return (
-    <nav aria-label="Side menu" className={`${SHOW} sticky top-0 h-dvh w-64 shrink-0 flex-col p-3`}>
+    <nav aria-label="Side menu" className={`${SHOW} sticky top-0 h-dvh w-72 shrink-0 flex-col p-3`}>
       <div className="flex h-full flex-col gap-1 overflow-y-auto rounded-3xl bg-card p-3 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10">
         <Link
           href="/dashboard/today"

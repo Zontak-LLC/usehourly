@@ -180,18 +180,25 @@ export function GuideSearch({
       ) : null}
 
       {q && topicHits.length + faqHits.length > 0 ? null : (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-10">
           {groups
             .filter((g) => depthOf(g.id) <= depth)
-            .map((g) => (
-              <section key={g.id} aria-labelledby={`g-${g.id}`}>
-                <h2
-                  id={`g-${g.id}`}
-                  className="mb-3 font-mono font-normal text-muted-foreground text-xs uppercase tracking-widest"
-                >
-                  {g.title}
-                </h2>
-                <ul className="grid gap-2 sm:grid-cols-2">
+            .map((g, gi) => (
+              <section
+                key={g.id}
+                aria-labelledby={`g-${g.id}`}
+                className="grid gap-4 border-foreground/10 border-t-2 pt-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-10"
+              >
+                {/* the chapter: a big number and its name, kept in view beside the list on a wide screen */}
+                <div className="lg:sticky lg:top-24 lg:self-start">
+                  <span aria-hidden className="font-display font-extrabold text-5xl text-amber leading-none">
+                    {String(gi + 1).padStart(2, "0")}
+                  </span>
+                  <h2 id={`g-${g.id}`} className="mt-2 font-display font-extrabold text-2xl leading-tight">
+                    {g.title}
+                  </h2>
+                </div>
+                <ul className="divide-y divide-foreground/10">
                   {topics
                     .filter((t) => t.group === g.id)
                     .map((t, n) => (
@@ -199,23 +206,21 @@ export function GuideSearch({
                         <Link
                           href={`/help/${t.slug}`}
                           prefetch={false}
-                          className="group/topic relative flex h-full gap-3 overflow-hidden rounded-3xl border bg-card p-4 shadow-[var(--shadow-sheet)] transition-all duration-200 hover:border-amber/60 motion-safe:hover:-translate-y-0.5"
+                          className="group/topic relative -mx-3 flex items-center gap-4 rounded-2xl px-3 py-4 outline-none transition-colors hover:bg-amber/10 focus-visible:ring-4 focus-visible:ring-amber/40"
                         >
-                          {/* a numbered badge, amber when the card is hovered or focused */}
-                          <span
-                            aria-hidden
-                            className="grid size-8 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs transition-colors group-hover/topic:bg-amber group-hover/topic:text-[#1b1405]"
-                          >
-                            {n + 1}
+                          <span aria-hidden className="w-6 shrink-0 font-mono text-foreground/60 text-xs">
+                            {String(n + 1).padStart(2, "0")}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block font-bold font-display text-base">{t.title}</span>
-                            <span className="mt-0.5 block text-muted-foreground text-sm">{t.summary}</span>
+                            <span className="block font-bold font-display text-lg leading-snug">{t.title}</span>
+                            <span className="mt-0.5 block text-foreground/75 text-sm">{t.summary}</span>
                           </span>
-                          <ArrowRight
+                          <span
                             aria-hidden
-                            className="size-4 shrink-0 self-center text-muted-foreground transition-transform group-hover/topic:translate-x-1 group-hover/topic:text-foreground"
-                          />
+                            className="grid size-9 shrink-0 place-items-center rounded-full bg-muted transition-all duration-200 group-hover/topic:translate-x-1 group-hover/topic:bg-amber group-hover/topic:text-[#1b1405]"
+                          >
+                            <ArrowRight className="size-4" />
+                          </span>
                         </Link>
                       </li>
                     ))}
