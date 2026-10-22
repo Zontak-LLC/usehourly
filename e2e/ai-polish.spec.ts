@@ -104,7 +104,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveCount(0);
     await expect(page.getByLabel("Description")).toHaveValue(/Reworked the homepage layout/);
     await page.getByLabel("Time to add").fill("1h");
-    await page.getByRole("button", { name: /Add to the day/ }).click();
+    await page.getByRole("button", { name: /Log time/ }).click();
     await expect(page.getByText(/Reworked the homepage layout/).first()).toBeVisible();
   });
 

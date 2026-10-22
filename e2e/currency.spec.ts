@@ -30,7 +30,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
   await test.step("an invoice is made in euros, and then the currency can no longer be changed", async () => {
     await page.goto("/dashboard/today");
     await page.getByPlaceholder(/Time:/).fill("2h");
-    await page.getByRole("button", { name: /Add to the day/ }).click();
+    await page.getByRole("button", { name: /Log time/ }).click();
     await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
     await page.goto("/dashboard/invoices/new");
     await page.getByRole("button", { name: "Create invoice" }).click();

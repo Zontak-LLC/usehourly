@@ -155,7 +155,7 @@ test("an owner invites someone by email, they join and log time, and the owner r
     await expect(patPage.getByText(/Log time for/)).toBeVisible();
     await patPage.getByLabel("Time", { exact: true }).fill("1.5");
     await patPage.getByLabel("Description").fill("Pat built the header");
-    await patPage.getByRole("button", { name: "Add to the day" }).click();
+    await patPage.getByRole("button", { name: "Log time" }).click();
     await expect(patPage.getByText("Pat built the header")).toBeVisible();
     await expect(patPage.getByRole("option", { name: "Acme Studio · General" })).toHaveCount(1); // only the granted client
   });

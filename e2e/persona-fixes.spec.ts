@@ -49,7 +49,7 @@ test("the budget bar sits under the Add button, so it never moves the controls a
   await page.goto("/dashboard/today");
   const bar = page.getByText(/^Budget:/);
   await expect(bar).toBeVisible();
-  const add = await page.getByRole("button", { name: /^Add to the day/ }).boundingBox();
+  const add = await page.getByRole("button", { name: /^Log time/ }).boundingBox();
   const budget = await bar.boundingBox();
   expect(budget?.y ?? 0).toBeGreaterThan((add?.y ?? 0) + (add?.height ?? 0)); // below the button, not above the time box
 });

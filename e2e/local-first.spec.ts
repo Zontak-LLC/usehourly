@@ -38,7 +38,7 @@ test("entries added, edited and deleted offline reach the server once the connec
   const add = async (time: string, note: string) => {
     await page.getByLabel("Time to add").fill(time);
     await page.getByLabel("Description").fill(note);
-    await page.getByRole("button", { name: /Add to the day/ }).click();
+    await page.getByRole("button", { name: /Log time/ }).click();
     await expect(page.getByText(note)).toBeVisible(); // shown at once, from the device
   };
   await add("2h", "kept offline");

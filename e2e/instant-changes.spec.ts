@@ -18,7 +18,7 @@ async function hold(page: Page, procedure: string) {
 async function addEntry(page: Page, time: string, note: string) {
   await page.getByPlaceholder(/Time:/).fill(time);
   await page.getByLabel("Description").fill(note);
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
 }
 
 test("a new entry is in the list and the form is clear before the server has answered", async ({ page }) => {

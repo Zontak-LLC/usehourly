@@ -48,7 +48,7 @@ test("sample account: every main page loads, and an entry can be added, edited a
     await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
     await page.getByLabel("Time to add").fill("1");
     await page.getByLabel("Description").fill("smoke test entry");
-    await page.getByRole("button", { name: /^Add to the day/ }).click();
+    await page.getByRole("button", { name: /^Log time/ }).click();
     await expect(page.getByText("smoke test entry").first()).toBeVisible();
   });
 

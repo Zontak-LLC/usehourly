@@ -51,7 +51,7 @@ test("the hours on an entry are plain text: only the pencil opens the edit form"
   await startFreshAccount(page);
   await page.getByLabel("Time to add").fill("2");
   await page.getByLabel("Description").fill("hours are not a button");
-  await page.getByRole("button", { name: /^Add to the day/ }).click();
+  await page.getByRole("button", { name: /^Log time/ }).click();
   const row = page.getByRole("listitem").filter({ hasText: "hours are not a button" }).first();
   await expect(row).toBeVisible();
   const hours = row.getByText("2:00", { exact: true });

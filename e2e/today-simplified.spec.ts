@@ -6,7 +6,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
 }) => {
   await startFreshAccount(page);
   const card = page.getByRole("region", { name: "From your calendar" });
-  const addCard = page.getByRole("heading", { name: "Add to the day" });
+  const addCard = page.getByRole("heading", { name: "Log time" });
 
   await test.step("three quick times and no total cards", async () => {
     for (const name of ["30 min", "1 hour", "2 hours"]) {
@@ -21,7 +21,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
   });
 
   await test.step("until a time is typed the Add button is quiet and a line says what to do", async () => {
-    const add = page.getByRole("button", { name: /^Add to the day/ });
+    const add = page.getByRole("button", { name: /^Log time/ });
     await expect(add).toBeDisabled();
     await expect(page.getByText("Type a time or tap one (tap again to add more), then add it.")).toBeVisible();
     // not a grey slab: the background is transparent while it waits
@@ -35,7 +35,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
   });
 
   await test.step("the timer is a small link under Add, not a rival button", async () => {
-    const add = page.getByRole("button", { name: /^Add to the day/ });
+    const add = page.getByRole("button", { name: /^Log time/ });
     const timer = page.getByRole("button", { name: /Start timer/ });
     const addBox = await add.boundingBox();
     const timerBox = await timer.boundingBox();

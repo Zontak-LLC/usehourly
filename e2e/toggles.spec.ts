@@ -10,7 +10,7 @@ test("buttons that open a form close it on the second click; the day's list is h
   await startFreshAccount(page, "Acme Studio");
   await page.getByLabel("Time to add").fill("1.5");
   await page.getByLabel("Description").fill("toggle me");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("toggle me")).toBeVisible();
 
   await test.step("Today's list says it is the day's timesheet, with the entry count and the total", async () => {

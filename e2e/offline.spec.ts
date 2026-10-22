@@ -7,7 +7,7 @@ import { expect, startFreshAccount, test } from "./helpers";
 const addEntry = async (page: import("@playwright/test").Page, time: string, note: string) => {
   await page.getByLabel("Time to add").fill(time);
   await page.getByLabel("Description").fill(note);
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
 };
 
 test("an entry typed offline is kept on the device and saved once when the connection returns", async ({

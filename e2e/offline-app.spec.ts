@@ -19,7 +19,7 @@ test("the app opens offline with what you last saw, takes an entry, and syncs wh
   // an entry made online, then visit the pages that should work offline
   await page.getByLabel("Time to add").fill("2:00");
   await page.getByLabel("Description").fill("seen while online");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("seen while online")).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.goto("/dashboard/week");
@@ -48,7 +48,7 @@ test("the app opens offline with what you last saw, takes an entry, and syncs wh
   // an entry typed on the offline page is kept, then sent when the connection returns
   await page.getByLabel("Time to add").fill("30m");
   await page.getByLabel("Description").fill("typed on the offline page");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByLabel("Offline status")).toContainText("1 saved on this device");
   await page.context().setOffline(false);
   await expect(page.getByText("1 saved entry synced.")).toBeVisible();
@@ -62,7 +62,7 @@ test("signing out leaves no kept pages or saved data on the device", async ({ pa
   await startFreshAccount(page);
   await page.getByLabel("Time to add").fill("1h");
   await page.getByLabel("Description").fill("private note");
-  await page.getByRole("button", { name: /Add to the day/ }).click();
+  await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("private note")).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.goto("/dashboard/today");
