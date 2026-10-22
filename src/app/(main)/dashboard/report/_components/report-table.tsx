@@ -12,7 +12,7 @@ export function Stat({ label, value, hint }: { label: string; value: string; hin
 
 export function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-xl border bg-card">
+    <section aria-label={title} className="overflow-hidden rounded-xl border bg-card">
       <div className="border-b bg-band-2 px-4 py-3">
         <CardTitle title={title} note={note} />
       </div>
@@ -27,31 +27,51 @@ export function Table({
   rows,
   total,
   textCols = 1,
+  phoneSummary,
 }: {
   head: string[];
   rows: string[][];
   total?: string[];
   textCols?: number;
+  /**
+   * Phones: a compact two-line row instead of a label/value list per row. `valueIndex` is the figure shown big on the
+   * right (Earned); `detail` writes the rest in one muted line. Without it the full list is used.
+   */
+  phoneSummary?: { valueIndex: number; detail: (row: string[]) => string };
 }) {
   const align = (i: number) => (i < textCols ? "" : "text-right font-mono tabular-nums");
   return (
     <>
       {/* Phones: one small card per row, with a label beside each value. */}
       <ul className="divide-y sm:hidden">
-        {rows.map((r) => (
-          <li key={r.join("|")} className="px-4 py-3">
-            <p className="font-medium">{r[0]}</p>
-            <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              {r.slice(1).map((c, k) => (
-                <div key={`${r[0]}-${head[k + 1]}`} className="flex items-baseline justify-between gap-2">
-                  <dt className="text-muted-foreground">{head[k + 1]}</dt>
-                  <dd className={k + 1 < textCols ? "text-right" : "text-right font-mono tabular-nums"}>{c}</dd>
-                </div>
-              ))}
-            </dl>
-          </li>
-        ))}
-        {total && (
+        {phoneSummary &&
+          [...rows, ...(total ? [total] : [])].map((r) => (
+            <li
+              key={r[0]}
+              className={`flex items-baseline justify-between gap-3 px-4 py-2.5 ${r === total ? "bg-muted/40" : ""}`}
+            >
+              <div className="min-w-0">
+                <p className="font-medium">{r[0]}</p>
+                <p className="text-muted-foreground text-xs">{phoneSummary.detail(r)}</p>
+              </div>
+              <p className="shrink-0 font-medium font-mono tabular-nums">{r[phoneSummary.valueIndex]}</p>
+            </li>
+          ))}
+        {!phoneSummary &&
+          rows.map((r) => (
+            <li key={r.join("|")} className="px-4 py-3">
+              <p className="font-medium">{r[0]}</p>
+              <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                {r.slice(1).map((c, k) => (
+                  <div key={`${r[0]}-${head[k + 1]}`} className="flex items-baseline justify-between gap-2">
+                    <dt className="text-muted-foreground">{head[k + 1]}</dt>
+                    <dd className={k + 1 < textCols ? "text-right" : "text-right font-mono tabular-nums"}>{c}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        {!phoneSummary && total && (
           <li className="bg-muted/40 px-4 py-3">
             <p className="font-medium">{total[0]}</p>
             <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
