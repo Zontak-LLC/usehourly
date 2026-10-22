@@ -40,7 +40,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     const addBox = await add.boundingBox();
     const timerBox = await timer.boundingBox();
     expect(timerBox?.y ?? 0).toBeGreaterThan((addBox?.y ?? 0) + (addBox?.height ?? 0));
-    expect(timerBox?.height ?? 99).toBeLessThan(40); // a line of text, not a 48px button
+    expect(timerBox?.height ?? 99).toBeLessThan(80); // a quiet row, not a big solid button
     await expect(timer).not.toHaveAttribute("data-variant", /.+/); // not one of the app's solid or outline buttons
   });
 

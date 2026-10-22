@@ -1,22 +1,12 @@
 import Link from "next/link";
 
-import {
-  ArrowRight,
-  Bot,
-  Code2,
-  FileText,
-  Heart,
-  KeyRound,
-  MessageSquare,
-  Server,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Bot, Code2, FileText, Heart, KeyRound, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
 import { LandingHero } from "@/components/landing-hero";
 import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
+import { McpAnimation } from "@/components/mcp-animation";
 import { Reveal } from "@/components/reveal";
 import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
@@ -78,70 +68,6 @@ const AI_POINTS = [
     body: "An assistant sees just your account, and it can't change your password or make more tokens.",
   },
 ];
-
-/** A simple spark mark for Claude, drawn here (not Anthropic's logo file). */
-function ClaudeSpark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="#D97757"
-      strokeLinecap="round"
-      strokeWidth="4"
-    >
-      {Array.from({ length: 12 }, (_, i) => {
-        const deg = i * 30;
-        const a = (deg * Math.PI) / 180;
-        const r2 = i % 2 ? 16 : 21;
-        return (
-          <line
-            key={`ray-${deg}`}
-            x1={round3(24 + 6 * Math.cos(a))}
-            y1={round3(24 + 6 * Math.sin(a))}
-            x2={round3(24 + r2 * Math.cos(a))}
-            y2={round3(24 + r2 * Math.sin(a))}
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
-function FlowNode({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex w-[5.25rem] flex-col items-center gap-2 text-center sm:w-28">
-      <div className="flex size-14 items-center justify-center rounded-2xl border bg-card shadow-sm sm:size-20">
-        {children}
-      </div>
-      <p className="font-medium text-sm leading-tight">{label}</p>
-    </div>
-  );
-}
-
-/** Claude, then the MCP server, then UseHourly: how an assistant reaches your time. */
-function McpFlow() {
-  return (
-    <div
-      className="flex items-start justify-center gap-0.5 sm:gap-3"
-      role="img"
-      aria-label="Diagram: your AI assistant, such as Claude, talks to the UseHourly MCP server, which reads and writes your UseHourly time."
-    >
-      <FlowNode label="Claude">
-        <ClaudeSpark className="size-8 sm:size-11" />
-      </FlowNode>
-      <ArrowRight className="mt-5 size-4 shrink-0 text-muted-foreground sm:mt-8 sm:size-6" aria-hidden />
-      <FlowNode label="MCP server">
-        <Server className="size-8 text-muted-foreground sm:size-9" aria-hidden />
-      </FlowNode>
-      <ArrowRight className="mt-5 size-4 shrink-0 text-muted-foreground sm:mt-8 sm:size-6" aria-hidden />
-      <FlowNode label="UseHourly">
-        <LogoMark className="size-8 sm:size-11" aria-hidden />
-      </FlowNode>
-    </div>
-  );
-}
 
 export default function LandingPage() {
   return (
@@ -293,7 +219,7 @@ export default function LandingPage() {
             </div>
 
             <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
-              <McpFlow />
+              <McpAnimation />
             </div>
           </div>
         </section>

@@ -121,7 +121,7 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
         {invoice.paid_date && (
           <span
             aria-hidden
-            className="pointer-events-none absolute top-3 right-4 rotate-[-10deg] rounded-md border-4 border-success-bright px-3 font-display font-extrabold text-2xl text-success tracking-widest opacity-90 motion-safe:animate-[stamp_.45s_cubic-bezier(.2,1.6,.4,1)]"
+            className="pointer-events-none absolute top-3 right-4 rotate-[-10deg] rounded-md px-3 font-display font-extrabold text-2xl text-success tracking-widest opacity-90 ring-4 ring-success-bright ring-inset motion-safe:animate-[stamp_.45s_cubic-bezier(.2,1.6,.4,1)]"
           >
             PAID
           </span>

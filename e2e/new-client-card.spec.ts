@@ -32,7 +32,7 @@ test("a new client is added from the card in place, and the title line counts cl
     await page.getByLabel("New client name").fill("Fernhill");
     await page.getByRole("button", { name: "Add client" }).click();
     await expect(page.getByRole("region", { name: "Fernhill" })).toBeVisible();
-    await expect(page.getByText(/2 clients · 1 project/)).toBeVisible();
+    await expect(page.getByText(/2 clients · 1 project/).first()).toBeVisible();
     await expect(page.getByRole("region", { name: "New client" })).toHaveCount(0); // the form closed itself
   });
 

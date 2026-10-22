@@ -1,11 +1,13 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
- * The main navigation is down the left on a wide screen by default (2026-10-20): using the side menu (always open, no
+ * The main navigation is the tab strip along the top by default (the ink-and-paper redesign, 2026-10-22); the side menu down the left is a choice: using the side menu (always open, no
  * collapsing), keeping the choice across a reload, switching to the tab strip along the top in the settings gear and back,
  * and phones keeping their bottom bar.
  */
-test("navigation sits down the left by default, stays open, and survives a reload", async ({ page }, info) => {
+test("navigation is along the top by default; the side menu is a choice, stays open, and survives a reload", async ({
+  page,
+}, info) => {
   const phone = info.project.name === "phone";
   await startFreshAccount(page);
   const top = page.getByRole("navigation", { name: "Main pages" });
@@ -27,7 +29,15 @@ test("navigation sits down the left by default, stays open, and survives a reloa
     return;
   }
 
-  await test.step("by default, on a wide screen, the side menu is shown and the tab strip is not", async () => {
+  await test.step("by default, on a wide screen, the tab strip is shown and the side menu is not", async () => {
+    await expect(page.locator("html")).toHaveAttribute("data-nav-position", "top");
+    await expect(top).toBeVisible();
+    await expect(side).toBeHidden();
+    await page.context().addCookies([{ name: "nav_position", value: "left", url: page.url() }]);
+    await page.reload();
+  });
+
+  await test.step("with Left chosen, the side menu is shown and the tab strip is not", async () => {
     await expect(page.locator("html")).toHaveAttribute("data-nav-position", "left");
     await expect(side).toBeVisible();
     await expect(top).toBeHidden();

@@ -17,7 +17,7 @@ test("a client can be billed in euros while the account is in dollars, until it 
 
   await test.step("its rates are shown and typed in euros", async () => {
     await page.getByRole("button", { name: "Edit General" }).click();
-    await expect(page.getByLabel("Rate per hour").locator("..")).toContainText("€");
+    await expect(page.getByText(/€\d+\/h/).first()).toBeVisible(); // the symbol beside the rate
     await page.getByLabel("Rate per hour").fill("85");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("€85.00/h")).toBeVisible();

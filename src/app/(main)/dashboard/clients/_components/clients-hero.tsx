@@ -41,7 +41,7 @@ export function ClientsHero({
         minutes={monthMinutes}
         goal={MONTH_GOAL_MINUTES}
         footLeft="Goal 160 h"
-        footRight={`${clients.length} clients · ${projectCount} projects`}
+        footRight={`${clients.length} client${clients.length === 1 ? "" : "s"} · ${projectCount} project${projectCount === 1 ? "" : "s"}`}
       />
       <div className={`grid auto-rows-fr grid-cols-1 gap-3 ${cols}`}>
         {rows.map(({ c, minutes }) => (

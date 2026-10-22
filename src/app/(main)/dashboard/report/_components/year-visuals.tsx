@@ -176,7 +176,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
   const read = (v: number) => (mode === "earned" ? money(v) : hours(v));
   return (
     <section
-      aria-label="Month by month"
+      aria-label="Monthly bars"
       className="rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

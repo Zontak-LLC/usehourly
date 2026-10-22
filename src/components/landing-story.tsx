@@ -132,7 +132,7 @@ export function LandingStory() {
               <span className="font-display font-extrabold text-2xl tabular-nums">$4,840.00</span>
             </div>
             <span
-              className="absolute top-3 right-3 rounded-md border-4 border-success-bright px-2 font-display font-extrabold text-success text-xl tracking-widest"
+              className="absolute top-3 right-3 rounded-md px-2 font-display font-extrabold text-success text-xl tracking-widest ring-4 ring-success-bright ring-inset"
               style={{
                 opacity: on ? 0.9 : 0,
                 transform: on ? "rotate(-10deg) scale(1)" : "rotate(-10deg) scale(1.6)",

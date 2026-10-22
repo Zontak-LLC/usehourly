@@ -97,7 +97,7 @@ test("a day's total says it is the total, and the day has a labelled Edit day bu
   await expect(list.getByText("Total", { exact: true })).toBeVisible();
   await expect(list.getByRole("button", { name: /^Edit .*\d/ })).toContainText("Edit day"); // words on the day's button
   await expect(list.getByRole("button", { name: "Edit", exact: true })).toHaveCount(1); // the entry's own pencil is icon-only
-  await expect(page.getByText("Total hours this week", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("This week's hours")).toBeVisible(); // the week's dial
 });
 
 test("Edit day on the Week page opens that day's entries for editing, and saving changes the time", async ({

@@ -83,7 +83,7 @@ export function MemberBadge({
         {/* A rubber stamp: free, and it stays free. */}
         <span
           aria-hidden
-          className="-rotate-6 rounded-md border-2 border-amber px-2 py-1 font-display font-extrabold text-amber text-sm uppercase tracking-widest motion-safe:animate-[stamp_0.5s_ease-out_0.4s_both]"
+          className="-rotate-6 rounded-md px-2 py-1 font-display font-extrabold text-amber text-sm uppercase tracking-widest ring-2 ring-amber ring-inset motion-safe:animate-[stamp_0.5s_ease-out_0.4s_both]"
         >
           Free · always
         </span>

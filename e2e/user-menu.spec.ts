@@ -23,7 +23,7 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
 
   await test.step("the side menu no longer carries the name or Log out", async () => {
     if (phone) return;
-    await page.context().clearCookies({ name: "nav_position" }); // journeys start on the tab strip; the default is the side menu
+    await page.context().addCookies([{ name: "nav_position", value: "left", url: page.url() }]); // journeys start on the tab strip; the side menu is a choice
     await page.reload();
     const side = page.getByRole("navigation", { name: "Side menu" });
     await expect(side).toBeVisible();
