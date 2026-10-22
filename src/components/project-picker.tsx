@@ -10,19 +10,6 @@ import { Input } from "@/components/ui/input";
 import { ALL_AS_CHIPS, chipProjects, type PickerProject, pushRecentId, searchProjects } from "@/lib/project-picker";
 
 const RECENT_KEY = "hourly:recentProjects";
-/**
- * From `sm` up, one row of equal columns when every project is a chip. On a phone the chips keep their natural width
- * and wrap onto a second row, so a name is never cut short (only one longer than the whole row is). Full class names
- * so Tailwind keeps them.
- */
-const CHIP_COLUMNS: Record<number, string> = {
-  2: "sm:grid sm:grid-cols-2",
-  3: "sm:grid sm:grid-cols-3",
-  4: "sm:grid sm:grid-cols-4",
-};
-/** With more projects: the three chips share the row equally and the search button takes only what it needs. */
-const MANY_COLUMNS = "sm:grid sm:grid-cols-[repeat(3,minmax(0,1fr))_auto]";
-
 const many_ = (projects: PickerProject[]) => projects.length > ALL_AS_CHIPS;
 
 function readRecent(): string[] {
@@ -44,8 +31,10 @@ export function rememberRecentProject(id: string) {
 }
 
 /**
- * Pick one project. Up to three projects are all shown as chips. With more, the chips are the selected project and the
- * most recent ones, and "All projects" opens a searchable list grouped by client, so the screen never fills up.
+ * Pick one project. The project you are logging to is one large row (a dot in its client's colour, the name, the client
+ * under it), so what is picked is never in doubt and nothing wraps. Your other projects are small one-line pills under
+ * it, one tap to switch. Up to three projects are all shown; with more, the pills are the most recent ones and
+ * "More…" opens a searchable list grouped by client, so the screen never fills up.
  */
 export function ProjectPicker({
   projects,
@@ -60,7 +49,7 @@ export function ProjectPicker({
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>(() => (typeof window === "undefined" ? [] : readRecent()));
 
-  // Picking a chip that is already showing must not shuffle the row: the chips shown at that moment stay put.
+  // Picking a pill that is already showing must not shuffle the row: the projects shown at that moment stay put.
   const [pinned, setPinned] = useState<string[] | null>(null);
   const computed = chipProjects(projects, recent, value);
   const pinnedChips = pinned
@@ -71,8 +60,8 @@ export function ProjectPicker({
       ? pinnedChips
       : computed;
   const many = projects.length > ALL_AS_CHIPS;
-  // Names that appear twice need their client next to them on the narrow chips.
-  const sameName = new Set(projects.map((p) => p.name).filter((n, i, all) => all.indexOf(n) !== i));
+  const current = projects.find((p) => p.id === value) ?? chips[0];
+  const others = chips.filter((p) => p.id !== current?.id);
   const results = useMemo(() => searchProjects(projects, query), [projects, query]);
   const first = results[0];
 
@@ -86,54 +75,62 @@ export function ProjectPicker({
 
   return (
     <>
-      <div
-        role="radiogroup"
-        aria-labelledby="quick-project-label"
-        className={`flex flex-wrap gap-2 ${many ? MANY_COLUMNS : (CHIP_COLUMNS[projects.length] ?? "")}`}
-      >
-        {chips.map((p) => {
-          const on = value === p.id;
-          return (
-            <Button
-              key={p.id}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              variant="outline"
-              onClick={() => choose(p.id)}
-              className={`h-auto justify-start gap-2.5 whitespace-normal px-3 py-2 text-left max-sm:min-h-10 max-sm:min-w-0 max-sm:max-w-full max-sm:justify-center max-sm:gap-1.5 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12 ${on ? "border-foreground/60 bg-card ring-1 ring-foreground/30" : ""}`}
-            >
-              <span
-                aria-hidden="true"
-                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 max-sm:size-4 ${on ? "" : "max-sm:hidden"} ${on ? "border-foreground bg-foreground text-background" : "border-muted-foreground/50"}`}
-              >
-                {on && <Check className="size-3.5 text-background max-sm:size-3" strokeWidth={3} />}
-              </span>
-              <span className="flex min-w-0 flex-col items-start max-sm:items-center">
-                <span className="max-w-full break-words font-medium max-sm:truncate sm:text-base" title={p.name}>
-                  {p.name}
-                </span>
-                <span
-                  className={`max-w-full break-words font-normal text-xs max-sm:truncate ${sameName.has(p.name) ? "" : "max-sm:hidden"} ${
-                    on ? "text-foreground/75" : "text-muted-foreground"
-                  }`}
-                >
-                  {p.clientName}
-                </span>
-              </span>
-            </Button>
-          );
-        })}
-        {many && (
+      <div role="radiogroup" aria-labelledby="quick-project-label" className="flex flex-col gap-2">
+        {current && (
           <Button
             type="button"
+            role="radio"
+            aria-checked="true"
             variant="outline"
-            onClick={() => setOpen(true)}
-            aria-label="Another project"
-            className="h-auto border-dashed text-muted-foreground max-sm:min-h-10 max-sm:rounded-full max-sm:px-3.5 max-sm:py-1.5 sm:min-h-12"
+            onClick={() => many && setOpen(true)}
+            title={many ? "Choose another project" : undefined}
+            className="h-auto w-full justify-start gap-3 whitespace-normal rounded-2xl border-2 border-foreground bg-card px-4 py-3 text-left hover:bg-card"
           >
-            <Search /> <span className="max-sm:sr-only">Another project…</span>
+            <span
+              aria-hidden="true"
+              className="size-3 shrink-0 rounded-full"
+              style={{ backgroundColor: current.color ?? "var(--foreground)" }}
+            />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-bold font-display text-lg leading-tight">{current.name}</span>
+              <span className="truncate text-muted-foreground text-sm">{current.clientName}</span>
+            </span>
+            <Check className="size-5 shrink-0" aria-hidden strokeWidth={2.5} />
           </Button>
+        )}
+        {(others.length > 0 || many) && (
+          <div className="flex flex-wrap gap-2">
+            {others.map((p) => (
+              <Button
+                key={p.id}
+                type="button"
+                role="radio"
+                aria-checked="false"
+                variant="outline"
+                title={`${p.name} · ${p.clientName}`}
+                onClick={() => choose(p.id)}
+                className="h-9 max-w-full gap-2 rounded-full px-3.5"
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: p.color ?? "var(--muted-foreground)" }}
+                />
+                <span className="truncate font-medium">{p.name}</span>
+              </Button>
+            ))}
+            {many && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(true)}
+                aria-label="Another project"
+                className="h-9 rounded-full border-dashed px-3.5 text-muted-foreground"
+              >
+                <Search /> More…
+              </Button>
+            )}
+          </div>
         )}
       </div>
 

@@ -62,9 +62,9 @@ export function DayTiles({
             onClick={() => onPick(d)}
             className={`relative flex min-h-36 flex-col items-center justify-end gap-1 rounded-2xl border px-0 py-3 transition-colors sm:min-h-40 sm:px-1 sm:py-3 ${
               on
-                ? "border-primary bg-tint shadow-sm ring-2 ring-primary/40"
+                ? "border-foreground bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground"
                 : d === today
-                  ? "border-primary/50 bg-card hover:bg-muted"
+                  ? "border-amber bg-card hover:bg-muted"
                   : "bg-card hover:bg-muted"
             }`}
           >
@@ -131,7 +131,7 @@ export function WeekTotalCard({
       {/* A summary, not another card: no frame and no header, a big figure first, then the projects that made it up. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className="font-medium text-foreground/75 text-sm">Total hours this week</h2>
-        <p className="font-mono font-semibold text-3xl tabular-nums leading-none">{formatDuration(sheet.total)}</p>
+        <p className="font-display font-extrabold text-4xl tabular-nums leading-none">{formatDuration(sheet.total)}</p>
         <p className="text-foreground/75 text-sm">({formatDecimalHours(sheet.total)} h)</p>
       </div>
       {sheet.rows.length > 0 && (

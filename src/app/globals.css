@@ -189,6 +189,28 @@ These serve as the fallback; there is no separate default.css file. */
   --shadow-sheet: 0 12px 32px -18px rgb(0 0 0 / 0.7);
 }
 
+/* An invoice sheet settling onto the page, and a PAID stamp landing on it. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(14px) rotate(-0.4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-10deg) scale(1.6);
+  }
+  to {
+    opacity: 0.9;
+    transform: rotate(-10deg) scale(1);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

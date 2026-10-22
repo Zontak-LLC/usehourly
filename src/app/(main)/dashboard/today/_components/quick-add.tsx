@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Play } from "lucide-react";
+import { Play, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -10,6 +10,7 @@ import { ClientCurrency } from "@/components/currency-provider";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
+import { TimeRuler } from "@/components/time-ruler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -206,7 +207,7 @@ export function QuickAdd({
             </p>
             <ProjectPicker
               projects={(clients.data ?? []).flatMap((c) =>
-                c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name })),
+                c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name, color: c.color })),
               )}
               value={projectId}
               onChange={remember}
@@ -230,6 +231,13 @@ export function QuickAdd({
             enterKeyHint="next"
             className="h-11 text-base"
           />
+          <TimeRuler
+            minutes={parsed ?? 0}
+            onChange={(m) => {
+              setChipRun(null);
+              setDuration(m > 0 ? chipText(m) : "");
+            }}
+          />
           <div className="grid grid-cols-3 gap-2">
             {DURATION_CHIPS.map((c) => (
               <Button
@@ -237,7 +245,7 @@ export function QuickAdd({
                 type="button"
                 variant={parsed === c.minutes ? "secondary" : "outline"}
                 aria-pressed={parsed === c.minutes}
-                className="h-9 px-1 text-sm sm:h-10 sm:text-base"
+                className="h-10 gap-1 rounded-full px-1 text-sm sm:text-base"
                 onClick={() => {
                   // Same chip, field still untouched since the last tap: add the chip's time once more.
                   const again = chipRun?.minutes === c.minutes && parsed === c.minutes * chipRun.taps;
@@ -247,6 +255,7 @@ export function QuickAdd({
                   durationRef.current?.focus();
                 }}
               >
+                <Plus className="size-3.5 text-amber" aria-hidden strokeWidth={3} />
                 <span className="sm:hidden" aria-hidden="true">
                   {c.short}
                 </span>

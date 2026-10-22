@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import Link from "next/link";
 
 import { useMoney } from "@/components/currency-provider";
@@ -9,6 +11,28 @@ import type { buildInvoice } from "@/lib/invoice";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
 
 export type InvoiceTotals = ReturnType<typeof buildInvoice>;
+
+/** A number that counts up to its value (the total settling), unless the person prefers less motion. */
+function useCountUp(value: number, ms = 800): number {
+  const [shown, setShown] = useState(value);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(value);
+      return;
+    }
+    const from = 0;
+    const t0 = performance.now();
+    let id = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      setShown(Math.round(from + (value - from) * (1 - (1 - p) ** 3)));
+      if (p < 1) id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [value, ms]);
+  return shown;
+}
 
 export function InvoicePreviewCard({
   validRange,
@@ -24,8 +48,10 @@ export function InvoicePreviewCard({
   clientName: string | undefined;
 }) {
   const money = useMoney();
+  const total = useCountUp(totals.totalCents);
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    // A sheet of paper: it settles onto the page, and its total counts up.
+    <div className="overflow-hidden rounded-md border bg-card shadow-[var(--shadow-sheet)] motion-safe:animate-[settle_.7s_cubic-bezier(.2,.8,.2,1)]">
       <h2 className="border-b bg-band-2 px-4 py-3 font-semibold text-base">Preview</h2>
       {!validRange ? (
         <p className="px-4 py-8 text-center text-muted-foreground text-sm">
@@ -56,7 +82,7 @@ export function InvoicePreviewCard({
               <td className="px-4 py-3 text-right font-mono tabular-nums">
                 {formatDecimalHours(totals.totalMinutes)} h
               </td>
-              <td className="px-4 py-3 text-right font-mono tabular-nums">{money(totals.totalCents)}</td>
+              <td className="px-4 py-3 text-right font-display font-extrabold text-xl tabular-nums">{money(total)}</td>
             </tr>
           </tbody>
         </table>

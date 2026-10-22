@@ -1,11 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { ArrowRight, Bot, FileText, KeyRound, MessageSquare, Server, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 
+import { LandingHero } from "@/components/landing-hero";
+import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
-import { ProductTour } from "@/components/product-tour";
 import { SupportHourly } from "@/components/support-hourly";
 import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
@@ -131,68 +131,6 @@ function McpFlow() {
   );
 }
 
-/** A screenshot in a simple window frame. The pictures are the real app, not mock-ups. */
-function Screen({
-  src,
-  alt,
-  width,
-  height,
-  priority = false,
-}: {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
-  priority?: boolean;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border bg-background shadow-xl ring-1 ring-black/5">
-      <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-3" aria-hidden>
-        <span className="size-2.5 rounded-full bg-border" />
-        <span className="size-2.5 rounded-full bg-border" />
-        <span className="size-2.5 rounded-full bg-border" />
-      </div>
-      <Image
-        src={src}
-        alt={alt}
-        width={width}
-        height={height}
-        priority={priority}
-        sizes="(min-width: 1024px) 60rem, 100vw"
-        className="h-auto w-full"
-      />
-    </div>
-  );
-}
-
-const FEATURES = [
-  {
-    id: "week",
-    title: "A real weekly timesheet.",
-    body: "Every project and every day in one grid. Type straight into any cell, fill several days at once, then export the week to Excel.",
-    image: { src: "/landing/week-v3.webp", width: 2144, height: 1310 },
-    alt: "The weekly timesheet: projects down the side, the days of the week across, with totals, and a Share & export menu.",
-    // A wide, dense table: it gets the full width, under its text, so the numbers stay readable.
-    wide: true,
-  },
-  {
-    id: "month",
-    title: "See the whole month at a glance.",
-    body: "A calendar that shows how every day and week added up, with a breakdown by project underneath. Spot a light week before it costs you.",
-    image: { src: "/landing/month-v3.webp", width: 2144, height: 1090 },
-    alt: "The month calendar: each day shaded by hours logged, with weekly totals on the right.",
-    wide: false,
-  },
-  {
-    id: "year",
-    title: "Ready for invoices and tax time.",
-    body: "Turn your tracked hours into invoices you can send as a PDF. At year end, see hours, earnings, invoiced and received by quarter and by month, ready for your accountant.",
-    image: { src: "/landing/report-v3.webp", width: 2144, height: 1230 },
-    alt: "The year summary: hours worked, earned, invoiced, received and outstanding, with a table by quarter.",
-    wide: false,
-  },
-] as const;
-
 export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -223,38 +161,51 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="mx-auto max-w-6xl px-6 pt-10 pb-16 text-center md:pt-20">
-          <p className="mx-auto inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 font-medium text-sm">
-            <Bot className="size-4" aria-hidden />
-            Free, open source, with a built-in MCP server
-          </p>
-          <h1 className="mx-auto mt-5 max-w-3xl font-semibold text-4xl tracking-tight md:text-6xl">
-            Your timesheet, run by your AI assistant.
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Connect Claude, ChatGPT, Cursor or any MCP assistant and say{" "}
-            <strong className="text-foreground">
-              &ldquo;log 3 hours on Acme, then make this week&rsquo;s timesheet for sign-off.&rdquo;
-            </strong>{" "}
-            UseHourly keeps the time, the timesheets and the invoices. Prefer typing? Press{" "}
-            <strong className="text-foreground">1.5</strong> or <strong className="text-foreground">90m</strong> and
-            Enter and you&rsquo;re done.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a href="#ai-assistants" className={`${primary} w-full max-w-xs sm:w-auto`}>
-              Connect your assistant
-            </a>
-            <Link href="/auth/v2/register" className={`${secondary} w-full max-w-xs sm:w-auto`}>
-              Create a free account
-            </Link>
-            <TryDemoButton className={`${secondary} w-full max-w-xs sm:w-auto`}>Try the demo, no sign-up</TryDemoButton>
+        <section className="mx-auto max-w-6xl px-6 pt-8 pb-16 md:pt-14">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 font-medium text-sm">
+                <Bot className="size-4" aria-hidden />
+                Free, open source, built for AI assistants
+              </p>
+              <h1 className="mt-5 max-w-xl font-extrabold text-5xl leading-[0.98] tracking-tight md:text-7xl">
+                Log a day in <span className="text-amber">seconds.</span>
+              </h1>
+              <p className="mt-5 max-w-lg text-lg text-muted-foreground md:text-xl">
+                Time tracking for freelancers. Type <strong className="text-foreground">1.5</strong> or{" "}
+                <strong className="text-foreground">90m</strong>, press Enter, done. Or tell your AI assistant:{" "}
+                <strong className="text-foreground">
+                  &ldquo;log 3 hours on Acme, then make this week&rsquo;s timesheet.&rdquo;
+                </strong>
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/auth/v2/register"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-base text-primary-foreground transition-transform hover:-translate-y-0.5"
+                >
+                  Create a free account
+                </Link>
+                <TryDemoButton className={secondary}>Try the demo, no sign-up</TryDemoButton>
+              </div>
+              <p className="mt-3 text-muted-foreground text-sm">
+                No paywall, no ads. The demo has sample data and is deleted after a day.{" "}
+                <a href="#ai-assistants" className="underline underline-offset-4">
+                  Connect your assistant
+                </a>
+              </p>
+            </div>
+            <LandingHero />
           </div>
-          <p className="mt-3 text-muted-foreground text-sm">
-            Free to use. No paywall, no ads. The demo comes with sample data and is deleted after a day.
-          </p>
+        </section>
 
-          <div className="mx-auto mt-14 max-w-5xl text-left">
-            <ProductTour />
+        <section className="border-t bg-muted/40">
+          <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+            <h2 className="max-w-2xl font-extrabold text-3xl tracking-tight md:text-5xl">
+              From hours to paid, without the busywork.
+            </h2>
+            <div className="mt-10">
+              <LandingStory />
+            </div>
           </div>
         </section>
 
@@ -320,59 +271,9 @@ export default function LandingPage() {
 
             <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-8">
               <McpFlow />
-              <figure className="w-full">
-                {/* A looping, silent clip of the conversation (scripts/social/render.mjs makes it); the words are below for everyone else. */}
-                <video
-                  className="w-full rounded-2xl border bg-card shadow-sm"
-                  poster="/landing/assistant-demo-poster.webp"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  aria-label="Example conversation: a freelancer asks an AI assistant to log 1 hour 30 minutes on the Acme website project, then to build this week's timesheet for Acme. The assistant shows 12.5 hours, points out that Tuesday has nothing logged, adds 2 hours on request, and creates a private link the client can approve."
-                >
-                  <source src="/landing/assistant-demo.mp4" type="video/mp4" />
-                </video>
-                <figcaption className="mt-3 text-center text-muted-foreground text-xs">
-                  An example conversation. Your assistant&rsquo;s wording will differ.
-                </figcaption>
-              </figure>
             </div>
           </div>
         </section>
-
-        <div className="border-t bg-muted/30">
-          {FEATURES.map((f, i) => (
-            <section key={f.id} className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-              {f.wide ? (
-                <div>
-                  <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="font-semibold text-3xl tracking-tight md:text-4xl">{f.title}</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">{f.body}</p>
-                  </div>
-                  <div className="mt-10">
-                    <Screen src={f.image.src} alt={f.alt} width={f.image.width} height={f.image.height} />
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className={`grid items-center gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] ${
-                    i % 2 ? "lg:[&>div:first-child]:order-2" : ""
-                  }`}
-                >
-                  <div>
-                    <h2 className="font-semibold text-3xl tracking-tight md:text-4xl">{f.title}</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">{f.body}</p>
-                  </div>
-                  <div>
-                    <Screen src={f.image.src} alt={f.alt} width={f.image.width} height={f.image.height} />
-                  </div>
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
 
         <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
           <h2 className="text-center font-semibold text-3xl tracking-tight md:text-4xl">
