@@ -141,7 +141,6 @@ export default function LandingPage() {
                     { name: "Claude", Mark: ClaudeMark },
                     { name: "ChatGPT", Mark: OpenAIMark },
                     { name: "Cursor", Mark: CursorMark },
-                    { name: "Claude Code", Mark: ClaudeMark },
                   ].map(({ name, Mark }) => (
                     <li
                       key={name}
