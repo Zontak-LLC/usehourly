@@ -416,7 +416,7 @@ textarea,
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m6 9 6 6 6-6' stroke='rgb(255 255 255 / .85)' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-/* The time ticket slides out from under the stopwatch, like a receipt being printed. */
+/* The time ticket slides down into the timer strip, like a receipt being printed. */
 @keyframes ticket-print {
   from {
     transform: translateY(-28px);
@@ -430,7 +430,7 @@ textarea,
   }
 }
 
-/* The Week clock's colon blinks once a second, like a digital watch. */
+/* The timer strip's recording dot blinks slowly while a timer runs. */
 @keyframes blink {
   50% {
     opacity: 0.25;

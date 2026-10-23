@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { CalendarSuggestions } from "@/components/calendar-suggestions";
-import { DigitalWatch, type WatchMode } from "@/components/digital-watch";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
@@ -21,7 +20,6 @@ import { useSavedCalendar } from "@/components/use-calendar";
 import { useRunningMinutes } from "@/components/use-running-minutes";
 import { WeekPills } from "@/components/week-pills";
 import { addDays, DATE_RE, fromISODate, monthBounds, startOfWeek } from "@/lib/dates";
-import { DAY_GOAL_MINUTES } from "@/lib/day-dial";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { trpc } from "@/lib/trpc";
@@ -50,9 +48,9 @@ export function TodayView() {
   const online = useOnline();
   // What the timer would start for: the project and description picked in the add form below.
   const [timerContext, setTimerContext] = useState({ projectId: "", projectName: "", note: "" });
-  const dialClock = useTodayTimer({ ...timerContext, date: date ?? "" });
+  const todayTimer = useTodayTimer({ ...timerContext, date: date ?? "" });
   const running = trpc.entry.running.useQuery();
-  // A timer running on the day shown adds its minutes to the day dial, so there is one clock for the day.
+  // A timer running on the day shown adds its minutes to the day and week totals in the header.
   const timer = running.data?.started_at ? running.data : null;
   const timerOnThisDay = !!timer && timer.date === date;
   const timerMinutes = useRunningMinutes(timerOnThisDay ? timer.started_at : null);
@@ -78,23 +76,8 @@ export function TodayView() {
   const go = (d: string) => router.replace(d === today ? "/dashboard/today" : `/dashboard/today?date=${d}`);
   const dayEntries = week.data?.filter((e) => e.date === date) ?? [];
   const sum = (xs: { minutes: number }[]) => xs.reduce((a, e) => a + e.minutes, 0);
-  // The running timer counts in the day and week totals as well as in the dial, so the three never disagree.
+  // The running timer counts in the day and week totals, so they never disagree with the timesheet.
   const dayTotal = sum(dayEntries) + timerMinutes;
-  // Today's stopwatch, part of the day dial: a small window inside the face and steel buttons under the watch (Start,
-  // Stop, then Resume / Add to timesheet / Discard). The face itself keeps showing the day.
-  // The stopwatch's display follows the timer on the day it runs (today): telling the time, recording, or saved.
-  const timerEntry = date === today ? dialClock.entry : null;
-  const watchMode: WatchMode =
-    dialClock.stopped && date === today
-      ? { kind: "stopped", seconds: dialClock.stopped.minutes * 60, label: dialClock.stopped.where }
-      : timerEntry
-        ? {
-            kind: "running",
-            seconds: dialClock.seconds,
-            label: `${timerEntry.project.name} · ${timerEntry.project.client.name}`,
-          }
-        : { kind: "time" };
-
   const weekTotal = week.data ? sum(week.data) + timerMinutes : null;
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
   // The two totals are one line under the title (they were two stat cards): this day, and this week.
@@ -165,20 +148,6 @@ export function TodayView() {
         <FirstRun />
       ) : (
         <TodayLayout
-          watch={
-            // The stopwatch (2026-10-23): start a timer, then turn it into an entry. The display tells the time and
-            // today's hours; it becomes a stopwatch while recording, and shows what was saved after a stop.
-            // The stopwatch (2026-10-23): one digital device. The display tells the time and today's hours, becomes a
-            // stopwatch while recording, and shows what was saved after a stop; its buttons are built into the same panel.
-            <DigitalWatch
-              label={date === today ? "Timer" : "This day"}
-              mode={watchMode}
-              foot={date === today ? `${formatDuration(dayTotal)} today` : `${formatDuration(dayTotal)} that day`}
-              progress={dayTotal / DAY_GOAL_MINUTES}
-            >
-              {date === today && <TimerControls timer={dialClock} online={online} />}
-            </DigitalWatch>
-          }
           pills={
             week.data && weekStart ? (
               <WeekPills
@@ -193,7 +162,11 @@ export function TodayView() {
               <Skeleton className="h-16 w-full" />
             )
           }
-          timerBar={date !== today ? <TimerPanel /> : null}
+          timerBar={
+            // On today the timer is a slim strip (it replaced the big watch on 2026-10-23); on another day only a
+            // running timer shows, as the bar with Stop.
+            date === today ? <TimerControls timer={todayTimer} online={online} /> : <TimerPanel />
+          }
           form={<QuickAdd date={date} showDate={false} dayMinutes={sum(dayEntries)} onTimerContext={setTimerContext} />}
           calendarTop={
             feature("calendar") && calendarFirst && clients.data ? (

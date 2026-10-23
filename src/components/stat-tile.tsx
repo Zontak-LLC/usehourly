@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { useSweepIn } from "@/components/explorer-watch";
+import { useSweepIn } from "@/components/use-sweep-in";
 
 /** A thin bar that fills to `fraction` (0 to 1): the drawing for a figure that is a share of something. */
 export function ShareBar({ fraction, label }: { fraction: number; label: string }) {

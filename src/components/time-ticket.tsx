@@ -58,8 +58,7 @@ function flyToEntry(ticket: HTMLElement, entryId: string) {
 }
 
 /**
- * After Stop, the stopwatch hands you a time ticket (2026-10-23): a slip of paper that slides out under the display and
- * shows exactly the entry it becomes (project and client, what you worked on, the day, the time with − / + to correct
+ * After Stop, the timer strip shows a time ticket (2026-10-23; plain since the watch went the same day): it shows exactly the entry it becomes (project and client, what you worked on, the day, the time with − / + to correct
  * it). "Add to timesheet" files it: the ticket flies into Today's timesheet and lands as the new row. Discard drops it,
  * Resume slides it back and the stopwatch carries on.
  */
@@ -78,33 +77,24 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
   return (
     <fieldset
       ref={ref}
-      className="w-full min-w-0 max-w-[17rem] motion-safe:animate-[ticket-print_.45s_cubic-bezier(.2,.9,.3,1)]"
+      className="m-0 w-full min-w-0 border-0 p-0 motion-safe:animate-[ticket-print_.45s_cubic-bezier(.2,.9,.3,1)]"
     >
       <legend className="sr-only">Time ticket: add this time to your timesheet, resume the timer or discard it</legend>
-      <div className="relative -rotate-[1.5deg] rounded-md bg-[rgb(250_249_246)] px-4 pt-3 pb-4 text-[rgb(20_22_27)] shadow-[0_16px_30px_-14px_rgb(0_0_0/0.7)] dark:brightness-[0.9]">
-        {/* The torn top edge, as if it came out of the stopwatch. */}
-        <span
-          aria-hidden
-          className="absolute inset-x-0 -top-1 h-2"
-          style={{
-            background:
-              "radial-gradient(circle at 4px 0, transparent 3px, rgb(250 249 246) 3.5px) 0 0 / 8px 8px repeat-x",
-          }}
-        />
-        <div className="flex items-baseline justify-between font-mono text-[9px] uppercase tracking-[0.25em] opacity-60">
+      <div className="relative">
+        <div className="flex items-baseline justify-between font-mono text-[9px] text-muted-foreground uppercase tracking-[0.25em]">
           <span>Time ticket</span>
           <span>{dayLine.format(new Date())}</span>
         </div>
         <p className="mt-2 truncate font-semibold text-sm">{s.where}</p>
-        <p className="truncate text-[rgb(20_22_27/0.65)] text-xs">{s.note?.trim() || "No description"}</p>
+        <p className="truncate text-muted-foreground text-xs">{s.note?.trim() || "No description"}</p>
 
-        <div className="mt-3 flex items-center justify-between border-[rgb(20_22_27/0.15)] border-y border-dashed py-2">
+        <div className="mt-3 flex items-center justify-between border-foreground/15 border-y border-dashed py-2">
           <button
             type="button"
             aria-label="Take off 5 min"
             disabled={minutes <= MIN_MINUTES}
             onClick={() => timer.onNudge(-NUDGE)}
-            className="grid size-9 place-items-center rounded-full text-lg ring-1 ring-[rgb(20_22_27/0.2)] hover:bg-[rgb(20_22_27/0.06)] disabled:opacity-40"
+            className="grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40"
           >
             −
           </button>
@@ -116,7 +106,7 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
             aria-label="Add 5 min"
             disabled={minutes >= MAX_MINUTES}
             onClick={() => timer.onNudge(NUDGE)}
-            className="grid size-9 place-items-center rounded-full text-lg ring-1 ring-[rgb(20_22_27/0.2)] hover:bg-[rgb(20_22_27/0.06)] disabled:opacity-40"
+            className="grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40"
           >
             +
           </button>
@@ -125,10 +115,11 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
         <button
           type="button"
           onClick={() => {
-            if (ref.current) flyToEntry(ref.current, s.id);
-            timer.onKeep();
+            // Fly only when it is really filed (the buttons are locked for a moment after a stop); the ticket is
+            // still on screen here, because React redraws after this handler.
+            if (timer.onKeep() && ref.current) flyToEntry(ref.current, s.id);
           }}
-          className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[rgb(20_22_27)] font-semibold text-[rgb(250_249_246)] text-sm transition-transform active:translate-y-px"
+          className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-foreground font-semibold text-background text-sm transition-transform active:translate-y-px"
         >
           <Check className="size-4" aria-hidden /> Add to timesheet
         </button>
@@ -142,7 +133,7 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
               )
             }
             disabled={timer.resuming}
-            className="inline-flex min-h-9 items-center gap-1.5 px-1 opacity-70 hover:opacity-100"
+            className="inline-flex min-h-9 items-center gap-1.5 px-1 text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="size-3.5" aria-hidden /> Resume timer
           </button>
@@ -155,7 +146,7 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
               )
             }
             disabled={timer.discarding}
-            className="inline-flex min-h-9 items-center gap-1.5 px-1 text-[rgb(176_32_40)] opacity-80 hover:opacity-100"
+            className="inline-flex min-h-9 items-center gap-1.5 px-1 text-destructive hover:underline"
           >
             <Trash2 className="size-3.5" aria-hidden /> Discard time
           </button>

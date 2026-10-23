@@ -65,7 +65,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.getByRole("button", { name: "Continue" }).click();
     count("firstEntry", 2);
     await expect(page.getByLabel("Time to add")).toBeVisible();
-    await expect(page.getByText("Acme Studio · General")).toBeVisible();
+    await expect(page.locator("form").getByText("General · Acme Studio")).toBeVisible(); // "on General · Acme Studio": the only project
   });
 
   await test.step("log the first entry by typing a time", async () => {

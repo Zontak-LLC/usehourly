@@ -2,10 +2,10 @@
 
 export type PickerProject = { id: string; name: string; clientName: string; color?: string };
 
-/** With this many projects or fewer, every project is a chip and there is no search (a fourth project starts the picker). */
-export const ALL_AS_CHIPS = 3;
-/** Chips shown when nothing is pinned (or fewer than three are). */
-export const BASE_CHIPS = 3;
+/** With this many projects or fewer, every project is a pill and there is no search (a sixth project adds "More…"). */
+export const ALL_AS_CHIPS = 5;
+/** Pills shown beside "More…" when nothing is pinned (or fewer than four are). */
+export const BASE_CHIPS = 4;
 export const MAX_PINNED = 6;
 const MAX_REMEMBERED = 8;
 const RECENT_SHOWN = 4;
@@ -24,7 +24,7 @@ export function togglePinnedId(ids: string[], id: string): string[] {
  * The chips to show, in a fixed order: the pinned ones, then the most recently used (as remembered when the page
  * opened), then projects in list order to fill up. The picked project is not moved to the front: picking a chip only
  * marks it as pressed, so nothing slides under the pointer and a quick second tap lands where the person aimed. With
- * pins there is room for all of them (up to six chips); without, three. Ids that no longer exist are ignored.
+ * pins there is room for all of them (up to six chips); without, four. Ids that no longer exist are ignored.
  */
 export function chipProjects(
   projects: PickerProject[],

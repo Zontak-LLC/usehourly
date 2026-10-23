@@ -1,13 +1,12 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
-test("the timer lives under the watch: Start runs it, Stop asks resume, add or discard", async ({ page, shot }) => {
+test("the timer strip: Start runs it, Stop asks resume, add or discard", async ({ page, shot }) => {
   await startFreshAccount(page, "Acme");
   const watch = page.getByRole("region", { name: "Timer" });
   await expect(watch).toBeVisible();
-  await expect(watch.getByRole("img", { name: /^Time now/ })).toBeVisible(); // idle, it tells the time
+  await expect(watch.getByRole("button", { name: /Start\s+timer/ })).toBeVisible(); // idle: one Start button
   await shot("today-idle");
 
-  // One timer, in the steel tray under the watch.
   await watch.getByRole("button", { name: /Start\s+timer/ }).click();
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toHaveAttribute(
@@ -42,7 +41,7 @@ test("the timer lives under the watch: Start runs it, Stop asks resume, add or d
   await expect(page.getByText("Timer discarded")).toBeVisible();
   await expect(page.getByRole("region", { name: "Today's timesheet" })).toHaveCount(0);
   await expect(watch.getByRole("button", { name: /Start\s+timer/ })).toBeVisible();
-  await expect(watch.getByRole("img", { name: /^Time now/ })).toBeVisible(); // idle, it tells the time
+  await expect(watch.getByRole("button", { name: /Start\s+timer/ })).toBeVisible(); // idle: one Start button
 });
 
 test("Add to timesheet keeps the stopped time as an entry and the timer is ready again", async ({ page }) => {

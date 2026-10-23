@@ -16,7 +16,7 @@ import { feature } from "@/lib/features";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
-import { longDayLabel, WeekDial, WeekTotalCard } from "./week-strip";
+import { longDayLabel, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
 
 /** The chosen day, else today when it is in this week, else Monday. */
@@ -122,7 +122,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
-        // Same pattern as Today: the days as one row, then the week's watch and its projects on the left (they stay in
+        // Same pattern as Today: the days as one row, then the week's hours and its projects on the left (they stay in
         // view), and the picked day on the right. The full list of the week's entries is folded away (search lives there).
         <div className="flex min-w-0 flex-col gap-4">
           <WeekPills
@@ -136,8 +136,12 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
           />
           <div className="grid items-start gap-4 md:grid-cols-[15rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)]">
             <div className="flex flex-col gap-4 md:sticky md:top-24">
-              <WeekDial total={sheet.total} />
-              <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
+              <WeekTotalCard
+                sheet={sheet}
+                weekMinutes={(entries.data ?? []).reduce((a, e) => a + e.minutes, 0)}
+                projectId={projectId}
+                onProjectId={setProjectId}
+              />
             </div>
             <div className="flex min-w-0 flex-col gap-4">
               <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
