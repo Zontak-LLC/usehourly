@@ -151,6 +151,9 @@ export default function LandingPage() {
                       {name}
                     </li>
                   ))}
+                  <li className="inline-flex items-center rounded-full border border-dashed px-3 py-1.5 font-medium text-muted-foreground text-sm">
+                    + any MCP app
+                  </li>
                 </ul>
               </div>
               <AssistantTerminal />

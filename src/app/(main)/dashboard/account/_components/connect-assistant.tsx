@@ -2,19 +2,25 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 
-import { ExternalLink } from "lucide-react";
+import { Blocks, ExternalLink, Sparkle, SquareCode } from "lucide-react";
 
 import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos";
 import { CopyBox } from "@/components/copy-box";
 import { SectionCard } from "@/components/section-card";
 
-type Choice = "claude" | "chatgpt" | "cursor" | "code";
+type Choice = "claude" | "chatgpt" | "cursor" | "code" | "vscode" | "devin" | "other";
 
-const CHOICES: { id: Choice; label: string; Logo: typeof ClaudeMark }[] = [
+type Logo = (props: { "aria-hidden"?: boolean; className?: string }) => ReactNode;
+
+// VS Code and Devin have no freely usable mark, so they get plain icons (the button's text names them).
+const CHOICES: { id: Choice; label: string; Logo: Logo }[] = [
   { id: "claude", label: "Claude", Logo: ClaudeMark },
   { id: "chatgpt", label: "ChatGPT", Logo: OpenAIMark },
   { id: "cursor", label: "Cursor", Logo: CursorMark },
   { id: "code", label: "Claude Code", Logo: ClaudeMark },
+  { id: "vscode", label: "VS Code", Logo: SquareCode },
+  { id: "devin", label: "Devin Desktop (Windsurf)", Logo: Sparkle },
+  { id: "other", label: "Another app", Logo: Blocks },
 ];
 
 /** A link that takes you straight to the place in the assistant where the next step happens. */
@@ -36,6 +42,11 @@ function Go({ href, children }: { href: string; children: ReactNode }) {
 function cursorInstallLink(endpoint: string): string {
   const config = btoa(JSON.stringify({ url: endpoint }));
   return `cursor://anysphere.cursor-deeplink/mcp/install?name=usehourly&config=${encodeURIComponent(config)}`;
+}
+
+/** VS Code installs an MCP server from a link: the server's settings as URL-encoded JSON (it then asks to install). */
+function vscodeInstallLink(endpoint: string): string {
+  return `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: "usehourly", type: "http", url: endpoint }))}`;
 }
 
 /**
@@ -79,6 +90,37 @@ function steps(choice: Choice, endpoint: string): { text: ReactNode; extra?: Rea
         },
         { text: "In Claude Code type /mcp, choose usehourly, and approve in your browser." },
       ];
+    case "vscode":
+      return [
+        {
+          text: "Add UseHourly to VS Code in one click.",
+          extra: <Go href={vscodeInstallLink(endpoint)}>Add to VS Code</Go>,
+        },
+        { text: "In VS Code, choose Install, then log in to UseHourly in the browser window and approve." },
+        {
+          text: "No button? Run MCP: Add Server from the Command Palette, choose HTTP, paste this address and name it usehourly:",
+          extra: address,
+        },
+      ];
+    case "devin":
+      return [
+        { text: "In Devin Desktop (formerly Windsurf), open the MCP config file from the agent panel's ··· menu." },
+        {
+          text: "Add this inside mcpServers and save:",
+          extra: <CopyBox text={`"usehourly": { "url": "${endpoint}" }`} />,
+        },
+        { text: "Turn the usehourly server on, then log in to UseHourly in the browser window and approve." },
+      ];
+    case "other":
+      return [
+        {
+          text: "Any app that supports MCP works. In its MCP settings, add a remote (HTTP) server with this address:",
+          extra: address,
+        },
+        {
+          text: "When it asks, log in to UseHourly and approve. If the app wants a token instead, make one under API tokens below.",
+        },
+      ];
   }
 }
 
@@ -96,7 +138,7 @@ export function ConnectAssistant() {
   return (
     <SectionCard
       title="Connect your assistant"
-      description="Let Claude, ChatGPT or Cursor log time, make timesheets and prepare invoices for you."
+      description="Let Claude, ChatGPT, Cursor, VS Code or any MCP app log time, make timesheets and prepare invoices for you."
     >
       <div className="grid gap-5">
         <fieldset className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0">

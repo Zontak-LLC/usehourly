@@ -17,7 +17,7 @@ Hosting costs the maker a few dollars a month, which they pay. If UseHourly save
     id: "connect-assistant",
     common: true,
     oldSlugs: ["ai-assistants"],
-    question: "How do I connect Claude, ChatGPT or Cursor?",
+    question: "How do I connect Claude, ChatGPT, Cursor or another AI app?",
     keywords: [
       "ai",
       "assistant",
@@ -36,6 +36,8 @@ Hosting costs the maker a few dollars a month, which they pay. If UseHourly save
 - **ChatGPT:** turn on Developer mode, create a connector with the same address, pick **OAuth**, then log in and approve. Your ChatGPT plan must allow custom connectors.
 - **Cursor:** press **Add to Cursor**, then **Install**, then log in and approve.
 - **Claude Code:** run \`claude mcp add --transport http usehourly https://usehourly.app/api/mcp\`, type \`/mcp\` and approve in your browser.
+- **VS Code:** press **Add to VS Code**, then **Install**, then log in and approve.
+- **Devin Desktop (formerly Windsurf)** or **any other app** that supports MCP: add a remote (HTTP) server with the same address, then log in and approve.
 
 When you approve, choose **Read only** (it can look at your time and invoices) or **Read and change** (it can also log time and make invoices). Then say things like "log 1h30 on Acme for yesterday" or "what did I log last week?". The assistant asks you before it deletes anything or makes an invoice.
 
