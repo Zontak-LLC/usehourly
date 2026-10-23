@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { DigitalWatch } from "@/components/digital-watch";
-
 const DAYS = ["M", "T", "W", "T", "F"];
 const BARS: [number, number][] = [
   [62, 18],
@@ -45,18 +43,36 @@ export function LandingStory() {
   return (
     <div ref={ref} className="grid gap-4 md:grid-cols-3">
       <article className="flex flex-col gap-4 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)]">
-        <div aria-hidden className="grid h-44 place-items-center">
-          <div className="w-60">
-            <DigitalWatch
-              mode={on ? { kind: "running", seconds: 2530, label: "Northwind" } : { kind: "total", minutes: 375 }}
-              label="A stopwatch running"
-            />
+        {/* The Log time moment as the app shows it: a time typed, the day total moving, then "Logged". */}
+        <div aria-hidden className="flex h-44 flex-col justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-11 flex-1 items-center rounded-xl bg-background px-3 font-mono text-lg ring-1 ring-foreground/15">
+              1.5
+              <span className="ml-0.5 inline-block h-5 w-0.5 animate-pulse bg-amber" />
+            </span>
+            <span
+              className={`flex h-11 items-center rounded-xl px-4 font-semibold text-sm transition-colors duration-500 ${
+                on ? "bg-success-soft text-success" : "bg-amber text-neutral-900"
+              }`}
+            >
+              {on ? "Logged 1:30 ✓" : "Log time"}
+            </span>
           </div>
+          <div className="flex flex-wrap gap-1.5">
+            {["15m", "30m", "1h", "2h", "4h"].map((c) => (
+              <span key={c} className="rounded-full bg-muted px-2.5 py-1 font-mono text-xs">
+                {c}
+              </span>
+            ))}
+          </div>
+          <p className="font-mono text-muted-foreground text-xs">
+            Day total 4:15 → <span className="font-semibold text-foreground">5:45</span>
+          </p>
         </div>
         <div>
           <h3 className="font-bold font-display text-xl">Log a day in seconds</h3>
           <p className="mt-1 text-muted-foreground">
-            Type 1.5 or 90m and press Enter, or start the stopwatch and file what it hands you when you stop.
+            Type 1.5 or 90m and press Enter, or tap a chip. The day total updates as you type.
           </p>
         </div>
       </article>

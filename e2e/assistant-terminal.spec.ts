@@ -19,7 +19,7 @@ test.describe("assistant terminal on the home page", () => {
     await page.goto("/");
     const screen = page.locator("#ai-assistants pre");
     await screen.scrollIntoViewIfNeeded();
-    await expect(screen).toContainText("3 timesheets, 37 hours, 3 private links");
-    await expect(screen).toContainText("usehourly.app/timesheet/");
+    await expect(screen).toContainText("37 hours, 3 invoices, $3,310.00");
+    await expect(screen).toContainText("INV-2026-016");
   });
 });

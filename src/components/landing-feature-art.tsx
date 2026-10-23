@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 const AMBER = "#F5A524";
 const GREEN = "#3DDC97";
 const VIOLET = "#8A6CFF";
-const CORAL = "#ff7a45";
 
 function Pad({ children }: { children: ReactNode }) {
   return (
@@ -30,11 +29,9 @@ export function QuickEntryArt() {
           <kbd className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">↵</kbd>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 rounded-full bg-foreground px-2.5 py-1 text-[11px] text-background">
-            <span className="size-1.5 rounded-full" style={{ backgroundColor: CORAL }} />
-            REC 0:42:10
-          </span>
-          {["+ 30 min", "+ 1 hour"].map((t) => (
+          {/* the quick-time chips as the app writes them; tapping one again adds it again */}
+          <span className="rounded-full bg-foreground px-2.5 py-1 text-[11px] text-background">2h ×2 = 4h</span>
+          {["30m", "1h"].map((t) => (
             <span
               key={t}
               className="rounded-full bg-card px-2.5 py-1 text-[11px] text-muted-foreground ring-1 ring-foreground/10"
