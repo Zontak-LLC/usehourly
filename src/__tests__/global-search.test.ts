@@ -63,6 +63,28 @@ describe("global search", () => {
     expect(titles("copy on this device").length > 0).toBe(feature("localFirst")); // "Log out on all devices" is not it
   });
 
+  it("a sample-data account is not offered the password, the tokens or deleting (its Account page has none)", () => {
+    const titles = (q: string, demo: boolean) => matchPagesAndSettings(q, { demo }).map((r) => r.title);
+    for (const [q, title] of [
+      ["password", "Change password"],
+      ["api token", "API tokens"],
+      ["delete", "Delete account"],
+      ["claude", "Connect an AI assistant"],
+    ]) {
+      expect(titles(q, false), q).toContain(title);
+      expect(titles(q, true), q).not.toContain(title);
+    }
+    expect(titles("currency", true)).toContain("Currency"); // the rest is still found
+  });
+
+  it("finds dark mode by the words people use, and choosing it switches the look instead of going somewhere", () => {
+    for (const q of ["dark", "dark mode", "light", "theme", "night"]) {
+      const hit = matchPagesAndSettings(q).find((r) => r.title === "Dark mode");
+      expect(hit?.action, q).toBe("toggle-theme");
+    }
+    expect(matchPagesAndSettings("dark", { demo: true }).map((r) => r.title)).toContain("Dark mode");
+  });
+
   it("finds clients and projects by name, a project with its client under it", () => {
     expect(matchClientsAndProjects("acme", clients).map((r) => r.title)).toEqual(["Acme Studio"]);
     const hit = matchClientsAndProjects("brand", clients);

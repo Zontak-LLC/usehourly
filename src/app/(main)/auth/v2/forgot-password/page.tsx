@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import type { Metadata } from "next";
 
 import { ForgotPasswordForm } from "../../_components/forgot-password-form";
@@ -15,11 +13,6 @@ export default function ForgotPasswordPage() {
           <p className="text-muted-foreground text-sm">Enter your email and we will send you a link.</p>
         </div>
         <ForgotPasswordForm />
-      </div>
-      <div className="absolute top-5 flex w-full justify-end px-10 text-muted-foreground text-sm">
-        <Link prefetch={false} className="text-foreground" href="/auth/v2/login">
-          Back to log in
-        </Link>
       </div>
     </>
   );

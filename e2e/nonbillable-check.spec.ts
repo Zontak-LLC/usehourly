@@ -29,23 +29,35 @@ test("the non-billable day button shows a check mark and a selected look when it
   await expect(button.locator("svg[data-icon='no-dollar']")).toBeVisible();
 });
 
-test("the dark-mode choice lives in the gear menu, not as a second button in the top bar", async ({ page }) => {
+test("one sun/moon switch in the top bar changes light and dark; no gear menu (issue 217)", async ({ page }) => {
+  test.skip(FEATURES.appearanceExtras, "With the extra appearance settings on, the gear menu holds the choice");
   await startFreshAccount(page);
-  await expect(page.getByRole("button", { name: /Current theme/ })).toHaveCount(0);
-  await page.getByRole("button", { name: "Appearance and layout settings" }).click();
-  const menu = page.getByRole("dialog");
-  await expect(menu.getByText("Theme Preset")).toHaveCount(0); // colour presets were removed
-  await expect(menu.getByText("Theme Mode")).toBeVisible();
-  await expect(menu.getByRole("radio", { name: "Toggle dark" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Appearance and layout settings" })).toHaveCount(0);
+  const html = page.locator("html");
+  const toggle = page.getByRole("button", { name: "Dark mode" });
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await toggle.click();
+  await expect(html).toHaveClass(/\bdark\b/);
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await toggle.click();
+  await expect(html).not.toHaveClass(/\bdark\b/);
 
-  // a signed-out visitor has no gear, so Help keeps the quick switch for them
+  // "Dark mode" is found by search, and choosing it switches the look right there
+  await page.keyboard.press("Control+k");
+  await page.getByRole("combobox", { name: /Search pages, settings/ }).fill("dark mode");
+  await page.getByRole("option", { name: /Dark mode/ }).click();
+  await expect(html).toHaveClass(/\bdark\b/);
+  await expect(page).toHaveURL(/\/dashboard\/today/);
+  await toggle.click(); // back to light for the rest of the run
+
+  // a signed-out visitor on Help has the same switch
   const visitor = await page
     .context()
     .browser()
     ?.newContext({ baseURL: page.url().split("/dashboard")[0] });
   const anon = await visitor?.newPage();
   await anon?.goto("/help");
-  await expect(anon?.getByRole("button", { name: /Current theme/ }) ?? page.locator("none")).toBeVisible();
+  await expect(anon?.getByRole("button", { name: "Dark mode", exact: true }) ?? page.locator("none")).toBeVisible();
   await visitor?.close();
 });
 

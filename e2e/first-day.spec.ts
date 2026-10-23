@@ -180,16 +180,16 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     const pages: [menu: string, heading: RegExp, title: RegExp][] = [
       ["Invoices", /^Invoices$/, /^Invoices/],
       ["Clients", /^Clients$/, /^Clients/],
-      ["Year summary (taxes)", /^Year summary/, /^Year summary/],
+      ["Year", /^Year summary/, /^Year summary/],
       ["Account", /^Account$/, /^Account/],
     ];
     for (const [menu, heading, title] of pages) {
-      if (menu === "Year summary (taxes)") {
-        // Rarely used, so it lives in the "More" menu of the top strip.
-        await page.getByRole("button", { name: "More", exact: true }).click();
-        await page.getByRole("menuitem", { name: menu, exact: true }).click();
+      if (menu === "Account") {
+        // Account lives in the account menu at the top right (issue 217: the tabs are the six pages).
+        await page.getByRole("button", { name: /^Account menu for/ }).click();
+        await page.getByRole("menuitem", { name: "Account", exact: true }).click();
       } else {
-        // Invoices, Clients and Account are tabs in the top strip.
+        // Invoices, Clients and Year are tabs in the top strip.
         await page
           .getByRole("navigation", { name: "Main pages" })
           .getByRole("link", { name: menu, exact: true })

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import type { Metadata } from "next";
 
 import { SocialSignIn } from "@/components/social-sign-in";
@@ -25,14 +23,6 @@ export default function LoginPage() {
             Try the demo first
           </TryDemoButton>
         </div>
-      </div>
-      <div className="absolute top-5 flex w-full justify-end px-10 text-muted-foreground text-sm">
-        <span>
-          New here?{" "}
-          <Link prefetch={false} className="inline-block py-2 text-foreground" href="/auth/v2/register">
-            Create an account
-          </Link>
-        </span>
       </div>
     </>
   );

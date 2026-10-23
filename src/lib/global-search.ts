@@ -15,6 +15,8 @@ export type SearchResult = {
   detail?: string;
   /** Where choosing it goes. A `#anchor` scrolls to that part of the page. */
   href: string;
+  /** Instead of going somewhere, choosing it does this here (switching between light and dark). */
+  action?: "toggle-theme";
 };
 
 export const GROUP_ORDER: readonly SearchGroup[] = [
@@ -35,8 +37,19 @@ export function matchesAll(query: string, text: string): boolean {
   return typed.every((t) => have.some((w) => w.startsWith(t)));
 }
 
-/** `feature` names the switch in lib/features.ts that must be on for the target to be found. */
-type Target = { title: string; href: string; keywords?: string; detail?: string; feature?: Feature };
+/**
+ * `feature` names the switch in lib/features.ts that must be on for the target to be found. `notForDemo` hides it from a
+ * sample-data account, whose Account page does not offer it (no password, no tokens, nothing to delete).
+ */
+type Target = {
+  title: string;
+  href: string;
+  keywords?: string;
+  detail?: string;
+  feature?: Feature;
+  notForDemo?: boolean;
+  action?: SearchResult["action"];
+};
 
 /** Leaves out what points at a hidden feature, so search never offers something the app does not show. */
 const shown = (targets: Target[]) => targets.filter((t) => !t.feature || feature(t.feature));
@@ -60,7 +73,14 @@ const SETTINGS: Target[] = shown([
     href: "/dashboard/account#account",
     keywords: "account your",
   },
-  { title: "Change password", href: "/dashboard/account#account", keywords: "sign in security" },
+  { title: "Change password", href: "/dashboard/account#account", keywords: "sign in security", notForDemo: true },
+  {
+    title: "Dark mode",
+    detail: "Switch between light and dark",
+    href: "",
+    keywords: "light theme night appearance colours colors",
+    action: "toggle-theme",
+  },
   {
     title: "Friday reminder email",
     href: "/dashboard/account#account",
@@ -84,16 +104,23 @@ const SETTINGS: Target[] = shown([
     feature: "importTime",
   },
   { title: "Keep a copy on this device", href: "/dashboard/account#data", keywords: "offline", feature: "localFirst" },
-  { title: "Delete account", href: "/dashboard/account#account", keywords: "remove erase privacy" },
+  {
+    title: "Delete account",
+    href: "/dashboard/account#account",
+    keywords: "remove erase privacy",
+    notForDemo: true,
+  },
   {
     title: "Connect an AI assistant",
     href: "/dashboard/account#ai",
     keywords: "claude chatgpt cursor mcp server integration",
+    notForDemo: true,
   },
   {
     title: "API tokens",
     href: "/dashboard/account#ai",
     keywords: "api key keys token tokens access authentication auth bearer credentials secret personal developer",
+    notForDemo: true,
   },
   {
     title: "Polish descriptions with your own AI key",
@@ -103,20 +130,27 @@ const SETTINGS: Target[] = shown([
   },
 ]);
 
-const find = (group: SearchGroup, targets: Target[], query: string, max: number): SearchResult[] =>
+const find = (group: SearchGroup, targets: Target[], query: string, max: number, demo: boolean): SearchResult[] =>
   targets
-    .filter((t) => matchesAll(query, `${t.title} ${t.keywords ?? ""}`))
+    .filter((t) => !(demo && t.notForDemo) && matchesAll(query, `${t.title} ${t.keywords ?? ""}`))
     .slice(0, max)
-    .map((t) => ({ id: `${group}:${t.title}`, group, title: t.title, detail: t.detail, href: t.href }));
+    .map((t) => ({
+      id: `${group}:${t.title}`,
+      group,
+      title: t.title,
+      detail: t.detail,
+      href: t.href,
+      ...(t.action ? { action: t.action } : {}),
+    }));
 
 /** Every page as a result: what the box shows before anything is typed. */
 export function allPages(): SearchResult[] {
   return PAGES.map((t) => ({ id: `Pages:${t.title}`, group: "Pages", title: t.title, href: t.href }));
 }
 
-/** Pages and settings that match, from fixed lists (no network). */
-export function matchPagesAndSettings(query: string): SearchResult[] {
-  return [...find("Pages", PAGES, query, 4), ...find("Settings", SETTINGS, query, 5)];
+/** Pages and settings that match, from fixed lists (no network). A sample-data account is not offered what it cannot use. */
+export function matchPagesAndSettings(query: string, { demo = false }: { demo?: boolean } = {}): SearchResult[] {
+  return [...find("Pages", PAGES, query, 4, demo), ...find("Settings", SETTINGS, query, 5, demo)];
 }
 
 /** The account's clients and projects that match by name. */
