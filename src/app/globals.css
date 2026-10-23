@@ -57,6 +57,7 @@
   --font-display: var(--font-display);
   --color-amber: var(--amber);
   --color-amber-soft: var(--amber-soft);
+  --color-amber-fill: var(--amber-fill);
   --color-ink: var(--foreground);
 }
 
@@ -82,6 +83,9 @@
   --destructive: #d8452f;
   --amber: #e8920b;
   --amber-soft: #fdefd3;
+  /* Big amber surfaces (the main button, the latest month bar) use a calmer amber: the bright one glared on a large
+     fill (2026-10-23). Small marks (today's date, a dot) keep --amber. */
+  --amber-fill: color-mix(in oklab, var(--amber) 80%, var(--background));
   /* Success is Bright Optimistic Green #50B83C. On white it is only 2.5:1, too pale for words, so it is used for icons,
      bars and fills (--success-bright) and the same hue, darker, writes the words (--success, 7:1). */
   --success-bright: #50b83c;
@@ -154,6 +158,7 @@
   --destructive: #ff7a63;
   --amber: #f5a524;
   --amber-soft: #232733; /* a raised neutral: dimmed amber on a dark page reads as brown */
+  --amber-fill: color-mix(in oklab, var(--amber) 78%, var(--background));
   --success-bright: #50b83c;
   --success: oklch(0.8 0.17 141);
   --success-soft: oklch(0.3 0.07 141);

@@ -421,12 +421,12 @@ function LogTimeButton({
     <button
       type="submit"
       disabled={disabled}
-      // The main event: amber with a clock-plus disc (time going in), a soft glow and a lift. While no time is typed
+      // The main event: a calm amber fill with a clock-plus disc (time going in); no glow or lift since 2026-10-23. While no time is typed
       // it is a pale amber (still the main button, only waiting: drawing audit 2026-10-23), and it comes alive when there
       // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
-      style={logged ? { backgroundColor: "var(--amber)", color: "#12151b" } : undefined} // colour-ok: the same dark ink as the button's own text
-      className="group relative order-last flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber px-6 font-display font-extrabold text-[#12151b] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-amber-soft disabled:font-bold disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      style={logged ? { backgroundColor: "var(--amber-fill)", color: "#12151b" } : undefined} // colour-ok: the same dark ink as the button's own text
+      className="group relative order-last flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-display font-bold text-[#12151b] text-lg shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}

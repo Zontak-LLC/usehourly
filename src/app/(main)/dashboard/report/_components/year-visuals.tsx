@@ -185,7 +185,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               <button
                 type="button"
                 aria-label={`${MONTH_NAMES[m.month - 1]}: ${read(v)}`}
-                className={`w-full rounded-t-lg outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80 ${i === latest ? "bg-amber" : "bg-foreground/30"}`}
+                className={`w-full rounded-t-lg outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80 ${i === latest ? "bg-amber-fill" : "bg-foreground/30"}`}
                 style={{ height: `${pct}%`, opacity: v ? 1 : 0.18 }}
               />
             </li>
