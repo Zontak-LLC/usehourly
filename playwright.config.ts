@@ -33,7 +33,7 @@ const SERIAL_SPECS = /support-notice\.spec\.ts$/;
 // testIgnore replaces the top-level one, so it is listed here too.
 const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-control/])];
 const PHONE_SPECS =
-  /(first-day|clients-split|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal|global-search)\.spec\.ts$/;
+  /(first-day|clients-split|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal|global-search|slide-to-delete)\.spec\.ts$/;
 
 // A CircleCI container is about twice as slow as a laptop (2 workers, a cold app that compiles each page the first time),
 // so the waits are doubled there. A real regression still fails; a slow machine does not.
