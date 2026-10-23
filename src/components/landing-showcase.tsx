@@ -84,16 +84,17 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
           usehourly.app/dashboard/{screen.id === "year" ? "report" : screen.id}
         </span>
       </div>
-      {/* The light picture on a light page, the dark one on a dark page. A phone gets the phone picture of each: the
+      {/* The light picture on a light page, the dark one on a dark page. Both are a 1120x1008 window (10:9, the deck's own
+          shape, issue 221), so the app fills the window instead of floating small in a 1440-wide page. A phone gets the phone picture of each: the
           desktop screen shrunk to a phone is too small to read. */}
       <div className="min-h-0 flex-1 dark:hidden">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=7`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=8`} />
           <img
-            src={`/landing/tour/${screen.file}.webp?v=7`}
+            src={`/landing/tour/${screen.file}.webp?v=8`}
             alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
-            width={1440}
-            height={1240}
+            width={1400}
+            height={1260}
             loading="lazy"
             decoding="async"
             className="size-full object-cover object-top"
@@ -102,12 +103,12 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
       </div>
       <div className="hidden min-h-0 flex-1 dark:block">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=7`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=8`} />
           <img
-            src={`/landing/tour-dark/${screen.file}.webp?v=7`}
+            src={`/landing/tour-dark/${screen.file}.webp?v=8`}
             alt=""
-            width={1000}
-            height={862}
+            width={1400}
+            height={1260}
             loading="lazy"
             decoding="async"
             className="size-full object-cover object-top"
@@ -177,7 +178,7 @@ export function LandingShowcase() {
           <div
             role="tabpanel"
             aria-label={screen.label}
-            className="relative aspect-[9/14] w-full touch-pan-y sm:aspect-[1000/900]"
+            className="relative aspect-[9/14] w-full touch-pan-y sm:aspect-[10/9]"
             onTouchStart={(e) => {
               touch.current = e.touches[0]?.clientX ?? null;
             }}
