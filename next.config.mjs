@@ -1,5 +1,8 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+/** Where usehourly.app/nightshift sends people (the Claude Night Shift board). */
+export const NIGHT_SHIFT_URL = "https://claude.ai/artifact/W2bbs2n4KaQDUtxo831tV7";
+
 // Expose Cloudflare bindings (D1) to `next dev`, and to `next start` when the browser tests serve a built copy
 // (E2E_SERVE=1; never set while building, where every page-data worker would boot its own local database).
 if (process.env.NODE_ENV === "development" || process.env.E2E_SERVE === "1") {
@@ -52,6 +55,9 @@ const nextConfig = {
     return [
       // "/" is the public landing page; src/proxy.ts sends signed-in users on to their day.
       { source: "/dashboard", destination: "/dashboard/today", permanent: false },
+      // Claude Night Shift: the live board of the overnight ticket run (a private claude.ai page; its Share setting decides
+      // who can open it). Temporary on purpose, so the address can point elsewhere later.
+      { source: "/nightshift", destination: NIGHT_SHIFT_URL, permanent: false },
     ];
   },
 };
