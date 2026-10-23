@@ -1,7 +1,7 @@
 import { expect, sql, startFreshAccount, test } from "./helpers";
 
 /** Account > API tokens & AI: the connect steps, and the small form that makes an access token. */
-test("an assistant is connected in words, and a token is made, shown once, listed and revoked", async ({
+test("an assistant is connected in words, and a token is made, shown once, listed and deleted", async ({
   page,
   shot,
 }) => {
@@ -56,9 +56,14 @@ test("an assistant is connected in words, and a token is made, shown once, liste
   await expect(page.getByText("Copy your new token now.")).toHaveCount(0);
   await expect(page.getByText("Cursor").last()).toBeVisible(); // the row stays, without the secret
 
-  await page.getByRole("button", { name: "Revoke" }).click();
-  await page.getByRole("button", { name: "Yes, revoke" }).click();
-  await expect(page.getByText("Revoked", { exact: true })).toBeVisible();
+  // Delete asks once for an active token (anything using it stops), then the row is gone.
+  await page.getByRole("button", { name: "Delete Cursor" }).click();
+  await expect(page.getByText("Anything using it stops working right away.")).toBeVisible();
+  await page.getByRole("button", { name: "Keep it" }).click();
+  await expect(page.getByRole("button", { name: "Delete Cursor" })).toBeVisible(); // kept
+  await page.getByRole("button", { name: "Delete Cursor" }).click();
+  await page.getByRole("button", { name: "Yes, delete" }).click();
+  await expect(page.getByText("No tokens yet.")).toBeVisible();
 });
 
 test("a long list of tokens is paged, three to a page on a phone", async ({ page }) => {
@@ -75,7 +80,7 @@ test("a long list of tokens is paged, three to a page on a phone", async ({ page
   }
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/dashboard/account#ai");
-  const rows = page.getByRole("list").filter({ hasText: "Revoke" }).getByRole("listitem");
+  const rows = page.getByRole("list").filter({ hasText: "Delete" }).getByRole("listitem");
   await expect(rows).toHaveCount(3); // page 1 of 2
   const pager = page.getByRole("navigation", { name: "tokens pages" });
   await expect(pager).toContainText("1 to 3 of 4");
