@@ -16,6 +16,10 @@ function setup(invoiceBranding: boolean) {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
     },
     timeEntry: {
+      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+        count: a?.where?.id?.in?.length ?? 0,
+      })),
       findMany: vi.fn(async () => [
         {
           date: "2026-10-02",

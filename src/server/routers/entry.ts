@@ -381,6 +381,13 @@ export const entryRouter = router({
       const byId = new Map(rows.map((r) => [r.id, r]));
       const ordered = ids.flatMap((id) => byId.get(id) ?? []);
       if (ordered.length !== ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+      // Merging billed and unbilled time would bill hours twice or never: only entries on the same invoice (or on none).
+      if (new Set(rows.map((r) => r.invoice_id ?? "")).size > 1) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Some of these entries are already on an invoice and some are not, so they can't be merged.",
+        });
+      }
       const plan = planMerge(ordered);
       if ("error" in plan) throw new TRPCError({ code: "BAD_REQUEST", message: plan.error });
       await ctx.prisma.timeEntry.update({

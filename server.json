@@ -3,7 +3,7 @@
   "name": "app.usehourly/usehourly",
   "title": "UseHourly",
   "description": "Freelancer time tracking for AI assistants: log time, timers, timesheets, sign-off links, invoices.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "websiteUrl": "https://usehourly.app",
   "repository": {
     "url": "https://github.com/Zontak-LLC/usehourly",
@@ -27,7 +27,7 @@
     {
       "registryType": "npm",
       "identifier": "usehourly-mcp",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

@@ -135,11 +135,17 @@ model TimeEntry {
   // member's id here; if that member's account is deleted the entry stays on the owner's books with author_id null.
   author_id  String?
 
+  // The invoice this time was billed on; null = not invoiced yet (migration 0035). Deleting the invoice frees it.
+  invoice_id String?
+
   user    AuthUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
   author  AuthUser? @relation("EntryAuthor", fields: [author_id], references: [id], onDelete: SetNull)
   project Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  invoice Invoice?  @relation(fields: [invoice_id], references: [id], onDelete: SetNull)
 
   @@index([author_id])
+  @@index([user_id, invoice_id])
+  @@index([invoice_id])
   // Both cover the per-project sums (totals, budgets), so they are answered from the index alone, without reading any
   // entry row: all time (by project) and inside a date range (by date). The date one also serves every date-range read.
   @@index([user_id, date, project_id, minutes])
@@ -198,6 +204,7 @@ model Invoice {
   client Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
   links  InvoiceLink[]
   emails InvoiceEmail[]
+  entries TimeEntry[]
 
   @@unique([user_id, number])
   @@index([user_id, issue_date])

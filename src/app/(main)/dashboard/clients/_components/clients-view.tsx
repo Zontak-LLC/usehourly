@@ -86,6 +86,8 @@ export function ClientsView() {
   // so the page stays ONE batched request; no input, so it shares the Invoices page's cached list.
   const invoices = trpc.invoice.list.useQuery();
   const latestInvoices = latestInvoiceByClient(invoices.data ?? []);
+  // Each client's time not invoiced yet (same render, so still one batched request).
+  const unbilled = trpc.invoice.unbilled.useQuery();
   const today = useToday();
 
   // The old stat tiles as one line under the title: how many clients and projects, and the month's time so far.
@@ -199,6 +201,7 @@ export function ClientsView() {
             client={c}
             quiet={quiet}
             latestInvoice={latestInvoices.get(c.id)}
+            unbilledCents={unbilled.data?.find((u) => u.clientId === c.id)?.cents ?? 0}
             today={today}
             allClients={clients.data}
             logos={logos}

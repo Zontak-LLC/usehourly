@@ -107,6 +107,7 @@ export function pendingEntry(input: {
     created_at: now,
     updated_at: now,
     author_id: null,
+    invoice_id: null,
     project,
     author: null,
     non_billable: input.nonBillable,

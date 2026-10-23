@@ -141,6 +141,10 @@ function world() {
       }),
     },
     timeEntry: {
+      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+        count: a?.where?.id?.in?.length ?? 0,
+      })),
       createMany: vi.fn(async ({ data }: { data: never[] }) => {
         for (const d of data) entries.push({ id: id("e"), ...(d as object) } as (typeof entries)[number]);
         return { count: data.length };

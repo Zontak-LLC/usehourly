@@ -14,12 +14,14 @@ import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { addDays, toISODate } from "@/lib/dates";
-import { buildInvoice, type InvoiceEntry } from "@/lib/invoice";
+import { addDays, MAX_QUERY_DAYS, toISODate } from "@/lib/dates";
+import { formatDuration } from "@/lib/duration";
+import { buildInvoice } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import type { Rounding } from "@/lib/rounding";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import type { Unbilled } from "@/lib/unbilled";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
 import { InvoiceNotices, InvoicePreviewCard } from "./invoice-preview";
@@ -41,31 +43,48 @@ function MissingProfileNotice({ ein, address }: { ein?: string | null; address?:
 }
 
 /**
- * The client the builder opens on: the one asked for in the address (`?client=`) when it exists,
- * else the client with the most billable minutes in the period, else the first client.
+ * The client the builder opens on: the one asked for in the address (`?client=`) when it exists, else the client with
+ * the most unbilled money, else the first client.
  */
-function defaultClientId(
-  clients: { id: string }[],
-  entries: (InvoiceEntry & { non_billable?: boolean })[],
-  wanted: string | null,
-): string {
+function defaultClientId(clients: { id: string }[], unbilled: Unbilled[], wanted: string | null): string {
   if (wanted && clients.some((c) => c.id === wanted)) return wanted;
-  const minutes = new Map<string, number>();
-  for (const e of entries) {
-    const id = e.project.client_id;
-    if (!id || e.non_billable || !e.project.billable || e.minutes <= 0) continue;
-    minutes.set(id, (minutes.get(id) ?? 0) + e.minutes);
-  }
   let best = clients[0]?.id ?? "";
   let most = 0;
-  for (const c of clients) {
-    const m = minutes.get(c.id) ?? 0;
-    if (m > most) {
-      best = c.id;
-      most = m;
+  for (const u of unbilled) {
+    if (u.cents > most && clients.some((c) => c.id === u.clientId)) {
+      best = u.clientId;
+      most = u.cents;
     }
   }
   return best;
+}
+
+/** Time in the period already on an invoice: left out unless the person asks for it, and said so plainly. */
+function AlreadyInvoiced({
+  minutes,
+  include,
+  onInclude,
+}: {
+  minutes: number;
+  include: boolean;
+  onInclude: (v: boolean) => void;
+}) {
+  if (minutes <= 0) return null;
+  return (
+    <div className="grid gap-2 rounded-lg border bg-muted/60 p-3 text-sm">
+      <p className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+        <span>
+          {formatDuration(minutes)} of this client&rsquo;s time in this period is already on an invoice.{" "}
+          {include ? "It is included again on this one." : "It is left out, so it is not billed twice."}
+        </span>
+      </p>
+      <label className="flex min-h-9 items-center gap-2 pl-6">
+        <input type="checkbox" checked={include} onChange={(e) => onInclude(e.target.checked)} className="size-4" />
+        Bill it again anyway
+      </label>
+    </div>
+  );
 }
 
 export function NewInvoiceView() {
@@ -86,6 +105,10 @@ export function NewInvoiceView() {
   const [notes, setNotes] = useState("");
   const [includeDetail, setIncludeDetail] = useState(true);
   const [compactNotes, setCompactNotes] = useState(false);
+  const [includeInvoiced, setIncludeInvoiced] = useState(false);
+  // The period follows the chosen client's unbilled time until the person sets the dates themselves.
+  const [rangeTouched, setRangeTouched] = useState(false);
+  const unbilled = trpc.invoice.unbilled.useQuery();
 
   useEffect(() => {
     const t = toISODate(new Date());
@@ -104,13 +127,22 @@ export function NewInvoiceView() {
   const validRange = !!from && !!to && from <= to;
   const entries = trpc.entry.list.useQuery({ from, to }, { enabled: validRange });
 
-  // Open on a client that has time to bill, using the period's entries this page loads anyway
-  // (no extra request). Chosen once; the person's own choice is never overwritten.
-  const entriesSettled = !!today && (!validRange || entries.isSuccess || entries.isError);
+  // Open on the client with the most unbilled money (or the one asked for). Chosen once; the person's own choice is
+  // never overwritten.
   useEffect(() => {
-    if (clientId || !clients.data?.length || !entriesSettled) return;
-    setClientId(defaultClientId(clients.data, entries.data ?? [], wantedClient));
-  }, [clients.data, clientId, entriesSettled, entries.data, wantedClient]);
+    if (clientId || !clients.data?.length || !unbilled.data) return;
+    setClientId(defaultClientId(clients.data, unbilled.data, wantedClient));
+  }, [clients.data, clientId, unbilled.data, wantedClient]);
+  // The period starts at the client's oldest unbilled day ("since the last invoice") and ends today.
+  const unbilledFrom = unbilled.data?.find((u) => u.clientId === clientId)?.from;
+  useEffect(() => {
+    if (rangeTouched || !today) return;
+    // At most a year back (the longest period an invoice may cover).
+    const earliest = addDays(today, -(MAX_QUERY_DAYS - 1));
+    const start = unbilledFrom && unbilledFrom < today ? unbilledFrom : `${today.slice(0, 7)}-01`;
+    setFrom(start < earliest ? earliest : start);
+    setTo(today);
+  }, [unbilledFrom, rangeTouched, today]);
 
   // Live preview uses the same math the server will snapshot.
   const rounding: Rounding = useMemo(
@@ -126,12 +158,18 @@ export function NewInvoiceView() {
       // Match by the project's client (not the active-project list) so archived projects count,
       // exactly as the server does.
       buildInvoice(
-        // Days marked non-billable are never invoiced (the server skips them too).
-        (entries.data ?? []).filter((e) => e.project.client_id === clientId && !e.non_billable),
+        // Days marked non-billable are never invoiced, and time already on an invoice is left out unless asked for
+        // (the server does the same).
+        (entries.data ?? []).filter(
+          (e) => e.project.client_id === clientId && !e.non_billable && (includeInvoiced || !e.invoice_id),
+        ),
         rounding,
       ),
-    [entries.data, clientId, rounding],
+    [entries.data, clientId, rounding, includeInvoiced],
   );
+  const alreadyInvoiced = (entries.data ?? [])
+    .filter((e) => e.project.client_id === clientId && e.invoice_id && e.project.billable && !e.non_billable)
+    .reduce((a, e) => a + e.minutes, 0);
   // A $0.00 invoice is never what anyone means: block it and say why.
   const nothingToBill = totals.lines.length > 0 && totals.totalCents === 0;
 
@@ -150,8 +188,13 @@ export function NewInvoiceView() {
         notes,
         includeDetail,
         compactNotes,
+        includeInvoiced,
       });
-      await utils.invoice.list.invalidate();
+      await Promise.all([
+        utils.invoice.list.invalidate(),
+        utils.invoice.unbilled.invalidate(),
+        utils.entry.list.invalidate(),
+      ]);
       try {
         await downloadInvoicePdf(snapshot);
       } catch (err) {
@@ -202,8 +245,14 @@ export function NewInvoiceView() {
                 setNumber(v);
                 setNumberTouched(true);
               }}
-              onFrom={setFrom}
-              onTo={setTo}
+              onFrom={(v) => {
+                setFrom(v);
+                setRangeTouched(true);
+              }}
+              onTo={(v) => {
+                setTo(v);
+                setRangeTouched(true);
+              }}
               onNetDays={setNetDays}
               onNotes={setNotes}
               onIncludeDetail={setIncludeDetail}
@@ -221,6 +270,7 @@ export function NewInvoiceView() {
                   clientName={client?.name}
                 />
 
+                <AlreadyInvoiced minutes={alreadyInvoiced} include={includeInvoiced} onInclude={setIncludeInvoiced} />
                 <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
               </ClientCurrency>
 

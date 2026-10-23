@@ -35,6 +35,10 @@ describe("one account cannot fill the shared database", () => {
     const prisma = {
       project: { findFirst: vi.fn(async () => ({ id: "p1" })) },
       timeEntry: {
+        // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+        updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+          count: a?.where?.id?.in?.length ?? 0,
+        })),
         count: vi.fn(async () => QUOTAS.entries - 1),
         create: vi.fn(async ({ data }: { data: object }) => ({ id: "e1", ...data })),
         findMany: vi.fn(async () => []),

@@ -42,6 +42,7 @@ export function ClientCard({
   onArchiveClient,
   onArchiveProject,
   latestInvoice,
+  unbilledCents = 0,
   today,
   quiet = false,
 }: {
@@ -58,6 +59,8 @@ export function ClientCard({
   onArchiveProject: (project: { id: string; name: string }) => void;
   /** The client's most recent invoice, shown in small text under the facts. */
   latestInvoice?: InvoiceFact;
+  /** What the client's billable time not on any invoice yet is worth (all time, not only this month). */
+  unbilledCents?: number;
   /** The browser's date (null until the page has loaded), for "12 days late". */
   today: string | null;
   /** No time logged this month: the header is drawn a little quieter. */
@@ -68,12 +71,6 @@ export function ClientCard({
   const hidden = showAll ? 0 : Math.max(0, c.projects.length - PROJECTS_SHOWN);
   const projects = hidden ? c.projects.slice(0, PROJECTS_SHOWN) : c.projects;
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
-  // What this month's time is worth at the projects' rates (billable projects only): the number a freelancer bills.
-  const monthCents = c.projects.reduce(
-    (sum, p) =>
-      p.billable && p.hourly_rate > 0 ? sum + Math.round(((totals?.[p.id]?.range ?? 0) * p.hourly_rate) / 60) : sum,
-    0,
-  );
   const editingHere = c.projects.some((p) => editing.editingId === p.id);
   return (
     <section
@@ -100,20 +97,21 @@ export function ClientCard({
               {c.name}
             </h2>
             <p className="text-foreground/70 text-sm">
-              {count(c.projects.length, "project")} · {formatDuration(monthMinutes)}
-              {monthCents > 0 && (
+              {count(c.projects.length, "project")} · {formatDuration(monthMinutes)} this month
+              {/* The number a freelancer bills: time not on any invoice yet, at the projects' rates (2026-10-23: it used
+                  to be this month's time, which counted hours already invoiced). */}
+              {unbilledCents > 0 && (
                 <>
                   {" · "}
-                  <MonthValue cents={monthCents} />
+                  <MonthValue cents={unbilledCents} /> not invoiced yet
                 </>
-              )}{" "}
-              this month
+              )}
             </p>
             {latestInvoice && <LastInvoiceLine invoice={latestInvoice} today={today} />}
           </div>
           <div className="flex items-center gap-2">
-            {/* Time worth billing this month: one click to an invoice for this client (the builder picks the period). */}
-            {monthCents > 0 && (
+            {/* Time not invoiced yet: one click to an invoice for this client (the builder starts on that time). */}
+            {unbilledCents > 0 && (
               <Button asChild variant="outline" className="h-10 gap-1.5">
                 <Link href={`/dashboard/invoices/new?client=${c.id}`} aria-label={`Make an invoice for ${c.name}`}>
                   <FileText /> Make invoice
