@@ -32,10 +32,10 @@ export function TeamStrip({ people }: { people: Person[] }) {
               // biome-ignore lint/suspicious/noArrayIndexKey: five fixed seats
               key={i}
               className={`grid size-8 place-items-center rounded-full ring-2 ring-card ${
-                i < active.length ? "bg-amber text-[#1b1405]" : "border-2 border-foreground/35 border-dashed bg-card"
+                i < active.length ? "bg-amber text-[#12151b]" : "border-2 border-foreground/35 border-dashed bg-card"
               }`}
             >
-              {i < active.length && <span className="size-2 rounded-full bg-[#1b1405]" />}
+              {i < active.length && <span className="size-2 rounded-full bg-[#12151b]" />}
             </span>
           ))}
         </div>
@@ -43,7 +43,7 @@ export function TeamStrip({ people }: { people: Person[] }) {
       <StatTile label={`${word(waiting, "Invitation")} waiting`} value={waiting}>
         <span className="relative grid size-14 place-items-center">
           <span
-            className={`relative grid size-12 place-items-center rounded-full ${waiting > 0 ? "bg-amber text-[#1b1405]" : "bg-muted text-foreground/60"}`}
+            className={`relative grid size-12 place-items-center rounded-full ${waiting > 0 ? "bg-amber text-[#12151b]" : "bg-muted text-foreground/60"}`}
           >
             <Mail className="size-6" />
           </span>

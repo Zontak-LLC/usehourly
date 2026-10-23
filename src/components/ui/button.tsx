@@ -12,11 +12,11 @@ const buttonVariants = cva(
           "border border-tint-edge bg-tint text-foreground shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_1px_2px_rgb(0_0_0/0.12)] hover:bg-tint-hover hover:shadow-[0_6px_16px_-6px_rgb(0_0_0/0.35)] focus-visible:ring-primary/30",
         // The one main action on a screen: a solid fill in the accent colour (the soft tint above is for the rest).
         primary:
-          "relative overflow-hidden border border-transparent bg-gradient-to-b from-amber to-[color-mix(in_oklab,var(--amber)_80%,#b45309)] font-semibold text-[#1b1405] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_8px_20px_-8px_color-mix(in_oklab,var(--amber)_80%,transparent)] before:pointer-events-none before:absolute before:inset-y-0 before:-left-1/2 before:w-1/3 before:-skew-x-12 before:bg-white/40 before:opacity-0 before:transition-all before:duration-700 hover:before:left-full hover:before:opacity-100 hover:shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_12px_26px_-8px_color-mix(in_oklab,var(--amber)_90%,transparent)] focus-visible:ring-amber/40",
+          "relative overflow-hidden border border-transparent bg-gradient-to-b from-[color-mix(in_oklab,var(--amber)_82%,white)] to-amber font-semibold text-[#12151b] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_8px_20px_-8px_color-mix(in_oklab,var(--amber)_80%,transparent)] before:pointer-events-none before:absolute before:inset-y-0 before:-left-1/2 before:w-1/3 before:-skew-x-12 before:bg-white/40 before:opacity-0 before:transition-all before:duration-700 hover:before:left-full hover:before:opacity-100 hover:shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_12px_26px_-8px_color-mix(in_oklab,var(--amber)_90%,transparent)] focus-visible:ring-amber/40",
         outline:
           "border-border bg-background hover:border-foreground/30 hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklab,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:

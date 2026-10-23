@@ -27,7 +27,7 @@ export function FridayReminderCard({ me, emailEnabled }: { me: AccountMe; emailE
           <li
             key={d}
             className={`rounded-2xl py-2 text-center font-mono text-[11px] uppercase tracking-widest ${
-              d === "Fri" ? "bg-amber text-[#1b1405]" : "bg-muted text-foreground/70"
+              d === "Fri" ? "bg-amber text-[#12151b]" : "bg-muted text-foreground/70"
             }`}
           >
             {d}

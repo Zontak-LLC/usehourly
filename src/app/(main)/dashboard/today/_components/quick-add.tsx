@@ -424,13 +424,13 @@ function LogTimeButton({
       // The main event: amber with a clock-plus disc (time going in), a soft glow and a lift. While no time is typed
       // it is a plain neutral, and it comes alive when there is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
-      style={logged ? { backgroundColor: "var(--amber)", color: "#1b1405" } : undefined} // colour-ok: the same dark ink as the button's own text
-      className="group relative order-last flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber px-6 font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-muted disabled:font-bold disabled:text-foreground/55 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      style={logged ? { backgroundColor: "var(--amber)", color: "#12151b" } : undefined} // colour-ok: the same dark ink as the button's own text
+      className="group relative order-last flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber px-6 font-display font-extrabold text-[#12151b] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-muted disabled:font-bold disabled:text-foreground/55 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}
-        style={logged ? { backgroundColor: "#1b1405", color: "var(--amber)" } : undefined} // colour-ok: the button's dark ink
-        className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/20 group-disabled:text-foreground/70 sm:size-6"
+        style={logged ? { backgroundColor: "#12151b", color: "var(--amber)" } : undefined} // colour-ok: the button's dark ink
+        className="grid size-7 place-items-center rounded-full bg-[#12151b] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/20 group-disabled:text-foreground/70 sm:size-6"
       >
         {logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
@@ -441,7 +441,7 @@ function LogTimeButton({
       {/* The name stays "Log time" for screen readers and tests; the eyes see what was logged for a moment. */}
       <span className="sr-only">Log time</span>
       <span aria-hidden="true">{logged ? `Logged ${logged}` : "Log time"}</span>
-      <Kbd className="hidden bg-[#1b1405]/15 text-inherit lg:inline-flex">↵</Kbd>
+      <Kbd className="hidden bg-[#12151b]/15 text-inherit lg:inline-flex">↵</Kbd>
     </button>
   );
 }

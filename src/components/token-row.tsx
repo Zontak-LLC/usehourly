@@ -41,7 +41,7 @@ export function TokenRow({
     <li className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
       <span
         aria-hidden
-        className={`grid size-10 shrink-0 place-items-center rounded-full ${live ? "bg-amber/20" : "bg-muted text-foreground/50"}`}
+        className={`grid size-10 shrink-0 place-items-center rounded-full ${live ? "bg-muted text-success" : "bg-muted text-foreground/50"}`}
       >
         <KeyRound className="size-5" />
       </span>

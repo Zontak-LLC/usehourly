@@ -25,6 +25,13 @@ const clients = [
 
 /** A person types a few letters in the top bar and finds what they meant, wherever it lives. */
 describe("global search", () => {
+  it("finds the API tokens by any of the words people use for them", () => {
+    for (const q of ["api key", "API token", "authentication", "api token authentication", "access token", "keys"]) {
+      const found = matchPagesAndSettings(q).find((r) => r.title === "API tokens");
+      expect(found?.href, q).toBe("/dashboard/account#ai");
+    }
+  });
+
   it("matches the start of every typed word, ignoring case and punctuation", () => {
     expect(matchesAll("pass", "Change password")).toBe(true);
     expect(matchesAll("change pass", "Change password")).toBe(true);

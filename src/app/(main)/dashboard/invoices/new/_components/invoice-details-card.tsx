@@ -94,7 +94,7 @@ export function InvoiceDetailsCard({
                 }}
                 className={`rounded-full border px-3 py-1.5 text-sm transition-all motion-safe:active:scale-95 ${
                   on
-                    ? "border-amber bg-amber font-semibold text-[#1b1405]"
+                    ? "border-amber bg-amber font-semibold text-[#12151b]"
                     : "bg-muted/50 hover:border-foreground/30 hover:bg-muted"
                 }`}
               >

@@ -1,6 +1,6 @@
 import { expect, sql, startFreshAccount, test } from "./helpers";
 
-/** Account > AI assistants: the connect steps, and the small form that makes an access token. */
+/** Account > API tokens & AI: the connect steps, and the small form that makes an access token. */
 test("an assistant is connected in words, and a token is made, shown once, listed and revoked", async ({
   page,
   shot,
@@ -8,9 +8,20 @@ test("an assistant is connected in words, and a token is made, shown once, liste
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/account#ai");
 
-  // The steps are plain words for the chosen assistant, with the server address to copy.
+  // Short steps for the chosen assistant, each with its link or the text to copy right there.
   await expect(page.getByRole("heading", { name: "Connect your assistant" })).toBeVisible();
-  await expect(page.getByText("Open Claude (the website or the desktop app)")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Claude connectors" })).toHaveAttribute(
+    "href",
+    "https://claude.ai/settings/connectors",
+  );
+  await expect(page.getByText(/\/api\/mcp$/).first()).toBeVisible(); // the address to paste
+  await page.getByRole("heading", { name: "Connect your assistant" }).scrollIntoViewIfNeeded();
+  await shot("connect-steps");
+  await page.getByRole("button", { name: "Cursor" }).first().click();
+  const cursor = await page.getByRole("link", { name: "Add to Cursor" }).getAttribute("href");
+  expect(cursor).toMatch(/^cursor:\/\/anysphere\.cursor-deeplink\/mcp\/install\?name=usehourly&config=/);
+  const config = JSON.parse(Buffer.from(decodeURIComponent(cursor?.split("config=")[1] ?? ""), "base64").toString());
+  expect(config.url).toMatch(/\/api\/mcp$/);
   await page.getByRole("button", { name: "Claude Code" }).first().click();
   await expect(page.getByText("claude mcp add --transport http usehourly").first()).toBeVisible();
 

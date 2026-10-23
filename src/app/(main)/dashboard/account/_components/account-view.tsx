@@ -101,7 +101,11 @@ export function AccountView() {
       </Section>
     ),
     ai: (
-      <Section id="ai" title="AI assistants" description="Connect an assistant such as Claude or ChatGPT to UseHourly.">
+      <Section
+        id="ai"
+        title="API tokens & AI"
+        description="API tokens for apps and scripts, and connecting an assistant such as Claude or ChatGPT."
+      >
         {account.is_demo ? (
           <SectionCard
             title="Create a free account first"

@@ -118,9 +118,9 @@
   --tint-edge-strength: 35%;
   --heat-base: 6%;
   --heat-range: 28%;
-  --tint: color-mix(in oklch, var(--primary) var(--tint-strength), var(--background));
-  --tint-hover: color-mix(in oklch, var(--primary) var(--tint-hover-strength), var(--background));
-  --tint-edge: color-mix(in oklch, var(--primary) var(--tint-edge-strength), var(--background));
+  --tint: color-mix(in oklab, var(--primary) var(--tint-strength), var(--background));
+  --tint-hover: color-mix(in oklab, var(--primary) var(--tint-hover-strength), var(--background));
+  --tint-edge: color-mix(in oklab, var(--primary) var(--tint-edge-strength), var(--background));
 
   /* fonts */
   --font-sans: var(--font-instrument-sans);
@@ -153,7 +153,7 @@
   --accent-foreground: #ecebe7;
   --destructive: #ff7a63;
   --amber: #f5a524;
-  --amber-soft: #2a2112;
+  --amber-soft: #232733; /* a raised neutral: dimmed amber on a dark page reads as brown */
   --success-bright: #50b83c;
   --success: oklch(0.8 0.17 141);
   --success-soft: oklch(0.3 0.07 141);

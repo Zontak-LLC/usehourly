@@ -35,7 +35,7 @@ export function PageShell({
 }) {
   const Icon = nav ? [...navLinks, ...adminLinks].find((l) => l.id === nav)?.icon : undefined;
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col overflow-clip border bg-muted/60 [--border:color-mix(in_oklch,var(--foreground)_16%,var(--background))] max-sm:-m-2 max-sm:w-[calc(100%+1rem)] max-sm:border-x-0 sm:rounded-2xl">
+    <div className="mx-auto flex w-full max-w-5xl flex-col overflow-clip border bg-muted/60 [--border:color-mix(in_oklab,var(--foreground)_16%,var(--background))] max-sm:-m-2 max-sm:w-[calc(100%+1rem)] max-sm:border-x-0 sm:rounded-2xl">
       <header
         className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b bg-card px-3 py-3 sm:px-4`}
       >

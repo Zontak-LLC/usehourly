@@ -57,13 +57,13 @@ export function ApiTokensCard() {
 
   return (
     <SectionCard
-      title="Access token"
-      description="For an app that asks for a token instead of a log-in button. Make one, copy it once, and revoke it whenever you like."
+      title="API tokens"
+      description="An API token (also called an API key or access token) lets an app or a script sign in as you. Make one, copy it once, and revoke it whenever you like."
     >
       <TokenForm busy={create.isPending} onMake={make} />
 
       {fresh && (
-        <div className="grid gap-4 rounded-2xl bg-amber/10 p-4 ring-2 ring-amber/60">
+        <div className="grid gap-4 rounded-2xl bg-card p-4 ring-2 ring-success/50">
           <p className="font-semibold text-sm">
             Copy your new token now. For safety it is shown only once, and UseHourly keeps just a fingerprint of it.
           </p>

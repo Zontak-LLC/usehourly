@@ -26,7 +26,7 @@ import { InvoiceNotices, InvoicePreviewCard } from "./invoice-preview";
 
 function MissingProfileNotice({ ein, address }: { ein?: string | null; address?: string | null }) {
   return (
-    <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+    <p className="flex items-start gap-2 rounded-lg border bg-muted/60 p-3 text-sm">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
       <span>
         Your {!ein ? "tax ID (EIN)" : ""}

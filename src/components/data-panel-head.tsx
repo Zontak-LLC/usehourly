@@ -24,7 +24,7 @@ export function DataPanelHead({
       <span
         aria-hidden
         className={`grid size-11 shrink-0 place-items-center rounded-full ${
-          danger ? "bg-destructive/12 text-destructive" : "bg-amber/20 text-foreground"
+          danger ? "bg-destructive/12 text-destructive" : "bg-muted text-foreground"
         }`}
       >
         <Icon className="size-5" />

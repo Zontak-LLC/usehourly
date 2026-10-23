@@ -49,7 +49,7 @@ function cellClass(s: CellState): string {
   const tone = s.isDropTarget || s.isPicked ? "" : quiet;
   // Amber marks where you are: the open day (and a day an entry is being dragged over) gets an amber ring.
   const ring = s.isOpen || s.isDropTarget ? "z-[1] ring-2 ring-amber ring-inset" : "";
-  const drop = s.isDropTarget ? "bg-amber-soft" : "";
+  const drop = s.isDropTarget ? "bg-amber-soft ring-2 ring-amber ring-inset" : "";
   const picked = s.isPicked ? "bg-tint outline-2 outline-primary -outline-offset-2" : "";
   return [base, tone, ring, drop, picked].filter(Boolean).join(" ");
 }

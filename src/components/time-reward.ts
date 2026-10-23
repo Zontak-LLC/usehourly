@@ -45,7 +45,7 @@ export function flyIn(from: HTMLElement, to: HTMLElement, text: string, colour: 
     padding: "2px 8px",
     borderRadius: "999px",
     font: "700 13px/1.4 var(--font-mono, monospace)",
-    color: "#1b1405", // colour-ok: dark ink on the bright token, the same in light and dark mode
+    color: "#12151b", // colour-ok: dark ink on the bright token, the same in light and dark mode
     background: colour,
     boxShadow: `0 6px 16px -6px ${soft(colour, 80)}`,
     transform: "translate(-50%, -50%)",
@@ -71,11 +71,15 @@ export function flyIn(from: HTMLElement, to: HTMLElement, text: string, colour: 
 /** A ring in `colour` that swells around the element and fades away. */
 export function halo(el: HTMLElement, colour: string) {
   if (lessMotion()) return;
+  // On a dark page a fading coral or amber reads as brown, so the ring is brighter there (mixed with white).
+  const ring = document.documentElement.classList.contains("dark")
+    ? `color-mix(in oklab, ${colour} 70%, white)`
+    : colour;
   el.animate(
     [
-      { boxShadow: `0 0 0 0 ${soft(colour, 70)}` },
-      { boxShadow: `0 0 0 6px ${soft(colour, 45)}`, offset: 0.35 },
-      { boxShadow: `0 0 0 14px ${soft(colour, 0)}` },
+      { boxShadow: `0 0 0 0 ${soft(ring, 70)}` },
+      { boxShadow: `0 0 0 6px ${soft(ring, 45)}`, offset: 0.35 },
+      { boxShadow: `0 0 0 14px ${soft(ring, 0)}` },
     ],
     { duration: 700, easing: "ease-out" },
   );
