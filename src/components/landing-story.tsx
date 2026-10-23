@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { ExplorerWatch, LUME } from "@/components/explorer-watch";
-import { PALETTE } from "@/lib/palette";
+import { DigitalWatch } from "@/components/digital-watch";
 
 const DAYS = ["M", "T", "W", "T", "F"];
 const BARS: [number, number][] = [
@@ -47,16 +46,17 @@ export function LandingStory() {
     <div ref={ref} className="grid gap-4 md:grid-cols-3">
       <article className="flex flex-col gap-4 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)]">
         <div aria-hidden className="grid h-44 place-items-center">
-          <ExplorerWatch fraction={on ? 0.82 : 0} ring={PALETTE.brandBlend} marks={8} duration={1.6} className="w-40">
-            <div className="absolute inset-x-0 top-[53%] text-center" style={{ color: LUME }}>
-              <span className="font-display font-extrabold text-[13cqi] tabular-nums leading-none">6:35</span>
-            </div>
-          </ExplorerWatch>
+          <div className="w-60">
+            <DigitalWatch
+              mode={on ? { kind: "running", seconds: 2530, label: "Northwind" } : { kind: "time" }}
+              label="A stopwatch running"
+            />
+          </div>
         </div>
         <div>
           <h3 className="font-bold font-display text-xl">Log a day in seconds</h3>
           <p className="mt-1 text-muted-foreground">
-            Type 1.5 or 90m and press Enter, or start a timer. The dial fills as the day adds up.
+            Type 1.5 or 90m and press Enter, or start the stopwatch and file what it hands you when you stop.
           </p>
         </div>
       </article>
@@ -128,8 +128,8 @@ export function LandingStory() {
         <div>
           <h3 className="font-bold font-display text-xl">Bill it, share it, get paid</h3>
           <p className="mt-1 text-muted-foreground">
-            Make the invoice from your hours, email it or send a private link, and share a timesheet your client can
-            approve.
+            Make the invoice from your hours, download the PDF or send a private link, and mark it paid when the money
+            arrives.
           </p>
         </div>
       </article>

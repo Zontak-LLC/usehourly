@@ -9,6 +9,8 @@
     "scripts/social/dark-screens.mjs",
     "scripts/social/dark-phone-screens.mjs",
     "scripts/social/feature-graphic.mjs",
+    "scripts/example-invoice/logo.mjs",
+    "scripts/example-invoice/make-example-invoice.test.ts",
     "bridge/index.mjs",
     "open-next.config.ts",
     "custom-worker.ts",

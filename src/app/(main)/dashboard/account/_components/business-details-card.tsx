@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 
+import { ExampleInvoice } from "@/components/example-invoice";
 import { FormStep } from "@/components/form-step";
-import { InvoiceSketch } from "@/components/invoice-sketch";
 import { LogoPicker } from "@/components/logo-picker";
 import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
@@ -133,9 +133,9 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
           </Button>
         </div>
 
-        {/* Where your details print: your side and "How to pay" in real text, the rest drawn as lines. */}
+        {/* A finished invoice, to see where these details print. */}
         <div className="lg:pt-8">
-          <InvoiceSketch seller={{ logo, name: name || me.name || "Your business", address, ein }} pay={pay} />
+          <ExampleInvoice />
         </div>
       </div>
     </SectionCard>

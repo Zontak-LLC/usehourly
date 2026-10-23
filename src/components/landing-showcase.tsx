@@ -8,35 +8,35 @@ const SCREENS = [
     label: "Today",
     file: "1-today",
     title: "Log a day in seconds",
-    text: "Type 1h30, tap a chip, press Enter. The dial fills as the day adds up, and your week sits right under it.",
+    text: "Type 1h30, tap a chip, press Enter. Or start the stopwatch and add what it hands you to the timesheet.",
   },
   {
     id: "week",
     label: "Week",
     file: "2-week",
     title: "The whole week at a glance",
-    text: "Seven day tiles with each project stacked in its own colour. Pick a day to edit it, or share the week with a client.",
+    text: "Seven day tiles with their totals. A weekday with no time stands out, so nothing slips through.",
   },
   {
     id: "month",
     label: "Month",
     file: "3-month",
     title: "A calendar of what you did",
-    text: "Day and week totals on a warm calendar. Add the same hours to several days at once.",
+    text: "Day and week totals on one calendar. Logged on the wrong day? Drag the entry onto the right one.",
   },
   {
     id: "invoices",
     label: "Invoices",
     file: "4-invoices",
     title: "Paid, waiting, late",
-    text: "Every invoice saved exactly as sent. Email it, share a private link, and mark it paid. A ring shows how much is in.",
+    text: "Every invoice saved exactly as sent. Download the PDF, share a private link, and mark it paid.",
   },
   {
     id: "clients",
     label: "Clients",
     file: "5-clients",
     title: "Clients, projects and rates",
-    text: "Each client's projects with their rate and this month's hours, plus budgets that warn you before you pass them.",
+    text: "Each client's month in hours and money, the rate on every project, and Make invoice one tap away.",
   },
   {
     id: "year",
@@ -86,9 +86,9 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
           desktop screen shrunk to a phone is too small to read. */}
       <div className="min-h-0 flex-1 dark:hidden">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=5`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=6`} />
           <img
-            src={`/landing/tour/${screen.file}.webp?v=5`}
+            src={`/landing/tour/${screen.file}.webp?v=6`}
             alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
             width={1440}
             height={1240}
@@ -100,9 +100,9 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
       </div>
       <div className="hidden min-h-0 flex-1 dark:block">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=5`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=6`} />
           <img
-            src={`/landing/tour-dark/${screen.file}.webp?v=5`}
+            src={`/landing/tour-dark/${screen.file}.webp?v=6`}
             alt=""
             width={1000}
             height={862}

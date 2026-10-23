@@ -6,7 +6,6 @@ import type { Metadata } from "next";
 import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
-import { LandingScenes } from "@/components/landing-scenes";
 import { LandingShowcase } from "@/components/landing-showcase";
 import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
@@ -27,16 +26,13 @@ const JSON_LD = {
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   featureList: [
-    "Quick daily time entry and a start/stop timer",
-    "Weekly timesheet and month calendar",
-    "Invoices as PDF, by email or as a private link, with overdue reminders",
-    "Timesheets a client can read and approve",
-    "Teams: let others log time on the clients you choose",
-    "Project budgets, billing rounding and a currency for each client",
-    "Meetings from your calendar turned into time entries",
-    "Year summary for taxes, Excel export, and Xero and QuickBooks files",
+    "Quick daily time entry and a stopwatch that turns into an entry",
+    "Weekly timesheet that shows the gaps, and a month calendar you can drag entries across",
+    "Invoices as PDF or as a private link, with paid, waiting and late at a glance",
+    "Each client's month in hours and money, and one tap to make the invoice",
+    "Year summary for taxes and Excel export",
     "Works offline and installs like an app",
-    "Export all your data, or import from Toggl and Clockify",
+    "Export all your data, or delete it",
     "MCP server: your AI assistant can log time, build timesheets for clients and prepare invoices",
   ],
 };
@@ -172,19 +168,9 @@ export default function LandingPage() {
             Everything a freelancer needs.
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
-            From the first hour you log to the invoice, the approval and the tax summary. Free, with no ads.
+            From the first hour you log to the invoice and the tax summary. Free, with no ads.
           </p>
           <LandingFeatures />
-        </section>
-
-        <section id="how-it-feels" className="mx-auto max-w-6xl px-6 pb-16 md:pb-24">
-          <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
-            Small things that save your week.
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
-            Four of the parts people ask about most, in a few seconds each.
-          </p>
-          <LandingScenes />
         </section>
 
         <section aria-labelledby="promises-heading" className="relative mx-auto max-w-6xl px-6 pt-16 pb-8 md:pt-24">

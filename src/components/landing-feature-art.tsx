@@ -29,8 +29,12 @@ export function QuickEntryArt() {
           </span>
           <kbd className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">↵</kbd>
         </div>
-        <div className="flex gap-1.5">
-          {["+ 30 min", "+ 1 hour", "+ 2 hours"].map((t) => (
+        <div className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1 rounded-full bg-foreground px-2.5 py-1 text-[11px] text-background">
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: CORAL }} />
+            REC 0:42:10
+          </span>
+          {["+ 30 min", "+ 1 hour"].map((t) => (
             <span
               key={t}
               className="rounded-full bg-card px-2.5 py-1 text-[11px] text-muted-foreground ring-1 ring-foreground/10"
@@ -68,64 +72,31 @@ export function InvoiceArt() {
   );
 }
 
-export function ApprovalArt() {
-  return (
-    <Pad>
-      <div className="w-full max-w-[13rem] rounded-xl bg-card p-3 shadow-sm ring-1 ring-foreground/10">
-        <div className="flex h-10 items-end justify-between gap-2 px-1">
-          {(
-            [
-              ["Mon", 5],
-              ["Tue", 7],
-              ["Wed", 4],
-              ["Thu", 8],
-              ["Fri", 6],
-            ] as [string, number][]
-          ).map(([day, h], i) => (
-            <span
-              key={day}
-              className="w-3 rounded-sm"
-              style={{ height: h * 5, backgroundColor: i % 2 ? VIOLET : AMBER }}
-            />
-          ))}
-        </div>
-        <svg
-          viewBox="0 0 120 24"
-          className="mt-2 h-6 w-full"
-          fill="none"
-          stroke={VIOLET}
-          strokeWidth="1.6"
-          strokeLinecap="round"
-        >
-          <title>A signature</title>
-          <path d="M4 16 C14 2, 20 22, 28 10 S42 4, 46 14 S62 20, 70 8 S86 14, 96 12" />
-        </svg>
-        <p className="text-[11px]" style={{ color: GREEN }}>
-          ✓ Approved by Sam
-        </p>
-      </div>
-    </Pad>
-  );
-}
-
-export function BudgetArt() {
-  const rows: [string, number, string][] = [
-    ["Website", 45, GREEN],
-    ["Support", 85, AMBER],
-    ["Retainer", 100, "#ef4444"],
+/** The week as seven day buttons: hours under each, a thin bar, and past weekdays with nothing logged as dashed gaps. */
+export function WeekArt() {
+  const days: [string, string, number][] = [
+    ["Mon", "–", 0],
+    ["Tue", "6:15", 0.78],
+    ["Wed", "–", 0],
+    ["Thu", "7:30", 0.94],
+    ["Fri", "4:00", 0.5],
   ];
   return (
     <Pad>
-      <div className="flex w-full max-w-[13rem] flex-col gap-2.5">
-        {rows.map(([name, pct, color]) => (
-          <div key={name}>
-            <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
-              <span>{name}</span>
-              <span>{pct}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-foreground/10">
-              <div className="h-2 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-            </div>
+      <div className="grid w-full max-w-xs grid-cols-5 gap-1.5">
+        {days.map(([day, hours, fill], i) => (
+          <div
+            key={day}
+            className={`relative flex flex-col items-center gap-0.5 overflow-hidden rounded-lg px-1 py-2 ${
+              fill ? "bg-card ring-1 ring-foreground/10" : "border border-foreground/30 border-dashed"
+            } ${i === 3 ? "ring-2" : ""}`}
+            style={i === 3 ? { boxShadow: `0 0 0 2px ${AMBER}` } : undefined}
+          >
+            <span className="text-[10px] text-muted-foreground uppercase">{day}</span>
+            <span className="text-[11px] text-foreground">{hours}</span>
+            <span className="absolute inset-x-0 bottom-0 h-1 bg-foreground/10">
+              <span className="block h-full bg-foreground/40" style={{ width: `${fill * 100}%` }} />
+            </span>
           </div>
         ))}
       </div>
@@ -133,74 +104,51 @@ export function BudgetArt() {
   );
 }
 
-export function CalendarArt() {
+/** A month of days, one entry being dragged from one day onto another. */
+export function MonthArt() {
   return (
     <Pad>
-      <div className="flex w-full max-w-[13rem] flex-col gap-2">
-        <div className="rounded-lg px-2.5 py-1.5 text-[11px]" style={{ backgroundColor: `${GREEN}26`, color: GREEN }}>
-          Design review · 10:00–11:00
-        </div>
-        <span aria-hidden className="self-center text-muted-foreground">
-          ↓ one tap
+      <div className="relative grid w-full max-w-[15rem] grid-cols-7 gap-1">
+        {Array.from({ length: 14 }, (_, i) => i + 6).map((d) => (
+          <div
+            key={d}
+            className={`flex h-9 flex-col justify-between rounded-md p-1 text-[9px] ${
+              d === 15 ? "ring-2" : "bg-card ring-1 ring-foreground/10"
+            }`}
+            style={d === 15 ? { boxShadow: `0 0 0 2px ${AMBER}`, backgroundColor: `${AMBER}22` } : undefined}
+          >
+            <span className="text-muted-foreground">{d}</span>
+            {[8, 9, 13, 16].includes(d) && <span className="h-1 rounded-full bg-foreground/35" />}
+          </div>
+        ))}
+        <span className="absolute top-[30%] left-[30%] rotate-[-4deg] rounded-md bg-card px-2 py-1 text-[10px] text-foreground shadow-md ring-1 ring-foreground/15">
+          ⠿ Logo review · 1:30
         </span>
-        <div className="flex justify-between rounded-lg bg-card px-2.5 py-1.5 text-[11px] text-foreground shadow-sm ring-1 ring-foreground/10">
-          <span>Acme · Design review</span>
-          <span>1:00</span>
-        </div>
       </div>
     </Pad>
   );
 }
 
-export function TeamArt() {
-  const people: [string, string][] = [
-    ["A", AMBER],
-    ["M", VIOLET],
-    ["S", GREEN],
-  ];
+/** A client card: the month's hours and what they are worth, and the button that turns it into an invoice. */
+export function ClientsArt() {
   return (
     <Pad>
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex -space-x-2">
-          {people.map(([l, c]) => (
-            <span
-              key={l}
-              className="grid size-10 place-items-center rounded-full font-bold text-[#12151b] text-sm ring-2 ring-muted"
-              style={{ backgroundColor: c }}
-            >
-              {l}
-            </span>
-          ))}
-          <span className="grid size-10 place-items-center rounded-full bg-card text-muted-foreground ring-2 ring-muted">
-            +
-          </span>
+      <div className="flex w-full max-w-xs items-center gap-2.5 rounded-xl bg-card p-3 shadow-sm ring-1 ring-foreground/10">
+        <span
+          className="grid size-8 shrink-0 place-items-center rounded-lg font-bold text-sm text-white"
+          style={{ backgroundColor: VIOLET }}
+        >
+          N
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-sans font-semibold text-foreground text-sm">Northwind</p>
+          <p className="truncate text-[10px] text-muted-foreground">
+            32:44 · <span className="font-semibold text-foreground">$1,473</span> this month
+          </p>
         </div>
-        <span className="text-[11px] text-muted-foreground">their hours land on your books</span>
-      </div>
-    </Pad>
-  );
-}
-
-export function CurrencyArt() {
-  return (
-    <Pad>
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex gap-1.5">
-          {["USD", "EUR", "GBP"].map((c, i) => (
-            <span
-              key={c}
-              className="rounded-full px-2.5 py-1 text-[11px] ring-1 ring-foreground/10"
-              style={i === 1 ? { backgroundColor: `${AMBER}33`, color: "inherit" } : undefined}
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 text-foreground text-sm">
-          <span className="text-muted-foreground line-through">1:07</span>
-          <span aria-hidden>→</span>
-          <span className="font-bold">1:15</span>
-        </div>
+        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[10px] text-foreground ring-1 ring-foreground/15">
+          Make invoice
+        </span>
       </div>
     </Pad>
   );
