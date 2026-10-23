@@ -18,6 +18,7 @@ const TONE: Record<Tone, string> = {
   warn: "text-[#FFC857]",
   link: "text-[#8AB4FF] underline underline-offset-2",
   text: "text-[#D6D9E0]",
+  ask: "font-semibold text-[#3DDC97]", // colour-ok: the terminal green, for the question the assistant asks
 };
 
 const HOLD_MS = 7000;

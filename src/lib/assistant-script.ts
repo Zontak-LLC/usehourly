@@ -2,7 +2,7 @@
  * The terminal scene on the home page: a person asks Claude Code for a bigger job and it works through the UseHourly
  * MCP server. Data only, so a test can check every tool it shows is a real one and the numbers add up.
  */
-export type Tone = "prompt" | "you" | "dim" | "tool" | "server" | "arg" | "ok" | "warn" | "link" | "text";
+export type Tone = "prompt" | "you" | "dim" | "tool" | "server" | "arg" | "ok" | "warn" | "link" | "text" | "ask";
 
 export type Seg =
   | { k: "line"; c: Tone; t: string } // appears at once
@@ -50,7 +50,8 @@ export const SCRIPT: Seg[] = [
     line("text", "14:30 h · "),
     line("ok", "every weekday logged ✓\n\n"),
   ),
-  line("text", "Northwind is missing Tuesday. Should I add something, or share it as it is?\n\n"),
+  // The assistant asks before it acts: the question is in the terminal green, so it stands out.
+  line("ask", "Northwind is missing Tuesday. Should I add something, or share it as it is?\n\n"),
   pause(900),
   type("prompt", "❯ "),
   type("you", "Log 2h on Support for that Tuesday, then share all three.\n"),
