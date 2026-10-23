@@ -116,7 +116,10 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
                 rows={4}
                 maxLength={500}
               />
-              <p className="text-muted-foreground text-xs">Printed on every invoice. Leave empty to print nothing.</p>
+              <p className="text-muted-foreground text-xs">
+                Printed on every invoice. Leave empty to print nothing. The due date is chosen on each invoice, so leave
+                terms like &ldquo;within 30 days&rdquo; out of here.
+              </p>
             </div>
           </FormStep>
           <FormStep n={3} title="Your logo">

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
 import { NativeSelect } from "@/components/ui/native-select";
+import { feature } from "@/lib/features";
 import { CURRENCIES, type CurrencyCode, currencySymbol, formatMoney } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -24,9 +25,16 @@ export function CurrencyCard({ me }: { me: AccountMe }) {
     <SectionCard
       title="Currency"
       description={
+        // Only what this release has: the per-client currency and budgets are switched off (issue 219).
         locked
-          ? "Your currency is fixed because you have made an invoice. A client can still be billed in another currency: see Billing details on Clients."
-          : "Your usual currency, used for rates, budgets, invoices and totals. You can change it until you make your first invoice, and any client can be billed in a different one under Billing details."
+          ? `Your currency is fixed because you have made an invoice.${
+              feature("clientCurrency")
+                ? " A client can still be billed in another currency: see Billing details on Clients."
+                : ""
+            }`
+          : `Your currency, used for rates, invoices and totals. You can change it until you make your first invoice.${
+              feature("clientCurrency") ? " Any client can be billed in a different one under Billing details." : ""
+            }`
       }
     >
       <div className="flex flex-wrap items-center gap-3">
@@ -69,7 +77,7 @@ export function CurrencyCard({ me }: { me: AccountMe }) {
       </div>
       {!locked && (
         <p className="text-muted-foreground text-xs">
-          Changing it changes the symbol only: your rates and budgets keep their numbers, nothing is converted.
+          Changing it changes the symbol only: your rates keep their numbers, nothing is converted.
         </p>
       )}
     </SectionCard>

@@ -109,9 +109,15 @@ export const signupProcedures = {
       const taken = await ctx.prisma.authUser.findUnique({ where: { email } });
       if (taken) throw new TRPCError({ code: "CONFLICT", message: "An account with that email already exists." });
 
+      // The sample invoices always go (issue 219): their frozen copies carry the sample business name and "Pay by bank
+      // transfer within 30 days (Sample text…)", which would print on a re-downloaded PDF. Kept time becomes unbilled.
+      await ctx.prisma.timeEntry.updateMany({
+        where: { user_id: ctx.userId, invoice_id: { not: null } },
+        data: { invoice_id: null },
+      });
+      await ctx.prisma.invoice.deleteMany({ where: { user_id: ctx.userId } });
       if (input.startFresh) {
         // Children first; the sample data is all this account has.
-        await ctx.prisma.invoice.deleteMany({ where: { user_id: ctx.userId } });
         await ctx.prisma.timeEntry.deleteMany({ where: { user_id: ctx.userId } });
         await ctx.prisma.project.deleteMany({ where: { user_id: ctx.userId } });
         await ctx.prisma.client.deleteMany({ where: { user_id: ctx.userId } });

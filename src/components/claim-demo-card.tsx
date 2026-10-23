@@ -93,7 +93,8 @@ export function ClaimDemoCard() {
           <label className="flex items-start gap-2 py-2">
             <input type="radio" className="mt-1" checked={!startFresh} onChange={() => setStartFresh(false)} />
             <span>
-              <strong>Keep everything</strong> in the demo, including anything you added.
+              <strong>Keep the work</strong>: the clients, projects and time, including anything you added. The sample
+              invoices are removed, because they carry the sample business details.
             </span>
           </label>
         </fieldset>

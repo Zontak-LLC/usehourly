@@ -175,7 +175,7 @@ export function InvoiceDetailsCard({
             onChange={(e) => onNotes(e.target.value)}
             rows={2}
             maxLength={1000}
-            placeholder="e.g. Please pay by ACH to … Thank you!"
+            placeholder="e.g. Thanks for a great month!"
           />
         </div>
         <details ref={moreRef}>

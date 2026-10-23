@@ -45,7 +45,7 @@ describe("Who can see which page", () => {
   });
 
   it("keeps the privacy and terms pages open to everyone, signed in or not", () => {
-    for (const path of ["/privacy", "/terms"]) {
+    for (const path of ["/privacy", "/terms", "/account-deleted"]) {
       expect(accessDecision(path, false)).toBe("allow");
       expect(accessDecision(path, true)).toBe("allow");
     }

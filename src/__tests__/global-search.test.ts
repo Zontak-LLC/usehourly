@@ -60,7 +60,7 @@ describe("global search", () => {
     expect(titles("friday").includes("Friday reminder email")).toBe(feature("weeklyReminder"));
     expect(titles("toggl").length > 0).toBe(feature("importTime"));
     expect(titles("polish").length > 0).toBe(feature("aiPolish"));
-    expect(titles("device").length > 0).toBe(feature("localFirst"));
+    expect(titles("copy on this device").length > 0).toBe(feature("localFirst")); // "Log out on all devices" is not it
   });
 
   it("finds clients and projects by name, a project with its client under it", () => {

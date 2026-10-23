@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import Link from "next/link";
+
 import { CircleDollarSign, Download, Mail, Pencil, Search, Trash2 } from "lucide-react";
 
 import { ClientInitial } from "@/components/client-initial";
@@ -228,16 +230,14 @@ function InvoiceSlip({
 
         <div className="min-w-0">
           <p className="truncate text-sm">
-            {/* The number is the invoice: a click downloads its PDF, and you stay on the list. */}
-            <button
-              type="button"
-              onClick={() => !busy && handlers.onDownload(i)}
-              title="Download the PDF"
-              aria-label={`${i.number}: download the PDF`}
+            {/* The number is the invoice: it opens the invoice's own page (issue 219; it used to download the PDF). */}
+            <Link
+              href={`/dashboard/invoices/${i.id}`}
+              aria-label={`${i.number}: open the invoice`}
               className="font-semibold underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground"
             >
               {i.number}
-            </button>
+            </Link>
             <span className="text-foreground/75"> · {i.client_name}</span>
           </p>
           {i.summary && <p className="truncate text-foreground/75 text-sm">{i.summary}</p>}

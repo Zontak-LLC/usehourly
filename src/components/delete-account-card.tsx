@@ -29,7 +29,7 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
     try {
       await del.mutateAsync({ confirm });
       toast.success("Your account and data were deleted.");
-      await signOutOfDevice({ callbackUrl: "/" }, true);
+      await signOutOfDevice({ callbackUrl: "/account-deleted" }, true);
     } catch (err) {
       toastError(err, "Couldn't delete the account.");
     }
@@ -43,7 +43,7 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
       <div className="grid gap-3">
         <DataPanelHead icon={Trash2} title="Delete my account" danger>
           This removes your clients, projects, time entries, invoices and settings for good, and cannot be undone. Use
-          &ldquo;Export&rdquo; above first if you want a copy.
+          &ldquo;Download everything&rdquo; on this page first if you want a copy.
         </DataPanelHead>
         {open ? (
           <form

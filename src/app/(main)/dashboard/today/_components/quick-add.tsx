@@ -426,7 +426,7 @@ function LogTimeButton({
       // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
       style={logged ? { backgroundColor: "var(--amber-fill)", color: "#12151b" } : undefined} // colour-ok: the same dark ink as the button's own text
-      className="group relative order-last flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-display font-bold text-[#12151b] text-lg shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      className="group relative order-last flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-[#12151b] text-lg shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}
