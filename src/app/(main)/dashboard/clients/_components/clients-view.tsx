@@ -177,7 +177,7 @@ export function ClientsView() {
       nav="clients"
       title="Clients"
       description={description}
-      descriptionOnPhone
+      descriptionOnPhone={all.length > 0} // the count line is information; the empty-page sentence is not (issue 167)
       actions={
         <div className="flex items-center gap-1">
           {all.length > 0 && (
