@@ -93,8 +93,8 @@ test("the whole guide reads with no connection, including pages never opened", a
   await page.waitForFunction(() => localStorage.getItem("hourly:guideKept") !== null, undefined, { timeout: 30_000 });
 
   await page.context().setOffline(true);
-  await page.goto("/help/rounding"); // never opened: kept by the once-only fetch
-  await expect(page.getByRole("heading", { name: "Rounding time on invoices", level: 1 })).toBeVisible();
+  await page.goto("/help/making-an-invoice"); // never opened: kept by the once-only fetch
+  await expect(page.getByRole("heading", { name: "Making an invoice", level: 1 })).toBeVisible();
   await page.goto("/help");
   await page.getByRole("searchbox", { name: "Search the guide" }).fill("offline");
   await expect(page.getByRole("link", { name: /Working offline/ }).first()).toBeVisible(); // search needs no server

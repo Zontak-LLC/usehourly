@@ -2,6 +2,8 @@
  * The global search in the top bar. Pure rules only: what a typed word matches, which pages and settings exist, and how
  * results are grouped and ordered. The component fetches clients, entries and invoices and feeds them in here.
  */
+import { type Feature, feature } from "@/lib/features";
+
 export type SearchGroup = "Pages" | "Settings" | "Clients and projects" | "Time entries" | "Invoices";
 
 export type SearchResult = {
@@ -33,37 +35,65 @@ export function matchesAll(query: string, text: string): boolean {
   return typed.every((t) => have.some((w) => w.startsWith(t)));
 }
 
-type Target = { title: string; href: string; keywords?: string; detail?: string };
+/** `feature` names the switch in lib/features.ts that must be on for the target to be found. */
+type Target = { title: string; href: string; keywords?: string; detail?: string; feature?: Feature };
 
-const PAGES: Target[] = [
+/** Leaves out what points at a hidden feature, so search never offers something the app does not show. */
+const shown = (targets: Target[]) => targets.filter((t) => !t.feature || feature(t.feature));
+
+const PAGES: Target[] = shown([
   { title: "Today", href: "/dashboard/today", keywords: "log time add timer day" },
   { title: "Week", href: "/dashboard/week", keywords: "weekly timesheet days" },
   { title: "Month", href: "/dashboard/month", keywords: "calendar monthly" },
   { title: "Invoices", href: "/dashboard/invoices", keywords: "invoice paid unpaid history" },
   { title: "New invoice", href: "/dashboard/invoices/new", keywords: "create make invoice bill" },
   { title: "Clients", href: "/dashboard/clients", keywords: "projects rates client project" },
-  { title: "Team", href: "/dashboard/team", keywords: "invite people members" },
+  { title: "Team", href: "/dashboard/team", keywords: "invite people members", feature: "team" },
   { title: "Year summary", href: "/dashboard/report", keywords: "report taxes annual accountant" },
   { title: "Account", href: "/dashboard/account", keywords: "settings profile" },
   { title: "Guide and FAQ", href: "/help", keywords: "help how to questions support" },
-];
+]);
 
-const SETTINGS: Target[] = [
-  { title: "Profile: name, email, picture", href: "/dashboard/account#account", keywords: "account your" },
+const SETTINGS: Target[] = shown([
+  {
+    title: feature("avatar") ? "Profile: name, email, picture" : "Profile: name and email",
+    href: "/dashboard/account#account",
+    keywords: "account your",
+  },
   { title: "Change password", href: "/dashboard/account#account", keywords: "sign in security" },
-  { title: "Friday reminder email", href: "/dashboard/account#account", keywords: "weekly notification" },
+  {
+    title: "Friday reminder email",
+    href: "/dashboard/account#account",
+    keywords: "weekly notification",
+    feature: "weeklyReminder",
+  },
   { title: "Log out", href: "/dashboard/account#account", keywords: "sign out" },
   { title: "Business details and logo", href: "/dashboard/account#invoices", keywords: "ein address invoice" },
   { title: "Currency", href: "/dashboard/account#invoices", keywords: "euro dollar pound money" },
   { title: "Export everything", href: "/dashboard/account#data", keywords: "download zip csv excel backup" },
-  { title: "Send invoices to Xero or QuickBooks", href: "/dashboard/account#data", keywords: "accounting books" },
-  { title: "Import from Toggl or Clockify", href: "/dashboard/account#data", keywords: "csv history" },
-  { title: "Keep a copy on this device", href: "/dashboard/account#data", keywords: "offline" },
+  {
+    title: "Send invoices to Xero or QuickBooks",
+    href: "/dashboard/account#data",
+    keywords: "accounting books",
+    feature: "accountingExport",
+  },
+  {
+    title: "Import from Toggl or Clockify",
+    href: "/dashboard/account#data",
+    keywords: "csv history",
+    feature: "importTime",
+  },
+  { title: "Keep a copy on this device", href: "/dashboard/account#data", keywords: "offline", feature: "localFirst" },
   { title: "Delete account", href: "/dashboard/account#account", keywords: "remove erase privacy" },
   { title: "Connect an AI assistant", href: "/dashboard/account#ai", keywords: "claude chatgpt cursor mcp" },
   { title: "Access tokens", href: "/dashboard/account#ai", keywords: "api key" },
-  { title: "Polish descriptions with your own AI key", href: "/dashboard/account#ai", keywords: "openai anthropic" },
-];
+  {
+    title: "Polish descriptions with your own AI key",
+    href: "/dashboard/account#ai",
+    keywords: "openai anthropic",
+    feature: "aiPolish",
+  },
+]);
 
 const find = (group: SearchGroup, targets: Target[], query: string, max: number): SearchResult[] =>
   targets

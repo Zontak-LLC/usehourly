@@ -14,9 +14,6 @@ export function dialLeft(minutes: number, goal: number = DAY_GOAL_MINUTES): stri
   return `${Math.floor(left / 60)}:${String(Math.round(left % 60)).padStart(2, "0")} to go`;
 }
 
-/** The ring is a circle of radius 78 in a 200 box: this is its length, for the dash trick that draws the arc. */
-export const DIAL_LENGTH = 2 * Math.PI * 78;
-
 /**
  * Whole minutes a running timer has added so far. A timer left running counts at most a day, as the server banks it when
  * it is stopped. No timer (or a start in the future) adds nothing.

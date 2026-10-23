@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { parseBudgetInput } from "@/lib/budget";
+import { feature } from "@/lib/features";
 import { fileToLogo } from "@/lib/logo";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -21,9 +22,11 @@ export function useProjectEditing() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const rate = Math.round(Number(fd.get("rate") || 0) * 100);
+    // With budgets hidden the form has no budget fields, so nothing about the budget is sent and a stored one stays.
+    const withBudget = feature("budgets");
     const unit = fd.get("budgetUnit") === "hours" ? "hours" : "dollars";
-    const budgetAmount = parseBudgetInput(String(fd.get("budgetAmount") ?? ""), unit);
-    if (budgetAmount === undefined) {
+    const budgetAmount = withBudget ? parseBudgetInput(String(fd.get("budgetAmount") ?? ""), unit) : undefined;
+    if (withBudget && budgetAmount === undefined) {
       return toast.error("Couldn't read that budget. Try 1000 for dollars or 22.5 for hours, or leave it blank.");
     }
     try {
@@ -33,9 +36,11 @@ export function useProjectEditing() {
         clientId: String(fd.get("clientId")),
         hourlyRate: Number.isFinite(rate) ? rate : 0,
         billable: fd.get("billable") === "on",
-        budgetAmount,
-        budgetUnit: unit,
-        budgetPeriod: fd.get("budgetPeriod") === "total" ? "total" : "month",
+        ...(withBudget && {
+          budgetAmount,
+          budgetUnit: unit,
+          budgetPeriod: fd.get("budgetPeriod") === "total" ? "total" : "month",
+        }),
         logo: logoDraft,
       });
       await Promise.all([

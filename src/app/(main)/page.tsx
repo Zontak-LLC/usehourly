@@ -15,7 +15,6 @@ import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
 import { APP_CONFIG } from "@/config/app-config";
 import { DONATE_PLATFORM, donateUrl } from "@/lib/donate";
-import { round3 } from "@/lib/round3";
 
 const JSON_LD = {
   "@context": "https://schema.org",
@@ -274,30 +273,6 @@ export default function LandingPage() {
 
         <section aria-labelledby="start-heading" className="mx-auto max-w-6xl px-6 pt-8 pb-20 md:pb-28">
           <Reveal className="relative isolate overflow-hidden rounded-[2.5rem] bg-[length:300%_100%] bg-[linear-gradient(120deg,#F5A524,#ff7a45,#8A6CFF,#3DDC97,#F5A524)] px-6 py-16 text-center text-[#0B0C10] shadow-[0_30px_80px_-30px_#8A6CFF] motion-safe:animate-[hue-shift_16s_ease-in-out_infinite] md:py-24">
-            {/* A big pale clock face turning slowly behind the words. */}
-            <svg
-              aria-hidden
-              viewBox="0 0 200 200"
-              className="pointer-events-none absolute top-1/2 left-1/2 -z-10 size-[34rem] -translate-x-1/2 -translate-y-1/2 text-white/25 motion-safe:animate-[spin_120s_linear_infinite]"
-            >
-              <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              {Array.from({ length: 60 }, (_, i) => {
-                const angle = (i / 60) * Math.PI * 2;
-                const inner = i % 5 === 0 ? 84 : 91;
-                return (
-                  <line
-                    key={i}
-                    x1={round3(100 + 96 * Math.sin(angle))}
-                    y1={round3(100 - 96 * Math.cos(angle))}
-                    x2={round3(100 + inner * Math.sin(angle))}
-                    y2={round3(100 - inner * Math.cos(angle))}
-                    stroke="currentColor"
-                    strokeWidth={i % 5 === 0 ? 2.5 : 1}
-                  />
-                );
-              })}
-              <line x1="100" y1="100" x2="100" y2="30" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            </svg>
             <p className="font-mono text-xs uppercase tracking-[0.3em] opacity-70">Ready when you are</p>
             <h2 id="start-heading" className="mt-3 font-display font-extrabold text-5xl tracking-tight md:text-7xl">
               Start tracking today.

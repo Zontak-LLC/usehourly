@@ -6,16 +6,16 @@ import Link from "next/link";
 
 import { ArrowRight, Search } from "lucide-react";
 
-import { StopSlider } from "@/components/stop-slider";
 import { Input } from "@/components/ui/input";
 import { searchGuide } from "@/lib/guide-search";
 
 import { StepArt } from "./step-art";
 
-/** How deep a group is: 0 = logging time, 1 = billing and sharing, 2 = the rest. */
-const depthOf = (group: string) => (group === "time" ? 0 : group === "billing" || group === "sharing" ? 1 : 2);
-
-const SUGGESTIONS = ["round", "offline", "free", "budget", "calendar", "currency", "team"] as const;
+/**
+ * Words offered under the search box. Each one shows only when it finds at least one topic this release shows, so a
+ * word never leads to a hidden feature (lib/features.ts) or to nothing.
+ */
+const SUGGESTIONS = ["invoice", "timer", "offline", "paid", "currency", "phone", "free"];
 
 const START_HERE = [
   { slug: "typing-time", title: "Log your time", hint: "Type 1.5, 90m or 1h30 and press Enter." },
@@ -37,7 +37,6 @@ export function GuideSearch({
   groups: { id: string; title: string }[];
 }) {
   const [query, setQuery] = useState("");
-  const [depth, setDepth] = useState(2);
   const box = useRef<HTMLInputElement>(null);
   // The placeholder cycles through example searches, a new one every few seconds (still when motion is reduced).
   const [tick, setTick] = useState(0);
@@ -46,7 +45,9 @@ export function GuideSearch({
     const id = setInterval(() => setTick((n) => n + 1), 2600);
     return () => clearInterval(id);
   }, []);
-  const hint = SUGGESTIONS[tick % SUGGESTIONS.length];
+  const searchable = topics.map((t) => ({ ...t, id: t.slug }));
+  const suggestions = SUGGESTIONS.filter((word) => searchGuide(searchable, word).length > 0);
+  const hint = suggestions.length > 0 ? suggestions[tick % suggestions.length] : "invoice";
   // "/" jumps to the search box from anywhere on the page (unless the person is already typing in a field).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -59,10 +60,7 @@ export function GuideSearch({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
   const q = query.trim();
-  const topicHits = searchGuide(
-    topics.map((t) => ({ ...t, id: t.slug })),
-    q,
-  );
+  const topicHits = searchGuide(searchable, q);
   const faqHits = searchGuide(
     faq.map((f) => ({ id: f.id, title: f.question, summary: "", keywords: f.keywords, body: f.answer })),
     q,
@@ -91,23 +89,6 @@ export function GuideSearch({
           </li>
         ))}
       </ol>
-      {/* How deep to go: the slider hides the groups past its stop (it starts on Everything, so nothing is hidden). */}
-      <div className="grid gap-1 rounded-3xl border bg-card px-4 py-3 shadow-[var(--shadow-sheet)]">
-        <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-          How much do you want to read?
-        </span>
-        <StopSlider
-          name="guideDepth"
-          label="How much of the guide to show"
-          defaultValue={2}
-          onChange={setDepth}
-          options={[
-            { value: 0, label: "Just logging time" },
-            { value: 1, label: "Billing clients" },
-            { value: 2, label: "Everything" },
-          ]}
-        />
-      </div>
       <div className="flex flex-col gap-2">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -129,7 +110,7 @@ export function GuideSearch({
           </kbd>
         </div>
         <ul className="flex flex-wrap items-center gap-2" aria-label="Try searching for">
-          {SUGGESTIONS.map((word) => (
+          {suggestions.map((word) => (
             <li key={word}>
               <button
                 type="button"
@@ -185,7 +166,7 @@ export function GuideSearch({
       {q && topicHits.length + faqHits.length > 0 ? null : (
         <div className="flex flex-col gap-10">
           {groups
-            .filter((g) => depthOf(g.id) <= depth)
+            .filter((g) => topics.some((t) => t.group === g.id))
             .map((g, gi) => (
               <section
                 key={g.id}

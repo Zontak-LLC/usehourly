@@ -1,3 +1,4 @@
+import { FEATURES } from "../src/lib/features";
 import {
   anonymous,
   clearMail,
@@ -145,6 +146,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("give the project a monthly budget: the bar shows on Clients and above the add form", async () => {
+    if (!FEATURES.budgets) return; // hidden in this release (src/lib/features.ts)
     await page.goto("/dashboard/clients");
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Budget amount").fill("100");
@@ -237,19 +239,17 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("mark it paid", async () => {
     await page.goto("/dashboard/invoices");
-    await page.getByRole("button", { name: /^Mark INV-.* as paid$/ }).click(); // the button on the card
+    await page.getByRole("button", { name: "Mark paid" }).click(); // the button on the invoice
     await page.getByLabel("Date the money arrived").fill(today());
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(
-      page
-        .getByText(/^Paid\b/)
-        .locator("visible=true")
-        .first(),
-    ).toBeVisible();
+    await expect(page.getByLabel("Date the money arrived")).toBeHidden(); // the panel closes once saved
+    const invoice = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
+    await expect(invoice).toContainText(/Paid \w{3} \d+/); // the state in words: "Paid Oct 23"
+    await expect(invoice.getByRole("button", { name: "Mark paid" })).toHaveCount(0);
     await shot("invoice-paid");
-    // A row offers four icon buttons with tooltips (money, send, PDF, delete) and no hidden menu.
-    const controls = await page.getByTestId("invoice-actions").first().locator("button, a").count();
-    expect.soft(controls, "controls on an invoice row").toBeLessThanOrEqual(4);
+    // An invoice offers at most four buttons beside its number (Mark paid until paid, share, PDF, ···).
+    const controls = await invoice.getByRole("button").filter({ hasNotText: /^INV-/ }).count();
+    expect.soft(controls, "controls on an invoice").toBeLessThanOrEqual(4);
     await audit("invoices with one invoice");
     await a11y("invoices");
   });
@@ -261,7 +261,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     const makeLink = page.getByRole("button", { name: "Make a link" });
     await expect(async () => {
       if (!(await linkBox.isVisible())) {
-        if (!(await makeLink.isVisible())) await page.getByRole("button", { name: /^Send INV-/ }).click();
+        if (!(await makeLink.isVisible())) await page.getByRole("button", { name: /^Share a link to INV-/ }).click();
         await makeLink.click();
       }
       await expect(linkBox).toBeVisible({ timeout: 3000 });
@@ -285,9 +285,10 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("share the week for sign-off, the client approves, the owner is emailed", async () => {
     await page.goto("/dashboard/week");
-    // The toolbar is the filter, one Share & export menu and the date arrows (usability pass #38).
+    // The toolbar is the date arrows, the filter and one Export menu (usability pass #38).
     const toolbar = await page.getByTestId("timesheet-toolbar").locator("button:visible, select:visible").count();
     expect.soft(toolbar, "controls in the Week toolbar").toBeLessThanOrEqual(5);
+    if (!FEATURES.signOff) return; // sign-off links are hidden in this release (src/lib/features.ts)
     await page.getByRole("button", { name: /Share & export/ }).click();
     await shot("share-and-export-menu");
     await page.getByRole("menuitem", { name: /Send to a client for sign-off/ }).click();
@@ -312,13 +313,14 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("email the invoice to the client, who can read it and opt out", async () => {
+    if (!FEATURES.invoiceEmail) return; // hidden in this release (src/lib/features.ts)
     sql(
       `UPDATE auth_users SET created_at = strftime('%Y-%m-%dT%H:%M:%f+00:00','now','-3 days') WHERE email='${user.email}'`,
     );
     await page.goto("/dashboard/clients");
     await menuAction(page, "More actions for Acme Studio", "Billing details");
     await page.getByLabel(/Email \(where you send invoices\)/).fill(client);
-    await page.getByRole("button", { name: "Save client" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Client updated.")).toBeVisible(); // wait for the save before leaving the page
     await page.goto("/dashboard/invoices");
     await page.getByRole("button", { name: /^Send INV-/ }).click();
@@ -356,6 +358,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("mark today non-billable (on the Week day card): it stays on screen, flagged, and the year summary leaves it out", async () => {
+    if (!FEATURES.nonBillableDays) return; // hidden in this release (src/lib/features.ts)
     await page.goto("/dashboard/week");
     await page.getByRole("button", { name: "Mark day non-billable" }).click();
     const marked = page.getByRole("button", { name: /Non-billable day/ });
@@ -380,6 +383,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("download the invoices as a file for Xero, QuickBooks and a payments list", async () => {
+    if (!FEATURES.accountingExport) return; // hidden in this release (src/lib/features.ts)
     await page.goto("/dashboard/account#data");
     await expect(page.getByRole("region", { name: "Send invoices to your accounting app" })).toBeVisible();
     await shot("accounting-export");

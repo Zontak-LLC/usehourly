@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { Archive, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import { useClientLogos } from "@/components/client-logo";
 import { MoreMenu } from "@/components/more-menu";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
@@ -16,14 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { feature } from "@/lib/features";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
 
 import { ClientCard } from "./client-card";
+import { latestInvoiceByClient, orderClients } from "./client-facts";
 import type { ClientRow } from "./client-types";
-import { ClientsHero } from "./clients-hero";
 import { NewClientCard } from "./new-client-card";
-import { useOpenClients } from "./use-open-clients";
 import { useProjectEditing } from "./use-project-editing";
 
 /** The search box shows from this many clients up. */
@@ -69,7 +69,6 @@ export function ClientsView() {
   const unarchiveProject = trpc.project.unarchive.useMutation();
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const logos = useProjectLogos();
-  useClientLogos(); // starts with the first batch; the client cards read it a moment later
   const editing = useProjectEditing();
   const [search, setSearch] = useState("");
 
@@ -81,7 +80,13 @@ export function ClientsView() {
     return { from: toISODate(first), to: toISODate(last) };
   });
   const totals = trpc.project.totals.useQuery(month);
-  const budgets = trpc.project.budgets.useQuery(month);
+  // Budgets are hidden in this release, so their usage is not even asked for.
+  const budgets = trpc.project.budgets.useQuery(month, { enabled: feature("budgets") });
+  // Each client's latest invoice, for the small line under its name. Started here with the other queries (same render)
+  // so the page stays ONE batched request; no input, so it shares the Invoices page's cached list.
+  const invoices = trpc.invoice.list.useQuery();
+  const latestInvoices = latestInvoiceByClient(invoices.data ?? []);
+  const today = useToday();
 
   // The old stat tiles as one line under the title: how many clients and projects, and the month's time so far.
   const clientCount = clients.data?.length ?? 0;
@@ -96,6 +101,10 @@ export function ClientsView() {
 
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const visibleClients = filterClients(clients.data ?? [], words);
+  // Clients with time this month first; the quiet ones (none this month) below, each group alphabetical.
+  const ordered = orderClients(visibleClients, (c) =>
+    totals.data ? c.projects.reduce((sum, p) => sum + (totals.data?.[p.id]?.range ?? 0), 0) : undefined,
+  );
 
   // Archiving needs no "Are you sure?": it is fully reversible, and the toast offers Undo (docs/ui-spec.md).
   async function archive({ kind, id, name }: { kind: "client" | "project"; id: string; name: string }) {
@@ -128,7 +137,6 @@ export function ClientsView() {
     }
   }
 
-  const openClients = useOpenClients();
   const [newClientOpen, setNewClientOpen] = useState(false);
   const router = useRouter();
   return (
@@ -138,20 +146,18 @@ export function ClientsView() {
       description={description}
       descriptionOnPhone
       actions={
-        // The way to add a client: a + in the header (the form opens at the top of the list). The big dashed card is only for an empty page.
+        // The way to add a client: "New client" in the header, in words (the form opens at the top of the list). The big dashed card is only for an empty page.
         <div className="flex items-center gap-1">
           {clientCount > 0 && (
             <Button
               type="button"
-              size="icon"
               variant="outline"
-              className="size-10"
+              className="h-10 gap-1.5"
               aria-label="New client"
               aria-expanded={newClientOpen}
-              title="New client"
               onClick={() => setNewClientOpen((open) => !open)}
             >
-              <Plus />
+              <Plus /> New client
             </Button>
           )}
           {/* The archive is one step away, not a link at the foot of a long page. */}
@@ -170,9 +176,6 @@ export function ClientsView() {
       }
     >
       <div className="flex flex-col gap-3 sm:gap-4">
-        {clientCount > 0 && totals.data && (
-          <ClientsHero clients={clients.data ?? []} totals={totals.data} monthMinutes={monthMinutes} />
-        )}
         {/* Search only earns its place once there are more clients than fit in a glance. */}
         {(clients.data?.length ?? 0) > SEARCH_FROM && <ClientSearch value={search} onChange={setSearch} />}
 
@@ -190,19 +193,19 @@ export function ClientsView() {
           <NewClientCard clientCount={clients.data.length} open={newClientOpen} onOpenChange={setNewClientOpen} />
         )}
 
-        {visibleClients.map((c) => (
+        {ordered.map(({ client: c, quiet }) => (
           <ClientCard
             key={c.id}
             client={c}
+            quiet={quiet}
+            latestInvoice={latestInvoices.get(c.id)}
+            today={today}
             allClients={clients.data}
             logos={logos}
             totals={totals.data}
             budgets={budgets.data}
             editing={editing}
             billingOpen={editingClientId === c.id}
-            // While searching, every match is shown open so the project that matched is visible.
-            open={words.length > 0 || openClients.isOpen(c.id, c.projects.length)}
-            onOpenChange={(open) => openClients.setOpen(c.id, open)}
             onToggleBilling={() => setEditingClientId(editingClientId === c.id ? null : c.id)}
             onCloseBilling={() => setEditingClientId(null)}
             onArchiveClient={() => void archive({ kind: "client", id: c.id, name: c.name })}

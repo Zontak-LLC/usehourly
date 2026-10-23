@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { feature } from "@/lib/features";
 import { type FontKey, fontOptions } from "@/lib/fonts/registry";
 import type { ContentLayout, NavbarStyle, NavPosition } from "@/lib/preferences/layout";
 import type { ThemeMode } from "@/lib/preferences/theme";
@@ -55,6 +56,10 @@ export function LayoutControls() {
     setPreference("font", value);
   };
 
+  // First release: only light, dark and system. The other choices stay in the code behind `appearanceExtras`;
+  // "Restore Defaults" stays so someone who picked them earlier can get back to the normal look.
+  const extras = feature("appearanceExtras");
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -65,27 +70,31 @@ export function LayoutControls() {
       <PopoverContent align="end">
         <div className="flex flex-col gap-5">
           <div className="space-y-1.5">
-            <h4 className="font-medium text-sm leading-none">Preferences</h4>
-            <p className="text-muted-foreground text-xs">Customize your dashboard layout preferences.</p>
+            <h4 className="font-medium text-sm leading-none">{extras ? "Preferences" : "Appearance"}</h4>
+            <p className="text-muted-foreground text-xs">
+              {extras ? "Customize your dashboard layout preferences." : "Light, dark, or the same as your device."}
+            </p>
           </div>
           <div className="space-y-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
-            <div className="space-y-1">
-              <Label className="font-medium text-xs">Fonts</Label>
-              <Select value={font} onValueChange={onFontChange}>
-                <SelectTrigger size="sm" className="w-full text-xs">
-                  <SelectValue placeholder="Select font" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {fontOptions.map((font) => (
-                      <SelectItem key={font.key} className="text-xs" value={font.key}>
-                        {font.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+            {extras && (
+              <div className="space-y-1">
+                <Label className="font-medium text-xs">Fonts</Label>
+                <Select value={font} onValueChange={onFontChange}>
+                  <SelectTrigger size="sm" className="w-full text-xs">
+                    <SelectValue placeholder="Select font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {fontOptions.map((font) => (
+                        <SelectItem key={font.key} className="text-xs" value={font.key}>
+                          {font.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-1">
               <Label className="font-medium text-xs">Theme Mode</Label>
@@ -109,62 +118,66 @@ export function LayoutControls() {
               </ToggleGroup>
             </div>
 
-            <div className="space-y-1">
-              <Label className="font-medium text-xs">Page Layout</Label>
-              <ToggleGroup
-                size="sm"
-                spacing={0}
-                variant="outline"
-                type="single"
-                value={contentLayout}
-                onValueChange={onContentLayoutChange}
-              >
-                <ToggleGroupItem value="centered" aria-label="Toggle centered">
-                  Centered
-                </ToggleGroupItem>
-                <ToggleGroupItem value="full-width" aria-label="Toggle full-width">
-                  Full Width
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+            {extras && (
+              <>
+                <div className="space-y-1">
+                  <Label className="font-medium text-xs">Page Layout</Label>
+                  <ToggleGroup
+                    size="sm"
+                    spacing={0}
+                    variant="outline"
+                    type="single"
+                    value={contentLayout}
+                    onValueChange={onContentLayoutChange}
+                  >
+                    <ToggleGroupItem value="centered" aria-label="Toggle centered">
+                      Centered
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="full-width" aria-label="Toggle full-width">
+                      Full Width
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
 
-            <div className="hidden space-y-1 lg:block">
-              <Label className="font-medium text-xs">Navigation</Label>
-              <ToggleGroup
-                size="sm"
-                spacing={0}
-                variant="outline"
-                type="single"
-                value={navPosition}
-                onValueChange={onNavPositionChange}
-              >
-                <ToggleGroupItem value="top" aria-label="Navigation along the top">
-                  Top
-                </ToggleGroupItem>
-                <ToggleGroupItem value="left" aria-label="Navigation down the left">
-                  Left
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+                <div className="hidden space-y-1 lg:block">
+                  <Label className="font-medium text-xs">Navigation</Label>
+                  <ToggleGroup
+                    size="sm"
+                    spacing={0}
+                    variant="outline"
+                    type="single"
+                    value={navPosition}
+                    onValueChange={onNavPositionChange}
+                  >
+                    <ToggleGroupItem value="top" aria-label="Navigation along the top">
+                      Top
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="left" aria-label="Navigation down the left">
+                      Left
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
 
-            <div className="space-y-1">
-              <Label className="font-medium text-xs">Navbar Behavior</Label>
-              <ToggleGroup
-                size="sm"
-                spacing={0}
-                variant="outline"
-                type="single"
-                value={navbarStyle}
-                onValueChange={onNavbarStyleChange}
-              >
-                <ToggleGroupItem value="sticky" aria-label="Toggle sticky">
-                  Sticky
-                </ToggleGroupItem>
-                <ToggleGroupItem value="scroll" aria-label="Toggle scroll">
-                  Scroll
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+                <div className="space-y-1">
+                  <Label className="font-medium text-xs">Navbar Behavior</Label>
+                  <ToggleGroup
+                    size="sm"
+                    spacing={0}
+                    variant="outline"
+                    type="single"
+                    value={navbarStyle}
+                    onValueChange={onNavbarStyleChange}
+                  >
+                    <ToggleGroupItem value="sticky" aria-label="Toggle sticky">
+                      Sticky
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="scroll" aria-label="Toggle scroll">
+                      Scroll
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              </>
+            )}
 
             <Button type="button" size="sm" variant="outline" className="w-full text-xs" onClick={resetPreferences}>
               Restore Defaults

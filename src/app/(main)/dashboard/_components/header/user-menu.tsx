@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAvatarUpload } from "@/components/use-avatar-upload";
 import { UserAvatar } from "@/components/user-avatar";
+import { feature } from "@/lib/features";
 import { signOutOfDevice } from "@/lib/sign-out";
 
 /**
@@ -27,19 +28,22 @@ import { signOutOfDevice } from "@/lib/sign-out";
 export function UserMenu({ user }: { user: { name: string; email: string; avatar: string | null } }) {
   const file = useRef<HTMLInputElement>(null);
   const avatar = useAvatarUpload();
+  const pictures = feature("avatar");
   return (
     <>
       {/* Outside the menu, so choosing the entry (which closes the menu) does not take the file box with it. */}
-      <input
-        ref={file}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="sr-only"
-        tabIndex={-1}
-        aria-label="Choose your picture file"
-        onChange={avatar.pick}
-      />
-      <AvatarCropper crop={avatar.crop} />
+      {pictures && (
+        <input
+          ref={file}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          tabIndex={-1}
+          aria-label="Choose your picture file"
+          onChange={avatar.pick}
+        />
+      )}
+      {pictures && <AvatarCropper crop={avatar.crop} />}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -66,10 +70,12 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
               <User /> Account
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={avatar.busy} onSelect={() => file.current?.click()}>
-            <ImagePlus /> {user.avatar ? "Change your picture" : "Add a picture"}
-          </DropdownMenuItem>
-          {user.avatar && (
+          {pictures && (
+            <DropdownMenuItem disabled={avatar.busy} onSelect={() => file.current?.click()}>
+              <ImagePlus /> {user.avatar ? "Change your picture" : "Add a picture"}
+            </DropdownMenuItem>
+          )}
+          {pictures && user.avatar && (
             <DropdownMenuItem disabled={avatar.busy} onSelect={() => void avatar.remove()}>
               <Trash2 /> Remove your picture
             </DropdownMenuItem>

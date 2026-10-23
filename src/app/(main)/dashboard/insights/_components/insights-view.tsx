@@ -2,7 +2,7 @@
 
 import { CardTitle } from "@/components/card-title";
 import { PageShell } from "@/components/page-shell";
-import { StatTile, TileRing } from "@/components/stat-tile";
+import { ShareBar, StatTile } from "@/components/stat-tile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
@@ -83,16 +83,16 @@ export function InsightsView() {
           value={d.totals.users}
           hint={`${d.totals.demoAccounts} sample account${d.totals.demoAccounts === 1 ? "" : "s"} now`}
         >
-          <TileRing fraction={d.totals.users ? d.active.last30 / d.totals.users : 0} label="Share active in 30 days" />
+          <ShareBar fraction={d.totals.users ? d.active.last30 / d.totals.users : 0} label="Share active in 30 days" />
         </StatTile>
         <StatTile label="New, last 7 days" value={d.signups.last7} hint={`${d.signups.last30} in 30 days`}>
-          <TileRing
+          <ShareBar
             fraction={d.signups.last30 ? d.signups.last7 / d.signups.last30 : 0}
             label="Share of the month's sign-ups"
           />
         </StatTile>
         <StatTile label="Active, last 7 days" value={d.active.last7} hint="logged or changed time">
-          <TileRing
+          <ShareBar
             fraction={d.totals.users ? d.active.last7 / d.totals.users : 0}
             label="Share of accounts active this week"
           />
@@ -102,7 +102,7 @@ export function InsightsView() {
           value={d.active.last30}
           hint={d.entriesPerActiveUser30 === null ? "" : `${d.entriesPerActiveUser30} entries each`}
         >
-          <TileRing
+          <ShareBar
             fraction={d.totals.users ? d.active.last30 / d.totals.users : 0}
             label="Share of accounts active this month"
           />

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { FAQ, GROUPS, GUIDE_PATHS, GUIDE_VERSION, TOPICS, topicBySlug } from "@/content/guide";
+import { ALL_TOPICS, FAQ, GROUPS, GUIDE_PATHS, GUIDE_VERSION, TOPICS, topicBySlug } from "@/content/guide";
+import { feature } from "@/lib/features";
 import { parseMarkdown, plainText, safeHref } from "@/lib/guide-markdown";
 import { searchGuide } from "@/lib/guide-search";
 import { accessDecision } from "@/lib/route-access";
@@ -39,7 +40,7 @@ describe("the guide's content", () => {
       ).toBe(true);
   });
 
-  it("only links to guide pages, FAQ answers and the privacy page that exist, and to https addresses", () => {
+  it("only links to guide pages, FAQ answers and the privacy page that exist (and are shown), and to https addresses", () => {
     const faqIds = new Set(FAQ.map((f) => f.id));
     for (const text of everyText) {
       for (const m of text.matchAll(/\]\(([^)]+)\)/g)) {
@@ -72,6 +73,8 @@ describe("the guide's content", () => {
     }
   });
 
+  // A ? link may point at a topic that is hidden in this release: it is drawn only with its feature, so the topic
+  // only has to exist (ALL_TOPICS), not be shown.
   it("every ? link in the app points at a topic that exists", () => {
     const used: string[] = [];
     const walk = (dir: string) => {
@@ -85,7 +88,7 @@ describe("the guide's content", () => {
     };
     walk(join(process.cwd(), "src"));
     expect(used.length).toBeGreaterThanOrEqual(3);
-    for (const slug of used) expect(topicBySlug(slug), slug).toBeDefined();
+    for (const slug of used) expect(ALL_TOPICS.find((t) => t.slug === slug)?.slug, slug).toBe(slug);
     // the "which one do I use?" menu item links by address, not by component
     const menu = readFileSync(join(process.cwd(), "src/components/share-export-menu.tsx"), "utf8");
     expect(menu).toContain('href="/help/share-and-export"');
@@ -103,14 +106,33 @@ describe("the guide's content", () => {
   });
 });
 
+describe("hidden features in the guide", () => {
+  it("lists, searches and serves only topics whose feature is on, but keeps every topic written", () => {
+    for (const t of ALL_TOPICS) {
+      const visible = !t.feature || feature(t.feature);
+      expect(TOPICS.includes(t), t.slug).toBe(visible);
+      expect(topicBySlug(t.slug) !== undefined, t.slug).toBe(visible);
+      expect(GUIDE_PATHS.includes(`/help/${t.slug}`), t.slug).toBe(visible);
+    }
+    expect(ALL_TOPICS.length).toBeGreaterThan(TOPICS.length); // this release hides some
+    expect(ids("xero").includes("xero-quickbooks")).toBe(feature("accountingExport"));
+    expect(ids("budget").includes("budgets")).toBe(feature("budgets"));
+    expect(FAQ.some((f) => f.id === "team")).toBe(feature("team"));
+  });
+});
+
 describe("searching the guide", () => {
   it("finds topics by the words a person would type, best match first", () => {
-    expect(ids("round up")[0]).toBe("rounding");
-    expect(ids("rounding")).toContain("rounding");
-    expect(ids("xero")[0]).toBe("xero-quickbooks");
+    if (feature("rounding")) {
+      expect(ids("round up")[0]).toBe("rounding");
+      expect(ids("rounding")).toContain("rounding");
+    }
+    if (feature("accountingExport")) expect(ids("xero")[0]).toBe("xero-quickbooks");
     expect(ids("offline")[0]).toBe("offline");
-    expect(ids("budget")[0]).toBe("budgets");
+    if (feature("budgets")) expect(ids("budget")[0]).toBe("budgets");
     expect(ids("holiday")).toContain("non-billable");
+    expect(ids("dark mode")).toContain("menu-position");
+    expect(ids("invoice link")).toContain("emailing-invoices");
     expect(ids("token")).toContain("ai-assistants");
     expect(ids("iphone")).toContain("install-on-phone");
   });
@@ -122,7 +144,7 @@ describe("searching the guide", () => {
   });
 
   it("matches the start of a word, ignores capitals, and finds nothing for nothing", () => {
-    expect(ids("ROUND")).toContain("rounding");
+    expect(ids("TIMER")).toContain("timer");
     expect(ids("   ")).toEqual([]);
     expect(ids("")).toEqual([]);
     expect(ids("zzzzqqq")).toEqual([]);

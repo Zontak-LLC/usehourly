@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { clearMail, expect, mailTo, sql, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.reportEmail, "'Email me this' is hidden in this release (src/lib/features.ts)");
 
 /** The year summary can be emailed to yourself, once your address is confirmed. */
 test("Email me this sends the year summary to your own confirmed address", async ({ page }) => {

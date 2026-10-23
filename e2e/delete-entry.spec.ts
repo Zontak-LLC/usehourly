@@ -1,4 +1,4 @@
-import { entryAction, expect, startFreshAccount, test } from "./helpers";
+import { entryAction, expect, openAllEntries, startFreshAccount, test } from "./helpers";
 
 /** Deleting time always asks first and says which entry it is, from the "What you worked on" list and from an entry on Today. */
 test("an entry is deleted only after confirming, from the list and from Today", async ({ page }) => {
@@ -17,9 +17,11 @@ test("an entry is deleted only after confirming, from the list and from Today", 
   await test.step("from What you worked on: cancelling keeps it, confirming removes it", async () => {
     await page.goto("/dashboard/week");
     await expect(page.getByText("delete me from the list").first()).toBeVisible();
+    await openAllEntries(page);
     const list = page.getByRole("region", { name: "What you worked on" });
-    const card = list.getByRole("listitem").filter({ hasText: "delete me from the list" });
-    await entryAction(card, "Delete"); // from the entry card's "More actions" menu, like on Today
+    // .last(): the day's group is a list item too; the entry's own card is the innermost match.
+    const card = list.getByRole("listitem").filter({ hasText: "delete me from the list" }).last();
+    await entryAction(card, "Delete"); // the red Delete at the foot of the entry's edit form, like on Today
     // the question opens inside the entry's own card (not a pop-up) and names the entry
     await expect(page.getByRole("dialog")).toHaveCount(0);
     const ask = card.getByRole("region", { name: "Delete this entry?" });
@@ -30,7 +32,8 @@ test("an entry is deleted only after confirming, from the list and from Today", 
     await expect(ask).toBeHidden();
     await expect(page.getByText("delete me from the list").first()).toBeVisible();
 
-    await entryAction(card, "Delete");
+    // Cancelling the question leaves the edit form open, so its Delete is right there again.
+    await card.getByRole("button", { name: "Delete", exact: true }).click();
     await card
       .getByRole("region", { name: "Delete this entry?" })
       .getByRole("button", { name: "Delete entry" })
@@ -52,36 +55,35 @@ test("an entry is deleted only after confirming, from the list and from Today", 
   });
 });
 
-test("the Week page shows a colour dot on a day with time, and none on an empty day", async ({ page }) => {
+test("the Week page's day buttons show the time of a day with time, and nothing on an empty day", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/week");
-  const today = new Date().getDay(); // the tile for today
-  const tiles = page.getByRole("tab");
-  await expect(tiles.first()).toBeVisible();
-  await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(0); // a new account has no time: no dots anywhere
-  await expect(page.getByRole("region", { name: "What you worked on" })).toHaveCount(0); // and no empty "What you worked on"
+  const days = page.getByRole("navigation", { name: "This week" }).getByRole("button");
+  await expect(days).toHaveCount(7);
+  const withTime = page.locator('nav[aria-label="This week"] button:not([aria-label*="nothing logged"])');
+  await expect(withTime).toHaveCount(0); // a new account has no time anywhere
+  await expect(page.getByRole("button", { name: /All entries this week/ })).toHaveCount(0); // no empty list to open
   await page.getByLabel("Time to add").fill("1");
   await page.getByRole("button", { name: /Log time/ }).click();
-  await expect(page.locator("[role=tab] [data-dot]")).toHaveCount(1); // one client, one day
-  await expect(page.getByRole("region", { name: "What you worked on" })).toBeVisible(); // the list appears with the first entry
-  const withDot = page.getByRole("tab").filter({ has: page.locator("[data-dot]") });
-  await expect(withDot).toHaveCount(1);
-  await expect(withDot).toHaveAttribute("aria-selected", "true");
-  void today;
+  await expect(withTime).toHaveCount(1); // one day has time
+  await expect(withTime).toHaveAccessibleName(/, 1:00$/);
+  await expect(withTime).toHaveAttribute("aria-current", "date"); // it is the day being shown
+  await expect(page.getByRole("button", { name: /All entries this week · 1/ })).toBeVisible(); // the list appears with the first entry
 });
 
 test("the Week page keeps the day you picked in the address, so a refresh comes back to it", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/week?date=2026-09-09");
-  await expect(page.getByRole("tab", { name: /Wednesday, September 9/ })).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("tab", { name: /Friday, September 11/ }).click();
+  const day = (name: RegExp) => page.getByRole("navigation", { name: "This week" }).getByRole("button", { name });
+  await expect(day(/Wednesday, September 9/)).toHaveAttribute("aria-current", "date");
+  await day(/Friday, September 11/).click();
   await expect(page).toHaveURL(/date=2026-09-11/);
   await page.reload();
-  await expect(page.getByRole("tab", { name: /Friday, September 11/ })).toHaveAttribute("aria-selected", "true");
+  await expect(day(/Friday, September 11/)).toHaveAttribute("aria-current", "date");
   await page.getByRole("button", { name: "Next week" }).click();
   await expect(page).toHaveURL(/date=2026-09-14/); // the Monday of the week now showing
   await page.reload();
-  await expect(page.getByRole("tab", { name: /Monday, September 14/ })).toBeVisible();
+  await expect(day(/Monday, September 14/)).toBeVisible();
 });
 
 test("a day's total says it is the total, and the day has a labelled Edit day button apart from the entry buttons", async ({
@@ -93,11 +95,12 @@ test("a day's total says it is the total, and the day has a labelled Edit day bu
   await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("labelled total")).toBeVisible();
   await page.goto("/dashboard/week");
+  await openAllEntries(page);
   const list = page.getByRole("region", { name: "What you worked on" });
   await expect(list.getByText("Total", { exact: true })).toBeVisible();
   await expect(list.getByRole("button", { name: /^Edit .*\d/ })).toContainText("Edit day"); // words on the day's button
   await expect(list.getByRole("button", { name: "Edit", exact: true })).toHaveCount(1); // the entry's own pencil is icon-only
-  await expect(page.getByLabel("This week's hours")).toBeVisible(); // the week's dial
+  await expect(page.getByRole("heading", { name: "By project · 1:30" })).toBeVisible(); // the week's time by project, in h:mm
 });
 
 test("Edit day on the Week page opens that day's entries for editing, and saving changes the time", async ({
@@ -109,6 +112,7 @@ test("Edit day on the Week page opens that day's entries for editing, and saving
   await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("edit me from the day button")).toBeVisible();
   await page.goto("/dashboard/week");
+  await openAllEntries(page);
   const list = page.getByRole("region", { name: "What you worked on" });
   await list.getByRole("button", { name: /^Edit .*\d/ }).click(); // "Edit day"
   await expect(list.getByRole("button", { name: "Save" })).toBeVisible(); // the entry is now a form

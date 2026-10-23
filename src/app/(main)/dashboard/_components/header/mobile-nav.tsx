@@ -53,7 +53,7 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <item.icon className="size-5 sm:max-lg:hidden sm:size-4" aria-hidden />
+              <item.icon className="size-5 sm:size-4 sm:max-lg:hidden" aria-hidden />
               {item.short ?? item.title}
             </Link>
           );
@@ -61,7 +61,7 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button type="button" className={`${tab} text-muted-foreground aria-expanded:text-foreground`}>
-              <Menu className="size-5 sm:max-lg:hidden sm:size-4" aria-hidden />
+              <Menu className="size-5 sm:size-4 sm:max-lg:hidden" aria-hidden />
               More
             </button>
           </DropdownMenuTrigger>

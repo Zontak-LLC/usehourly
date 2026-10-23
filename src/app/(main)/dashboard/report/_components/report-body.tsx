@@ -4,7 +4,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 
 import { useMoney } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
-import { formatDecimalHours } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
 import type { AppRouter } from "@/server/routers/_app";
 
 import { Section, Table } from "./report-table";
@@ -27,11 +27,12 @@ const MONTHS = [
   "December",
 ];
 
-const h = (m: number) => `${formatDecimalHours(m)} h`;
-/** An empty figure is always "–" (never "0.00 h" in one table and "–" in another). */
+/** Hours on screen are h:mm, as everywhere else in the app (files keep decimals). */
+const h = (m: number) => formatDuration(Math.round(m));
+/** An empty figure is always "–" (never "0:00" in one table and "–" in another). */
 const hOrDash = (m: number) => (m ? h(m) : "–");
 
-/** Phones: "Billable 12.50 h · Received $800.00" under the month, skipping empty figures. */
+/** Phones: "Billable 12:30 · Received $800.00" under the month, skipping empty figures. */
 const periodDetail = (r: string[]) =>
   [r[1] !== "–" && `${r[1]} worked`, r[2] !== "–" && `${r[2]} billable`, r[4] !== "–" && `${r[4]} received`]
     .filter(Boolean)

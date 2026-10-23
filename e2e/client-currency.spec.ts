@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, menuAction, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.clientCurrency, "A per-client currency is hidden in this release (src/lib/features.ts)");
 
 /** Localisation step 2: one client is billed in its own currency while the account stays in dollars. */
 test("a client can be billed in euros while the account is in dollars, until it has an invoice", async ({ page }) => {
@@ -11,7 +14,7 @@ test("a client can be billed in euros while the account is in dollars, until it 
     await expect(select).toHaveValue("");
     await expect(select).toContainText("Same as my account (USD)");
     await select.selectOption("EUR");
-    await page.getByRole("button", { name: "Save client" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Client updated.")).toBeVisible();
   });
 

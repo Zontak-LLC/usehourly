@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Play, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -10,12 +10,14 @@ import { ClientCurrency } from "@/components/currency-provider";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
+import { TIMER_STARTED_EVENT } from "@/components/timer-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate, monthBounds } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
+import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
 import { pendingEntry } from "@/lib/optimistic-entries";
@@ -23,7 +25,6 @@ import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { notifyPending, useOnline } from "@/lib/use-offline";
-import { useToday } from "@/lib/use-today";
 
 /** What a time chip writes in the box: "30m", "1h", "1h30", "2h" (never "120m"). parseDuration reads all of them. */
 function chipText(minutes: number): string {
@@ -44,14 +45,13 @@ function readLast(): string {
 
 export function QuickAdd({
   date,
-  timerRunning,
   dayMinutes,
   showDate = true,
   bare = false,
   wide = false,
+  onTimerContext,
 }: {
   date: string;
-  timerRunning: boolean;
   dayMinutes: number;
   /** The Today page already shows the date in its header, so it turns this off; the day dialog keeps it. */
   showDate?: boolean;
@@ -59,6 +59,8 @@ export function QuickAdd({
   bare?: boolean;
   /** From a wide screen up the form is two columns (project and description at the left, time and the buttons at the right) for a page that gives it the full width. */
   wide?: boolean;
+  /** Today's timer sits beside the dial, not in this form: it starts for the project and description picked here. */
+  onTimerContext?: (context: { projectId: string; projectName: string; note: string }) => void;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -66,7 +68,6 @@ export function QuickAdd({
   const online = useOnline();
   const create = trpc.entry.create.useMutation();
   const optimistic = useOptimisticEntries();
-  const start = trpc.entry.start.useMutation();
 
   const [projectId, setProjectId] = useState("");
   const [duration, setDuration] = useState("");
@@ -74,8 +75,6 @@ export function QuickAdd({
   // Tapping the same chip again adds its time again (2 hours, again = 4 hours); typing or another chip starts over.
   const [chipRun, setChipRun] = useState<{ minutes: number; taps: number } | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
-  // "Today" is the browser's date (the server runs in UTC), so it is worked out after the page loads.
-  const isToday = useToday() === date;
 
   const projects = clients.data?.flatMap((c) => c.projects) ?? [];
   // The month of the day being logged: the budget for the project picked below, if it has one.
@@ -166,20 +165,16 @@ export function QuickAdd({
     finish();
   }
 
-  async function startTimer() {
-    if (!projectId) return toast.error("Pick a project first.");
-    try {
-      await start.mutateAsync({ projectId, date, note });
-      await Promise.all([
-        utils.entry.running.invalidate(),
-        utils.entry.list.invalidate(),
-        utils.project.budgets.invalidate(),
-      ]);
-      setNote("");
-    } catch (err) {
-      toastError(err, "Couldn't start the timer.");
-    }
-  }
+  // Tell the page's timer what it would start for, and clear the description once a timer has started with it.
+  const pickedName = projects.find((p) => p.id === projectId)?.name ?? "";
+  useEffect(() => {
+    onTimerContext?.({ projectId, projectName: pickedName, note });
+  }, [onTimerContext, projectId, pickedName, note]);
+  useEffect(() => {
+    const clear = () => setNote("");
+    window.addEventListener(TIMER_STARTED_EVENT, clear);
+    return () => window.removeEventListener(TIMER_STARTED_EVENT, clear);
+  }, []);
 
   const polishOwner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
   const polishContext = {
@@ -277,7 +272,7 @@ export function QuickAdd({
           <NoteTextarea
             value={note}
             onChange={setNote}
-            polish={polishContext}
+            polish={feature("aiPolish") ? polishContext : undefined}
             onKeyDown={(e) => {
               // Enter saves when a time is typed, otherwise goes back to the time field.
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -306,30 +301,8 @@ export function QuickAdd({
           Log time
           <Kbd className="hidden bg-[#1b1405]/15 text-inherit md:inline-flex">↵</Kbd>
         </button>
-        {/* The timer is the second way: a quiet button under Add (a green "go" play disc, two short lines). Only for today. */}
-        {isToday && (
-          <button
-            type="button"
-            onClick={startTimer}
-            disabled={start.isPending || !online}
-            title={online ? undefined : "A timer needs a connection"}
-            className={`group flex w-full items-center gap-3 ${wc("lg:col-start-1 lg:row-start-3")} rounded-2xl border bg-card px-4 py-3 text-left transition-[border-color,transform] hover:-translate-y-0.5 hover:border-foreground/40 disabled:opacity-50`}
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-foreground text-background transition-transform group-hover:scale-105">
-              <Play className="size-4" fill="currentColor" aria-hidden />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-bold font-display">
-                {timerRunning ? "Switch timer to this" : "Start timer"}
-              </span>
-              <span className="block text-muted-foreground text-xs">
-                Haven&apos;t done it yet? Track it as you work.
-              </span>
-            </span>
-          </button>
-        )}
         {/* At the foot, so picking a project with a budget never moves the controls above it. */}
-        {budget && (
+        {budget && feature("budgets") && (
           <div className={wc("lg:col-span-2")}>
             <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
               <BudgetBar status={budget} />

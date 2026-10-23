@@ -2,7 +2,7 @@
 
 import { Mail } from "lucide-react";
 
-import { StatTile, TileRing } from "@/components/stat-tile";
+import { ShareBar, StatTile } from "@/components/stat-tile";
 import { word } from "@/lib/plural";
 import { trpc } from "@/lib/trpc";
 
@@ -40,7 +40,7 @@ export function TeamStrip({ people }: { people: Person[] }) {
           ))}
         </div>
       </StatTile>
-      <StatTile label={word(waiting, "Invitation") + " waiting"} value={waiting}>
+      <StatTile label={`${word(waiting, "Invitation")} waiting`} value={waiting}>
         <span className="relative grid size-14 place-items-center">
           <span
             className={`relative grid size-12 place-items-center rounded-full ${waiting > 0 ? "bg-amber text-[#1b1405]" : "bg-muted text-foreground/60"}`}
@@ -50,7 +50,7 @@ export function TeamStrip({ people }: { people: Person[] }) {
         </span>
       </StatTile>
       <StatTile label={`${word(covered, "Client")} they can log on`} value={covered}>
-        <TileRing fraction={covered / total} label="Share of your clients covered" />
+        <ShareBar fraction={covered / total} label="Share of your clients covered" />
       </StatTile>
     </section>
   );

@@ -1,7 +1,10 @@
 import type { Page } from "@playwright/test";
 
+import { FEATURES } from "../src/lib/features";
 import { icsFor } from "./calendar-fixture";
 import { expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.swipe, "Swiping is hidden in this release (src/lib/features.ts)");
 
 /** A real touch gesture (the Chrome protocol's touch events), not a click. */
 async function swipe(page: Page, from: [number, number], to: [number, number]) {

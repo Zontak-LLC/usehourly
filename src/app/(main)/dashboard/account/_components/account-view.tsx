@@ -11,6 +11,7 @@ import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
 import { SupportHourly } from "@/components/support-hourly";
 import { Skeleton } from "@/components/ui/skeleton";
+import { feature } from "@/lib/features";
 import { trpc } from "@/lib/trpc";
 
 import { AccountChecklist } from "./account-checklist";
@@ -70,7 +71,7 @@ export function AccountView() {
             <div className="grid items-start gap-6">
               <ProfileCard me={account} emailEnabled={emailEnabled.data} />
               <div className="flex flex-col gap-6">
-                <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />
+                {feature("weeklyReminder") && <FridayReminderCard me={account} emailEnabled={emailEnabled.data} />}
                 {account.has_password ? <ChangePasswordCard me={account} /> : <PasswordNote />}
                 <SignOutCard />
                 <DeleteAccountCard hasPassword={account.has_password} email={account.email} />
@@ -87,7 +88,15 @@ export function AccountView() {
       </Section>
     ),
     data: (
-      <Section id="data" title="Your data" description="Export it, import it, or keep a copy.">
+      <Section
+        id="data"
+        title="Your data"
+        description={
+          feature("importTime") || feature("localFirst")
+            ? "Export it, import it, or keep a copy."
+            : "Take it with you, or delete it."
+        }
+      >
         <DataHub account={account} />
       </Section>
     ),
@@ -102,7 +111,7 @@ export function AccountView() {
           <>
             <ConnectAssistant />
             <ApiTokensCard />
-            <AiPolishCard />
+            {feature("aiPolish") && <AiPolishCard />}
           </>
         )}
       </Section>

@@ -11,7 +11,7 @@ import type { InvoiceSnapshot } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 
 /** The client can save the invoice as a PDF (made in their browser from the frozen copy) or print the page. */
-export function InvoiceActions({ snapshot }: { snapshot: InvoiceSnapshot }) {
+export function InvoiceDocActions({ snapshot }: { snapshot: InvoiceSnapshot }) {
   const [busy, setBusy] = useState(false);
 
   async function pdf() {

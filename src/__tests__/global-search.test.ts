@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { feature } from "@/lib/features";
 import {
+  allPages,
   entryResults,
   groupResults,
   invoiceResults,
@@ -35,12 +37,23 @@ describe("global search", () => {
     const titles = (q: string) => matchPagesAndSettings(q).map((r) => r.title);
     expect(titles("week")).toContain("Week");
     expect(titles("password")).toContain("Change password");
-    expect(titles("xero")).toContain("Send invoices to Xero or QuickBooks");
+    expect(titles("currency")).toContain("Currency");
     expect(titles("delete")).toEqual(["Delete account"]);
     expect(titles("zzzz")).toEqual([]);
     const pw = matchPagesAndSettings("password").find((r) => r.title === "Change password");
     expect(pw?.href).toBe("/dashboard/account#account"); // a setting scrolls to its section
     expect(pw?.group).toBe("Settings");
+  });
+
+  it("never offers a page or setting whose feature is hidden in this release", () => {
+    const titles = (q: string) => matchPagesAndSettings(q).map((r) => r.title);
+    expect(titles("xero").includes("Send invoices to Xero or QuickBooks")).toBe(feature("accountingExport"));
+    expect(titles("team").includes("Team")).toBe(feature("team"));
+    expect(allPages().some((p) => p.href === "/dashboard/team")).toBe(feature("team"));
+    expect(titles("friday").includes("Friday reminder email")).toBe(feature("weeklyReminder"));
+    expect(titles("toggl").length > 0).toBe(feature("importTime"));
+    expect(titles("polish").length > 0).toBe(feature("aiPolish"));
+    expect(titles("device").length > 0).toBe(feature("localFirst"));
   });
 
   it("finds clients and projects by name, a project with its client under it", () => {

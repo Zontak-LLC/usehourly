@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataPanelHead } from "@/components/data-panel-head";
+import { SlideToConfirm } from "@/components/slide-to-confirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,14 +14,18 @@ import { signOutOfDevice } from "@/lib/sign-out";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-/** Deleting the account is permanent, so it hides behind one extra click and asks for the password (or the email, for GitHub/Google accounts). */
+/**
+ * Deleting the account is permanent, so it hides behind one extra click, asks for the password (or the email, for
+ * GitHub/Google accounts), and then the person slides a knob all the way across (GitHub issue 210). The slider stays off
+ * until the box is filled; Enter in the box never deletes anything.
+ */
 export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean; email: string }) {
   const del = trpc.account.deleteAccount.useMutation();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState("");
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function remove() {
+    if (confirm === "") return;
     try {
       await del.mutateAsync({ confirm });
       toast.success("Your account and data were deleted.");
@@ -41,7 +46,15 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
           &ldquo;Export&rdquo; above first if you want a copy.
         </DataPanelHead>
         {open ? (
-          <form method="post" onSubmit={submit} className="flex flex-col gap-3">
+          <form
+            method="post"
+            // Enter in the box must not delete: it only moves on to the slider.
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.currentTarget.querySelector<HTMLElement>("[role=slider]")?.focus();
+            }}
+            className="flex flex-col gap-3"
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="delete-confirm">
                 {hasPassword ? "Type your password to confirm" : `Type your email (${email}) to confirm`}
@@ -55,10 +68,15 @@ export function DeleteAccountCard({ hasPassword, email }: { hasPassword: boolean
                 required
               />
             </div>
+            <SlideToConfirm
+              label="Slide to delete your account"
+              pendingLabel="Deleting…"
+              disabled={confirm === ""}
+              pending={del.isPending}
+              hint={hasPassword ? "Type your password above first." : "Type your email above first."}
+              onConfirm={remove}
+            />
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" variant="destructive" disabled={del.isPending || confirm === ""}>
-                {del.isPending ? "Deleting…" : "Delete everything"}
-              </Button>
               <Button
                 type="button"
                 variant="outline"

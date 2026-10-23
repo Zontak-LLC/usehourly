@@ -1,0 +1,56 @@
+/**
+ * What the first release shows (feature audit, 2026-10-23). The core is a plain, solid timesheet and invoices; the
+ * extras below are hidden, not deleted: their code, server procedures and tests stay, so turning one back on is
+ * changing `false` to `true` here. A hidden feature has no button, card, menu item, setting, search result or guide
+ * topic, and its page answers "not found".
+ *
+ * Kept on purpose and not listed: AI assistants (MCP, trimmed to connecting and tokens), Month and the Year summary
+ * (read-only), the private invoice link, the demo, offline saving, light/dark mode.
+ */
+export const FEATURES = {
+  /** Calendar import on Today (file, private address, Google). */
+  calendar: false,
+  /** Inviting people to log time for you (/dashboard/team). */
+  team: false,
+  /** "Polish" descriptions with your own AI key. */
+  aiPolish: false,
+  /** "Keep a copy on this device (experimental)". */
+  localFirst: false,
+  /** Xero / QuickBooks CSV export. */
+  accountingExport: false,
+  /** Importing time from a CSV (Toggl, Clockify or any). */
+  importTime: false,
+  /** Project budgets and the budget bar. */
+  budgets: false,
+  /** A client billed in its own currency (the account's one currency stays). */
+  clientCurrency: false,
+  /** Per-client billing rounding. */
+  rounding: false,
+  /** Emailing an invoice to the client and overdue reminders (the private link stays). */
+  invoiceEmail: false,
+  /** Sign-off timesheet links for a client. */
+  signOff: false,
+  /** "Email me this" on the Year summary. */
+  reportEmail: false,
+  /** The Friday "log your hours" email. */
+  weeklyReminder: false,
+  /** Swiping between pages and days on a phone. */
+  swipe: false,
+  /** Merging several entries of a day into one. */
+  merge: false,
+  /** Marking a whole day non-billable (a non-billable project covers the need). */
+  nonBillableDays: false,
+  /** "Add to several days" on Month. */
+  multiDay: false,
+  /** Font, centred layout, header style and menu position settings (light/dark stays). */
+  appearanceExtras: false,
+  /** Uploading a profile picture (initials are shown instead). */
+  avatar: false,
+} as const;
+
+export type Feature = keyof typeof FEATURES;
+
+/** Whether a feature is part of this release. */
+export function feature(name: Feature): boolean {
+  return FEATURES[name];
+}

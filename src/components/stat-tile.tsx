@@ -2,35 +2,19 @@
 
 import type { ReactNode } from "react";
 
-const RING = 2 * Math.PI * 22;
+import { useSweepIn } from "@/components/explorer-watch";
 
-/** A small ring that fills to `fraction` (0 to 1): the drawing for a figure that is a share of something. */
-export function TileRing({
-  fraction,
-  label,
-  colour = "var(--amber)",
-}: {
-  fraction: number;
-  label: string;
-  colour?: string;
-}) {
+/** A thin bar that fills to `fraction` (0 to 1): the drawing for a figure that is a share of something. */
+export function ShareBar({ fraction, label }: { fraction: number; label: string }) {
   const f = Math.min(1, Math.max(0, Number.isFinite(fraction) ? fraction : 0));
+  const shown = useSweepIn(f);
   return (
-    <svg viewBox="0 0 56 56" role="img" aria-label={label} className="size-14 -rotate-90">
-      <title>{label}</title>
-      <circle cx="28" cy="28" r="22" fill="none" stroke="var(--muted)" strokeWidth="6" />
-      <circle
-        cx="28"
-        cy="28"
-        r="22"
-        fill="none"
-        stroke={colour}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={RING}
-        strokeDashoffset={RING * (1 - f)}
+    <div role="img" aria-label={label} className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+      <div
+        className="h-full rounded-full bg-foreground/40 transition-[width] duration-700"
+        style={{ width: `${shown * 100}%` }}
       />
-    </svg>
+    </div>
   );
 }
 

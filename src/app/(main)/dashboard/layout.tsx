@@ -23,6 +23,7 @@ import { GUIDE_PATHS, GUIDE_VERSION } from "@/content/guide";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { donateUrl } from "@/lib/donate";
+import { feature } from "@/lib/features";
 import { googleCalendarClientIdFor } from "@/lib/google-calendar-config";
 import { getPrisma } from "@/lib/prisma";
 import { sessionStillValid } from "@/lib/session-version";
@@ -63,13 +64,27 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   if (session?.user?.id && !sessionStillValid(session.user.tv, dbUser?.token_version)) {
     redirect("/api/session-expired");
   }
-  const user = { name: dbUser?.name ?? "You", email: dbUser?.email ?? "", avatar: dbUser?.avatar ?? null };
-  const savedTheme = readSavedTheme(dbUser ?? {});
   const isAdmin = isAdminUser(dbUser);
+  // With pictures hidden (lib/features.ts) everyone shows their initials, even someone who uploaded a picture before.
+  const user = {
+    name: dbUser?.name ?? "You",
+    email: dbUser?.email ?? "",
+    avatar: feature("avatar") ? (dbUser?.avatar ?? null) : null,
+  };
+  // The calendar hook reads null (no Google button) when the provider is not mounted, so it is left out with the feature.
+  const withCalendar = (children: ReactNode) =>
+    feature("calendar") ? (
+      <GoogleCalendarProvider clientId={googleCalendarClientIdFor({ isAdmin, isDemo: Boolean(dbUser?.is_demo) })}>
+        {children}
+      </GoogleCalendarProvider>
+    ) : (
+      children
+    );
+  const savedTheme = readSavedTheme(dbUser ?? {});
   return (
     <OfflineGuard userId={session.user.id}>
       <LocalFirst userId={session.user.id} isDemo={Boolean(dbUser?.is_demo)} />
-      <GoogleCalendarProvider clientId={googleCalendarClientIdFor({ isAdmin, isDemo: Boolean(dbUser?.is_demo) })}>
+      {withCalendar(
         <CurrencyProvider currency={dbUser?.currency ?? "USD"}>
           <SidebarProvider
             style={
@@ -90,13 +105,13 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               )}
             >
               <UsageBeacon />
-              <SwipeNav />
+              {feature("swipe") && <SwipeNav />}
               <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
               <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
               {session?.user?.demo === true && <DemoBanner />}
               {/* No backdrop-filter on a phone: it would make the fixed bottom tab bar (inside this header) position itself against the header instead of the screen. */}
               {/* Stuck to the top on a phone (a slim bar) and on a wide screen (one row); in between, the menu pills take a second row, so it scrolls away instead of covering the page. */}
-              <header className="top-0 z-40 shrink-0 border-b max-sm:sticky max-sm:bg-background sm:bg-background/85 sm:backdrop-blur-md lg:sticky">
+              <header className="top-0 z-40 shrink-0 border-b max-sm:sticky max-sm:bg-background sm:bg-background/85 sm:backdrop-blur-md lg:sticky print:hidden">
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 px-4 py-2 lg:px-6">
                   <div className="flex min-w-0 items-center gap-1 lg:flex-1 lg:gap-2">
                     <Link
@@ -124,8 +139,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               </div>
             </SidebarInset>
           </SidebarProvider>
-        </CurrencyProvider>
-      </GoogleCalendarProvider>
+        </CurrencyProvider>,
+      )}
     </OfflineGuard>
   );
 }

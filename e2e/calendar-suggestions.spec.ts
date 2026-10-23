@@ -1,5 +1,8 @@
+import { FEATURES } from "../src/lib/features";
 import { icsFor } from "./calendar-fixture";
 import { expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.calendar, "The calendar import is hidden in this release (src/lib/features.ts)");
 
 /**
  * Issue #99, slice 1: a calendar file imported on Today shows that day's meetings as one-tap suggestions. The file is

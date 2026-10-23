@@ -1,3 +1,5 @@
+import { feature } from "@/lib/features";
+
 import type { Topic } from "./types";
 
 export const MORE_TOPICS: Topic[] = [
@@ -16,7 +18,7 @@ export const MORE_TOPICS: Topic[] = [
 
 ## What needs a connection
 
-Timers, editing an entry, moving, merging and deleting, invoices, exports and everything on the Account page. A message says so instead of failing silently.
+Timers, editing an entry, moving, ${feature("merge") ? "merging " : ""}and deleting, invoices, exports and everything on the Account page. A message says so instead of failing silently.
 
 ## Good to know
 
@@ -39,21 +41,28 @@ It also keeps working offline (see [Working offline](/help/offline)). Phones sho
   },
   {
     slug: "menu-position",
-    title: "Moving the menu to the left, and dark mode",
+    title: feature("appearanceExtras") ? "Moving the menu to the left, and dark mode" : "Light and dark mode",
     group: "everywhere",
-    summary: "Choose a side menu on a wide screen, and light or dark mode.",
+    summary: feature("appearanceExtras")
+      ? "Choose a side menu on a wide screen, and light or dark mode."
+      : "Choose light or dark mode, or follow your device.",
     keywords: ["navigation", "sidebar", "layout", "theme", "dark mode", "colour", "color", "appearance"],
-    body: `Click the **gear** at the top right (Appearance and layout).
+    body: feature("appearanceExtras")
+      ? `Click the **gear** at the top right (Appearance and layout).
 
 - **Navigation: Top or Left** (wide screens only). Left puts every page in a side menu. The current page has a marker beside it. Your name, picture and Log out are in the top bar.
 - **Theme Mode** is light, dark or follows your computer.
 
-Light or dark follows your account to other devices. The menu position is saved in this browser only. Phones always keep the bottom bar.`,
+Light or dark follows your account to other devices. The menu position is saved in this browser only. Phones always keep the bottom bar.`
+      : `Click the **gear** at the top right and pick **Theme Mode**: **Light**, **Dark**, or **System** to follow your computer or phone.
+
+Your choice follows your account to other devices, so you pick it once. On a phone the main pages sit in a bar along the bottom of the screen.`,
   },
   {
     slug: "teams",
     title: "Inviting someone to log time on your clients",
     group: "team",
+    feature: "team",
     summary: "What a team member can and cannot see, and how to remove them.",
     keywords: ["team", "assistant", "invite", "member", "studio", "partner", "collaborator", "permissions"],
     body: `Open **Team** (under Settings in the menu) and enter their email address, optionally a name, and tick the **clients** they may log time on. UseHourly emails them a link. It also shows you the link once, in case you prefer to send it yourself.
@@ -89,8 +98,12 @@ If you work in an AI assistant all day, this lets you manage your timesheets rig
 - "Log 1h30 on Acme / Website for fixing the checkout bug."
 - "What did I log last week? Anything missing?"
 - "Show my timesheet for Acme for last week" (a grid of projects and days, with the weekdays that have nothing logged).
-- "Make a link for Acme's client to sign off last week's timesheet." It asks whether to include your descriptions and how long the link should work, then creates a private page your client can read, print and approve. The link is shown once, so copy it.
-- "Prepare an invoice for Acme for September." It lists the time and the amounts first, and waits for your OK before it makes the invoice.
+${
+  feature("signOff")
+    ? `- "Make a link for Acme's client to sign off last week's timesheet." It asks whether to include your descriptions and how long the link should work, then creates a private page your client can read, print and approve. The link is shown once, so copy it.
+`
+    : ""
+}- "Prepare an invoice for Acme for September." It lists the time and the amounts first, and waits for your OK before it makes the invoice.
 
 ## Connect
 
@@ -108,6 +121,7 @@ Tokens can expire. A token stops working when you change your password or choose
     slug: "ai-polish",
     title: "Polishing descriptions with your own AI key",
     group: "team",
+    feature: "aiPolish",
     summary: "Turn a rough note into a clear line with your own Anthropic or OpenAI key, and what is sent.",
     keywords: [
       "ai",
@@ -166,12 +180,13 @@ Open the **···** menu at the top right of the Clients page and choose **Archi
 
 To keep it, open **Account** and choose **Keep your work: create a free account**. You can either **start fresh** (the sample data is removed and your account is empty) or **keep everything** in the demo, including anything you added.
 
-A demo cannot email invoices, share links, invite people or connect an assistant: those need a real account.`,
+A demo cannot ${[feature("invoiceEmail") && "email invoices", "share links", feature("team") && "invite people"].filter(Boolean).join(", ")} or connect an assistant: those need a real account.`,
   },
   {
     slug: "friday-reminder",
     title: "The Friday reminder email",
     group: "account",
+    feature: "weeklyReminder",
     summary: "An optional weekly nudge to log your hours.",
     keywords: ["reminder", "email", "weekly", "notification", "unsubscribe"],
     body: `Under **Account**, tick **Email me on Friday afternoon with my week so far**. It needs a confirmed email address.
@@ -186,8 +201,10 @@ One email arrives each Friday from about 4 pm **your** time, with your week so f
     keywords: ["delete account", "remove my data", "export", "privacy", "gdpr", "leave", "close account"],
     body: `**Take it with you.** Under **Account, Your data**, **Download everything** gives a zip of all your clients, entries and invoices as spreadsheets and plain CSV files.
 
-**Delete your account** is under **Account, Your data**. If you sign in with a password you confirm with it; if you sign in with Google or GitHub you type your email address. Deleting removes your clients, projects, entries, invoices, links and tokens **straight away**, and cannot be undone. Backups held by the hosting provider age out within 30 days.
-
-If you were invited to someone's team, leaving or deleting does not remove the entries you logged for them: those belong to their books.`,
+**Delete your account** is under **Account, Profile**. If you sign in with a password you confirm with it; if you sign in with Google or GitHub you type your email address. Deleting removes your clients, projects, entries, invoices, links and tokens **straight away**, and cannot be undone. Backups held by the hosting provider age out within 30 days.${
+      feature("team")
+        ? "\n\nIf you were invited to someone's team, leaving or deleting does not remove the entries you logged for them: those belong to their books."
+        : ""
+    }`,
   },
 ];

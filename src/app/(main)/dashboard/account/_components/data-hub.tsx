@@ -8,6 +8,7 @@ import { ExportEverything } from "@/components/export-everything";
 import { GuideLink } from "@/components/guide-link";
 import { ImportTime } from "@/components/import-time";
 import { LocalFirstCard } from "@/components/local-first-card";
+import { feature } from "@/lib/features";
 import { count, word } from "@/lib/plural";
 import { trpc } from "@/lib/trpc";
 
@@ -16,8 +17,8 @@ import type { AccountMe } from "./account-section";
 const CARD = "rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10";
 
 /**
- * "Your data" is ONE page: the things you can do with your data as plain sections one under the other (export, send to
- * an accounting app, import, keep a copy on this device) (Delete account lives under Profile). No tabs inside the tab: everything
+ * "Your data" is ONE page: the things you can do with your data as plain sections one under the other (export, and, when
+ * those features are on, send to an accounting app, import, keep a copy on this device) (Delete account lives under Profile). No tabs inside the tab: everything
  * is where you scroll to. Sample accounts have no device copy and nothing to delete.
  */
 export function DataHub({ account }: { account: AccountMe }) {
@@ -42,22 +43,24 @@ export function DataHub({ account }: { account: AccountMe }) {
         <ExportEverything big className="justify-self-start" />
       </section>
 
-      <section aria-label="Send invoices to your accounting app" className={`overflow-hidden ${CARD}`}>
-        <div className="p-5 pb-4 sm:p-6 sm:pb-5">
-          <DataPanelHead
-            icon={FileSpreadsheet}
-            title="Send your invoices to the books."
-            aside={<GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />}
-          >
-            Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you
-            marked non-billable are already left off every invoice.
-          </DataPanelHead>
-        </div>
-        <AccountingExport />
-      </section>
+      {feature("accountingExport") && (
+        <section aria-label="Send invoices to your accounting app" className={`overflow-hidden ${CARD}`}>
+          <div className="p-5 pb-4 sm:p-6 sm:pb-5">
+            <DataPanelHead
+              icon={FileSpreadsheet}
+              title="Send your invoices to the books."
+              aside={<GuideLink topic="xero-quickbooks" label="Xero and QuickBooks" />}
+            >
+              Your invoices as a file Xero or QuickBooks Online can import, or a list of payments received. Days you
+              marked non-billable are already left off every invoice.
+            </DataPanelHead>
+          </div>
+          <AccountingExport />
+        </section>
+      )}
 
-      <ImportTime />
-      {!account.is_demo && <LocalFirstCard />}
+      {feature("importTime") && <ImportTime />}
+      {feature("localFirst") && !account.is_demo && <LocalFirstCard />}
     </div>
   );
 }

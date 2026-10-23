@@ -39,9 +39,24 @@ function writeIds(key: string, ids: string[]) {
   }
 }
 
-/** Remember that `id` was just used, so it shows up first next time. */
-export function rememberRecentProject(id: string) {
-  writeIds(RECENT_KEY, pushRecentId(readIds(RECENT_KEY), id));
+const BIG_ROW = "gap-3 rounded-2xl border-2 border-foreground bg-card px-4 py-3";
+
+/** The large "you are logging to" row: colour dot, project name, client, a check. */
+function CurrentRow({ project }: { project: PickerProject }) {
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="size-3 shrink-0 rounded-full"
+        style={{ backgroundColor: project.color ?? "var(--foreground)" }}
+      />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate font-bold font-display text-lg leading-tight">{project.name}</span>
+        <span className="truncate text-muted-foreground text-sm">{project.clientName}</span>
+      </span>
+      <Check className="size-5 shrink-0" aria-hidden strokeWidth={2.5} />
+    </>
+  );
 }
 
 /** A phone has an on-screen keyboard that would cover a list under the field, so there the search opens at the top. */
@@ -59,7 +74,7 @@ function useIsPhone() {
 
 /**
  * Pick one project. The project you are logging to is one large row; your pinned and recent projects are one-tap pills
- * under it; and with more than three projects a search field takes the place of "More…": type two letters (or press /
+ * under it, in an order that stays put while the page is open (the picked pill is pressed, not moved); and with more than three projects a search field takes the place of "More…": type two letters (or press /
  * from anywhere), use the arrow keys, press Enter. The list drops down under the field on a computer and opens at the
  * top of the screen on a phone. A star on any row pins it as a pill.
  */
@@ -84,23 +99,23 @@ export function ProjectPicker({
   const phone = useIsPhone();
   const listId = useId();
 
-  // Picking a pill that is already showing must not shuffle the row: the projects shown at that moment stay put.
-  const [frozen, setFrozen] = useState<string[] | null>(null);
+  // The pills are worked out from what was remembered when the page opened (and the pins), never from what is picked
+  // now: picking a pill only presses it, so nothing moves under the pointer. New recent projects show from the next visit.
+  const [recentAtLoad] = useState(recent);
   const many = projects.length > ALL_AS_CHIPS;
-  const computed = chipProjects(projects, recent, value, pins);
-  const frozenChips = frozen
-    ? frozen.map((id) => projects.find((p) => p.id === id)).filter((p): p is PickerProject => !!p)
-    : [];
-  const chips =
-    many && frozenChips.length === computed.length && frozenChips.some((p) => p.id === value) ? frozenChips : computed;
+  const chips = useMemo(() => chipProjects(projects, recentAtLoad, pins), [projects, recentAtLoad, pins]);
   const current = projects.find((p) => p.id === value) ?? chips[0];
-  const others = chips.filter((p) => p.id !== current?.id);
+  const currentIsPill = !!current && chips.some((p) => p.id === current.id);
+  const showPills = chips.some((p) => p.id !== current?.id);
+  const bigIsRadio = !currentIsPill || !showPills;
   const { sections, flat } = useMemo(() => pickerRows(projects, query, recent), [projects, query, recent]);
 
   function choose(id: string, fromSearch = false) {
-    setFrozen(chips.some((p) => p.id === id) ? chips.map((p) => p.id) : null);
     onChange(id);
-    setRecent(pushRecentId(recent, id));
+    // Remembered for the search list now and for the pills on the next visit (they never move during this one).
+    const next = pushRecentId(recent, id);
+    setRecent(next);
+    writeIds(RECENT_KEY, next);
     setOpen(false);
     setQuery("");
     setActive(0);
@@ -111,7 +126,6 @@ export function ProjectPicker({
     const next = togglePinnedId(pins, id);
     setPins(next);
     writeIds(PINNED_KEY, next);
-    setFrozen(null);
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -159,40 +173,37 @@ export function ProjectPicker({
   return (
     <>
       <div role="radiogroup" aria-labelledby="quick-project-label" className="flex flex-col gap-2">
-        {current && (
+        {current && !many && !bigIsRadio && (
+          <div className={`flex items-center ${BIG_ROW}`}>
+            <CurrentRow project={current} />
+          </div>
+        )}
+        {current && (many || bigIsRadio) && (
           <Button
             type="button"
-            role="radio"
-            aria-checked="true"
+            // While the picked project is also a pill, the pill is the checked radio and this row only opens the search.
+            role={bigIsRadio ? "radio" : undefined}
+            aria-checked={bigIsRadio ? "true" : undefined}
             variant="outline"
             onClick={() => many && (phone ? setOpen(true) : field.current?.focus())}
             title={many ? "Choose another project" : undefined}
-            className="h-auto w-full justify-start gap-3 whitespace-normal rounded-2xl border-2 border-foreground bg-card px-4 py-3 text-left hover:bg-card"
+            className={`h-auto w-full justify-start whitespace-normal text-left hover:bg-card ${BIG_ROW}`}
           >
-            <span
-              aria-hidden="true"
-              className="size-3 shrink-0 rounded-full"
-              style={{ backgroundColor: current.color ?? "var(--foreground)" }}
-            />
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate font-bold font-display text-lg leading-tight">{current.name}</span>
-              <span className="truncate text-muted-foreground text-sm">{current.clientName}</span>
-            </span>
-            <Check className="size-5 shrink-0" aria-hidden strokeWidth={2.5} />
+            <CurrentRow project={current} />
           </Button>
         )}
-        {others.length > 0 && (
+        {showPills && (
           <div className="flex flex-wrap gap-2">
-            {others.map((p) => (
+            {chips.map((p) => (
               <Button
                 key={p.id}
                 type="button"
                 role="radio"
-                aria-checked="false"
+                aria-checked={p.id === current?.id}
                 variant="outline"
                 title={`${p.name} · ${p.clientName}`}
                 onClick={() => choose(p.id)}
-                className="h-9 max-w-full gap-2 rounded-full px-3.5"
+                className="h-9 max-w-full gap-2 rounded-full px-3.5 aria-checked:border-foreground aria-checked:bg-muted aria-checked:font-semibold"
               >
                 <span
                   aria-hidden="true"

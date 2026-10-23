@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.calendar, "The calendar import is hidden in this release (src/lib/features.ts)");
 
 /**
  * Issue #99, slice 4: "Connect Google Calendar". Google's sign-in script and its calendar answer are stand-ins here

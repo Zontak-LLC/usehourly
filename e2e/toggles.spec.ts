@@ -1,4 +1,4 @@
-import { expect, menuAction, startFreshAccount, test } from "./helpers";
+import { expect, menuAction, openAllEntries, startFreshAccount, test } from "./helpers";
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
@@ -32,6 +32,7 @@ test("buttons that open a form close it on the second click; the day's list is h
 
   await test.step("on Week the day's Edit day button opens every entry's form and Done editing closes them", async () => {
     await page.goto("/dashboard/week");
+    await openAllEntries(page); // the full list is folded behind one button
     const list = page.getByRole("region", { name: "What you worked on" });
     const open = list.getByRole("button", { name: /^Edit .*\d/ });
     await expect(open).toHaveAttribute("aria-expanded", "false");
@@ -45,7 +46,7 @@ test("buttons that open a form close it on the second click; the day's list is h
     await expect(list.getByRole("button", { name: /^Edit .*\d/ })).toContainText("Edit day");
   });
 
-  await test.step("on Clients the + and the billing pencil open their forms and close them again", async () => {
+  await test.step("on Clients Add project and Billing details open their forms and close them again", async () => {
     await page.goto("/dashboard/clients");
     const add = page.getByRole("button", { name: "Add a project for Acme Studio" }).first();
     await expect(add).toHaveAttribute("aria-expanded", "false");
@@ -54,25 +55,27 @@ test("buttons that open a form close it on the second click; the day's list is h
     await expect(page.getByRole("button", { name: "Cancel" }).first()).toBeVisible();
     await add.click();
     await expect(add).toHaveAttribute("aria-expanded", "false");
-    await expect(page.getByRole("button", { name: "Add a project for Acme Studio" })).toHaveCount(1); // only the + in the header: a client that has a project no longer shows a dashed add card
+    await expect(page.getByRole("button", { name: "Add a project for Acme Studio" })).toHaveCount(1); // only the one in the card's header
     await expect(page.getByRole("button", { name: "Cancel" })).toHaveCount(0);
 
     await menuAction(page, "More actions for Acme Studio", "Billing details"); // the ··· menu opens the form
-    await expect(page.getByText("Round the time on invoices")).toBeVisible();
+    const billing = page.getByRole("form", { name: "Billing details for Acme Studio" });
+    await expect(billing).toBeVisible();
     await menuAction(page, "More actions for Acme Studio", "Close billing details"); // and the same item closes it
-    await expect(page.getByText("Round the time on invoices")).toHaveCount(0);
+    await expect(billing).toHaveCount(0);
   });
 });
 
-test("the Month page's This month button is disabled while already on this month, and works from another month", async ({
-  page,
-}) => {
+test("the Month page's This month button shows only away from this month, and comes back to it", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/month");
   const thisMonth = page.getByRole("button", { name: "This month" });
-  await expect(thisMonth).toBeDisabled();
+  const heading = page.getByRole("heading", { level: 1 });
+  const now = await heading.textContent();
+  await expect(thisMonth).toHaveCount(0); // already here: nothing to go back to
   await page.getByRole("button", { name: "Previous month" }).click();
-  await expect(thisMonth).toBeEnabled();
+  await expect(heading).not.toHaveText(now ?? "");
   await thisMonth.click();
-  await expect(thisMonth).toBeDisabled();
+  await expect(heading).toHaveText(now ?? "");
+  await expect(thisMonth).toHaveCount(0);
 });

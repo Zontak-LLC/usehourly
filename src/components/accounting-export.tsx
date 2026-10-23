@@ -83,7 +83,7 @@ export function AccountingExport() {
           <legend className="mb-3 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
             What to send
           </legend>
-          <div className="grid gap-3 @md:grid-cols-2 @2xl:grid-cols-3">
+          <div className="grid @2xl:grid-cols-3 @md:grid-cols-2 gap-3">
             {select(
               "acct-format",
               "Send to",
@@ -126,7 +126,7 @@ export function AccountingExport() {
           <legend className="mb-3 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
             How it is written
           </legend>
-          <div className="grid gap-3 @md:grid-cols-2 @2xl:grid-cols-3">
+          <div className="grid @2xl:grid-cols-3 @md:grid-cols-2 gap-3">
             {select(
               "acct-dates",
               "Date format",
@@ -166,7 +166,7 @@ export function AccountingExport() {
         </fieldset>
       </div>
       {/* The foot of the card: what happens next on the left, the one action on the right, on a tinted strip. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 mt-auto border-t bg-band-2 px-5 py-4 sm:px-6">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t bg-band-2 px-5 py-4 sm:px-6">
         <p className="min-w-0 flex-1 basis-64 text-foreground/75 text-sm">{picked.hint}</p>
         <DocButton
           onClick={run}

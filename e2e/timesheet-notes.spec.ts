@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { anonymous, expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.signOff, "Sign-off timesheet links are hidden in this release (src/lib/features.ts)");
 
 test("the client's timesheet lists what was worked on as a table: date once per day, project, work, hours", async ({
   page,

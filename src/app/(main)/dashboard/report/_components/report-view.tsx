@@ -11,6 +11,7 @@ import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadAnnualXlsx } from "@/lib/export-annual-xlsx";
+import { feature } from "@/lib/features";
 import { isCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -37,6 +38,7 @@ export function ReportView() {
   const [exporting, setExporting] = useState(false);
   const emailIt = trpc.report.email.useMutation();
 
+  const withEmail = feature("reportEmail");
   if (year === null) return <Skeleton className="mx-auto h-96 w-full max-w-5xl" />;
   const data = report.data;
 
@@ -115,8 +117,8 @@ export function ReportView() {
               ))}
             </select>
           )}
-          {/* The two actions share a row on a phone. */}
-          <div className="grid grid-cols-2 gap-2 sm:contents">
+          {/* The two actions share a row on a phone ("Email me this" is hidden in this release). */}
+          <div className={`grid gap-2 sm:contents ${withEmail ? "grid-cols-2" : "grid-cols-1"}`}>
             <Button
               variant="outline"
               className="h-10 w-full sm:order-first sm:w-auto"
@@ -125,14 +127,16 @@ export function ReportView() {
             >
               <Download /> {exporting ? "Exporting…" : "Export Excel"}
             </Button>
-            <Button
-              variant="outline"
-              className="h-10 w-full sm:order-first sm:w-auto"
-              onClick={sendByEmail}
-              disabled={!data || emailIt.isPending}
-            >
-              <Mail /> {emailIt.isPending ? "Sending…" : "Email me this"}
-            </Button>
+            {withEmail && (
+              <Button
+                variant="outline"
+                className="h-10 w-full sm:order-first sm:w-auto"
+                onClick={sendByEmail}
+                disabled={!data || emailIt.isPending}
+              >
+                <Mail /> {emailIt.isPending ? "Sending…" : "Email me this"}
+              </Button>
+            )}
           </div>
         </div>
       }

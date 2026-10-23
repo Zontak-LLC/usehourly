@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { feature } from "@/lib/features";
 import { DEFAULT_LINK_EXPIRY_DAYS, LINK_EXPIRY_DAYS, type LinkStatus } from "@/lib/invoice-link";
 import { MAX_INVOICE_NOTE } from "@/lib/invoice-mail";
 import { toastError } from "@/lib/toast-error";
@@ -149,7 +150,7 @@ function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean })
 }
 
 /** A private link to paste into your own email or message. Shown once, like an API token. */
-function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) {
+function LinkSection({ invoiceId, open, alone = false }: { invoiceId: string; open: boolean; alone?: boolean }) {
   const utils = trpc.useUtils();
   const create = trpc.invoiceLink.create.useMutation();
   const revoke = trpc.invoiceLink.revoke.useMutation();
@@ -197,13 +198,16 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
   }
 
   return (
-    <section className="flex flex-col gap-3 border-t pt-4" aria-label="Copy a link">
-      <div>
-        <h3 className="flex items-center gap-1.5 font-medium">
-          <Link2 className="size-4" /> Or copy a link to send yourself
-        </h3>
-        <p className="text-muted-foreground text-sm">A private page with the invoice and a PDF download.</p>
-      </div>
+    <section className={alone ? "flex flex-col gap-3" : "flex flex-col gap-3 border-t pt-4"} aria-label="Copy a link">
+      {/* On its own, the panel's heading already says what this is. */}
+      {!alone && (
+        <div>
+          <h3 className="flex items-center gap-1.5 font-medium">
+            <Link2 className="size-4" /> Or copy a link to send yourself
+          </h3>
+          <p className="text-muted-foreground text-sm">A private page with the invoice and a PDF download.</p>
+        </div>
+      )}
 
       {link ? (
         <Notice className="flex flex-col gap-2">
@@ -269,7 +273,7 @@ function LinkSection({ invoiceId, open }: { invoiceId: string; open: boolean }) 
 
 /**
  * Everything about getting an invoice to a client, opened inside the invoice's own card (not in a popup): email it from
- * here, or copy a link and send it your own way. The card owns whether it is open.
+ * here (when the invoiceEmail feature is on), or copy a link and send it your own way. The card owns whether it is open.
  */
 export function SendInvoicePanel({
   invoice,
@@ -278,12 +282,19 @@ export function SendInvoicePanel({
   invoice: { id: string; number: string };
   onClose: () => void;
 }) {
+  // Emailing is hidden in this release: the panel is then only the private link.
+  const email = feature("invoiceEmail");
+  const title = email ? `Send invoice ${invoice.number}` : `Share invoice ${invoice.number}`;
   return (
-    <section aria-label={`Send invoice ${invoice.number}`} className="flex flex-col gap-4 border-t bg-band-3 px-4 py-4">
+    <section aria-label={title} className="flex flex-col gap-4 border-t bg-band-3 px-4 py-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="font-semibold text-base">Send invoice {invoice.number}</h3>
-          <p className="text-foreground/75 text-sm">Email it from here, or copy a link and send it your own way.</p>
+          <h3 className="font-semibold text-base">{title}</h3>
+          <p className="text-foreground/75 text-sm">
+            {email
+              ? "Email it from here, or copy a link and send it your own way."
+              : "Make a private link and send it to your client by email or message. It opens a page with the invoice and a PDF download."}
+          </p>
         </div>
         <Button
           type="button"
@@ -296,8 +307,8 @@ export function SendInvoicePanel({
           <X />
         </Button>
       </div>
-      <EmailSection invoiceId={invoice.id} open />
-      <LinkSection invoiceId={invoice.id} open />
+      {email && <EmailSection invoiceId={invoice.id} open />}
+      <LinkSection invoiceId={invoice.id} open alone={!email} />
     </section>
   );
 }
