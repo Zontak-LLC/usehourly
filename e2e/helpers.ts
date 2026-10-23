@@ -409,6 +409,21 @@ export const test = base.extend<Fixtures>({
 
 export { expect };
 
+/**
+ * Opens the Clients page on one client's profile (issue 238): the page is a split view, and on a phone the list and
+ * the profile are two screens, so the client is picked from the list.
+ */
+export async function gotoClient(page: Page, name: string) {
+  await page.goto("/dashboard/clients");
+  await page
+    .locator('a[href^="/dashboard/clients/"]')
+    .filter({ has: page.getByText(name, { exact: true }) })
+    .locator("visible=true")
+    .first()
+    .click();
+  await expect(page.getByRole("region", { name, exact: true }).getByRole("heading", { level: 2 })).toHaveText(name);
+}
+
 /** Opens a ··· menu by its button's name (for example "More actions for Acme Studio") and picks one item. */
 export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("button", { name: button, exact: true }).click();

@@ -1,4 +1,4 @@
-/** Pure rules for the Clients page header lines: each client's latest invoice, and the order of the cards. */
+/** Pure rules for the Clients page: each client's latest invoice and where it stands (the list order is in lib/client-list.ts). */
 
 import { spanDays } from "@/lib/dates";
 
@@ -35,20 +35,4 @@ export function invoiceStatus(inv: InvoiceFact, today: string): InvoiceStatus {
   if (!inv.due_date) return { kind: "open" };
   if (inv.due_date < today) return { kind: "late", days: spanDays(inv.due_date, today) - 1 };
   return { kind: "due", date: inv.due_date };
-}
-
-/**
- * The cards in order: clients with time logged this month first, then the quiet ones (no time this month), each group
- * alphabetical. Before the month's totals arrive every client counts as active, so nothing is pushed down by mistake.
- */
-export function orderClients<T extends { id: string; name: string }>(
-  clients: readonly T[],
-  monthMinutes: (client: T) => number | undefined,
-): { client: T; quiet: boolean }[] {
-  return clients
-    .map((client) => {
-      const minutes = monthMinutes(client);
-      return { client, quiet: minutes !== undefined && minutes <= 0 };
-    })
-    .sort((a, b) => Number(a.quiet) - Number(b.quiet) || a.client.name.localeCompare(b.client.name));
 }

@@ -167,17 +167,23 @@ export const projectRouter = router({
     .input(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .query(async ({ ctx, input }) => {
       const [all, range] = await Promise.all([
-        ctx.prisma.timeEntry.groupBy({ by: ["project_id"], where: { user_id: ctx.userId }, _sum: { minutes: true } }),
+        // The newest day too (the Clients list says how long a quiet client has been quiet); the covering index has it.
+        ctx.prisma.timeEntry.groupBy({
+          by: ["project_id"],
+          where: { user_id: ctx.userId },
+          _sum: { minutes: true },
+          _max: { date: true },
+        }),
         ctx.prisma.timeEntry.groupBy({
           by: ["project_id"],
           where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
           _sum: { minutes: true },
         }),
       ]);
-      const out: Record<string, { total: number; range: number }> = {};
-      for (const r of all) out[r.project_id] = { total: r._sum.minutes ?? 0, range: 0 };
+      const out: Record<string, { total: number; range: number; last: string | null }> = {};
+      for (const r of all) out[r.project_id] = { total: r._sum.minutes ?? 0, range: 0, last: r._max?.date ?? null };
       for (const r of range) {
-        const entry = out[r.project_id] ?? { total: 0, range: 0 };
+        const entry = out[r.project_id] ?? { total: 0, range: 0, last: null };
         entry.range = r._sum.minutes ?? 0;
         out[r.project_id] = entry;
       }

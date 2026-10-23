@@ -1,3 +1,5 @@
+import { clientIdFromPath } from "@/lib/client-list";
+
 /**
  * Which in-app pages are counted. The list is closed on purpose: the counter table can only ever hold
  * days x these pages, and nothing a visitor sends can add a new row.
@@ -39,6 +41,8 @@ const BY_PATH: Record<string, UsagePage> = {
 /** The page a browser path counts as, or null for pages we do not count (admin pages, anything unknown). */
 export function usagePageForPath(pathname: string): UsagePage | null {
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  // A client's profile (/dashboard/clients/<id>, issue 238) counts as Clients; the archived page is not counted.
+  if (clientIdFromPath(clean)) return "clients";
   return BY_PATH[clean] ?? null;
 }
 
