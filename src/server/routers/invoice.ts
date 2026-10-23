@@ -141,7 +141,11 @@ export const invoiceRouter = router({
         data: { snapshot: JSON.stringify(snapshot) },
       });
     }
-    return { id: inv.id, snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot) };
+    return {
+      id: inv.id,
+      paidDate: inv.paid_date,
+      snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot),
+    };
   }),
 
   /** Suggested next number: INV-<year>-<n>, one more than the highest n used that year (never a taken one). */

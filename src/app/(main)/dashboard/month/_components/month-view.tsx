@@ -83,6 +83,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
       // Swipe left for the next month, right for the previous one (the arrows in the toolbar do the same).
       onSwipe={feature("swipe") ? (direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1)) : undefined}
       inlineDescription
+      // The month's total is the page's key figure: shown on a phone too.
+      descriptionOnPhone
       title={monthTitle.format(fromISODate(first))}
       description={
         // The month's total is the number people came for: a figure, not small print.

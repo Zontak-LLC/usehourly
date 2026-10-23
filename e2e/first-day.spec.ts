@@ -374,7 +374,8 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await expect(slider).not.toHaveAttribute("aria-disabled", "true");
     await slider.focus();
     await page.keyboard.press("End");
-    await expect(page).toHaveURL(/\/$|\/auth/);
+    await expect(page).toHaveURL(/\/account-deleted$/);
+    await expect(page.getByRole("heading", { name: "Your account is deleted" })).toBeVisible();
     await page.goto("/auth/v2/login");
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     await page.getByLabel("Password", { exact: true }).fill(user.password);

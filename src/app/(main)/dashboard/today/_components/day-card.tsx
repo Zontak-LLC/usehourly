@@ -51,8 +51,19 @@ function Neighbour({
         <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-wider">
           {isToday ? "Today" : weekday.format(when)}
         </span>
-        <span className="font-display font-extrabold text-lg leading-none">{when.getDate()}</span>
-        <span className="font-mono text-[11px] text-foreground/80 tabular-nums">
+        {/* The same drawing as Week's tiles and Month's cells: a quiet date, the hours the stronger figure. */}
+        <span
+          className={
+            isToday
+              ? "inline-flex size-6 items-center justify-center rounded-full bg-amber font-semibold text-neutral-950 text-sm"
+              : "inline-flex h-6 items-center font-medium text-foreground/75 text-sm"
+          }
+        >
+          {when.getDate()}
+        </span>
+        <span
+          className={`font-mono tabular-nums tracking-tight ${minutes ? "font-semibold text-foreground/90 text-sm" : "text-foreground/50 text-xs"}`}
+        >
           {minutes ? formatDuration(minutes) : "–"}
         </span>
       </span>
@@ -68,7 +79,7 @@ const DAY_GOAL_MINUTES = 480;
 
 /**
  * Today's own way of moving, "the day card" (2026-10-23, direction A of the five designs): ONE card on top of the page.
- * Inside it, the day shown is the big amber-ringed tile (its name, a progress line toward 8 hours, the day's and week's
+ * Inside it, the day shown is the big ringed tile (amber when it is today, ink otherwise) (its name, a progress line toward 8 hours, the day's and week's
  * totals; a tap opens the month calendar), with the day before and the day after beside it as big buttons; the card's
  * footer holds the timer and the days with no time. Month has its calendar, Week its seven tiles; Today is about a
  * single day, so it walks one day at a time.
@@ -110,7 +121,9 @@ export function DayCard({
           date={date}
           today={today}
           onPick={onPick}
-          className="flex min-h-20 min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 ring-2 ring-amber transition-shadow hover:shadow-md"
+          className={`flex min-h-20 min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 ring-2 transition-shadow hover:shadow-md ${
+            date === today ? "ring-amber" : "ring-foreground"
+          }`}
         >
           <span className="flex items-center gap-1.5 font-mono text-[10px] text-foreground/70 uppercase tracking-wider">
             {date === today ? (
@@ -121,30 +134,39 @@ export function DayCard({
               relative(date, today)
             )}
           </span>
-          <span className="flex min-w-0 items-center gap-1.5 font-display font-extrabold text-lg leading-tight sm:text-2xl">
+          <span className="group/date flex min-w-0 items-center gap-1.5 font-display font-semibold text-base leading-tight sm:text-lg">
             <span className="truncate sm:hidden">{shortFull.format(when)}</span>
             <span className="truncate max-sm:hidden">{full.format(when)}</span>
-            <CalendarDays aria-hidden className="size-4 shrink-0 text-foreground/60" />
-            <ChevronDown aria-hidden className="-ml-1 size-3.5 shrink-0 text-foreground/60" />
+            <CalendarDays aria-hidden className="size-4 shrink-0 text-foreground/40" />
+            <ChevronDown aria-hidden className="-ml-1 size-3.5 shrink-0 text-foreground/40" />
           </span>
-          <span
-            role="progressbar"
-            aria-label="This day: progress towards 8 hours"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(Math.min(1, dayTotal / DAY_GOAL_MINUTES) * 100)}
-            className="block h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-muted"
-          >
+          {/* Nothing logged yet: no empty track and no "0:00", just words. */}
+          {dayTotal > 0 && (
             <span
-              className="block h-full rounded-full transition-[width] duration-1000 ease-out"
-              style={{
-                width: `${shown * 100}%`,
-                background: `linear-gradient(90deg, ${PALETTE.brandBlend.join(", ")})`,
-              }}
-            />
-          </span>
-          <span className="font-mono text-[11px] text-foreground/75 tabular-nums">
-            {formatDuration(dayTotal)} this day
+              role="progressbar"
+              aria-label="This day: progress towards 8 hours"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(Math.min(1, dayTotal / DAY_GOAL_MINUTES) * 100)}
+              className="block h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-foreground/10"
+            >
+              <span
+                className="block h-full rounded-full transition-[width] duration-1000 ease-out"
+                style={{
+                  width: `${shown * 100}%`,
+                  background: `linear-gradient(90deg, ${PALETTE.brandBlend.join(", ")})`,
+                }}
+              />
+            </span>
+          )}
+          <span className="font-mono text-[13px] text-foreground/70 tabular-nums">
+            {dayTotal > 0 ? (
+              <>
+                <span className="font-semibold text-foreground">{formatDuration(dayTotal)}</span> this day
+              </>
+            ) : (
+              "Nothing yet"
+            )}
             {weekTotal !== null && <> · {formatDuration(weekTotal)} this week</>}
           </span>
         </DayPicker>

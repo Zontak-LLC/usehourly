@@ -386,11 +386,15 @@ describe("turning the demo into a real account", () => {
     expect(w.invoices.filter((x) => x.user_id === id)).toHaveLength(0);
   });
 
-  it("keeping everything leaves the work in place", async () => {
+  it("keeping the work leaves the time in place but drops the sample invoices", async () => {
     const { w, c, id } = await demo();
     const before = w.entries.length;
+    expect(w.invoices.filter((x) => x.user_id === id).length).toBeGreaterThan(0);
     await c.account.claimDemo({ ...details, startFresh: false });
     expect(w.entries.filter((x) => x.user_id === id)).toHaveLength(before);
+    // The sample invoices go: their frozen copies carry the sample business details (issue 219). The time stays, unbilled.
+    expect(w.invoices.filter((x) => x.user_id === id)).toHaveLength(0);
+    expect(w.entries.filter((x) => x.user_id === id && x.invoice_id)).toHaveLength(0);
     expect((w.users.find((u) => u.id === id) as User).is_demo).toBe(false);
   });
 

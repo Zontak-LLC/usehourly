@@ -29,7 +29,7 @@ async function invoiceForAcme(page: Page) {
   await page.getByRole("button", { name: /Create invoice/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
   const first = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
-  const number = (await first.getByRole("button", { name: /: download the PDF$/ }).innerText()).trim();
+  const number = (await first.getByRole("link", { name: /: open the invoice$/ }).innerText()).trim();
   return { user, number };
 }
 

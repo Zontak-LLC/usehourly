@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useMoney } from "@/components/currency-provider";
-import { GoalSummary } from "@/components/goal-summary";
-import { RANGE_INPUT_CLASS } from "@/components/range-input";
-import { StatTile } from "@/components/stat-tile";
 import { formatDuration } from "@/lib/duration";
-import { count } from "@/lib/plural";
 
 import type { AnnualReport } from "./report-body";
+import { SummaryRow } from "./report-table";
 
 const MONTH_NAMES = [
   "January",
@@ -29,131 +26,57 @@ const MONTH_NAMES = [
 /** Hours on screen are h:mm, as everywhere else in the app (files keep decimals). */
 const hours = (m: number) => formatDuration(Math.round(m));
 
-function readGoal(): number {
-  try {
-    const n = Number(window.localStorage.getItem("hourly:goal:year"));
-    return Number.isFinite(n) && n >= 200 && n <= 2400 ? n : 1800;
-  } catch {
-    return 1800;
-  }
-}
-
-/** The year's hours against a goal, with a slider that moves the goal (kept on this device). */
-export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
-  const [goal, setGoal] = useState(1800);
-  useEffect(() => setGoal(readGoal()), []);
-  const change = (value: number) => {
-    setGoal(value);
-    try {
-      window.localStorage.setItem("hourly:goal:year", String(value));
-    } catch {
-      // the goal simply is not remembered
-    }
-  };
-  return (
-    <GoalSummary
-      label={`Hours in ${year}`}
-      figure={hours(data.totals.minutes)}
-      goal={`of a ${goal} hour year`}
-      fraction={data.totals.minutes / (goal * 60)}
-      foot={`${count(data.totals.workedDays, "day")} worked`}
-    >
-      <div>
-        <label
-          htmlFor="year-goal"
-          className="flex items-baseline justify-between font-mono text-[11px] text-foreground/75 uppercase tracking-widest"
-        >
-          Yearly goal
-          <span className="font-display font-extrabold text-base text-foreground normal-case tracking-normal">
-            {goal} h
-          </span>
-        </label>
-        <div className="relative mt-2 h-6">
-          <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-amber"
-              style={{ width: `calc(12px + (100% - 24px) * ${(goal - 200) / 2200})` }}
-            />
-          </div>
-          <input
-            id="year-goal"
-            type="range"
-            min={200}
-            max={2400}
-            step={100}
-            value={goal}
-            onChange={(e) => change(Number(e.target.value))}
-            className={RANGE_INPUT_CLASS}
-          />
-        </div>
-      </div>
-    </GoalSummary>
-  );
-}
-
-/** Six stat tiles: each figure counts up. */
-export function YearFigures({ data }: { data: AnnualReport }) {
+/**
+ * The year in money, led by what actually came in (issue 219, 2026-10-23): Received and Unpaid are the two figures, the
+ * rest are quiet lines. "Earned" (billable hours × today's rates) is what the time is worth, not income, so it is a line
+ * with that said under it. The hours goal card and its slider were removed: they repeated the figures.
+ */
+export function YearFigures({ data, year }: { data: AnnualReport; year: number }) {
   const money = useMoney();
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
   const t = data.totals;
-  const items: {
-    label: string;
-    value: number;
-    display: (n: number) => string;
-    hint: string;
-    tone?: string;
-  }[] = [
-    {
-      label: "Hours worked",
-      value: t.minutes,
-      display: hours,
-      hint: plural(t.workedDays, "day"),
-    },
-    {
-      label: "Billable hours",
-      value: t.billableMinutes,
-      display: hours,
-      hint: t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it",
-    },
-    {
-      label: "Earned",
-      value: t.earnedCents,
-      display: money,
-      hint: "billable hours × rate",
-    },
-    {
-      label: "Invoiced",
-      value: data.invoices.totalCents,
-      display: money,
-      hint: `${plural(data.invoices.count, "invoice")} issued`,
-    },
-    {
-      label: "Received",
-      value: data.received.totalCents,
-      display: money,
-      hint: `${plural(data.received.count, "payment")} · by paid date`,
-    },
-    {
-      label: "Outstanding",
-      value: data.outstanding.totalCents,
-      display: money,
-      hint: `${data.outstanding.count} unpaid at year end`,
-    },
-  ];
   return (
-    <div className="grid h-full auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3">
-      {items.map((i) => (
-        <StatTile
-          key={i.label}
-          label={i.label}
-          value={i.value}
-          display={i.display}
-          hint={i.hint}
-          tone={i.tone}
-          corner
+    <section
+      aria-label={`Money in ${year}`}
+      className="rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+    >
+      <div className="grid gap-5 p-5 sm:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">Received</span>
+          <p className="font-display font-extrabold text-5xl tabular-nums leading-none">
+            {money(data.received.totalCents)}
+          </p>
+          <p className="text-foreground/75 text-sm">
+            {plural(data.received.count, "payment")}, by the date they were paid
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">Unpaid</span>
+          <p className="font-bold font-display text-3xl tabular-nums leading-none sm:mt-2">
+            {money(data.outstanding.totalCents)}
+          </p>
+          <p className="text-foreground/75 text-sm">{plural(data.outstanding.count, "invoice")} not paid at year end</p>
+        </div>
+      </div>
+      <dl className="grid border-t sm:grid-cols-2 sm:[&>*:nth-child(2)]:border-t-0 sm:[&>*:nth-child(odd)]:border-r">
+        <SummaryRow
+          label="Invoiced"
+          value={money(data.invoices.totalCents)}
+          hint={`${plural(data.invoices.count, "invoice")} issued`}
         />
-      ))}
-    </div>
+        <SummaryRow label="Hours worked" value={hours(t.minutes)} hint={plural(t.workedDays, "day")} />
+        <SummaryRow
+          label="Billable hours"
+          value={hours(t.billableMinutes)}
+          hint={t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it"}
+        />
+        <SummaryRow
+          label="Earned"
+          value={money(t.earnedCents)}
+          hint="billable hours × today's rates: what the time is worth, not income"
+        />
+      </dl>
+    </section>
   );
 }
 
@@ -181,7 +104,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
               className={`min-h-8 rounded-full px-4 font-semibold text-sm capitalize transition-colors ${
-                mode === m ? "bg-amber text-[#12151b]" : "text-foreground/75 hover:text-foreground"
+                mode === m ? "bg-foreground text-background" : "text-foreground/75 hover:text-foreground"
               }`}
             >
               {m}
@@ -205,7 +128,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               <button
                 type="button"
                 aria-label={`${MONTH_NAMES[m.month - 1]}: ${read(v)}`}
-                className={`w-full rounded-t-lg outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80 ${i === latest ? "bg-amber" : "bg-foreground/30"}`}
+                className={`w-full rounded-t-lg outline-none focus-visible:ring-4 focus-visible:ring-amber/40 group-hover:opacity-80 ${i === latest ? "bg-amber-fill" : "bg-foreground/30"}`}
                 style={{ height: `${pct}%`, opacity: v ? 1 : 0.18 }}
               />
             </li>
