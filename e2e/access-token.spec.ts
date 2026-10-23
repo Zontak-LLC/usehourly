@@ -24,6 +24,21 @@ test("an assistant is connected in words, and a token is made, shown once, liste
   expect(config.url).toMatch(/\/api\/mcp$/);
   await page.getByRole("button", { name: "Claude Code" }).first().click();
   await expect(page.getByText("claude mcp add --transport http usehourly").first()).toBeVisible();
+  // VS Code: a one-click install link carrying the server's settings, and the Command Palette way as a fallback.
+  await page.getByRole("button", { name: "VS Code" }).click();
+  const vscode = (await page.getByRole("link", { name: "Add to VS Code" }).getAttribute("href")) ?? "";
+  expect(vscode).toMatch(/^vscode:mcp\/install\?/);
+  const server = JSON.parse(decodeURIComponent(vscode.split("?")[1]));
+  expect(server).toMatchObject({ name: "usehourly", type: "http" });
+  expect(server.url).toMatch(/^http.*\/api\/mcp$/);
+  await expect(page.getByText(/MCP: Add Server/)).toBeVisible();
+  // Devin Desktop (formerly Windsurf): the entry to paste into its MCP config file.
+  await page.getByRole("button", { name: "Devin Desktop (Windsurf)" }).click();
+  await expect(page.getByText(/"usehourly": \{ "url": "http.*\/api\/mcp" \}/)).toBeVisible();
+  // Any other MCP app: the address and the sign-in.
+  await page.getByRole("button", { name: "Another app" }).first().click();
+  await expect(page.getByText(/Any app that supports MCP works/)).toBeVisible();
+  await expect(page.getByText(/\/api\/mcp$/).first()).toBeVisible();
 
   // The token form: one-tap name, a clear choice of what it may do, how long it lives.
   await expect(page.getByText("No tokens yet.")).toBeVisible();
