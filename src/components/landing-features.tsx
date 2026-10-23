@@ -10,8 +10,8 @@ type Tile = { title: string; body: string; art: ReactNode; wide?: boolean; full?
 /** What the first release does, each with a small picture of itself (hidden features are not advertised). */
 const TILES: Tile[] = [
   {
-    title: "Quick entry and a stopwatch",
-    body: "Type 1h30 and press Enter, or start the stopwatch. When you stop it, it hands you the entry to file.",
+    title: "Quick entry, no stopwatch needed",
+    body: "Type 1h30 and press Enter, or tap 2h twice for four hours. A timer is there if you like one.",
     art: <QuickEntryArt />,
     wide: true,
   },
