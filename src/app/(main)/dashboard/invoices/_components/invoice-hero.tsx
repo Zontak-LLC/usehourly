@@ -54,7 +54,7 @@ export function InvoiceHero({
               >
                 {value}
               </dd>
-              <dt className="order-2 mt-1 font-mono max-sm:order-1 max-sm:mt-0 text-[11px] text-foreground/75 uppercase tracking-widest">
+              <dt className="order-2 mt-1 font-mono text-[11px] text-foreground/75 uppercase tracking-widest max-sm:order-1 max-sm:mt-0">
                 {label === "Of" ? "Invoiced" : label}
               </dt>
             </div>
