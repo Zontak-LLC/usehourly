@@ -39,7 +39,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
   });
 
   await test.step("the timer lives under the watch, not as a rival button in the form", async () => {
-    const watch = page.getByRole("region", { name: "Today's hours" });
+    const watch = page.getByRole("region", { name: "Timer" });
     const start = watch.getByRole("button", { name: /Start\s+timer/ });
     await expect(start).toBeVisible();
     const box = await start.boundingBox();

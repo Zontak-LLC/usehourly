@@ -419,7 +419,11 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await page.goto("/dashboard/account#data");
     await page.getByRole("button", { name: /Delete my account/ }).click();
     await page.getByLabel(/Type your password/).fill(user.password);
-    await page.getByRole("button", { name: "Delete everything" }).click();
+    // Slide to delete (issue 210): the slider wakes up once the password is typed; End completes it.
+    const slider = page.getByRole("slider", { name: "Slide to delete your account" });
+    await expect(slider).not.toHaveAttribute("aria-disabled", "true");
+    await slider.focus();
+    await page.keyboard.press("End");
     await expect(page).toHaveURL(/\/$|\/auth/);
     await page.goto("/auth/v2/login");
     await page.getByLabel("Email", { exact: true }).fill(user.email);

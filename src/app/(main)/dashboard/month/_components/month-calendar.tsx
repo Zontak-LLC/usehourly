@@ -127,7 +127,7 @@ function DayCell({
         <>
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-1 rounded-md border border-foreground/15 border-dashed"
+            className="pointer-events-none absolute inset-1 rounded-[6px] border border-foreground/15 border-dashed"
           />
           <span className="mt-auto hidden text-right text-muted-foreground text-xs sm:block">No time</span>
         </>

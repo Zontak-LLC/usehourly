@@ -2,9 +2,9 @@ import { expect, startFreshAccount, test } from "./helpers";
 
 test("the timer lives under the watch: Start runs it, Stop asks resume, add or discard", async ({ page, shot }) => {
   await startFreshAccount(page, "Acme");
-  const watch = page.getByRole("region", { name: "Today's hours" });
+  const watch = page.getByRole("region", { name: "Timer" });
   await expect(watch).toBeVisible();
-  await expect(watch.getByRole("timer")).toHaveText("0:00:00");
+  await expect(watch.getByRole("img", { name: /^Time now/ })).toBeVisible(); // idle, it tells the time
   await shot("today-idle");
 
   // One timer, in the steel tray under the watch.
@@ -14,16 +14,16 @@ test("the timer lives under the watch: Start runs it, Stop asks resume, add or d
     "title",
     "Stop the timer on General",
   );
-  await expect(watch.getByRole("timer")).toHaveText(/^0:0\d:\d\d$/); // the running time in the watch's window
+  await expect(watch.getByRole("timer")).toHaveAttribute("aria-label", /^Timer 0:0\d:\d\d$/); // the running time
   await page.waitForTimeout(2500);
   await shot("timer-running");
   await expect(page).toHaveTitle(/⏱ \d+:\d\d:\d\d · General/); // the tab shows it too
   await expect(page.getByRole("button", { name: /Start\s+timer/ })).toHaveCount(0); // one timer, no rival button
 
-  // Stop: the window says what was stopped and three choices show. Resume carries on with the same entry.
+  // Stop: a time ticket shows the entry with three choices. Resume carries on with the same entry.
   await page.waitForTimeout(1100); // past the press lock
   await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
-  await expect(watch.getByRole("timer")).toHaveText(/^Stopped \d+:\d\d$/);
+  await expect(watch.getByRole("group", { name: /Time ticket/ })).toBeVisible(); // the ticket: the entry it becomes
   for (const name of [/Resume\s+timer/, /Add to\s+timesheet/, /Discard\s+time/])
     await expect(watch.getByRole("button", { name })).toBeVisible();
   await expect(page.getByRole("region", { name: "Today's timesheet" })).toBeVisible(); // already saved as an entry
@@ -36,22 +36,22 @@ test("the timer lives under the watch: Start runs it, Stop asks resume, add or d
   // Stop again and discard: nothing is kept.
   await page.waitForTimeout(1100);
   await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
-  await expect(watch.getByRole("timer")).toHaveText(/^Stopped/);
+  await expect(watch.getByRole("group", { name: /Time ticket/ })).toBeVisible();
   await page.waitForTimeout(1100); // the choices are locked for a moment after they appear
   await watch.getByRole("button", { name: /Discard\s+time/ }).click();
   await expect(page.getByText("Timer discarded")).toBeVisible();
   await expect(page.getByRole("region", { name: "Today's timesheet" })).toHaveCount(0);
   await expect(watch.getByRole("button", { name: /Start\s+timer/ })).toBeVisible();
-  await expect(watch.getByRole("timer")).toHaveText("0:00:00");
+  await expect(watch.getByRole("img", { name: /^Time now/ })).toBeVisible(); // idle, it tells the time
 });
 
 test("Add to timesheet keeps the stopped time as an entry and the timer is ready again", async ({ page }) => {
   await startFreshAccount(page, "Acme");
-  const watch = page.getByRole("region", { name: "Today's hours" });
+  const watch = page.getByRole("region", { name: "Timer" });
   await watch.getByRole("button", { name: /Start\s+timer/ }).click();
   await page.waitForTimeout(1500);
   await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
-  await expect(watch.getByRole("timer")).toHaveText(/^Stopped/);
+  await expect(watch.getByRole("group", { name: /Time ticket/ })).toBeVisible();
   await page.waitForTimeout(1100); // the choices are locked for a moment after they appear
   await watch.getByRole("button", { name: /Add to\s+timesheet/ }).click();
   await expect(watch.getByRole("button", { name: /Start\s+timer/ })).toBeVisible();
@@ -62,13 +62,13 @@ test("Add to timesheet keeps the stopped time as an entry and the timer is ready
 
 test("a double click on Start starts the timer and does not stop it again (found 2026-10-23)", async ({ page }) => {
   await startFreshAccount(page, "Acme");
-  const watch = page.getByRole("region", { name: "Today's hours" });
+  const watch = page.getByRole("region", { name: "Timer" });
   await watch.getByRole("button", { name: /Start\s+timer/ }).dblclick();
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
   await page.waitForTimeout(1500);
   // still running, and nothing was stopped by the second click
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
-  await expect(watch.getByRole("timer")).not.toContainText("Stopped");
+  await expect(watch.getByRole("group", { name: /Time ticket/ })).toHaveCount(0);
   // the only entry is the running timer itself: the second click did not stop it and save a short one
   const sheet = page.getByRole("region", { name: "Today's timesheet" });
   await expect(sheet.getByRole("heading", { level: 2 })).toContainText("(1 entry)");
