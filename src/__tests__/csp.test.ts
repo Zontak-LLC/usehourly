@@ -28,6 +28,8 @@ describe("content security policy", () => {
     );
     expect(prod).toContain("upgrade-insecure-requests");
     expect(buildCsp("n", false)).not.toContain("upgrade-insecure-requests");
+    // the browser tests' built copy runs on plain http, so it leaves the upgrade out (and nothing else changes)
+    expect(buildCsp("n", true, false)).toBe(prod.replace("; upgrade-insecure-requests", ""));
     // the robot check, web analytics and Google sign-in (Connect Google Calendar) are the only outside script hosts
     expect(directive(prod, "script-src")).toBe(
       "script-src 'self' 'nonce-n' https://static.cloudflareinsights.com https://challenges.cloudflare.com https://accounts.google.com",

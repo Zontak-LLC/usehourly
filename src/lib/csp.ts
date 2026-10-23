@@ -4,7 +4,7 @@
  * not run. Everything else is locked down too: no plugins, no <base> hijack, no framing, forms and fetches only to
  * this origin, images only from this origin or data/blob (logos are data URLs, downloads are blobs).
  */
-export function buildCsp(nonce: string, isProd: boolean): string {
+export function buildCsp(nonce: string, isProd: boolean, upgradeToHttps = isProd): string {
   return [
     "default-src 'self'",
     // The nonce covers Next.js's own inline scripts and the theme boot script. static.cloudflareinsights.com is
@@ -24,7 +24,9 @@ export function buildCsp(nonce: string, isProd: boolean): string {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    ...(isProd ? ["upgrade-insecure-requests"] : []),
+    // Not on the browser tests' built copy (plain http on localhost): the browser would turn its own redirects into
+    // https requests that nothing answers.
+    ...(upgradeToHttps ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
 }
 

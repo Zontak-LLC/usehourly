@@ -1,7 +1,8 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
-// Expose Cloudflare bindings (D1) to `next dev`.
-if (process.env.NODE_ENV === "development") {
+// Expose Cloudflare bindings (D1) to `next dev`, and to `next start` when the browser tests serve a built copy
+// (E2E_SERVE=1; never set while building, where every page-data worker would boot its own local database).
+if (process.env.NODE_ENV === "development" || process.env.E2E_SERVE === "1") {
   // Browser tests give their copy of the app its own database folder (E2E_PERSIST), so it never shares files with the
   // normal dev server: two servers on the same local D1 files corrupt each other ("Failed to get session commit token").
   await initOpenNextCloudflareForDev(

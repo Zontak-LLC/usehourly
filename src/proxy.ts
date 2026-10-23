@@ -19,7 +19,8 @@ export default auth((req) => {
   // A fresh nonce per request: the policy goes on the response, and on the request too so Next.js puts the nonce on
   // its own inline scripts. The root layout reads `x-nonce` for the theme boot script.
   const nonce = newNonce();
-  const csp = buildCsp(nonce, process.env.NODE_ENV === "production");
+  const isProd = process.env.NODE_ENV === "production";
+  const csp = buildCsp(nonce, isProd, isProd && process.env.E2E_SERVE !== "1");
   const headers = new Headers(req.headers);
   headers.set("x-nonce", nonce);
   headers.set("content-security-policy", csp);
