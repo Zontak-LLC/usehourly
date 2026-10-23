@@ -2,19 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { AllEntriesFold } from "@/components/all-entries-fold";
 import { DayEditorPanel } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
-import { PeriodGlance } from "@/components/period-glance";
 import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WeekPills } from "@/components/week-pills";
 import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
+import { feature } from "@/lib/features";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
-import { DayTiles, longDayLabel, WeekDial, WeekTotalCard } from "./week-strip";
+import { longDayLabel, WeekDial, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
 
 /** The chosen day, else today when it is in this week, else Monday. */
@@ -100,7 +102,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
         </>
       }
       descriptionOnPhone
-      onSwipe={(direction) => moveDay(direction === "left" ? 1 : -1)}
+      onSwipe={feature("swipe") ? (direction) => moveDay(direction === "left" ? 1 : -1) : undefined}
     >
       <WeekToolbar
         start={start}
@@ -120,57 +122,54 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
+        // Same pattern as Today: the days as one row, then the week's watch and its projects on the left (they stay in
+        // view), and the picked day on the right. The full list of the week's entries is folded away (search lives there).
         <div className="flex min-w-0 flex-col gap-4">
-          {/* A band across the top (the dial, the week by project, three facts); the days and the picked day's editor use the full width below. */}
-          {/* On a phone or half a browser the days and the editor come first; this summary follows them. */}
-          <div className="grid gap-4 max-md:order-last md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,1fr)]">
-            <WeekDial total={sheet.total} today={today ? (sheet.dayTotals[today] ?? 0) : null} />
-            <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
-            <PeriodGlance dayTotals={sheet.dayTotals} days={7} />
-          </div>
-          <div className="flex min-w-0 flex-col gap-4">
-            <DayTiles
-              days={days}
-              selected={selected}
-              today={today}
-              dayTotals={sheet.dayTotals}
-              rows={sheet.rows}
-              nonBillable={nonBillable}
-              onPick={pickDay}
-            />
-
-            <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
-              {/* The day strip above already says which day this is, so the date is not repeated here. */}
-              <DayEditorPanel
-                key={selected}
-                date={selected}
-                projectFilter={projectId}
-                inPage
-                weekSeed={
-                  entries.data && nonBillableDays.data
-                    ? {
-                        entries: entries.data,
-                        days: nonBillableDays.data,
-                        updatedAt: entries.dataUpdatedAt,
-                        daysUpdatedAt: nonBillableDays.dataUpdatedAt,
-                      }
-                    : undefined
-                }
-              />
-            </section>
-
-            {/* The picked day has its own Merge button in the editor above, so this card covers the other days. */}
-            <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />
-
-            {/* Keyed by week + project so navigating starts on page 1 with a clear search. */}
-            <WorkItems
-              key={`${start}-${projectId}`}
-              entries={shown}
-              onOpenDay={openDay}
-              period="week"
-              editInPlace
-              nonBillable={nonBillable}
-            />
+          <WeekPills
+            entries={shown}
+            weekStart={start}
+            date={selected}
+            today={today}
+            onPick={pickDay}
+            nonBillable={nonBillable}
+            allEntries={entries.data}
+          />
+          <div className="grid items-start gap-4 md:grid-cols-[15rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)]">
+            <div className="flex flex-col gap-4 md:sticky md:top-24">
+              <WeekDial total={sheet.total} />
+              <WeekTotalCard sheet={sheet} projectId={projectId} onProjectId={setProjectId} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-4">
+              <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
+                <DayEditorPanel
+                  key={selected}
+                  date={selected}
+                  projectFilter={projectId}
+                  inPage
+                  weekSeed={
+                    entries.data && nonBillableDays.data
+                      ? {
+                          entries: entries.data,
+                          days: nonBillableDays.data,
+                          updatedAt: entries.dataUpdatedAt,
+                          daysUpdatedAt: nonBillableDays.dataUpdatedAt,
+                        }
+                      : undefined
+                  }
+                />
+              </section>
+              {feature("merge") && <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />}
+              <AllEntriesFold period="week" count={shown.length}>
+                <WorkItems
+                  key={`${start}-${projectId}`}
+                  entries={shown}
+                  onOpenDay={openDay}
+                  period="week"
+                  editInPlace
+                  nonBillable={nonBillable}
+                />
+              </AllEntriesFold>
+            </div>
           </div>
         </div>
       )}

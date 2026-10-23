@@ -1,3 +1,5 @@
+import { feature } from "@/lib/features";
+
 import type { Topic } from "./types";
 
 export const SHARING_TOPICS: Topic[] = [
@@ -5,22 +7,28 @@ export const SHARING_TOPICS: Topic[] = [
     slug: "share-and-export",
     title: "Share & export: which option do I use?",
     group: "sharing",
-    summary: "Excel, a date range, everything at once, or a timesheet your client can approve.",
+    summary: feature("signOff")
+      ? "Excel, a date range, everything at once, or a timesheet your client can approve."
+      : "Excel for a week or month, a date range, or everything at once.",
     keywords: ["excel", "csv", "download", "export", "range", "zip", "backup", "spreadsheet"],
-    body: `On Week and Month the **Share & export** menu has three choices:
+    body: `On Week and Month the **Share & export** menu has ${feature("signOff") ? "three" : "two"} choices:
 
 - **Download as Excel** gives the week or month you are looking at.
 - **Export a date range** lets you pick any dates (up to a year), such as "March 3 to April 20".
-- **Send to a client for sign-off** makes a timesheet link (see [Client sign-off timesheets](/help/sign-off)).
-
+${feature("signOff") ? "- **Send to a client for sign-off** makes a timesheet link (see [Client sign-off timesheets](/help/sign-off)).\n" : ""}
 To take **everything** with you (all clients, all time), use **Account, Your data, Download everything**. It is a zip with one combined workbook, one workbook per client, and plain CSV files.
 
-Excel files have the hours as numbers with live totals. Time on days you marked non-billable is left out of exports (see [Non-billable days](/help/non-billable)).`,
+Excel files have the hours as numbers with live totals.${
+      feature("nonBillableDays")
+        ? " Time on days you marked non-billable is left out of exports (see [Non-billable days](/help/non-billable))."
+        : ""
+    }`,
   },
   {
     slug: "sign-off",
     title: "Client sign-off timesheets",
     group: "sharing",
+    feature: "signOff",
     summary: "Send hours to a client to review and approve, without showing money.",
     keywords: ["approve", "approval", "client", "timesheet", "link", "pdf", "print"],
     body: `Use **Share & export, Send to a client for sign-off**. Pick the dates, one client or project (or all), whether to include your descriptions, and how long the link works (7, 30 or 90 days).
@@ -37,6 +45,7 @@ It shows your real logged time, even if you round for invoices.`,
     slug: "xero-quickbooks",
     title: "Sending invoices to Xero or QuickBooks",
     group: "sharing",
+    feature: "accountingExport",
     summary: "Download a file your accounting app can import.",
     keywords: ["xero", "quickbooks", "accounting", "bookkeeping", "csv", "import", "chart of accounts"],
     body: `Go to **Account, Your data, Send invoices to your accounting app**. Choose the format (Xero invoices, QuickBooks Online invoices, or Payments received), the year, a date format, and the settings the format needs:
@@ -59,6 +68,7 @@ Before a QuickBooks import:
     slug: "importing",
     title: "Importing from Toggl, Clockify or a CSV",
     group: "sharing",
+    feature: "importTime",
     summary: "Bring your history in, and why importing twice is safe.",
     keywords: ["toggl", "clockify", "csv", "import", "migrate", "history"],
     body: `Go to **Account, Your data, Import from Toggl or Clockify** and choose the CSV file you exported from the other tool (the page says how to export it).

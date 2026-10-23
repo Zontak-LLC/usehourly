@@ -60,7 +60,7 @@ export async function createDemoUser(
       is_demo: true,
       business_name: "Sample Freelance Studio",
       address: "12 Example Street\nSpringfield, IL 62701",
-      payment_instructions: "Pay by bank transfer within 30 days.\n(Sample text: add your own under Account.)",
+      payment_instructions: "Pay by bank transfer within 30 days.\n(Sample text: replace it with your own.)",
     },
     select: { id: true, name: true, email: true, token_version: true },
   });

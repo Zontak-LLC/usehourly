@@ -10,7 +10,7 @@ import { NoDollar } from "@/components/no-dollar-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePageSize } from "@/components/use-page-size";
-import { DateBlock, ProjectGroups, type WorkFilterProject, WorkToolbar } from "@/components/work-filter";
+import { DateBlock, ProjectGroups, WorkToolbar } from "@/components/work-filter";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import type { SheetEntry } from "@/lib/timesheet";
@@ -28,9 +28,6 @@ export function WorkItems({
   period = "month",
   editInPlace = false,
   nonBillable,
-  projects,
-  projectId = "",
-  onProjectId,
 }: {
   entries: SheetEntry[];
   onOpenDay: (date: string) => void;
@@ -39,10 +36,6 @@ export function WorkItems({
   editInPlace?: boolean;
   /** Dates marked non-billable: their header carries a badge. */
   nonBillable?: ReadonlySet<string>;
-  /** The period's projects: when given, a bar of project chips narrows the list (the page keeps the chosen one). */
-  projects?: WorkFilterProject[];
-  projectId?: string;
-  onProjectId?: (id: string) => void;
 }) {
   // Entries open for editing in place (only used with `editInPlace`).
   const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
@@ -110,9 +103,7 @@ export function WorkItems({
           setMode(next);
           setPage(1);
         }}
-        projects={projects}
-        projectId={projectId}
-        onProjectId={onProjectId}
+        projectId=""
       />
 
       <div className="flex flex-col gap-4 p-3 sm:p-4">

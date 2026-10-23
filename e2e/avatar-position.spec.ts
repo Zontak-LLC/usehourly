@@ -1,6 +1,9 @@
 import sharp from "sharp";
 
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.avatar, "Profile pictures are hidden in this release (src/lib/features.ts)");
 
 /**
  * The position editor for the picture at the top right: choose a file, move and zoom it inside the round frame,

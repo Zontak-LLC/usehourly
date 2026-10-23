@@ -2,26 +2,32 @@
 
 import { useState } from "react";
 
-import { Archive, ChevronDown, Pencil, Plus, X } from "lucide-react";
+import Link from "next/link";
 
-import { ClientLogoSlot } from "@/components/client-logo";
-import { ClientCurrency } from "@/components/currency-provider";
-import { IconAction } from "@/components/icon-action";
+import { Archive, FileText, Pencil, Plus, X } from "lucide-react";
+
+import { ClientCurrency, useMoney } from "@/components/currency-provider";
 import { MoreMenu } from "@/components/more-menu";
 import { Button } from "@/components/ui/button";
+import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { count } from "@/lib/plural";
 
 import { SetupForm } from "../../today/_components/setup-form";
 import { ClientDetailsForm } from "./client-details-form";
+import { type InvoiceFact, invoiceStatus } from "./client-facts";
 import type { ClientRow, ProjectBudgets, ProjectTotals } from "./client-types";
 import { PROJECT_COLS, ProjectEditCard, ProjectLine } from "./project-row";
-import { PROJECTS_SHOWN } from "./use-open-clients";
 import type { ProjectEditing } from "./use-project-editing";
 
+/** The first few projects of a client; the rest are behind "Show all". */
+const PROJECTS_SHOWN = 4;
+
 /**
- * One client as a card: a tinted header (logo, name, summary, buttons), then its projects as tiles with a header of
- * their own. No lines anywhere: the tint and the spacing do the separating. The tiles have no border, so a card never
- * holds another framed card.
+ * One client as a card (2026-10-23 redo): a header with the logo, the name and one line of facts, and on the right the
+ * one thing people do here, "Add project", in words, plus ··· for the rare ones (billing details, archive). Under it the
+ * projects as rows of one table whose columns line up on every card, each with a single Edit button. Always open: the
+ * list is short, and a fold arrow was one more icon to puzzle over.
  */
 export function ClientCard({
   client: c,
@@ -31,12 +37,13 @@ export function ClientCard({
   budgets,
   editing,
   billingOpen,
-  open: openByChoice,
-  onOpenChange,
   onToggleBilling,
   onCloseBilling,
   onArchiveClient,
   onArchiveProject,
+  latestInvoice,
+  today,
+  quiet = false,
 }: {
   client: ClientRow;
   allClients: ClientRow[] | undefined;
@@ -45,169 +52,210 @@ export function ClientCard({
   budgets: ProjectBudgets | undefined;
   editing: ProjectEditing;
   billingOpen: boolean;
-  /** Whether the person has this client open (closed shows just the one-line header). */
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onToggleBilling: () => void;
   onCloseBilling: () => void;
   onArchiveClient: () => void;
   onArchiveProject: (project: { id: string; name: string }) => void;
+  /** The client's most recent invoice, shown in small text under the facts. */
+  latestInvoice?: InvoiceFact;
+  /** The browser's date (null until the page has loaded), for "12 days late". */
+  today: string | null;
+  /** No time logged this month: the header is drawn a little quieter. */
+  quiet?: boolean;
 }) {
   const [adding, setAdding] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  // Something being edited or added here must be seen, so it opens the card whatever was chosen.
-  const open = openByChoice || adding || billingOpen || c.projects.some((p) => editing.editingId === p.id);
-  const bodyId = `client-body-${c.id}`;
   const hidden = showAll ? 0 : Math.max(0, c.projects.length - PROJECTS_SHOWN);
   const projects = hidden ? c.projects.slice(0, PROJECTS_SHOWN) : c.projects;
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
+  // What this month's time is worth at the projects' rates (billable projects only): the number a freelancer bills.
+  const monthCents = c.projects.reduce(
+    (sum, p) =>
+      p.billable && p.hourly_rate > 0 ? sum + Math.round(((totals?.[p.id]?.range ?? 0) * p.hourly_rate) / 60) : sum,
+    0,
+  );
+  const editingHere = c.projects.some((p) => editing.editingId === p.id);
   return (
-    <section aria-label={c.name} className="border-foreground/10 border-t pt-5 first:border-t-0 first:pt-0">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 px-1 pb-2">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <ClientLogoSlot clientId={c.id} name={c.name} />
-          {/* The whole name area opens and closes the card (the logo stays its own button, so this is not nested). */}
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-controls={bodyId}
-            onClick={() => onOpenChange(!open)}
-            className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md text-left"
-          >
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-bold font-display text-2xl">{c.name}</span>
-              <span className="block text-foreground/70 text-sm">
-                {c.projects.length} project{c.projects.length === 1 ? "" : "s"} · {formatDuration(monthMinutes)} this
-                month
-              </span>
-            </span>
-            <ChevronDown
-              className={`size-5 shrink-0 text-foreground/60 transition-transform ${open ? "rotate-180" : ""}`}
-              aria-hidden
-            />
-          </button>
-        </div>
-        {/* The common action stays visible; billing details and archive sit behind the ··· menu (docs/ui-spec.md). */}
-        <span className="flex gap-1">
-          <IconAction
-            label={`Add a project for ${c.name}`}
-            tip="Add a project"
-            expanded={adding}
-            onClick={() => setAdding((now) => !now)}
-          >
-            <Plus />
-          </IconAction>
-          <MoreMenu
-            label={`More actions for ${c.name}`}
-            items={[
-              {
-                label: billingOpen ? "Close billing details" : "Billing details",
-                icon: <Pencil />,
-                onSelect: onToggleBilling,
-              },
-              { label: "Archive client", icon: <Archive />, onSelect: onArchiveClient, destructive: true },
-            ]}
-          />
-        </span>
-      </header>
+    <section
+      aria-label={c.name}
+      data-quiet={quiet || undefined}
+      data-headerless="a client card: its header is the logo, name and buttons"
+      className="overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+    >
       <ClientCurrency currency={c.currency}>
-        <div id={bodyId} hidden={!open} className="flex flex-col">
-          {billingOpen && (
-            <div className="m-1 mb-4 rounded-2xl bg-muted/40 p-3">
-              <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
-            </div>
-          )}
-          {c.projects.length === 0 && !adding && (
-            <p className="px-3 pt-3 text-muted-foreground text-sm">No projects yet. Add the first one below.</p>
-          )}
-          {c.projects.length > 0 && !c.projects.some((p) => editing.editingId === p.id) && (
-            // Column titles, wide screens only: the projects below are rows of a table, not tiles.
-            <div
-              className={`${PROJECT_COLS} gap-x-3 px-3 pt-2 pb-1 text-muted-foreground text-xs max-sm:hidden`}
-              aria-hidden
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:p-4">
+          {/* A plain tile with the initial, in the client's own colour (the uploaded logo is for invoices). */}
+          <span
+            aria-hidden
+            className={`grid size-10 shrink-0 place-items-center rounded-xl font-display font-extrabold text-base text-white ${quiet ? "opacity-50" : ""}`}
+            style={{ background: c.color }}
+          >
+            {c.name.trim().charAt(0).toUpperCase() || "?"}
+          </span>
+          <div className="min-w-0 flex-1">
+            {/* A client with no time this month is quieter: lighter weight and a softer ink (still well above 4.5:1). */}
+            <h2
+              className={`truncate text-lg leading-tight ${quiet ? "font-medium text-foreground/80" : "font-semibold"}`}
             >
-              <span>Project</span>
-              <span className="text-right">Rate</span>
-              <span className="text-right">This month</span>
-              <span className="text-right">All time</span>
-              <span />
-            </div>
+              {c.name}
+            </h2>
+            <p className="text-foreground/70 text-sm">
+              {count(c.projects.length, "project")} · {formatDuration(monthMinutes)}
+              {monthCents > 0 && (
+                <>
+                  {" · "}
+                  <MonthValue cents={monthCents} />
+                </>
+              )}{" "}
+              this month
+            </p>
+            {latestInvoice && <LastInvoiceLine invoice={latestInvoice} today={today} />}
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Time worth billing this month: one click to an invoice for this client (the builder picks the period). */}
+            {monthCents > 0 && (
+              <Button asChild variant="outline" className="h-10 gap-1.5">
+                <Link href={`/dashboard/invoices/new?client=${c.id}`} aria-label={`Make an invoice for ${c.name}`}>
+                  <FileText /> Make invoice
+                </Link>
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 gap-1.5"
+              aria-expanded={adding}
+              aria-label={`Add a project for ${c.name}`}
+              onClick={() => setAdding((now) => !now)}
+            >
+              <Plus /> Add project
+            </Button>
+            <MoreMenu
+              label={`More actions for ${c.name}`}
+              items={[
+                {
+                  label: billingOpen ? "Close billing details" : "Billing details",
+                  icon: <Pencil />,
+                  onSelect: onToggleBilling,
+                },
+                { label: "Archive client", icon: <Archive />, onSelect: onArchiveClient, destructive: true },
+              ]}
+            />
+          </div>
+        </header>
+
+        {billingOpen && (
+          <div className="border-t bg-muted/30 p-4 sm:p-5">
+            <ClientDetailsForm id={c.id} onDone={onCloseBilling} />
+          </div>
+        )}
+
+        {c.projects.length > 0 && !editingHere && (
+          // Column titles (wide screens): the same columns on every client card, so the figures line up down the page.
+          <div
+            className={`${PROJECT_COLS} gap-x-3 border-t bg-band-3 px-3 py-1.5 text-foreground/60 text-xs max-sm:hidden sm:px-4`}
+            aria-hidden
+          >
+            <span>Project</span>
+            <span className="text-right">Rate</span>
+            <span className="text-right">This month</span>
+            <span className="text-right">All time</span>
+            <span />
+          </div>
+        )}
+
+        <ul className="border-t empty:hidden">
+          {projects.map((p) =>
+            editing.editingId === p.id ? (
+              <ProjectEditCard
+                key={p.id}
+                project={p}
+                clients={allClients}
+                logos={logos}
+                editing={editing}
+                onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
+              />
+            ) : (
+              <ProjectLine
+                key={p.id}
+                project={p}
+                clientColor={c.color}
+                totals={totals}
+                budget={budgets?.[p.id]}
+                onEdit={() => editing.startEditing(p.id)}
+              />
+            ),
           )}
-          <ul>
-            {projects.map((p) =>
-              editing.editingId === p.id ? (
-                <ProjectEditCard key={p.id} project={p} clients={allClients} logos={logos} editing={editing} />
-              ) : (
-                <ProjectLine
-                  key={p.id}
-                  project={p}
-                  clientColor={c.color}
-                  logos={logos}
-                  totals={totals}
-                  budget={budgets?.[p.id]}
-                  onEdit={() => editing.startEditing(p.id)}
-                  onArchive={() => onArchiveProject({ id: p.id, name: p.name })}
-                />
-              ),
-            )}
-            {adding && (
-              <li className="flex flex-col gap-2 border-t px-3 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-tint text-foreground">
-                      <Plus className="size-3.5" aria-hidden />
-                    </span>
-                    <span className="truncate">Add a project for {c.name}</span>
-                  </p>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-10 shrink-0"
-                    onClick={() => setAdding(false)}
-                    aria-label="Cancel"
-                  >
-                    <X />
-                  </Button>
-                </div>
-                <SetupForm
-                  clientId={c.id}
-                  bar
-                  onDone={() => {
-                    setAdding(false);
-                    // A client that started open because it had one project must not fold up when it gets a second.
-                    onOpenChange(true);
-                  }}
-                  onCancel={() => setAdding(false)}
-                />
-              </li>
-            )}
-          </ul>
-          {!adding && c.projects.length === 0 && (
-            // Only a client with no project yet gets the dashed button; once it has one, the + in the header is enough.
-            <div className="p-3">
-              <button
+        </ul>
+
+        {c.projects.length === 0 && !adding && (
+          <p className="border-t px-3 py-3 text-foreground/70 text-sm sm:px-4">
+            No projects yet. Use <span className="font-medium text-foreground">Add project</span> to start logging time
+            for {c.name}.
+          </p>
+        )}
+
+        {adding && (
+          <div className="flex flex-col gap-2 border-t bg-muted/30 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate font-semibold text-sm">New project for {c.name}</p>
+              <Button
                 type="button"
-                onClick={() => setAdding(true)}
-                aria-label={`Add a project for ${c.name}`}
-                className="flex min-h-20 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-foreground/30 border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-foreground/50 hover:bg-muted/60 hover:text-foreground"
+                size="icon"
+                variant="ghost"
+                className="size-10 shrink-0"
+                onClick={() => setAdding(false)}
+                aria-label="Cancel"
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-muted">
-                  <Plus className="size-4" aria-hidden />
-                </span>
-                Add a project
-              </button>
-            </div>
-          )}
-          {(hidden > 0 || (showAll && c.projects.length > PROJECTS_SHOWN)) && (
-            <div className="border-t p-3">
-              <Button type="button" variant="outline" onClick={() => setShowAll((all) => !all)}>
-                {showAll ? "Show fewer projects" : `Show all ${c.projects.length} projects`}
+                <X />
               </Button>
             </div>
-          )}
-        </div>
+            <SetupForm clientId={c.id} bar onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
+          </div>
+        )}
+
+        {(hidden > 0 || (showAll && c.projects.length > PROJECTS_SHOWN)) && (
+          <div className="border-t px-3 py-2 sm:px-4">
+            <Button type="button" variant="ghost" onClick={() => setShowAll((all) => !all)}>
+              {showAll ? "Show fewer projects" : `Show all ${c.projects.length} projects`}
+            </Button>
+          </div>
+        )}
       </ClientCurrency>
     </section>
+  );
+}
+
+/** The month's value in the client's own currency (inside its ClientCurrency), in the text colour so it reads as the key figure. */
+function MonthValue({ cents }: { cents: number }) {
+  const money = useMoney();
+  return <span className="font-semibold text-foreground">{money(cents)}</span>;
+}
+
+const shortDate = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const longDate = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+/** "Oct 20", with the year only when it is not this year. */
+function niceDate(date: string, today: string | null) {
+  const sameYear = today !== null && date.slice(0, 4) === today.slice(0, 4);
+  return (sameYear ? shortDate : longDate).format(fromISODate(date));
+}
+
+/** "Last invoice INV-2026-004 · 12 days late" (or "· paid Oct 20", "· due Nov 3"). Lateness needs the browser's date. */
+function LastInvoiceLine({ invoice, today }: { invoice: InvoiceFact; today: string | null }) {
+  const status = today || invoice.paid_date ? invoiceStatus(invoice, today ?? "") : null;
+  return (
+    <p className="truncate text-foreground/70 text-xs">
+      Last invoice {invoice.number}
+      {status?.kind === "paid" && ` · paid ${niceDate(status.date, today)}`}
+      {status?.kind === "due" && ` · due ${niceDate(status.date, today)}`}
+      {status?.kind === "open" && " · not paid yet"}
+      {status?.kind === "late" && (
+        <>
+          {" · "}
+          <span className="font-medium text-destructive">{count(status.days, "day")} late</span>
+        </>
+      )}
+    </p>
   );
 }

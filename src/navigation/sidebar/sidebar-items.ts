@@ -12,6 +12,8 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { feature } from "@/lib/features";
+
 export interface NavLink {
   id: string;
   title: string;
@@ -23,7 +25,7 @@ export interface NavLink {
   short?: string;
 }
 
-export const navLinks: NavLink[] = [
+const allNavLinks: NavLink[] = [
   { id: "today", title: "Today", url: "/dashboard/today", icon: Clock },
   { id: "week", title: "Week", url: "/dashboard/week", icon: CalendarDays },
   { id: "month", title: "Month", url: "/dashboard/month", icon: CalendarRange },
@@ -40,6 +42,9 @@ export const navLinks: NavLink[] = [
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
   { id: "guide", title: "Guide", url: "/help", icon: BookOpen, secondary: true },
 ];
+
+/** The pages in the menus. Team is left out while that feature is hidden (lib/features.ts). */
+export const navLinks: NavLink[] = allNavLinks.filter((l) => l.id !== "team" || feature("team"));
 
 /** Shown only to the site owner (see lib/admin.ts). */
 export const adminLinks: NavLink[] = [

@@ -76,7 +76,7 @@
   --secondary: #e9ecf1;
   --secondary-foreground: #12151b;
   --muted: #e9ecf1;
-  --muted-foreground: #666e7c;
+  --muted-foreground: #5f6775; /* 4.8:1 or better on every light panel (was #666e7c, 4.3:1 on the tab strip) */
   --accent: #e9ecf1;
   --accent-foreground: #12151b;
   --destructive: #d8452f;
@@ -407,12 +407,34 @@ textarea,
 
 /* The drop-down arrow for NativeSelect: a rounded chevron in a quiet grey (works on light and dark fields). */
 .field-chevron {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23f5a623' fill-opacity='.22'/%3E%3Cpath d='m7.5 10 4.5 4.5 4.5-4.5' stroke='%23c98a10' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  /* A plain chevron in the text colour (ink in light mode, white in dark mode), no chip behind it. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m6 9 6 6 6-6' stroke='rgb(18 21 27 / .8)' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.6rem center;
+  background-position: right 0.65rem center;
 }
-.field-chevron:focus-visible {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23f5a623' fill-opacity='.45'/%3E%3Cpath d='m7.5 10 4.5 4.5 4.5-4.5' stroke='%23f5a623' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+.dark .field-chevron {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m6 9 6 6 6-6' stroke='rgb(255 255 255 / .85)' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* The time ticket slides out from under the stopwatch, like a receipt being printed. */
+@keyframes ticket-print {
+  from {
+    transform: translateY(-28px);
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+/* The Week clock's colon blinks once a second, like a digital watch. */
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
 }
 
 /* Home page: the colour glows drift slowly, and a gradient band shifts across its colours. */

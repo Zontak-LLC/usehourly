@@ -16,22 +16,39 @@ export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
 
 /**
- * Runs one of an entry card's rarer actions (Move to another day, Delete) from its "More actions" menu; Edit is a visible button. `scope` is the card (or the page, for its first card).
- * The menu opens in a layer of its own, so the item is looked up on the page.
+ * Opens an entry card's edit form (its one visible button, "Edit") and returns the card, so the form's fields and its
+ * Delete button can be used. `scope` is the card (or the page, for its first card).
  */
-export async function entryAction(scope: Page | Locator, action: "Move to another day" | "Delete") {
-  const page = await openEntryMenu(scope);
-  await page.getByRole("menuitem", { name: action }).click();
-}
-
-/** Opens an entry card's "More actions" menu and returns the page, so its items can be checked. */
-export async function openEntryMenu(scope: Page | Locator): Promise<Page> {
+export async function openEntryEdit(scope: Page | Locator): Promise<Locator> {
   const page = "context" in scope ? scope : scope.page();
-  const button = scope.getByRole("button", { name: "More actions" }).first();
-  // A card the server has not confirmed yet is replaced when it is; a menu opened before that would close under us.
+  const button = scope.getByRole("button", { name: "Edit", exact: true }).first();
+  // A card the server has not confirmed yet is replaced when it is; a form opened before that would close under us.
   await expect(button.locator("xpath=ancestor::li[1]")).not.toHaveAttribute("aria-busy", "true");
   await button.click();
-  return page;
+  // The open card is found by its pressed Edit button: a card filtered by its note stops matching once the note is in a
+  // text box (a field's value is not text on the page).
+  const card = page
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("button", { name: "Edit", exact: true, expanded: true }) })
+    .last();
+  await expect(card.getByLabel("Day")).toBeVisible();
+  return card;
+}
+
+/**
+ * Runs one of an entry card's rarer actions, which live in its edit form: Delete (the red button at the foot of the form,
+ * which asks to confirm: the caller confirms) or moving it to another day (the form's "Day" field, then Save).
+ */
+export async function entryAction(scope: Page | Locator, action: "Delete"): Promise<void>;
+export async function entryAction(scope: Page | Locator, action: "Move", date: string): Promise<void>;
+export async function entryAction(scope: Page | Locator, action: "Delete" | "Move", date?: string) {
+  const card = await openEntryEdit(scope);
+  if (action === "Delete") {
+    await card.getByRole("button", { name: "Delete", exact: true }).click();
+    return;
+  }
+  await card.getByLabel("Day").fill(date ?? "");
+  await card.getByRole("button", { name: "Save", exact: true }).click();
 }
 
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -383,4 +400,12 @@ export { expect };
 export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("button", { name: button, exact: true }).click();
   await page.getByRole("menuitem", { name: item }).click();
+}
+
+/** Week and Month fold their full list of entries ("What you worked on") behind one button: open it. */
+export async function openAllEntries(page: Page) {
+  const fold = page.getByRole("button", { name: /^All entries this (week|month)/ });
+  await expect(fold).toHaveAttribute("aria-expanded", "false");
+  await fold.click();
+  await expect(page.getByRole("region", { name: "What you worked on" })).toBeVisible();
 }

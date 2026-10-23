@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-import { startDemo } from "./helpers";
+import { openAllEntries, startDemo } from "./helpers";
 
-test("What you worked on: project chips narrow the list, and it can be read by day or by project", async ({ page }) => {
+test("What you worked on: the project filter narrows the list, and it can be read by day or by project", async ({
+  page,
+}) => {
   await startDemo(page);
   await page.goto("/dashboard/month");
+  await openAllEntries(page); // folded behind "All entries this month"
 
   const list = page.getByRole("region", { name: "What you worked on" });
   await expect(list).toBeVisible();
@@ -13,19 +16,15 @@ test("What you worked on: project chips narrow the list, and it can be read by d
   const all = await countOf();
   expect(all).toBeGreaterThan(1);
 
-  await test.step("the chips: All projects plus one per project, each with its hours", async () => {
-    const chips = page.getByRole("group", { name: "Filter by project" }).getByRole("button");
-    expect(await chips.count()).toBeGreaterThan(2);
-    await expect(chips.first()).toHaveAttribute("aria-pressed", "true");
-    await expect(chips.nth(1)).toContainText(/\d+:\d\d/);
-  });
-
-  await test.step("choosing a project narrows the list, and All projects brings it back", async () => {
-    const chips = page.getByRole("group", { name: "Filter by project" }).getByRole("button");
-    await chips.nth(1).click();
-    await expect(chips.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await test.step("the list has no chip row of its own: the toolbar's project filter narrows it", async () => {
+    await expect(page.getByRole("group", { name: "Filter by project" })).toHaveCount(0);
+    const filter = page.getByRole("combobox", { name: "Filter by project" });
+    const options = filter.locator("option");
+    expect(await options.count()).toBeGreaterThan(2); // All projects plus one per project
+    await filter.selectOption({ index: 1 });
+    await expect(page).toHaveURL(/project=/);
     await expect.poll(countOf).toBeLessThan(all);
-    await chips.first().click();
+    await filter.selectOption({ index: 0 });
     await expect.poll(countOf).toBe(all);
   });
 

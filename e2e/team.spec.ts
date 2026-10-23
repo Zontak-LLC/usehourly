@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { anonymous, expect, linkIn, mailTo, menuAction, newUser, seen, sql, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.team, "Team is hidden in this release (src/lib/features.ts)");
 
 /**
  * Teams, start to finish in real browsers: an owner invites a person by email, the email arrives (the mail stand-in

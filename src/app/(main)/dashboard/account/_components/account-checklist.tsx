@@ -1,25 +1,38 @@
 import { Check, Circle } from "lucide-react";
 
-import { TileRing } from "@/components/stat-tile";
+import { ShareBar } from "@/components/stat-tile";
+import { feature } from "@/lib/features";
 
 import type { AccountMe } from "./account-section";
 
-/** What is left to set up on the account: four small steps, with a ring that says how many are done. Nothing here moves. */
+/**
+ * What is left to set up on the account: a few small steps, with a ring that says how many are done. Nothing here moves.
+ * Once every step is done there is nothing to say, so it shows nothing.
+ */
 export function AccountChecklist({ me }: { me: AccountMe }) {
-  const steps: [string, boolean, string][] = [
-    ["Email confirmed", !!me.email_verified_at, "Unlocks reminders and emailing invoices"],
-    ["Password or social sign-in", true, "You can always get back in"],
-    ["Friday reminder", me.weekly_reminder, "One email with your week so far"],
-    ["Picture", !!me.avatar, "Shown beside your name"],
+  const all: [string, boolean, string, boolean][] = [
+    [
+      "Email confirmed",
+      !!me.email_verified_at,
+      feature("weeklyReminder") || feature("invoiceEmail")
+        ? "Unlocks reminders and emailing invoices"
+        : "Proves the address is yours",
+      true,
+    ],
+    ["Password or social sign-in", true, "You can always get back in", true],
+    ["Friday reminder", me.weekly_reminder, "One email with your week so far", feature("weeklyReminder")],
+    ["Picture", !!me.avatar, "Shown beside your name", feature("avatar")],
   ];
+  const steps = all.filter(([, , , shown]) => shown);
   const done = steps.filter(([, ok]) => ok).length;
+  if (done === steps.length) return null;
   return (
     <section
       aria-label="Account setup"
       className="flex items-center gap-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
     >
       <div className="relative shrink-0">
-        <TileRing fraction={done / steps.length} label={`${done} of ${steps.length} set up`} />
+        <ShareBar fraction={done / steps.length} label={`${done} of ${steps.length} set up`} />
         <span className="absolute inset-0 grid place-content-center font-display font-extrabold text-lg">
           {done}/{steps.length}
         </span>

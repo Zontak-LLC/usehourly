@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.aiPolish, "Polish with your own AI key is hidden in this release (src/lib/features.ts)");
 
 const KEY = "sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789";
 const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz0123456789_-ABC";

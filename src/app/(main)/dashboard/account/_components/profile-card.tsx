@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAvatarUpload } from "@/components/use-avatar-upload";
+import { feature } from "@/lib/features";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -52,19 +53,21 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
           <ConfirmEmailHint />
         ) : null}
       </div>
-      <div className="grid gap-1.5">
-        <Label>Picture</Label>
-        <LogoPicker
-          value={me.avatar}
-          onPick={avatar.pick}
-          onRemove={() => void avatar.remove()}
-          name="picture"
-          compact
-          addLabel="Add a picture"
-        />
-        <AvatarCropper crop={avatar.crop} />
-        <p className="text-muted-foreground text-xs">Shown beside your name at the top right. Only you see it.</p>
-      </div>
+      {feature("avatar") && (
+        <div className="grid gap-1.5">
+          <Label>Picture</Label>
+          <LogoPicker
+            value={me.avatar}
+            onPick={avatar.pick}
+            onRemove={() => void avatar.remove()}
+            name="picture"
+            compact
+            addLabel="Add a picture"
+          />
+          <AvatarCropper crop={avatar.crop} />
+          <p className="text-muted-foreground text-xs">Shown beside your name at the top right. Only you see it.</p>
+        </div>
+      )}
       <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
         Save
       </Button>
@@ -78,7 +81,9 @@ function ConfirmEmailHint() {
 
   return (
     <p className="text-muted-foreground text-xs">
-      Not confirmed yet. Confirming it turns on the Friday reminder and lets you email invoices.{" "}
+      {feature("weeklyReminder") || feature("invoiceEmail")
+        ? "Not confirmed yet. Confirming it turns on the Friday reminder and lets you email invoices. "
+        : "Not confirmed yet. Confirming it proves the address is yours. "}
       {verificationSent ? (
         "We sent you a link. Check your inbox."
       ) : (

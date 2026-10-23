@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 
+import { AllEntriesFold } from "@/components/all-entries-fold";
 import { DayEditorPanel, longDateLabel } from "@/components/day-editor";
-import { GoalMeter } from "@/components/goal-meter";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
@@ -13,15 +13,18 @@ import { useProjectLogos } from "@/components/project-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
 import { addDays, addMonths, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
-import { formatDecimalHours, formatDuration } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
+import { feature } from "@/lib/features";
 import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
+import { EntryGrip } from "./entry-grip";
 import { MonthCalendar } from "./month-calendar";
 import { MonthFacts } from "./month-facts";
 import { MonthToolbar } from "./month-toolbar";
 import { QuickCreate } from "./quick-create";
 import { useDaySelection } from "./use-day-selection";
+import { useEntryDrag } from "./use-entry-drag";
 
 const monthTitle = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
 
@@ -44,6 +47,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   const [selectMode, setSelectMode] = useState(false);
   const selection = useDaySelection(first, setSelectMode);
   const { setPicked } = selection;
+  // Dragging an entry of the open day onto another day of the calendar moves it there.
+  const drag = useEntryDrag();
   useEffect(() => {
     const t = toISODate(new Date());
     setToday(t);
@@ -60,8 +65,6 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
-  // The project list always shows every project, so picking one never hides the others.
-  const allRows = useMemo(() => buildSheet(entries.data ?? []).rows, [entries.data]);
 
   if (!first) return <Skeleton className="h-96 w-full" />;
 
@@ -78,7 +81,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
     <PageShell
       nav="month"
       // Swipe left for the next month, right for the previous one (the arrows in the toolbar do the same).
-      onSwipe={(direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1))}
+      onSwipe={feature("swipe") ? (direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1)) : undefined}
       inlineDescription
       title={monthTitle.format(fromISODate(first))}
       description={
@@ -87,7 +90,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           <span className="font-display font-extrabold text-foreground text-xl tabular-nums">
             {formatDuration(sheet.total)}
           </span>{" "}
-          logged ({formatDecimalHours(sheet.total)} h)
+          logged
         </>
       }
     >
@@ -115,17 +118,8 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
         <Skeleton className="h-96 w-full" />
       ) : (
         <>
-          <GoalMeter
-            id="month"
-            label="This month"
-            minutes={sheet.total}
-            defaultGoalHours={160}
-            minHours={40}
-            maxHours={240}
-            note={`${Object.values(sheet.dayTotals).filter((m) => m > 0).length} days worked`}
-          />
           {/* The calendar is the page: it gets the full width. The dial and the lists sit under it. */}
-          {selectMode && (
+          {selectMode && feature("multiDay") && (
             <QuickCreate
               dates={[...shownPicked].sort()}
               entries={shown}
@@ -145,11 +139,15 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             weeks={weeks}
             today={today}
             dayTotals={sheet.dayTotals}
+            rows={sheet.rows}
             inMonth={inMonth}
-            selectMode={selectMode}
+            openDay={editDate}
+            selectMode={selectMode && feature("multiDay")}
+            rangeSelect={feature("multiDay")}
             selection={selection}
             shownPicked={shownPicked}
             nonBillable={nonBillable}
+            drag={drag}
             onOpenDay={setEditDate}
           />
 
@@ -162,6 +160,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
                 inPage
                 title={longDateLabel(editDate)}
                 onClose={() => setEditDate(null)}
+                entryGrip={(entry) => <EntryGrip entry={entry} drag={drag} />}
               />
               <Link
                 href={`/dashboard/today?date=${editDate}`}
@@ -174,20 +173,19 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
 
           <MonthFacts dayTotals={sheet.dayTotals} />
           <div className="flex min-w-0 flex-col gap-4">
-            <MergeDaysPanel entries={shown} />
+            {feature("merge") && <MergeDaysPanel entries={shown} />}
 
             {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
-            <WorkItems
-              key={`${first}-${projectId}`}
-              entries={shown}
-              onOpenDay={setEditDate}
-              period="month"
-              editInPlace
-              nonBillable={nonBillable}
-              projects={allRows}
-              projectId={projectId}
-              onProjectId={setProjectId}
-            />
+            <AllEntriesFold period="month" count={shown.length}>
+              <WorkItems
+                key={`${first}-${projectId}`}
+                entries={shown}
+                onOpenDay={setEditDate}
+                period="month"
+                editInPlace
+                nonBillable={nonBillable}
+              />
+            </AllEntriesFold>
           </div>
         </>
       )}

@@ -1,7 +1,7 @@
 import { expect, startDemo, startFreshAccount, test } from "./helpers";
 
 /**
- * Clients: "New client" is a + in the page header that opens the form as a card at the top of the list; an empty page has
+ * Clients: "New client" is a button in the page header that opens the form as a card at the top of the list; an empty page has
  * the big dashed card instead. The numbers that used to sit in three tiles are one line under the title.
  */
 test("a new client is added from the card in place, and the title line counts clients, projects and the month", async ({
@@ -11,7 +11,7 @@ test("a new client is added from the card in place, and the title line counts cl
   await page.goto("/dashboard/clients");
   await expect(page.getByRole("heading", { name: "Clients", level: 1 })).toBeVisible();
 
-  await test.step("the way in is a + in the page header; no dashed card waits at the foot of the list", async () => {
+  await test.step("the way in is a New client button in the page header; no dashed card waits at the foot of the list", async () => {
     await expect(page.getByRole("button", { name: "New client" })).toHaveCount(1);
     const header = page.getByRole("heading", { name: "Clients", level: 1 }).locator("xpath=ancestor::header[1]");
     await expect(header.getByRole("button", { name: "New client" })).toHaveCount(1);
@@ -21,7 +21,7 @@ test("a new client is added from the card in place, and the title line counts cl
     await expect(page.getByText(/1 client · 1 project/).first()).toBeVisible();
   });
 
-  await test.step("the + opens the form at the top of the list, and the new client appears", async () => {
+  await test.step("New client opens the form at the top of the list, and the new client appears", async () => {
     const plus = page.getByRole("button", { name: "New client" });
     await plus.click();
     await expect(plus).toHaveAttribute("aria-expanded", "true");
@@ -53,9 +53,9 @@ test("archived clients and projects open from a menu in the header, on a page of
   // nothing about the archive hangs at the foot of the page
   await expect(page.getByRole("button", { name: /Archived clients and projects/ })).toHaveCount(0);
 
-  // archive a project (immediate, with Undo), then find it on the archived page
-  await page.getByRole("button", { name: "More actions for Mobile app" }).click();
-  await page.getByRole("menuitem", { name: "Archive project" }).click();
+  // archive a project from its edit form (immediate, with Undo), then find it on the archived page
+  await page.getByRole("button", { name: "Edit Mobile app" }).click();
+  await page.getByRole("button", { name: "Archive project" }).click();
   await expect(page.getByText(/Mobile app archived/)).toBeVisible();
 
   await page.getByRole("button", { name: "More actions for Clients" }).click();

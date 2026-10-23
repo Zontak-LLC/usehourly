@@ -4,7 +4,7 @@ export type PickerProject = { id: string; name: string; clientName: string; colo
 
 /** With this many projects or fewer, every project is a chip and there is no search (a fourth project starts the picker). */
 export const ALL_AS_CHIPS = 3;
-/** Chips shown (the picked project included) when nothing is pinned. */
+/** Chips shown when nothing is pinned (or fewer than three are). */
 export const BASE_CHIPS = 3;
 export const MAX_PINNED = 6;
 const MAX_REMEMBERED = 8;
@@ -21,21 +21,21 @@ export function togglePinnedId(ids: string[], id: string): string[] {
 }
 
 /**
- * The chips to show: the picked project first (so what is picked is always visible), then the pinned ones, then the
- * most recently used, then projects in list order to fill up. With pins there is room for all of them (up to six
- * chips); without, three. Ids that no longer exist are ignored.
+ * The chips to show, in a fixed order: the pinned ones, then the most recently used (as remembered when the page
+ * opened), then projects in list order to fill up. The picked project is not moved to the front: picking a chip only
+ * marks it as pressed, so nothing slides under the pointer and a quick second tap lands where the person aimed. With
+ * pins there is room for all of them (up to six chips); without, three. Ids that no longer exist are ignored.
  */
 export function chipProjects(
   projects: PickerProject[],
   recentIds: string[],
-  selectedId: string,
   pinnedIds: string[] = [],
 ): PickerProject[] {
   if (projects.length <= ALL_AS_CHIPS) return projects;
   const byId = new Map(projects.map((p) => [p.id, p]));
   const pinned = pinnedIds.filter((id) => byId.has(id));
-  const slots = Math.max(BASE_CHIPS, Math.min(MAX_PINNED, pinned.length + (pinned.includes(selectedId) ? 0 : 1)));
-  const order = [selectedId, ...pinned, ...recentIds, ...projects.map((p) => p.id)];
+  const slots = Math.max(BASE_CHIPS, Math.min(MAX_PINNED, pinned.length));
+  const order = [...pinned, ...recentIds, ...projects.map((p) => p.id)];
   const out: PickerProject[] = [];
   for (const id of order) {
     const p = byId.get(id);

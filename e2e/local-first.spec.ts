@@ -1,4 +1,7 @@
+import { FEATURES } from "../src/lib/features";
 import { entryAction, expect, startFreshAccount, test } from "./helpers";
+
+test.skip(!FEATURES.localFirst, "'Keep a copy on this device' is hidden in this release (src/lib/features.ts)");
 
 /**
  * Local-first spike (issue #95). With the switch on, entries are kept in this browser and shown from there; changes

@@ -1,3 +1,4 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, sql, startFreshAccount, test } from "./helpers";
 
 /** Found by the persona walkthrough (ticket #179): three things that tripped a first-time freelancer. */
@@ -26,6 +27,7 @@ test("a project with no rate has an empty rate box with a hint, so typing 95 mak
 });
 
 test("picking the first day in Add to several days does not make the calendar jump", async ({ page }) => {
+  test.skip(!FEATURES.multiDay, "'Add to several days' is hidden in this release (src/lib/features.ts)");
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/month");
   await page.getByRole("button", { name: "Add to several days" }).click();
@@ -42,6 +44,7 @@ test("picking the first day in Add to several days does not make the calendar ju
 /** Round two of the persona walkthrough (#181 to #184 and two more). */
 
 test("the budget bar sits under the Add button, so it never moves the controls above it (#181)", async ({ page }) => {
+  test.skip(!FEATURES.budgets, "Project budgets are hidden in this release (src/lib/features.ts)");
   const user = await startFreshAccount(page, "Acme");
   sql(
     `UPDATE projects SET budget_amount = 500000, budget_unit = 'dollars', budget_period = 'month' WHERE user_id = (SELECT id FROM auth_users WHERE email = '${user.email}')`,
@@ -55,10 +58,11 @@ test("the budget bar sits under the Add button, so it never moves the controls a
 });
 
 test("a sign-off link must name a client or project when there are several clients (#182)", async ({ page }) => {
+  test.skip(!FEATURES.signOff, "Sign-off links are hidden in this release (src/lib/features.ts)");
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/clients");
   await page.getByRole("button", { name: "New client" }).click();
-  await page.getByPlaceholder("Client name").fill("Beta");
+  await page.getByLabel("New client name").fill("Beta");
   await page.keyboard.press("Enter");
   await expect(page.getByText("Beta").filter({ visible: true }).first()).toBeVisible();
   await page.goto("/dashboard/month");
@@ -78,6 +82,7 @@ test("a sign-off link must name a client or project when there are several clien
 });
 
 test("the several-days panel does not change which project Today starts on (#183)", async ({ page }) => {
+  test.skip(!FEATURES.multiDay, "'Add to several days' is hidden in this release (src/lib/features.ts)");
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/clients");
   await page.getByRole("button", { name: "Add a project for Acme" }).first().click();
@@ -103,6 +108,7 @@ test("the Month toolbar and calendar fit a 1,030px window (#184)", async ({ page
   await page.setViewportSize({ width: 1030, height: 800 });
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/month");
+  await page.getByRole("button", { name: "Previous month" }).click(); // "This month" shows only away from this month
   const thisMonth = page.getByRole("button", { name: "This month" });
   const right = (await thisMonth.boundingBox())?.x ?? 0;
   const box = await thisMonth.boundingBox();

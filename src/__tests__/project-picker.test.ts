@@ -21,26 +21,38 @@ const many = [
 ];
 
 describe("project picker rules", () => {
-  it("shows every project as a chip while there are three or fewer, and recent ones plus the selection when there are more", () => {
-    expect(chipProjects(many.slice(0, 3), ["c"], "a").map((p) => p.id)).toEqual(["a", "b", "c"]);
+  it("shows every project as a chip while there are three or fewer, and recent ones when there are more", () => {
+    expect(chipProjects(many.slice(0, 3), ["c"]).map((p) => p.id)).toEqual(["a", "b", "c"]);
     // a fourth project starts the picker: three chips, the rest behind search
-    expect(chipProjects(many.slice(0, 4), ["d"], "a").map((p) => p.id)).toEqual(["a", "d", "b"]);
-    // selected first, then recents in order, then list order to fill
-    expect(chipProjects(many, ["e", "c"], "f").map((p) => p.id)).toEqual(["f", "e", "c"]);
-    expect(chipProjects(many, [], "").map((p) => p.id)).toEqual(["a", "b", "c"]);
+    expect(chipProjects(many.slice(0, 4), ["d"]).map((p) => p.id)).toEqual(["d", "a", "b"]);
+    // recents in order, then list order to fill
+    expect(chipProjects(many, ["e", "c"]).map((p) => p.id)).toEqual(["e", "c", "a"]);
+    expect(chipProjects(many, []).map((p) => p.id)).toEqual(["a", "b", "c"]);
     // remembered ids that were deleted or archived are ignored, and nothing repeats
-    expect(chipProjects(many, ["zzz", "e", "e"], "e").map((p) => p.id)).toEqual(["e", "a", "b"]);
+    expect(chipProjects(many, ["zzz", "e", "e"]).map((p) => p.id)).toEqual(["e", "a", "b"]);
   });
 
-  it("pinned projects come right after the picked one and get room, up to six chips; recent ones fill what is left", () => {
-    // two pins: picked + 2 pins = 3 chips, the recent one has no room
-    expect(chipProjects(many, ["e"], "a", ["f", "d"]).map((p) => p.id)).toEqual(["a", "f", "d"]);
-    // four pins and a picked project that is not pinned: five chips
-    expect(chipProjects(many, [], "a", ["b", "c", "d", "e"]).map((p) => p.id)).toEqual(["a", "b", "c", "d", "e"]);
-    // the picked project is itself pinned: it is not counted twice
-    expect(chipProjects(many, [], "b", ["b", "c", "d", "e"]).map((p) => p.id)).toEqual(["b", "c", "d", "e"]);
+  it("picking a project never reorders the chips: the order depends only on what was remembered and pinned", () => {
+    // the same inputs give the same row, whichever chip is picked (the picked one is pressed, not moved)
+    const before = chipProjects(many, ["e", "c"], ["f"]).map((p) => p.id);
+    expect(before).toEqual(["f", "e", "c"]);
+    // the picker keeps the recents read at page load for the chips, so a pick changes nothing until the next visit
+    const recentAtLoad = ["e", "c"];
+    const afterPick = pushRecentId(recentAtLoad, "c"); // what is saved for next time
+    expect(chipProjects(many, recentAtLoad, ["f"]).map((p) => p.id)).toEqual(before);
+    // next visit: the newly used project leads the recents
+    expect(chipProjects(many, afterPick, ["f"]).map((p) => p.id)).toEqual(["f", "c", "e"]);
+  });
+
+  it("pinned projects come first and get room, up to six chips; recent ones fill what is left", () => {
+    // two pins: 3 chips, the recent one takes the last slot
+    expect(chipProjects(many, ["e"], ["f", "d"]).map((p) => p.id)).toEqual(["f", "d", "e"]);
+    // four pins: four chips
+    expect(chipProjects(many, [], ["b", "c", "d", "e"]).map((p) => p.id)).toEqual(["b", "c", "d", "e"]);
+    // seven pins are capped at six chips
+    expect(chipProjects([...many, P("g", "Extra", "Zed")], [], ["a", "b", "c", "d", "e", "f", "g"])).toHaveLength(6);
     // a pin for a project that was archived or deleted is ignored
-    expect(chipProjects(many, [], "a", ["gone", "c"]).map((p) => p.id)).toEqual(["a", "c", "b"]);
+    expect(chipProjects(many, [], ["gone", "c"]).map((p) => p.id)).toEqual(["c", "a", "b"]);
   });
 
   it("toggles a pin, and a seventh pin pushes the oldest one out", () => {

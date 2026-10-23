@@ -1,6 +1,7 @@
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { DayBar } from "@/components/day-bar";
 import { HeaderCard } from "@/components/header-card";
+import { useRunningMinutes } from "@/components/use-running-minutes";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 
@@ -26,7 +27,9 @@ export function EntryList({
   showTotal?: boolean;
 }) {
   const title = date === today ? "Today's timesheet" : `Timesheet for ${longDay.format(fromISODate(date))}`;
-  const total = entries.reduce((a, e) => a + e.minutes, 0);
+  // A running timer counts in the total as it runs, so this agrees with the watch and the header.
+  const running = useRunningMinutes(entries.find((e) => e.started_at)?.started_at ?? null);
+  const total = entries.reduce((a, e) => a + e.minutes, 0) + running;
   return (
     <HeaderCard
       label={title}

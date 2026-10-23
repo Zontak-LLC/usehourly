@@ -1,3 +1,5 @@
+import { feature } from "@/lib/features";
+
 import type { FaqItem } from "./types";
 
 export const FAQ: FaqItem[] = [
@@ -11,7 +13,7 @@ export const FAQ: FaqItem[] = [
     id: "privacy",
     question: "Who can see my data?",
     keywords: ["private", "security", "safe", "share", "sell", "analytics"],
-    answer: `Only you. Every account is separate. Your data is not sold or used for ads. A team member sees only what you grant, and a client sees only a link you chose to send. The maker counts page views per day with no names and no cookies, to see which parts get used. See the [privacy page](/privacy).`,
+    answer: `Only you. Every account is separate. Your data is not sold or used for ads. ${feature("team") ? "A team member sees only what you grant, and a client sees" : "A client sees"} only a link you chose to send. The maker counts page views per day with no names and no cookies, to see which parts get used. See the [privacy page](/privacy).`,
   },
   {
     id: "export",
@@ -34,6 +36,7 @@ export const FAQ: FaqItem[] = [
   {
     id: "team",
     question: "Can more than one person use it?",
+    feature: "team",
     keywords: ["team", "employees", "assistant", "studio", "share", "multi user"],
     answer: `In a first version, yes: you can invite someone to log time on the clients you choose. Invoices stay yours alone. See [Inviting someone](/help/teams).`,
   },
@@ -41,7 +44,11 @@ export const FAQ: FaqItem[] = [
     id: "rounding",
     question: "Does it round my time?",
     keywords: ["round up", "increments", "billing"],
-    answer: `Never in your own records. You can choose rounding per client for invoices only. See [Rounding time on invoices](/help/rounding).`,
+    answer: `Only the timer, which counts a running time up to the next whole minute. Nothing else in your own records is rounded.${
+      feature("rounding")
+        ? " You can choose rounding per client for invoices only. See [Rounding time on invoices](/help/rounding)."
+        : " Invoices bill the exact minutes you logged."
+    }`,
   },
   {
     id: "demo",

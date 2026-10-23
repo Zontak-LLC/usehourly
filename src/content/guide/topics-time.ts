@@ -1,3 +1,5 @@
+import { feature } from "@/lib/features";
+
 import type { Topic } from "./types";
 
 export const TIME_TOPICS: Topic[] = [
@@ -34,11 +36,12 @@ The line under the box ("Day total 2:00 → 3:30") shows what the day will total
   },
   {
     slug: "non-billable",
-    title: "Non-billable days and projects",
+    title: feature("nonBillableDays") ? "Non-billable days and projects" : "Non-billable projects",
     group: "time",
     summary: "Time you track but never charge for, and what it is left out of.",
     keywords: ["holiday", "unpaid", "free", "not charged", "exclude", "invoice", "tax"],
-    body: `There are two ways to keep time out of your invoices.
+    body: feature("nonBillableDays")
+      ? `There are two ways to keep time out of your invoices.
 
 ## A whole day
 
@@ -54,30 +57,48 @@ It still **shows** in the day, week and month totals, and in a timesheet you sha
 
 On the Clients page, edit a project and untick **Billable**. It then has no rate and is never invoiced.
 
-> Marking a single entry non-billable is not available yet. Today, move it to a non-billable project.`,
+> Marking a single entry non-billable is not available yet. Today, move it to a non-billable project.`
+      : `Some work you track but never charge for: work for yourself, a holiday you still want on record, a favour for a client.
+
+## A non-billable project
+
+On the Clients page, edit a project and untick **Billable** (or tick **Not billable** when you add it). It then has no rate and is never invoiced. Its time still shows in your day, week and month totals.
+
+> Marking a single entry non-billable is not available yet. Move it to a non-billable project instead.`,
   },
   {
     slug: "moving-and-merging",
-    title: "Moving, merging and adding to several days",
+    title: feature("merge") || feature("multiDay") ? "Moving, merging and adding to several days" : "Moving an entry",
     group: "time",
-    summary: "Fixing time that went on the wrong project or day, and filling many days at once.",
+    summary: feature("multiDay")
+      ? "Fixing time that went on the wrong project or day, and filling many days at once."
+      : "Fixing time that went on the wrong project or day.",
     keywords: ["move", "merge", "combine", "wrong project", "wrong day", "several days", "bulk", "duplicate"],
     body: `## Move an entry
 
 Each entry has a **Move** button. Pick a nearby day or any date. Nothing else about the entry changes. To change its **project**, click the project name on the entry.
-
+${
+  feature("merge")
+    ? `
 ## Merge entries
 
 When a day has two or more entries on the **same project**, a bar offers to merge them into one. The times add up and the descriptions are joined, one per line (blank ones and exact repeats are skipped). Entries on different projects, or a running timer, cannot be merged: move them first.
-
+`
+    : ""
+}${
+  feature("multiDay")
+    ? `
 ## Add to several days
 
-On **Month**, use **Add to several days** to put the same time on many days at once, for example 8 hours every weekday in a week. Days that already hold several entries or a running timer are skipped and listed, never changed.`,
+On **Month**, use **Add to several days** to put the same time on many days at once, for example 8 hours every weekday in a week. Days that already hold several entries or a running timer are skipped and listed, never changed.`
+    : ""
+}`,
   },
   {
     slug: "budgets",
     title: "Project budgets",
     group: "time",
+    feature: "budgets",
     summary: "Set a limit in hours or money and get a warning before you pass it.",
     keywords: ["limit", "cap", "retainer", "warning", "over budget", "80%"],
     body: `Edit a project on the Clients page and fill in **Budget**: an amount, whether it is in **hours** or **money** (in your account's currency), and whether it **resets each month** or covers the **whole life** of the project. Clear the amount to remove it.
@@ -92,6 +113,7 @@ A bar appears under the project and above the time box when you add time. It tur
     slug: "calendar-suggestions",
     title: "Time entries from your calendar",
     group: "time",
+    feature: "calendar",
     summary:
       "Connect Google Calendar, import a calendar file or connect a private calendar address, and each day shows its meetings ready to log in one tap.",
     keywords: [

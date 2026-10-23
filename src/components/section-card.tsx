@@ -46,17 +46,11 @@ export function SectionCard({
     >
       <div
         className={cn(
-          // Inside an Account section a card is a soft sheet: an amber tick, then a display heading.
+          // Inside an Account section a card is a soft sheet with a display heading.
           grouped ? "px-5 pt-5 pb-3 sm:px-6 sm:pt-6" : cn("bg-band-2 px-4 py-3", children && "border-b"),
           tone === "danger" && "border-destructive/30 bg-destructive/5",
         )}
       >
-        {grouped && (
-          <span
-            aria-hidden
-            className={cn("mb-3 block h-1 w-10 rounded-full", tone === "danger" ? "bg-destructive" : "bg-amber")}
-          />
-        )}
         {typeof title === "string" ? (
           <CardTitle
             as="h3"

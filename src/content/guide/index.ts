@@ -1,4 +1,6 @@
-import { FAQ } from "./faq";
+import { feature } from "@/lib/features";
+
+import { FAQ as ALL_FAQ } from "./faq";
 import { BILLING_TOPICS } from "./topics-billing";
 import { MORE_TOPICS } from "./topics-more";
 import { SHARING_TOPICS } from "./topics-sharing";
@@ -6,13 +8,22 @@ import { TIME_TOPICS } from "./topics-time";
 import { type FaqItem, GROUPS, type GroupId, type Topic } from "./types";
 
 export type { FaqItem, GroupId, Topic };
-export { FAQ, GROUPS };
+export { GROUPS };
 
-/** Every topic, in the order the guide shows them (by group, then as written). */
-export const TOPICS: Topic[] = [...TIME_TOPICS, ...BILLING_TOPICS, ...SHARING_TOPICS, ...MORE_TOPICS].sort(
+const shown = (item: { feature?: Parameters<typeof feature>[0] }) => !item.feature || feature(item.feature);
+
+/** Every topic written, hidden ones included, in the order the guide shows them (by group, then as written). */
+export const ALL_TOPICS: Topic[] = [...TIME_TOPICS, ...BILLING_TOPICS, ...SHARING_TOPICS, ...MORE_TOPICS].sort(
   (a, b) => GROUPS.findIndex((g) => g.id === a.group) - GROUPS.findIndex((g) => g.id === b.group),
 );
 
+/** The topics this release shows: a topic about a hidden feature (lib/features.ts) is not listed, searched or served. */
+export const TOPICS: Topic[] = ALL_TOPICS.filter(shown);
+
+/** The FAQ answers this release shows. */
+export const FAQ: FaqItem[] = ALL_FAQ.filter(shown);
+
+/** A visible topic by its address (a hidden topic's page answers "not found"). */
 export const topicBySlug = (slug: string) => TOPICS.find((t) => t.slug === slug);
 
 /** Every address the guide has, so the offline keeper can fetch them all. */

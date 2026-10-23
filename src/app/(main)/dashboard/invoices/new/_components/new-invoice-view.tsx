@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AlertTriangle, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, toISODate } from "@/lib/dates";
-import { buildInvoice } from "@/lib/invoice";
+import { buildInvoice, type InvoiceEntry } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import type { Rounding } from "@/lib/rounding";
 import { toastError } from "@/lib/toast-error";
@@ -29,7 +29,7 @@ function MissingProfileNotice({ ein, address }: { ein?: string | null; address?:
     <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
       <span>
-        Your {!ein ? "EIN" : ""}
+        Your {!ein ? "tax ID (EIN)" : ""}
         {!ein && !address ? " and " : ""}
         {!address ? "address" : ""} {!ein && !address ? "are" : "is"} missing and won't appear on the invoice.{" "}
         <Link href="/dashboard/account" className="inline-block py-1 font-medium underline">
@@ -40,8 +40,37 @@ function MissingProfileNotice({ ein, address }: { ein?: string | null; address?:
   );
 }
 
+/**
+ * The client the builder opens on: the one asked for in the address (`?client=`) when it exists,
+ * else the client with the most billable minutes in the period, else the first client.
+ */
+function defaultClientId(
+  clients: { id: string }[],
+  entries: (InvoiceEntry & { non_billable?: boolean })[],
+  wanted: string | null,
+): string {
+  if (wanted && clients.some((c) => c.id === wanted)) return wanted;
+  const minutes = new Map<string, number>();
+  for (const e of entries) {
+    const id = e.project.client_id;
+    if (!id || e.non_billable || !e.project.billable || e.minutes <= 0) continue;
+    minutes.set(id, (minutes.get(id) ?? 0) + e.minutes);
+  }
+  let best = clients[0]?.id ?? "";
+  let most = 0;
+  for (const c of clients) {
+    const m = minutes.get(c.id) ?? 0;
+    if (m > most) {
+      best = c.id;
+      most = m;
+    }
+  }
+  return best;
+}
+
 export function NewInvoiceView() {
   const router = useRouter();
+  const wantedClient = useSearchParams().get("client");
   const utils = trpc.useUtils();
   const me = trpc.account.me.useQuery();
   const clients = trpc.clients.list.useQuery();
@@ -71,14 +100,17 @@ export function NewInvoiceView() {
     if (!numberTouched && next.data) setNumber(next.data.number);
   }, [next.data, numberTouched]);
 
-  // Default to the first client once loaded.
-  useEffect(() => {
-    if (!clientId && clients.data?.[0]) setClientId(clients.data[0].id);
-  }, [clients.data, clientId]);
-
   const client = clients.data?.find((c) => c.id === clientId);
   const validRange = !!from && !!to && from <= to;
   const entries = trpc.entry.list.useQuery({ from, to }, { enabled: validRange });
+
+  // Open on a client that has time to bill, using the period's entries this page loads anyway
+  // (no extra request). Chosen once; the person's own choice is never overwritten.
+  const entriesSettled = !!today && (!validRange || entries.isSuccess || entries.isError);
+  useEffect(() => {
+    if (clientId || !clients.data?.length || !entriesSettled) return;
+    setClientId(defaultClientId(clients.data, entries.data ?? [], wantedClient));
+  }, [clients.data, clientId, entriesSettled, entries.data, wantedClient]);
 
   // Live preview uses the same math the server will snapshot.
   const rounding: Rounding = useMemo(

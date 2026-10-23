@@ -26,6 +26,9 @@ const minutesSchema = z
   .max(24 * 60);
 const noteSchema = z.string().trim().max(NOTE_MAX).default("");
 
+/** "Started earlier?" moves a start back at most this far (and never to more than this long ago). */
+const MAX_SHIFT_MINUTES = 12 * 60;
+
 /** Refuses a write that would take the account past its entry limit (see lib/quotas.ts). */
 async function assertEntryQuota(
   ctx: { prisma: PrismaClient; userId: string; session: Session | null },
@@ -433,19 +436,128 @@ export const entryRouter = router({
       }
     }),
 
-  /** Stop the running timer; elapsed time is rounded up to the next minute (min 1). */
-  stop: protectedProcedure.mutation(async ({ ctx }) => {
-    const running = await ctx.prisma.timeEntry.findFirst({
-      where: { user_id: ctx.userId, started_at: { not: null } },
-    });
-    if (!running?.started_at) throw new TRPCError({ code: "NOT_FOUND", message: "No timer is running." });
-    return ctx.prisma.timeEntry.update({
-      where: { id: running.id, user_id: ctx.userId },
-      data: { minutes: stoppedMinutes(running.minutes, running.started_at, new Date()), started_at: null },
-      include: withProject,
-    });
+  /**
+   * Resume a stopped entry: its timer runs again and the next stop adds the new time to what it already holds. Any other
+   * running timer is stopped first (one timer at a time). Used by Today's "Resume" after a stop.
+   */
+  resume: protectedProcedure.input(z.object({ id: z.string().min(1).max(64) })).mutation(async ({ ctx, input }) => {
+    const entry = await ctx.prisma.timeEntry.findFirst({ where: { id: input.id, user_id: ctx.userId } });
+    if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+    if (entry.minutes >= MAX_ENTRY_MINUTES) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "This entry already holds a full day." });
+    }
+    const now = new Date();
+    if (!entry.started_at) {
+      const running = await ctx.prisma.timeEntry.findFirst({
+        where: { user_id: ctx.userId, started_at: { not: null } },
+      });
+      if (running?.started_at) {
+        await ctx.prisma.timeEntry.update({
+          where: { id: running.id, user_id: ctx.userId },
+          data: { minutes: stoppedMinutes(running.minutes, running.started_at, now), started_at: null },
+        });
+      }
+    }
+    try {
+      return await ctx.prisma.timeEntry.update({
+        where: { id: entry.id, user_id: ctx.userId },
+        data: { started_at: entry.started_at ?? now },
+        include: withProject,
+      });
+    } catch (e) {
+      if ((e as { code?: string } | null)?.code === "P2002") {
+        throw new TRPCError({ code: "CONFLICT", message: "A timer is already running. Stop it first." });
+      }
+      throw e;
+    }
   }),
+
+  /**
+   * Stop the running timer; elapsed time is rounded up to the next minute (min 1). `minutesAgo` stops it at an earlier
+   * moment ("Still working?" after a long run): the entry then holds only the time up to that moment, never more than ran.
+   */
+  stop: protectedProcedure
+    .input(
+      z
+        .object({
+          minutesAgo: z
+            .number()
+            .int()
+            .min(1)
+            .max(24 * 60)
+            .optional(),
+        })
+        .optional(),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const running = await ctx.prisma.timeEntry.findFirst({
+        where: { user_id: ctx.userId, started_at: { not: null } },
+      });
+      if (!running?.started_at) throw new TRPCError({ code: "NOT_FOUND", message: "No timer is running." });
+      const end = new Date(Date.now() - (input?.minutesAgo ?? 0) * 60_000);
+      if (end.getTime() <= running.started_at.getTime()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The timer had not started then. Pick a later time." });
+      }
+      return ctx.prisma.timeEntry.update({
+        where: { id: running.id, user_id: ctx.userId },
+        data: { minutes: stoppedMinutes(running.minutes, running.started_at, end), started_at: null },
+        include: withProject,
+      });
+    }),
+
+  /**
+   * "Started earlier?": moves the running timer's start back by `minutes` (Today's -15 min / -30 min / -1 h chips). Only
+   * the caller's own running timer; the new start may not be in the future, more than 12 hours ago, or on the day before
+   * the timer's start (local time, from the browser's `tzOffset`, as `Date.getTimezoneOffset()` gives it).
+   */
+  shiftStart: protectedProcedure
+    .input(
+      z.object({
+        minutes: z.number().int().min(1).max(MAX_SHIFT_MINUTES),
+        tzOffset: z.number().int().min(-840).max(840),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const running = await ctx.prisma.timeEntry.findFirst({
+        where: { user_id: ctx.userId, started_at: { not: null } },
+      });
+      if (!running?.started_at) throw new TRPCError({ code: "NOT_FOUND", message: "No timer is running." });
+      const now = Date.now();
+      const next = new Date(running.started_at.getTime() - input.minutes * 60_000);
+      if (next.getTime() > now)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The start can't be in the future." });
+      if (now - next.getTime() > MAX_SHIFT_MINUTES * 60_000) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A timer can start at most 12 hours ago. Log the earlier time as its own entry.",
+        });
+      }
+      if (localDate(next, input.tzOffset) !== localDate(running.started_at, input.tzOffset)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "That would move the start to the day before. Log the earlier time as its own entry.",
+        });
+      }
+      try {
+        // Only if the start is still the one read above: a stop or another shift in between wins, nothing is doubled.
+        return await ctx.prisma.timeEntry.update({
+          where: { id: running.id, user_id: ctx.userId, started_at: running.started_at },
+          data: { started_at: next },
+          include: withProject,
+        });
+      } catch (e) {
+        if ((e as { code?: string } | null)?.code === "P2025") {
+          throw new TRPCError({ code: "CONFLICT", message: "The timer changed. Please try again." });
+        }
+        throw e;
+      }
+    }),
 });
+
+/** The local calendar date of a moment, for a browser `getTimezoneOffset()` value (minutes behind UTC). */
+function localDate(at: Date, tzOffset: number): string {
+  return new Date(at.getTime() - tzOffset * 60_000).toISOString().slice(0, 10);
+}
 
 /** A day is the most one entry can hold (the same limit every other way of adding time has). */
 const MAX_ENTRY_MINUTES = 24 * 60;

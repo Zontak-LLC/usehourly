@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 
 import { useMoney } from "@/components/currency-provider";
-import { Dial } from "@/components/day-dial";
+import { GoalSummary } from "@/components/goal-summary";
 import { RANGE_INPUT_CLASS } from "@/components/range-input";
 import { StatTile } from "@/components/stat-tile";
-import { formatDecimalHours } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
+import { count } from "@/lib/plural";
 
 import type { AnnualReport } from "./report-body";
 
@@ -25,7 +26,8 @@ const MONTH_NAMES = [
   "December",
 ];
 
-const hours = (m: number) => `${formatDecimalHours(m)} h`;
+/** Hours on screen are h:mm, as everywhere else in the app (files keep decimals). */
+const hours = (m: number) => formatDuration(Math.round(m));
 
 function readGoal(): number {
   try {
@@ -36,7 +38,7 @@ function readGoal(): number {
   }
 }
 
-/** The year as the dial the other pages use (hours against a goal), with a slider that moves the goal (kept on this device). */
+/** The year's hours against a goal, with a slider that moves the goal (kept on this device). */
 export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
   const [goal, setGoal] = useState(1800);
   useEffect(() => setGoal(readGoal()), []);
@@ -49,16 +51,14 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
     }
   };
   return (
-    <div className="flex flex-col gap-3">
-      <Dial
-        label={`Hours in ${year}`}
-        title={`${year}`}
-        minutes={data.totals.minutes}
-        goal={goal * 60}
-        footLeft={`Goal ${goal} h`}
-        footRight={`${data.totals.workedDays} days worked`}
-      />
-      <div className="px-2">
+    <GoalSummary
+      label={`Hours in ${year}`}
+      figure={hours(data.totals.minutes)}
+      goal={`of a ${goal} hour year`}
+      fraction={data.totals.minutes / (goal * 60)}
+      foot={`${count(data.totals.workedDays, "day")} worked`}
+    >
+      <div>
         <label
           htmlFor="year-goal"
           className="flex items-baseline justify-between font-mono text-[11px] text-foreground/75 uppercase tracking-widest"
@@ -87,7 +87,7 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
           />
         </div>
       </div>
-    </div>
+    </GoalSummary>
   );
 }
 

@@ -1,3 +1,5 @@
+import { feature } from "@/lib/features";
+
 import type { Topic } from "./types";
 
 export const BILLING_TOPICS: Topic[] = [
@@ -10,7 +12,7 @@ export const BILLING_TOPICS: Topic[] = [
     body: `Open **Invoices** and choose **New invoice**. Pick the client and the dates (up to a year). The preview below is exactly what will be issued.
 
 - It is built from your **billable** time for that client in those dates: one line per project, hours times the project's hourly rate.
-- Days you marked non-billable and non-billable projects are left out.
+- ${feature("nonBillableDays") ? "Days you marked non-billable and non-billable projects are" : "Non-billable projects are"} left out.
 - An invoice that would total **$0.00** is blocked, because a project has no hourly rate yet. Set it under Clients.
 - Numbers run \`INV-<year>-001\`, \`002\` and so on.
 
@@ -24,7 +26,9 @@ Your business name, EIN, address and payment instructions come from **Account**.
     slug: "currency",
     title: "Choosing your currency",
     group: "billing",
-    summary: "Pick your usual currency, bill a client in a different one, and why each locks after its first invoice.",
+    summary: feature("clientCurrency")
+      ? "Pick your usual currency, bill a client in a different one, and why each locks after its first invoice."
+      : "Pick the currency you bill in, and why it locks after your first invoice.",
     keywords: [
       "client",
       "multiple",
@@ -41,22 +45,27 @@ Your business name, EIN, address and payment instructions come from **Account**.
     ],
     body: `Open **Account**, then **Invoices**, then **Currency**. Pick the currency you bill in: US dollar, euro, British pound and several others (those that use two decimals, like cents).
 
-- It changes how amounts are **written** (the symbol and format) on rates, budgets, invoices, the invoice page your client sees, invoice emails, the year summary and Excel exports.
+- It changes how amounts are **written** (the symbol and format) on rates, ${feature("budgets") ? "budgets, " : ""}invoices, the invoice page your client sees, ${feature("invoiceEmail") ? "invoice emails, " : ""}the year summary and Excel exports.
 - **It does not convert anything.** A rate of 85 stays 85: only the symbol changes. Check your project rates after changing it.
-- You can change it **until you make your first invoice**. After that it is fixed. It is the currency of every client that does not have one of its own.
+- You can change it **until you make your first invoice**. After that it is fixed.${feature("clientCurrency") ? " It is the currency of every client that does not have one of its own." : ""}
 - Each invoice keeps the currency it was made in.
-
+${
+  feature("clientCurrency")
+    ? `
 **Billing one client in another currency:** on **Clients**, open **Billing details** for that client and pick its **Currency**. Its rates, budgets and invoices are then written in it, and the client's currency is fixed once you have made an invoice for it.
 
 - **Totals are never added across currencies.** The Invoices page shows one set of figures per currency, and the **Year summary** shows one currency at a time (a currency picker appears when you use more than one).
 - The **accounting export** asks which currency to write, because its files hold plain numbers.
-
-An invoice PDF shows the **code** (for example EUR 150.00) for currencies whose symbol its built-in font cannot draw. The invoice page and emails show the symbol.`,
+`
+    : ""
+}
+An invoice PDF shows the **code** (for example EUR 150.00) for currencies whose symbol its built-in font cannot draw. The invoice page${feature("invoiceEmail") ? " and emails show" : " shows"} the symbol.`,
   },
   {
     slug: "rounding",
     title: "Rounding time on invoices",
     group: "billing",
+    feature: "rounding",
     summary: "Bill in 6, 15 or 30 minute steps, with a minimum, for one client.",
     keywords: ["round up", "round", "quarter hour", "15 minutes", "minimum", "increment", "billing details"],
     body: `Some clients are billed in blocks (for example every quarter hour). Set it per client: on the Clients page, open the client's **Billing details** and choose:
@@ -84,15 +93,24 @@ The **Year summary** shows, for the year you pick:
 - **Received**: invoices **by the date they were paid**, including ones issued in an earlier year.
 - **Outstanding**: invoices still unpaid at the end of the year.
 
-There are tables by quarter, month, client and project, and **Export Excel** downloads it all. **Email me this** sends the figures to your own email address (once it is confirmed on Account), for example to forward to your accountant. It only ever goes to you, and up to five times a day. It is a summary of your own records, not tax advice: check it against your bank deposits before filing.`,
+There are tables by quarter, month, client and project, and **Export Excel** downloads it all.${
+      feature("reportEmail")
+        ? " **Email me this** sends the figures to your own email address (once it is confirmed on Account), for example to forward to your accountant. It only ever goes to you, and up to five times a day."
+        : ""
+    } It is a summary of your own records, not tax advice: check it against your bank deposits before filing.`,
   },
   {
     slug: "emailing-invoices",
-    title: "Sending an invoice and overdue reminders",
+    title: feature("invoiceEmail")
+      ? "Sending an invoice and overdue reminders"
+      : "Sharing an invoice with a private link",
     group: "billing",
-    summary: "Email it to your client or share a private link, and what the client sees.",
+    summary: feature("invoiceEmail")
+      ? "Email it to your client or share a private link, and what the client sees."
+      : "Send your client a private link to the invoice, and what the client sees.",
     keywords: ["email", "send", "link", "reminder", "overdue", "client email", "stop emails", "paper plane"],
-    body: `On the Invoices list, the paper-plane button opens **Send**. You can do either:
+    body: feature("invoiceEmail")
+      ? `On the Invoices list, the paper-plane button opens **Send**. You can do either:
 
 - **Email it to the client.** Add their address first (the Clients page, client **Billing details**). The email comes from "your name via UseHourly", replies go to **you**, and it holds a private link. You can add a short note.
 - **Copy a private link** and send it yourself.
@@ -105,6 +123,9 @@ Tick the reminders box when you send. If the invoice has a due date and is unpai
 
 ## Limits and opting out
 
-To protect everyone's email, you must have confirmed your own address, and new accounts can email after their first day. There are daily limits. Every email has a link for the client to **stop all emails**, after which nobody can email that address through UseHourly.`,
+To protect everyone's email, you must have confirmed your own address, and new accounts can email after their first day. There are daily limits. Every email has a link for the client to **stop all emails**, after which nobody can email that address through UseHourly.`
+      : `On the Invoices list, the paper-plane button opens **Send**. Choose how long the link works (30, 90 or 180 days), copy the private link, and send it to your client yourself, for example in your own email.
+
+The link opens a page with the invoice, a **Download PDF** button and how to pay. Anyone with the link can see the invoice, including your payment instructions, so keep lifetimes short.`,
   },
 ];

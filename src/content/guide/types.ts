@@ -1,3 +1,5 @@
+import type { Feature } from "@/lib/features";
+
 /** One guide topic: a short page about something that is easy to misunderstand. The body is a small Markdown subset (see lib/guide-markdown.ts). */
 export type Topic = {
   /** The page's address: /help/<slug>. Never change one that has been published (people link to it). */
@@ -10,9 +12,11 @@ export type Topic = {
   /** Words people might type that the title does not contain ("round up", "free", "offline"). */
   keywords: string[];
   body: string;
+  /** A topic about a feature that is hidden in this release (lib/features.ts) is not listed, searched or served. */
+  feature?: Feature;
 };
 
-export type FaqItem = { id: string; question: string; answer: string; keywords: string[] };
+export type FaqItem = { id: string; question: string; answer: string; keywords: string[]; feature?: Feature };
 
 export const GROUPS = [
   { id: "time", title: "Logging time" },

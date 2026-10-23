@@ -1,3 +1,4 @@
+import { FEATURES } from "../src/lib/features";
 import { icsFor } from "./calendar-fixture";
 import { expect, startFreshAccount, test } from "./helpers";
 
@@ -37,22 +38,21 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     );
   });
 
-  await test.step("the timer is a small link under Add, not a rival button", async () => {
-    const add = page.getByRole("button", { name: /^Log time/ });
-    const timer = page.getByRole("button", { name: /Start timer/ });
-    const addBox = await add.boundingBox();
-    const timerBox = await timer.boundingBox();
-    const wide = (page.viewportSize()?.width ?? 0) >= 1024;
-    if (wide) {
-      // the form is two columns on a wide screen: the timer sits in the left one, on the row of the Add button
-      expect(Math.abs((timerBox?.y ?? 0) - (addBox?.y ?? 0))).toBeLessThan(80);
-      expect((timerBox?.x ?? 0) + (timerBox?.width ?? 0)).toBeLessThan(addBox?.x ?? 0);
-    } else {
-      expect(timerBox?.y ?? 0).toBeGreaterThan((addBox?.y ?? 0) + (addBox?.height ?? 0));
-    }
-    expect(timerBox?.height ?? 99).toBeLessThan(80); // a quiet row, not a big solid button
-    await expect(timer).not.toHaveAttribute("data-variant", /.+/); // not one of the app's solid or outline buttons
+  await test.step("the timer lives under the watch, not as a rival button in the form", async () => {
+    const watch = page.getByRole("region", { name: "Timer" });
+    const start = watch.getByRole("button", { name: /Start\s+timer/ });
+    await expect(start).toBeVisible();
+    const box = await start.boundingBox();
+    expect(box?.height ?? 99).toBeLessThan(100); // a small steel button, not a big bar
+    await expect(page.getByRole("button", { name: /Start\s+timer/ })).toHaveCount(1); // one timer
   });
+
+  if (!FEATURES.calendar) {
+    // The calendar import is hidden in this release (src/lib/features.ts): Today offers none.
+    await expect(card).toHaveCount(0);
+    await expect(page.getByText("Turn meetings into time entries")).toHaveCount(0);
+    return;
+  }
 
   await test.step("not connected, the calendar card sits below the day's entries", async () => {
     const entries = page.getByRole("region", { name: /^What you worked on|timesheet/i }).first();

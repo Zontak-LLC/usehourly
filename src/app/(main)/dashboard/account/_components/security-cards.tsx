@@ -78,8 +78,8 @@ export function SignOutCard() {
 
   return (
     <SectionCard
-      title="Sign out"
-      description="Log out here, or on every device at once. Signing out everywhere also stops every AI assistant access token."
+      title="Log out"
+      description="Log out here, or on every device at once. Logging out everywhere also disconnects every AI assistant; connect them again with a new token."
     >
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>

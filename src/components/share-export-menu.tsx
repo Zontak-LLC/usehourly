@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { downloadTimesheetXlsx } from "@/lib/export-xlsx";
+import { feature } from "@/lib/features";
 import type { SheetEntry } from "@/lib/timesheet";
 
 export type SharePanelKind = "range" | "share";
@@ -35,7 +36,7 @@ export function SharePanel({
 }) {
   if (panel === "range")
     return <RangeExport onClose={onClose} defaultFrom={defaultFrom} defaultTo={defaultTo} projectId={projectId} />;
-  if (panel === "share")
+  if (panel === "share" && feature("signOff"))
     return <ShareTimesheet onClose={onClose} defaultFrom={defaultFrom} defaultTo={defaultTo} projectId={projectId} />;
   return null;
 }
@@ -64,6 +65,8 @@ export function ShareExportMenu({
   className?: string;
 }) {
   const accountCurrency = useAccountCurrency();
+  // Sign-off links are hidden in this release; the menu is then only about exporting, and says so.
+  const signOff = feature("signOff");
 
   async function download() {
     if (!entries) return;
@@ -78,7 +81,16 @@ export function ShareExportMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className={`group h-10 ${className ?? ""}`}>
-          <Share2 /> Share &amp; export <Caret />
+          {signOff ? (
+            <>
+              <Share2 /> Share &amp; export
+            </>
+          ) : (
+            <>
+              <Download /> Export
+            </>
+          )}{" "}
+          <Caret />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-64">
@@ -88,9 +100,11 @@ export function ShareExportMenu({
         <DropdownMenuItem onSelect={() => onPanel("range")}>
           <FileSpreadsheet /> Export a date range…
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onPanel("share")}>
-          <Send /> Send to a client for sign-off…
-        </DropdownMenuItem>
+        {signOff && (
+          <DropdownMenuItem onSelect={() => onPanel("share")}>
+            <Send /> Send to a client for sign-off…
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <a href="/help/share-and-export" target="_blank" rel="noopener noreferrer">
             <CircleHelp /> Which one do I use?

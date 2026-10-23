@@ -17,9 +17,9 @@ export default function PrivacyPage() {
       <h2>What we store</h2>
       <ul>
         <li>
-          Your account details: your name, your email address and your sign-in credentials. If you sign in with GitHub,
-          we receive your GitHub name, your verified email address and your GitHub account number, and nothing else; we
-          cannot see your repositories.
+          Your account details: your name, your email address and your sign-in credentials. If you sign in with Google
+          or GitHub, we receive your name, your verified email address and your account number with them, and nothing
+          else; we cannot see your email, files or repositories there.
         </li>
         <li>What you enter: clients, projects, time entries, notes, rates and invoices.</li>
       </ul>
@@ -60,9 +60,9 @@ export default function PrivacyPage() {
       <ul>
         <li>You can export everything you have entered at any time from the Account page.</li>
         <li>
-          You can delete your account yourself at the bottom of “Your data” on the Account page. That removes your
-          clients, projects, time entries, invoices and settings from our database straight away. Backups kept by our
-          hosting provider for disaster recovery expire on their own within 30 days.
+          You can delete your account yourself on the Account page, in the Delete account card under Profile. That
+          removes your clients, projects, time entries, invoices and settings from our database straight away. Backups
+          kept by our hosting provider for disaster recovery expire on their own within 30 days.
         </li>
         <li>If an email address bounces or is reported as spam, we stop sending reminders to it.</li>
       </ul>

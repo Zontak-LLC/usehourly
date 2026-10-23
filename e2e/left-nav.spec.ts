@@ -1,3 +1,4 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
@@ -28,6 +29,7 @@ test("navigation is along the top by default; the side menu is a choice, stays o
     });
     return;
   }
+  test.skip(!FEATURES.appearanceExtras, "The menu position choice is hidden in this release (src/lib/features.ts)");
 
   await test.step("by default, on a wide screen, the tab strip is shown and the side menu is not", async () => {
     await expect(page.locator("html")).toHaveAttribute("data-nav-position", "top");

@@ -1,6 +1,8 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
 
 test("the non-billable day button shows a check mark and a selected look when it is on", async ({ page, shot }) => {
+  test.skip(!FEATURES.nonBillableDays, "Non-billable days are hidden in this release (src/lib/features.ts)");
   await startFreshAccount(page);
   await page.goto("/dashboard/week");
   const button = page.getByRole("button", { name: /Mark day non-billable|Non-billable day/ }).first();

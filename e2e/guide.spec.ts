@@ -1,3 +1,4 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
 
 /** The guide and FAQ: public, searchable, reachable from the app's menu and from the "?" beside confusing settings. */
@@ -7,23 +8,23 @@ test("a visitor can search the guide, read a topic and the FAQ, with no account"
   await expect(page.getByRole("heading", { name: "Logging time" })).toBeVisible(); // topics are grouped under headings
 
   await test.step("searching finds a topic by the words a person would type", async () => {
-    await page.getByRole("searchbox", { name: "Search the guide" }).fill("round up");
-    const results = page.getByRole("link", { name: /Rounding time on invoices/ });
+    await page.getByRole("searchbox", { name: "Search the guide" }).fill("pdf");
+    const results = page.getByRole("link", { name: /Making an invoice/ });
     await expect(results.first()).toBeVisible();
     await page.getByRole("searchbox", { name: "Search the guide" }).fill("zzzzqqq");
     await expect(page.getByText(/Nothing matches that/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Logging time" })).toBeVisible(); // falls back to the full list
-    await page.getByRole("searchbox", { name: "Search the guide" }).fill("round up");
+    await page.getByRole("searchbox", { name: "Search the guide" }).fill("pdf");
     await page
-      .getByRole("link", { name: /Rounding time on invoices/ })
+      .getByRole("link", { name: /Making an invoice/ })
       .first()
       .click();
   });
 
   await test.step("a topic page reads well and links on to related topics", async () => {
-    await expect(page).toHaveURL(/\/help\/rounding$/);
-    await expect(page.getByRole("heading", { name: "Rounding time on invoices", level: 1 })).toBeVisible();
-    await expect(page.getByText("Billing details").first()).toBeVisible();
+    await expect(page).toHaveURL(/\/help\/making-an-invoice$/);
+    await expect(page.getByRole("heading", { name: "Making an invoice", level: 1 })).toBeVisible();
+    await expect(page.getByText("New invoice").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "More in this group" })).toBeVisible();
   });
 
@@ -61,21 +62,26 @@ test("a visitor can search the guide, read a topic and the FAQ, with no account"
   });
 
   await test.step("every topic is listed in the guide's own contents, with the page you are on marked", async () => {
-    await page.goto("/help/rounding");
+    await page.goto("/help/making-an-invoice");
     const phone = (page.viewportSize()?.width ?? 1280) < 1024;
     if (phone) await page.getByText("Browse all topics").click();
     const toc = page.getByRole("navigation", { name: phone ? "Guide topics (phone)" : "Guide topics" });
-    await expect(toc.getByRole("link", { name: "Rounding time on invoices" })).toHaveAttribute("aria-current", "page");
-    await expect(toc.getByRole("link", { name: "Making an invoice" })).not.toHaveAttribute("aria-current", "page");
+    await expect(toc.getByRole("link", { name: "Making an invoice" })).toHaveAttribute("aria-current", "page");
+    await expect(toc.getByRole("link", { name: "Marking paid and the year summary" })).not.toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     await expect(toc.getByText("Invoices and money", { exact: true })).toBeVisible(); // grouped under headings
     await expect(toc.getByRole("link", { name: "FAQ" })).toBeVisible();
-    await toc.getByRole("link", { name: "Project budgets" }).click();
-    await expect(page).toHaveURL(/\/help\/budgets$/);
-    await expect(page.getByRole("heading", { name: "Project budgets", level: 1 })).toBeVisible();
+    await toc.getByRole("link", { name: "Marking paid and the year summary" }).click();
+    await expect(page).toHaveURL(/\/help\/paid-and-year-summary$/);
+    await expect(page.getByRole("heading", { name: "Marking paid and the year summary", level: 1 })).toBeVisible();
   });
 
   await test.step("a made-up topic is a normal not-found page", async () => {
     expect((await request.get("/help/not-a-topic")).status()).toBe(404);
+    // so is a topic about a feature this release hides (src/lib/features.ts)
+    if (!FEATURES.rounding) expect((await request.get("/help/rounding")).status()).toBe(404);
   });
 });
 
@@ -113,26 +119,36 @@ test("the app links to the guide: the menu, and a ? beside the settings that are
     await expect(page).toHaveURL(/\/help$/);
   });
 
-  await test.step("the ? beside rounding opens the matching topic in a new tab", async () => {
-    await page.goto("/dashboard/clients");
-    await page
-      .getByRole("button", { name: /More actions for (?!Clients$)/ })
-      .first()
-      .click();
-    await page.getByRole("menuitem", { name: "Billing details" }).click();
-    const help = page.getByRole("link", { name: "Guide: rounding time on invoices" });
-    await expect(help).toHaveAttribute("href", "/help/rounding");
+  await test.step("the Export menu's 'Which one do I use?' opens the matching topic in a new tab", async () => {
+    await page.goto("/dashboard/week");
+    await page.getByRole("button", { name: /^(Share & export|Export)$/ }).click();
+    const help = page.getByRole("menuitem", { name: "Which one do I use?" });
+    await expect(help).toHaveAttribute("href", "/help/share-and-export");
     await expect(help).toHaveAttribute("target", "_blank");
     const [tab] = await Promise.all([context.waitForEvent("page"), help.click()]);
-    await expect(tab.getByRole("heading", { name: "Rounding time on invoices", level: 1 })).toBeVisible();
+    await expect(tab.getByRole("heading", { name: /Share & export/, level: 1 })).toBeVisible();
     await tab.close();
   });
 
-  await test.step("the accounting export on Account has one too", async () => {
-    await page.goto("/dashboard/account#data");
-    await expect(page.getByRole("link", { name: "Guide: Xero and QuickBooks" })).toHaveAttribute(
-      "href",
-      "/help/xero-quickbooks",
-    );
+  await test.step("the ? beside rounding and the accounting export open their topics", async () => {
+    if (FEATURES.rounding) {
+      await page.goto("/dashboard/clients");
+      await page
+        .getByRole("button", { name: /More actions for (?!Clients$)/ })
+        .first()
+        .click();
+      await page.getByRole("menuitem", { name: "Billing details" }).click();
+      await expect(page.getByRole("link", { name: "Guide: rounding time on invoices" })).toHaveAttribute(
+        "href",
+        "/help/rounding",
+      );
+    }
+    if (FEATURES.accountingExport) {
+      await page.goto("/dashboard/account#data");
+      await expect(page.getByRole("link", { name: "Guide: Xero and QuickBooks" })).toHaveAttribute(
+        "href",
+        "/help/xero-quickbooks",
+      );
+    }
   });
 });

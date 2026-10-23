@@ -31,8 +31,8 @@ test("delete invoice confirms inside the card; archive is immediate with Undo", 
 
   await test.step("archiving a project happens at once and offers Undo", async () => {
     await page.goto("/dashboard/clients");
-    await page.getByRole("button", { name: "More actions for Mobile app" }).click();
-    await page.getByRole("menuitem", { name: "Archive project" }).click();
+    await page.getByRole("button", { name: "Edit Mobile app" }).click();
+    await page.getByRole("button", { name: "Archive project" }).click(); // the red button in the project's edit form
     await expect(page.getByRole("dialog")).toHaveCount(0); // no "Are you sure?"
     await expect(page.getByText(/Mobile app archived/)).toBeVisible();
     await page.getByRole("button", { name: "Undo" }).click();

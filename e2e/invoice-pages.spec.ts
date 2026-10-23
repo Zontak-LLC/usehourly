@@ -54,33 +54,52 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
   }
 });
 
-test("an invoice shows its status in its header, labelled buttons on a wide screen, and the filters start folded", async ({
+test("an invoice says its state in words, unpaid ones have Mark paid, and the tabs narrow the list", async ({
   page,
-}, info) => {
+}) => {
   await startDemo(page);
   await page.goto("/dashboard/invoices");
 
-  const first = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
-  // the status (Unpaid / Paid) is in the header line, next to the invoice number
+  const card = page.getByRole("region", { name: "Your invoices" });
+  const invoices = card.getByRole("listitem");
+  await expect(invoices.first()).toBeVisible();
+  const all = await invoices.count();
+  expect(all).toBeGreaterThanOrEqual(2); // the sample data has a paid and an unpaid invoice
+  // the state is in words beside the amount: Paid Oct 20, Due in 5 days, 3 days late, Due today, Waiting
+  for (const row of await invoices.all())
+    await expect(row).toContainText(/Paid \w{3} \d+|Due in \d+ days?|\d+ days? late|Due today|Waiting/);
+  // the number is a button that downloads the PDF
+  await expect(invoices.first().getByRole("button", { name: /^INV-\d{4}-\d{3}: download the PDF$/ })).toBeVisible();
+
+  await test.step("the tabs: All is chosen, Paid shows only paid ones, Waiting only unpaid ones", async () => {
+    const tabs = page.getByRole("tablist", { name: "Show invoices" });
+    await expect(tabs.getByRole("tab", { name: /^All/ })).toHaveAttribute("aria-selected", "true");
+    await tabs.getByRole("tab", { name: /^Paid/ }).click();
+    await expect(tabs.getByRole("tab", { name: /^Paid/ })).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => invoices.count()).toBeLessThan(all);
+    for (const row of await invoices.all()) {
+      await expect(row).toContainText(/Paid \w{3} \d+/);
+      await expect(row.getByRole("button", { name: "Mark paid" })).toHaveCount(0);
+    }
+    await tabs.getByRole("tab", { name: /^Waiting/ }).click();
+    await expect.poll(() => invoices.count()).toBeGreaterThan(0);
+    for (const row of await invoices.all()) await expect(row.getByRole("button", { name: "Mark paid" })).toBeVisible();
+    await tabs.getByRole("tab", { name: /^All/ }).click();
+    await expect.poll(() => invoices.count()).toBe(all);
+  });
+
+  await test.step("Mark paid opens its panel under the invoice and closes on a second press", async () => {
+    const mark = card.getByRole("button", { name: "Mark paid" }).first();
+    await expect(mark).toHaveAttribute("aria-expanded", "false");
+    await mark.click();
+    await expect(mark).toHaveAttribute("aria-expanded", "true");
+    await mark.click();
+    await expect(mark).toHaveAttribute("aria-expanded", "false");
+  });
+
+  // there are no folded filters any more: one search box
+  await expect(page.getByRole("button", { name: "Filters" })).toHaveCount(0);
   await expect(
-    first
-      .locator("div")
-      .first()
-      .getByText(/Unpaid|Paid/),
+    page.getByRole("searchbox", { name: "Search invoices" }).or(page.getByLabel("Search invoices")),
   ).toBeVisible();
-
-  if (info.project.name === "desktop") {
-    // words on the buttons, not bare icons
-    await expect(
-      first.getByRole("button", { name: /^(Mark|Edit payment|Send) /, includeHidden: false }).first(),
-    ).toBeVisible();
-    await expect(first.getByText("Send", { exact: true }).locator("visible=true")).toBeVisible();
-  }
-
-  // the filters are folded on every screen until Filters is pressed
-  await expect(page.getByLabel("Issued from")).toBeHidden();
-  await page.getByRole("button", { name: "Filters" }).click();
-  await expect(page.getByLabel("Issued from")).toBeVisible();
-  await page.getByRole("button", { name: "Filters" }).click();
-  await expect(page.getByLabel("Issued from")).toBeHidden();
 });

@@ -10,7 +10,7 @@ const PUBLIC_PAGES: [string, string][] = [
   ["/tools/hours-calculator", "hours calculator"],
   ["/help", "guide"],
   ["/help/faq", "faq"],
-  ["/help/rounding", "guide topic"],
+  ["/help/making-an-invoice", "guide topic"],
 ];
 
 test.describe("public pages", () => {

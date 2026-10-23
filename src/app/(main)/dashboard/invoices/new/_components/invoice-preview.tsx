@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMoney } from "@/components/currency-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimalHours } from "@/lib/duration";
+import { feature } from "@/lib/features";
 import type { buildInvoice } from "@/lib/invoice";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
 import { useCountUp } from "@/lib/use-count-up";
@@ -83,11 +84,18 @@ export function InvoiceNotices({
       {isRounding(rounding) && totals.lines.length > 0 && (
         <p className="text-muted-foreground text-sm">
           {describeRounding(rounding)} You logged {formatDecimalHours(totals.loggedMinutes)} h and will bill{" "}
-          {formatDecimalHours(totals.totalMinutes)} h. Change it under{" "}
-          <Link href="/dashboard/clients" className="underline">
-            Clients
-          </Link>
-          .
+          {formatDecimalHours(totals.totalMinutes)} h.
+          {/* A rule stored earlier still applies; the setting itself is hidden while rounding is turned off. */}
+          {feature("rounding") && (
+            <>
+              {" "}
+              Change it under{" "}
+              <Link href="/dashboard/clients" className="underline">
+                Clients
+              </Link>
+              .
+            </>
+          )}
         </p>
       )}
 

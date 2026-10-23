@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ExplorerWatch, LUME } from "@/components/explorer-watch";
+import { PALETTE } from "@/lib/palette";
+
 const DAYS = ["M", "T", "W", "T", "F"];
 const BARS: [number, number][] = [
   [62, 18],
@@ -44,32 +47,11 @@ export function LandingStory() {
     <div ref={ref} className="grid gap-4 md:grid-cols-3">
       <article className="flex flex-col gap-4 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)]">
         <div aria-hidden className="grid h-44 place-items-center">
-          <svg viewBox="0 0 200 200" className="size-40 overflow-visible">
-            <title>A day dial filling up to 6:35</title>
-            <circle cx="100" cy="100" r="78" fill="none" stroke="var(--muted)" strokeWidth="16" />
-            <circle
-              cx="100"
-              cy="100"
-              r="78"
-              fill="none"
-              stroke="var(--amber)"
-              strokeWidth="16"
-              strokeLinecap="round"
-              strokeDasharray="490"
-              strokeDashoffset={on ? 490 * 0.18 : 490}
-              transform="rotate(-90 100 100)"
-              style={{ transition: `stroke-dashoffset 1.6s ${ease}` }}
-            />
-            <text
-              x="100"
-              y="108"
-              textAnchor="middle"
-              className="fill-foreground font-display font-extrabold"
-              fontSize="38"
-            >
-              6:35
-            </text>
-          </svg>
+          <ExplorerWatch fraction={on ? 0.82 : 0} ring={PALETTE.brandBlend} marks={8} duration={1.6} className="w-40">
+            <div className="absolute inset-x-0 top-[53%] text-center" style={{ color: LUME }}>
+              <span className="font-display font-extrabold text-[13cqi] tabular-nums leading-none">6:35</span>
+            </div>
+          </ExplorerWatch>
         </div>
         <div>
           <h3 className="font-bold font-display text-xl">Log a day in seconds</h3>

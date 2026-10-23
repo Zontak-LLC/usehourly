@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
@@ -299,6 +299,64 @@ describe("daily time entry journey", () => {
   });
 });
 
+describe("resuming a stopped timer (Today's Resume button)", () => {
+  it("runs the same entry again after stopping any other timer, and the next stop adds to what it held", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-23T10:00:00Z"));
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst
+      .mockResolvedValueOnce({ id: "e1", user_id: "u1", minutes: 13, started_at: null })
+      .mockResolvedValueOnce({ id: "other", minutes: 5, started_at: new Date("2026-10-23T09:50:00Z") });
+    await asCaller(prisma, "u1").entry.resume({ id: "e1" });
+    expect(prisma.timeEntry.findFirst).toHaveBeenNthCalledWith(1, { where: { id: "e1", user_id: "u1" } });
+    // The other timer is banked first: 5 + 10 elapsed.
+    expect(prisma.timeEntry.update).toHaveBeenNthCalledWith(1, {
+      where: { id: "other", user_id: "u1" },
+      data: { minutes: 15, started_at: null },
+    });
+    expect(prisma.timeEntry.update).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: { id: "e1", user_id: "u1" },
+        data: { started_at: new Date("2026-10-23T10:00:00Z") },
+      }),
+    );
+
+    // Twenty minutes later the stop adds 20 to the 13 already banked.
+    vi.setSystemTime(new Date("2026-10-23T10:20:00Z"));
+    prisma.timeEntry.update.mockClear();
+    prisma.timeEntry.findFirst.mockResolvedValueOnce({
+      id: "e1",
+      minutes: 13,
+      started_at: new Date("2026-10-23T10:00:00Z"),
+    });
+    await asCaller(prisma, "u1").entry.stop();
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { minutes: 33, started_at: null } }),
+    );
+    vi.useRealTimers();
+  });
+
+  it("refuses another account's entry and a missing id, touching nothing", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue(null);
+    await expect(asCaller(prisma, "u2").entry.resume({ id: "e1" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(prisma.timeEntry.findFirst).toHaveBeenCalledWith({ where: { id: "e1", user_id: "u2" } });
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+
+    prisma.timeEntry.findFirst.mockClear();
+    await expect(asCaller(prisma, "u1").entry.resume({ id: "" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("will not resume an entry that already holds a full day", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue({ id: "e1", user_id: "u1", minutes: 1440, started_at: null });
+    await expect(asCaller(prisma, "u1").entry.resume({ id: "e1" })).rejects.toThrow("already holds a full day");
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+  });
+});
+
 describe("a timer left running for days", () => {
   it("stop banks at most one day, however long it ran", async () => {
     const prisma = mockPrisma();
@@ -350,6 +408,149 @@ describe("a timer left running for days", () => {
       expect.objectContaining({ data: { minutes: 135, started_at: null } }),
     );
     vi.useRealTimers();
+  });
+});
+
+describe("timer: started earlier (Today's -15 min / -30 min / -1 hour chips)", () => {
+  const T0 = new Date("2026-10-23T10:00:00Z");
+  function runningAt(startedAt: Date, extra: Record<string, unknown> = {}) {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue({
+      id: "run",
+      user_id: "u1",
+      minutes: 0,
+      started_at: startedAt,
+      ...extra,
+    });
+    return prisma;
+  }
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-23T10:01:00Z"));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("moves the caller's own running start back by the chosen minutes, only if it has not changed meanwhile", async () => {
+    const prisma = runningAt(T0);
+    await asCaller(prisma, "u1").entry.shiftStart({ minutes: 30, tzOffset: 0 });
+    expect(prisma.timeEntry.findFirst).toHaveBeenCalledWith({ where: { user_id: "u1", started_at: { not: null } } });
+    expect(prisma.timeEntry.update).toHaveBeenCalledTimes(1);
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "run", user_id: "u1", started_at: T0 },
+        data: { started_at: new Date("2026-10-23T09:30:00Z") },
+      }),
+    );
+
+    // The stop that follows counts from the new start: 09:30 to 10:31 is 61 minutes.
+    vi.setSystemTime(new Date("2026-10-23T10:31:00Z"));
+    prisma.timeEntry.update.mockClear();
+    prisma.timeEntry.findFirst.mockResolvedValue({
+      id: "run",
+      minutes: 0,
+      started_at: new Date("2026-10-23T09:30:00Z"),
+    });
+    await asCaller(prisma, "u1").entry.stop();
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { minutes: 61, started_at: null } }),
+    );
+  });
+
+  it("never touches another account's timer: with none running for the caller it is NOT_FOUND", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue(null); // u1's timer is not visible under u2's filter
+    await expect(asCaller(prisma, "u2").entry.shiftStart({ minutes: 15, tzOffset: 0 })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(prisma.timeEntry.findFirst).toHaveBeenCalledWith({ where: { user_id: "u2", started_at: { not: null } } });
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+
+    await expect(asCaller(prisma, null).entry.shiftStart({ minutes: 15, tzOffset: 0 })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+  });
+
+  it("validates input (0, over 12 hours, fractions, a made-up time zone) and never reads or writes", async () => {
+    const prisma = runningAt(T0);
+    const c = asCaller(prisma, "u1");
+    for (const bad of [
+      { minutes: 0, tzOffset: 0 },
+      { minutes: 721, tzOffset: 0 },
+      { minutes: 1.5, tzOffset: 0 },
+      { minutes: 15, tzOffset: 900 },
+    ]) {
+      await expect(c.entry.shiftStart(bad)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+    expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses a start more than 12 hours ago, and writes nothing", async () => {
+    vi.setSystemTime(new Date("2026-10-23T20:00:00Z"));
+    const prisma = runningAt(new Date("2026-10-23T10:00:00Z")); // already 10 hours
+    await expect(asCaller(prisma, "u1").entry.shiftStart({ minutes: 180, tzOffset: 0 })).rejects.toThrow(
+      "at most 12 hours ago",
+    );
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses to move the start to the day before in the person's own time zone", async () => {
+    // 05:10 UTC is 00:10 in New York (offset 300): 15 minutes back is yesterday there.
+    vi.setSystemTime(new Date("2026-10-23T05:11:00Z"));
+    const prisma = runningAt(new Date("2026-10-23T05:10:00Z"));
+    await expect(asCaller(prisma, "u1").entry.shiftStart({ minutes: 15, tzOffset: 300 })).rejects.toThrow("day before");
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+
+    // The same moment in London (offset 0) is 05:10, so the same shift is fine.
+    await asCaller(prisma, "u1").entry.shiftStart({ minutes: 15, tzOffset: 0 });
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { started_at: new Date("2026-10-23T04:55:00Z") } }),
+    );
+  });
+
+  it("gives a plain message when the timer was stopped or moved at the same moment", async () => {
+    const prisma = runningAt(T0);
+    prisma.timeEntry.update.mockRejectedValueOnce(Object.assign(new Error("not found"), { code: "P2025" }));
+    await expect(asCaller(prisma, "u1").entry.shiftStart({ minutes: 15, tzOffset: 0 })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The timer changed. Please try again.",
+    });
+  });
+});
+
+describe("timer: still working? (stop at an earlier moment)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-23T15:00:00Z"));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("stops the caller's timer 60 minutes ago: only the time up to then is kept, on top of what it held", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue({
+      id: "r",
+      minutes: 10,
+      started_at: new Date("2026-10-23T10:00:00Z"),
+    });
+    await asCaller(prisma, "u1").entry.stop({ minutesAgo: 60 });
+    expect(prisma.timeEntry.findFirst).toHaveBeenCalledWith({ where: { user_id: "u1", started_at: { not: null } } });
+    expect(prisma.timeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "r", user_id: "u1" }, data: { minutes: 250, started_at: null } }),
+    );
+  });
+
+  it("refuses a moment before the timer started, and bad input, writing nothing", async () => {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue({ id: "r", minutes: 0, started_at: new Date("2026-10-23T14:30:00Z") });
+    await expect(asCaller(prisma, "u1").entry.stop({ minutesAgo: 30 })).rejects.toThrow("had not started then");
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+
+    prisma.timeEntry.findFirst.mockClear();
+    for (const minutesAgo of [0, -5, 1441, 2.5]) {
+      await expect(asCaller(prisma, "u1").entry.stop({ minutesAgo })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+    expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
   });
 });
 

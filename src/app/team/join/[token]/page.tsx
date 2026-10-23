@@ -1,4 +1,8 @@
+import { notFound } from "next/navigation";
+
 import type { Metadata } from "next";
+
+import { feature } from "@/lib/features";
 
 import { JoinView } from "./join-view";
 
@@ -9,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
+  if (!feature("team")) notFound();
   const { token } = await params;
   return (
     <div className="min-h-dvh bg-background text-foreground">

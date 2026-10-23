@@ -1,3 +1,4 @@
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test } from "./helpers";
 
 // A 1x1 PNG: the browser turns whatever is chosen into a 128x128 picture, so any real image will do.
@@ -22,7 +23,7 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
   });
 
   await test.step("the side menu no longer carries the name or Log out", async () => {
-    if (phone) return;
+    if (phone || !FEATURES.appearanceExtras) return; // the side menu is a choice that is hidden in this release
     await page.context().addCookies([{ name: "nav_position", value: "left", url: new URL("/", page.url()).href }]); // journeys start on the tab strip; the side menu is a choice
     await page.reload();
     const side = page.getByRole("navigation", { name: "Side menu" });
@@ -32,6 +33,13 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
   });
 
   await test.step("a picture can be added straight from the menu, and removed from it", async () => {
+    if (!FEATURES.avatar) {
+      // Pictures are hidden in this release (src/lib/features.ts): the menu offers none.
+      await trigger.click();
+      await expect(page.getByRole("menuitem", { name: "Add a picture" })).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      return;
+    }
     await trigger.click();
     await expect(page.getByRole("menuitem", { name: "Add a picture" })).toBeVisible();
     await page.keyboard.press("Escape");
@@ -56,6 +64,7 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
   });
 
   await test.step("a picture added on Account replaces the initials in the top bar, and can be removed", async () => {
+    if (!FEATURES.avatar) return; // pictures are hidden in this release (src/lib/features.ts)
     await page
       .getByLabel("Choose picture file")
       .setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PIXEL });
