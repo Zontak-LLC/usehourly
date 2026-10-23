@@ -1,5 +1,5 @@
 import { FEATURES } from "../src/lib/features";
-import { anonymous, clearMail, expect, linkIn, mailTo, newUser, seen, test, today } from "./helpers";
+import { anonymous, clearMail, expect, gotoClient, linkIn, mailTo, newUser, seen, test, today } from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -119,21 +119,21 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("set the project's hourly rate under Clients", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme Studio"); // the split view: on a phone the client is picked from the list first
     await expect(page.getByRole("heading", { name: "Clients", level: 1 })).toBeVisible();
     await expect(page.getByText("No hourly rate yet")).toBeVisible(); // a missing rate is visible, not silent
     await shot("my-work-before");
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Rate per hour").fill("60");
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("$60.00/h")).toBeVisible();
+    await expect(page.getByText("$60.00/h").first()).toBeVisible();
     await audit("my work");
     await shot("my-work-after");
   });
 
   await test.step("give the project a monthly budget: the bar shows on Clients and above the add form", async () => {
     if (!FEATURES.budgets) return; // hidden in this release (src/lib/features.ts)
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme Studio");
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Budget amount").fill("100");
     await page.getByLabel("Budget unit").selectOption("dollars");
@@ -151,11 +151,11 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     await audit("today, over budget");
 
     // a blank budget removes it again
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme Studio");
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Budget amount").fill("");
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("$60.00/h")).toBeVisible();
+    await expect(page.getByText("$60.00/h").first()).toBeVisible();
     await expect(page.getByText(/Budget: /)).toBeHidden();
   });
 
