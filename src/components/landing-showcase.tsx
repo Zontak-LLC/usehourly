@@ -86,9 +86,9 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
           desktop screen shrunk to a phone is too small to read. */}
       <div className="min-h-0 flex-1 dark:hidden">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=6`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=7`} />
           <img
-            src={`/landing/tour/${screen.file}.webp?v=6`}
+            src={`/landing/tour/${screen.file}.webp?v=7`}
             alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
             width={1440}
             height={1240}
@@ -100,9 +100,9 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
       </div>
       <div className="hidden min-h-0 flex-1 dark:block">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=6`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=7`} />
           <img
-            src={`/landing/tour-dark/${screen.file}.webp?v=6`}
+            src={`/landing/tour-dark/${screen.file}.webp?v=7`}
             alt=""
             width={1000}
             height={862}

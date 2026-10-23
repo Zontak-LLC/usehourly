@@ -38,12 +38,12 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     );
   });
 
-  await test.step("the timer lives under the watch, not as a rival button in the form", async () => {
+  await test.step("the timer is one strip above the form, not a rival button in it", async () => {
     const watch = page.getByRole("region", { name: "Timer" });
     const start = watch.getByRole("button", { name: /Start\s+timer/ });
     await expect(start).toBeVisible();
     const box = await start.boundingBox();
-    expect(box?.height ?? 99).toBeLessThan(100); // a small steel button, not a big bar
+    expect(box?.height ?? 99).toBeLessThan(100); // a small button, not a big bar
     await expect(page.getByRole("button", { name: /Start\s+timer/ })).toHaveCount(1); // one timer
   });
 

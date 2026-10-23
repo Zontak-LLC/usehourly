@@ -48,7 +48,7 @@ export function LandingStory() {
         <div aria-hidden className="grid h-44 place-items-center">
           <div className="w-60">
             <DigitalWatch
-              mode={on ? { kind: "running", seconds: 2530, label: "Northwind" } : { kind: "time" }}
+              mode={on ? { kind: "running", seconds: 2530, label: "Northwind" } : { kind: "total", minutes: 375 }}
               label="A stopwatch running"
             />
           </div>

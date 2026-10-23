@@ -2,13 +2,12 @@
 
 import type { ReactNode } from "react";
 
-import { useSweepIn } from "@/components/explorer-watch";
+import { useSweepIn } from "@/components/use-sweep-in";
 import { PALETTE } from "@/lib/palette";
 
 /**
  * A figure against a goal, without a clock: a label, the big figure, how far it is towards the goal as one progress line
- * (the brand blend, like every progress line), and a short foot. The watch belongs to Today and Week only (the pages
- * about time); a month on Clients or a year on the Year summary is a number with a bar.
+ * (the brand blend, like every progress line), and a short foot. The app draws no clocks (see docs/ui-spec.md).
  */
 export function GoalSummary({
   label,

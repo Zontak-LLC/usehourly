@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Plus } from "lucide-react";
+import { ClockPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -59,7 +59,7 @@ export function QuickAdd({
   bare?: boolean;
   /** From a wide screen up the form is two columns (project and description at the left, time and the buttons at the right) for a page that gives it the full width. */
   wide?: boolean;
-  /** Today's timer sits beside the dial, not in this form: it starts for the project and description picked here. */
+  /** Today's timer is the strip above this form: it starts for the project and description picked here. */
   onTimerContext?: (context: { projectId: string; projectName: string; note: string }) => void;
 }) {
   const utils = trpc.useUtils();
@@ -291,12 +291,12 @@ export function QuickAdd({
         <button
           type="submit"
           disabled={create.isPending || parsed === null}
-          // The main event: a big amber button with a plus disc, a soft glow and a lift. While no time is typed it is a
+          // The main event: a big amber button with a clock-plus disc (time going in), a soft glow and a lift. While no time is typed it is a
           // plain neutral (not brown, not a dashed box), and it comes alive when there is something to add.
           className={`group relative flex h-14 w-full items-center justify-center gap-3 ${wc("lg:col-start-2 lg:row-start-3")} rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-muted disabled:font-bold disabled:text-foreground/55 disabled:shadow-none`}
         >
-          <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:rotate-90 group-disabled:bg-foreground/20 group-disabled:text-foreground/70">
-            <Plus className="size-4" strokeWidth={3} aria-hidden />
+          <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/20 group-disabled:text-foreground/70">
+            <ClockPlus className="size-4" strokeWidth={2.5} aria-hidden />
           </span>
           Log time
           <Kbd className="hidden bg-[#1b1405]/15 text-inherit md:inline-flex">↵</Kbd>

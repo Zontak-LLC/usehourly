@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ChevronDown, Play, Square } from "lucide-react";
 import { toast } from "sonner";
@@ -12,9 +12,6 @@ import { formatDuration } from "@/lib/duration";
 import { NOTE_MAX } from "@/lib/notes";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
-
-/** The brushed-steel face of the timer buttons (kept here so the controls work under any display, not only the watch). */
-const STEEL = "linear-gradient(135deg, rgb(236 238 242), rgb(150 155 165) 50%, rgb(214 217 223))";
 
 /** Sent when a timer starts, so the add form clears the description it used. */
 export const TIMER_STARTED_EVENT = "hourly:timer-started";
@@ -90,7 +87,7 @@ function useRunningNote(entry: { id: string; note: string } | null) {
 }
 
 /**
- * Today's one timer, built into the day dial. Idle: Start (for the project on the chip). Running: Stop, a description
+ * Today's one timer, a slim strip above the add form. Idle: Start (for the project on the chip). Running: Stop, a description
  * box and, for a moment, "Started earlier?". Stopped: the saved time with - / + 5 min, then Resume / Add / Discard, which
  * stay until the person picks one (the time is already saved, so leaving the page keeps it). Every press locks the
  * buttons for a moment, so a double click cannot start and then stop (found 2026-10-23).
@@ -219,10 +216,12 @@ export function useTodayTimer({
     }
   }
 
-  function onKeep() {
-    if (locked()) return;
+  /** Files the stopped time (it is already saved); false while the buttons are still locked after the stop. */
+  function onKeep(): boolean {
+    if (locked()) return false;
     playClick("save");
     setStopped(null);
+    return true;
   }
 
   /** - / + 5 min after a stop: shown at once, saved in order (one change after the other). */
@@ -288,104 +287,34 @@ export function useTodayTimer({
   };
 }
 
-/** A steel button with an icon and a two-line label under it (written "Line one\nline two"). Every one is the same size, so a row of them lines up. */
-function SteelButton({
-  label,
-  icon,
-  onClick,
-  disabled,
-  dot = false,
-  middle = false,
-  title,
-}: {
-  label: string;
-  /** Sit in the tray's middle column on its own (Start, Stop). */
-  middle?: boolean;
-  icon: ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  dot?: boolean;
-  title?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title ?? label.replaceAll("\n", " ")}
-      className={`group flex w-full min-w-0 flex-col items-center gap-2 disabled:opacity-50 ${middle ? "col-start-2" : ""}`}
-    >
-      <span
-        style={{ background: STEEL }}
-        className="relative grid size-12 place-items-center rounded-full text-[rgb(20_22_27)] shadow-[inset_0_1px_0_rgb(255_255_255/0.75),0_3px_6px_rgb(0_0_0/0.5)] transition-[filter,transform,box-shadow] duration-75 group-hover:brightness-105 group-active:translate-y-0.5 group-active:shadow-[inset_0_2px_4px_rgb(0_0_0/0.35)]"
-      >
-        {icon}
-        {dot && (
-          <span
-            aria-hidden
-            className="absolute top-0.5 right-0.5 size-2.5 rounded-full bg-amber ring-2 ring-black/60"
-          />
-        )}
-      </span>
-      <span className="whitespace-pre-line text-center font-mono text-[10px] text-white/75 uppercase leading-[1.25] tracking-wide">
-        {label}
-      </span>
-    </button>
-  );
-}
-
-/** The dark tray the timer's buttons sit in, under the watch: one panel, equal columns. */
-function Tray({ children, legend }: { children: ReactNode; legend?: string }) {
-  // Always three equal columns: Start and Stop sit in the middle one, where "Add to timesheet" appears after a stop,
-  // so nothing moves when the state changes.
-  const cls =
-    "grid w-full grid-cols-3 items-start justify-items-center rounded-2xl bg-white/[0.04] px-2 pt-3 pb-2 ring-1 ring-white/10";
-  return legend ? (
-    <fieldset className={cls}>
-      <legend className="sr-only">{legend}</legend>
-      {children}
-    </fieldset>
-  ) : (
-    <div className={cls}>{children}</div>
-  );
-}
-
-/** A small rounded button on the dark watch box (the - / + nudges and the time choices). */
+/** A small rounded button (the time choices). */
 const PILL =
-  "inline-flex h-9 min-w-0 items-center justify-center rounded-full bg-white/10 px-2 font-mono text-white text-xs ring-1 ring-white/15 transition-colors hover:bg-white/15 disabled:opacity-40";
-const SMALL_TEXT = "font-mono text-[11px] text-white/60";
+  "inline-flex h-9 min-w-0 items-center justify-center rounded-full bg-card px-3 text-xs ring-1 ring-foreground/15 transition-colors hover:bg-muted disabled:opacity-40";
+const SMALL_TEXT = "text-muted-foreground text-xs";
+const BUTTON =
+  "inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 font-semibold text-sm transition-colors disabled:opacity-50";
 
 /**
- * Which project the timer starts on (or runs on), as a chip with the client's colour. Idle, a tap opens a plain list of
- * the account's projects; picking one there does not change the Log time form.
+ * Which project the timer starts on (or runs on), with the client's colour. Idle, with two projects or more, it is a
+ * plain select of the account's projects; picking one there does not change the Log time form.
  */
 function ProjectChip({ timer }: { timer: TodayTimer }) {
   const running = timer.entry;
-  const stoppedProject = timer.stopped?.projectId
-    ? timer.projects.find((p) => p.id === timer.stopped?.projectId)
-    : null;
   const shown = running
-    ? {
-        name: running.project.name,
-        clientName: running.project.client.name,
-        color: running.project.client.color,
-      }
-    : timer.stopped
-      ? (stoppedProject ?? null)
-      : timer.timerProject;
+    ? { name: running.project.name, clientName: running.project.client.name, color: running.project.client.color }
+    : timer.timerProject;
   if (!shown) return null;
   const face = (
     <>
       <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: shown.color }} />
       <span className="min-w-0 truncate">
         {shown.name}
-        <span className="text-white/55"> · {shown.clientName}</span>
+        <span className="text-muted-foreground"> · {shown.clientName}</span>
       </span>
     </>
   );
-  const chip =
-    "relative inline-flex min-h-9 max-w-full items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-white/85 text-xs ring-1 ring-white/15";
-  if (running || timer.stopped || timer.projects.length < 2) {
+  const chip = "relative inline-flex min-h-9 min-w-0 max-w-full items-center gap-2 text-sm";
+  if (running || timer.projects.length < 2) {
     return (
       <p className={chip}>
         <span className="sr-only">Timer project: </span>
@@ -394,9 +323,9 @@ function ProjectChip({ timer }: { timer: TodayTimer }) {
     );
   }
   return (
-    <label className={`${chip} cursor-pointer focus-within:ring-white/50 hover:bg-white/15`}>
+    <label className={`${chip} cursor-pointer rounded-full px-2 hover:bg-muted`}>
       {face}
-      <ChevronDown className="size-3.5 shrink-0 text-white/60" aria-hidden />
+      <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       <select
         aria-label="Timer project"
         value={timer.timerProject?.id ?? ""}
@@ -432,7 +361,7 @@ function NoteField({ timer }: { timer: TodayTimer }) {
           }
         }}
         enterKeyHint="done"
-        className="h-10 w-full rounded-xl bg-white/5 px-3 text-base text-white ring-1 ring-white/15 placeholder:text-white/40 focus:outline-none focus:ring-white/50 sm:text-sm"
+        className="h-10 w-full rounded-xl bg-background px-3 text-base ring-1 ring-foreground/15 placeholder:text-muted-foreground focus:outline-none focus:ring-foreground/40 sm:text-sm"
       />
       <span role="status" className={`min-h-4 text-right ${SMALL_TEXT}`}>
         {timer.note.state === "saving" ? "Saving…" : timer.note.state === "saved" ? "Saved" : ""}
@@ -445,22 +374,20 @@ function NoteField({ timer }: { timer: TodayTimer }) {
 function StartedEarlier({ timer }: { timer: TodayTimer }) {
   if (timer.earlyChoices.length === 0) return null;
   return (
-    <fieldset className="m-0 flex w-full min-w-0 flex-col gap-1.5 border-0 p-0">
-      <legend className={`mb-1.5 w-full text-center ${SMALL_TEXT}`}>Started earlier? Move the start back:</legend>
-      <div className="grid grid-cols-3 gap-2">
-        {timer.earlyChoices.map((c) => (
-          <button
-            key={c.minutes}
-            type="button"
-            aria-label={`Started ${c.label} earlier`}
-            className={PILL}
-            disabled={timer.shifting}
-            onClick={() => void timer.onShift(c.minutes)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+    <fieldset className="m-0 flex min-w-0 flex-wrap items-center gap-2 border-0 p-0">
+      <legend className={`float-left mr-1 ${SMALL_TEXT}`}>Started earlier? Move the start back:</legend>
+      {timer.earlyChoices.map((c) => (
+        <button
+          key={c.minutes}
+          type="button"
+          aria-label={`Started ${c.label} earlier`}
+          className={PILL}
+          disabled={timer.shifting}
+          onClick={() => void timer.onShift(c.minutes)}
+        >
+          {c.label}
+        </button>
+      ))}
     </fieldset>
   );
 }
@@ -487,11 +414,13 @@ function StillWorking({ timer }: { timer: TodayTimer }) {
     void timer.onStop(ago);
   }
   return (
-    <fieldset className="m-0 flex w-full min-w-0 flex-col gap-2 rounded-xl border-0 bg-white/[0.06] p-3 ring-1 ring-white/10">
+    <fieldset className="m-0 flex min-w-0 flex-col gap-2 rounded-xl border-0 bg-muted/60 p-3">
       <legend className="sr-only">Still working?</legend>
-      <p className="text-center text-sm text-white/80">Running for {formatDuration(run)}. Still working?</p>
-      <span className={`text-center ${SMALL_TEXT}`}>If not, stop it when you stopped:</span>
-      <div className="grid grid-cols-3 gap-2">
+      <p className="text-sm">
+        Running for {formatDuration(run)}. Still working?{" "}
+        <span className="text-muted-foreground">If not, stop it when you stopped:</span>
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
         {EARLY_CHOICES.map((c) => (
           <button
             key={c.minutes}
@@ -504,14 +433,12 @@ function StillWorking({ timer }: { timer: TodayTimer }) {
             {c.label} ago
           </button>
         ))}
-      </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
         <input
           type="time"
           aria-label="Stopped at"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          className="h-9 min-w-0 rounded-full bg-white/5 px-3 text-base text-white ring-1 ring-white/15 [color-scheme:dark] focus:outline-none focus:ring-white/50 sm:text-sm"
+          className="h-9 min-w-0 rounded-full bg-background px-3 text-base ring-1 ring-foreground/15 focus:outline-none focus:ring-foreground/40 sm:text-sm"
         />
         <button type="button" className={PILL} disabled={!time || timer.busy} onClick={stopAtTime}>
           Stop at this time
@@ -522,81 +449,74 @@ function StillWorking({ timer }: { timer: TodayTimer }) {
 }
 
 /**
- * The timer's controls, under the watch. One thing at a time, always in the same place:
- * idle = the project chip and Start timer; running = Stop timer (an amber dot says it runs), a description box,
- * "Started earlier?" for a moment and "Still working?" after 4 hours; stopped = the saved time with - / + 5 min, then
- * Resume · Add to timesheet · Discard, which stay until one is picked. "Add" sits in the middle where Stop was, so a
- * double click on Stop lands on the harmless choice (the time is already saved; walking away keeps it too).
+ * Today's timer as one slim strip above the add form (2026-10-23: it replaced the big watch; most people log after the
+ * fact, so the timer is there for those who want it without taking a column of the page). One thing at a time:
+ * idle = Start timer and the project it starts on; running = a red dot, the elapsed h:mm:ss, the project and Stop timer,
+ * then a description box, "Started earlier?" for a moment and "Still working?" after 4 hours; stopped = the time ticket
+ * (the entry it became, - / + 5 min, Resume · Add to timesheet · Discard), which stays until one is picked.
  */
 export function TimerControls({ timer, online }: { timer: TodayTimer; online: boolean }) {
   return (
-    <div className="flex w-full max-w-[17rem] flex-col items-center gap-2">
-      {!timer.stopped && <ProjectChip timer={timer} />}
+    <section
+      aria-label="Timer"
+      className="flex flex-col gap-3 rounded-2xl bg-card px-4 py-3 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+    >
       {timer.stopped ? (
-        // After Stop the stopwatch hands you a time ticket: the entry it becomes, to file, resume or discard.
         <TimeTicket timer={timer} />
       ) : timer.entry ? (
         <>
-          <Tray>
-            <SteelButton
-              dot
-              middle
-              label={"Stop\ntimer"}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span
+              aria-hidden
+              className="inline-block size-2.5 shrink-0 rounded-full bg-[rgb(255_69_58)] motion-safe:animate-[blink_1.6s_ease-in-out_infinite]"
+            />
+            <span
+              role="timer"
+              aria-live="off"
+              aria-label={`Timer ${timer.text}`}
+              className="font-mono font-semibold text-2xl tabular-nums"
+            >
+              {timer.text}
+            </span>
+            <div className="min-w-0 flex-1 basis-40">
+              <ProjectChip timer={timer} />
+            </div>
+            <button
+              type="button"
               title={`Stop the timer on ${timer.entry.project.name}`}
-              icon={<Square className="size-4" fill="currentColor" aria-hidden />}
               onClick={() => void timer.onStop()}
               disabled={timer.busy}
-            />
-          </Tray>
+              className={`${BUTTON} bg-foreground text-background hover:opacity-90`}
+            >
+              <Square className="size-3.5" fill="currentColor" aria-hidden />
+              Stop timer
+            </button>
+          </div>
           <NoteField timer={timer} />
           <StartedEarlier timer={timer} />
           <StillWorking timer={timer} />
         </>
       ) : (
-        <Tray>
-          <SteelButton
-            middle
-            label={"Start\ntimer"}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <button
+            type="button"
             title={
               online
                 ? `Start timer${timer.projectName ? ` for ${timer.projectName}` : ""}`
                 : "A timer needs a connection"
             }
-            icon={<Play className="ml-0.5 size-[18px]" fill="currentColor" aria-hidden />}
             onClick={timer.onStart}
             disabled={timer.busy || !online}
-          />
-        </Tray>
+            className={`${BUTTON} ring-1 ring-foreground/20 hover:bg-muted`}
+          >
+            <Play className="size-3.5" fill="currentColor" aria-hidden />
+            Start timer
+          </button>
+          <div className="min-w-0 flex-1 basis-40">
+            <ProjectChip timer={timer} />
+          </div>
+        </div>
       )}
-    </div>
-  );
-}
-
-/**
- * The stopwatch's window inside the face: a small digital readout. Idle it is a dim 0:00:00; running, the digits come
- * up and tick, with the project in small letters; just after a stop it says how long it ran.
- */
-export function TimerReadout({ timer }: { timer: TodayTimer }) {
-  const runningNow = !!timer.entry;
-  const text = timer.stopped ? `Stopped ${formatDuration(timer.stopped.minutes)}` : runningNow ? timer.text : "0:00:00";
-  return (
-    <div
-      className={`flex flex-col items-center rounded-[0.4em] border px-[0.6em] py-[0.15em] ${
-        runningNow ? "border-white/30 bg-white/5" : "border-white/15 border-dashed"
-      }`}
-    >
-      <span
-        role="timer"
-        aria-live="off"
-        className={`font-mono text-[1em] tabular-nums leading-tight ${runningNow || timer.stopped ? "" : "opacity-40"}`}
-      >
-        {text}
-      </span>
-      {(runningNow || timer.stopped) && (
-        <span className="max-w-[7rem] truncate font-mono text-[0.55em] uppercase tracking-widest opacity-60">
-          {runningNow ? timer.entry?.project.name : timer.stopped?.where.split(" · ")[0]}
-        </span>
-      )}
-    </div>
+    </section>
   );
 }
