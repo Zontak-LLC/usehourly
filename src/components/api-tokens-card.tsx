@@ -57,8 +57,8 @@ export function ApiTokensCard() {
 
   return (
     <SectionCard
-      title="Access token"
-      description="For an app that asks for a token instead of a log-in button. Make one, copy it once, and revoke it whenever you like."
+      title="API tokens"
+      description="An API token (also called an API key or access token) lets an app or a script sign in as you. Make one, copy it once, and revoke it whenever you like."
     >
       <TokenForm busy={create.isPending} onMake={make} />
 

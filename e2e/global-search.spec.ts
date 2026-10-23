@@ -55,13 +55,13 @@ test("the Account page is one page with quick links that jump to a section", asy
   await startFreshAccount(page);
   await page.goto("/dashboard/account");
   await expect(page.getByRole("tablist")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "AI assistants", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "API tokens & AI", level: 2 })).toBeVisible();
   await page
     .getByRole("navigation", { name: "Jump to a section" })
-    .getByRole("link", { name: "AI assistants" })
+    .getByRole("link", { name: "API tokens & AI" })
     .click();
   await expect(page).toHaveURL(/#ai$/);
-  await expect(page.getByRole("heading", { name: "AI assistants", level: 2 })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "API tokens & AI", level: 2 })).toBeInViewport();
   await page.goto("/dashboard/account#data");
   await expect(page.getByRole("heading", { name: "Your data", level: 2 })).toBeInViewport({ timeout: 15_000 });
 });

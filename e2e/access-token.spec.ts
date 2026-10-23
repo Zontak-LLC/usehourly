@@ -1,6 +1,6 @@
 import { expect, sql, startFreshAccount, test } from "./helpers";
 
-/** Account > AI assistants: the connect steps, and the small form that makes an access token. */
+/** Account > API tokens & AI: the connect steps, and the small form that makes an access token. */
 test("an assistant is connected in words, and a token is made, shown once, listed and revoked", async ({
   page,
   shot,

@@ -9,7 +9,7 @@ export const SECTIONS = [
   { id: "account", label: "Profile" },
   { id: "data", label: "Your data" },
   { id: "invoices", label: "Invoices" },
-  { id: "ai", label: "AI assistants" },
+  { id: "ai", label: "API tokens & AI" },
 ] as const;
 
 export type AccountMe = Outputs["account"]["me"];

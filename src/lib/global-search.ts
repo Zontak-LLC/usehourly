@@ -85,8 +85,16 @@ const SETTINGS: Target[] = shown([
   },
   { title: "Keep a copy on this device", href: "/dashboard/account#data", keywords: "offline", feature: "localFirst" },
   { title: "Delete account", href: "/dashboard/account#account", keywords: "remove erase privacy" },
-  { title: "Connect an AI assistant", href: "/dashboard/account#ai", keywords: "claude chatgpt cursor mcp" },
-  { title: "Access tokens", href: "/dashboard/account#ai", keywords: "api key" },
+  {
+    title: "Connect an AI assistant",
+    href: "/dashboard/account#ai",
+    keywords: "claude chatgpt cursor mcp server integration",
+  },
+  {
+    title: "API tokens",
+    href: "/dashboard/account#ai",
+    keywords: "api key keys token tokens access authentication auth bearer credentials secret personal developer",
+  },
   {
     title: "Polish descriptions with your own AI key",
     href: "/dashboard/account#ai",
