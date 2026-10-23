@@ -372,7 +372,8 @@ export class SyncEngine {
 
 /** The server answers writes with the entry plus its project; the copy keeps only the entry's own fields. */
 function stripToRow(saved: EntryRow & Record<string, unknown>): EntryRow {
-  const { id, user_id, project_id, date, minutes, note, started_at, created_at, updated_at, author_id } = saved;
+  const { id, user_id, project_id, date, minutes, note, started_at, created_at, updated_at, author_id, invoice_id } =
+    saved;
   return {
     id,
     user_id,
@@ -384,5 +385,6 @@ function stripToRow(saved: EntryRow & Record<string, unknown>): EntryRow {
     created_at,
     updated_at,
     author_id: author_id ?? null,
+    invoice_id: invoice_id ?? null,
   };
 }

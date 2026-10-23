@@ -1,6 +1,6 @@
 import { expect, startDemo, startFreshAccount, test } from "./helpers";
 
-test("a client is a card with its projects always in view, and Make invoice when the month has billable time", async ({
+test("a client is a card with its projects always in view, and Make invoice when time is not invoiced yet", async ({
   page,
 }) => {
   await startDemo(page);
@@ -12,7 +12,7 @@ test("a client is a card with its projects always in view, and Make invoice when
   await expect(northwind.getByText("Website redesign")).toBeVisible();
   await expect(northwind.locator("[aria-expanded]").filter({ hasText: "Northwind Studio" })).toHaveCount(0); // no fold
   // the line under the name: projects, this month's time and what it is worth
-  await expect(northwind).toContainText(/2 projects · \d+:\d\d · \$[\d,]+\.\d\d this month/);
+  await expect(northwind).toContainText(/2 projects · \d+:\d\d this month · \$[\d,]+\.\d\d not invoiced yet/);
 
   // the month has billable time, so the card offers an invoice for this client
   const invoice = northwind.getByRole("link", { name: "Make an invoice for Northwind Studio" });
@@ -35,7 +35,7 @@ test("a client is a card with its projects always in view, and Make invoice when
   );
 });
 
-test("a client with no billable time this month has no Make invoice, and one with no projects says how to start", async ({
+test("a client with nothing to invoice has no Make invoice, and one with no projects says how to start", async ({
   page,
 }) => {
   await startFreshAccount(page, "Fable Labs");

@@ -9,10 +9,12 @@ import { logError } from "@/lib/log";
 import { effectiveCurrency, formatMoney } from "@/lib/money";
 import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
+import { nextInvoiceNumber } from "@/lib/unbilled";
 
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
 import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
+import { markInvoiced, unbilledByClient } from "../unbilled";
 
 const MAX_SNAPSHOT_CHARS = 900_000; // D1 rows top out at 2 MB; keep well under
 const MAX_SEARCH_CHARS = 50_000;
@@ -142,16 +144,24 @@ export const invoiceRouter = router({
     return { id: inv.id, snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot) };
   }),
 
-  /** Suggested next number: INV-<year>-<n>, where n continues from the user's invoice count. */
+  /** Suggested next number: INV-<year>-<n>, one more than the highest n used that year (never a taken one). */
   nextNumber: protectedProcedure
     .input(z.object({ year: z.number().int().min(2000).max(2100) }))
     .query(async ({ ctx, input }) => {
-      const prefix = `INV-${input.year}-`;
-      const count = await ctx.prisma.invoice.count({
-        where: { user_id: ctx.userId, number: { startsWith: prefix } },
+      const rows = await ctx.prisma.invoice.findMany({
+        where: { user_id: ctx.userId, number: { startsWith: `INV-${input.year}-` } },
+        select: { number: true },
       });
-      return { number: `${prefix}${String(count + 1).padStart(3, "0")}` };
+      return {
+        number: nextInvoiceNumber(
+          input.year,
+          rows.map((r) => r.number),
+        ),
+      };
     }),
+
+  /** Per client: billable time not on any invoice yet, what it is worth, and its oldest and newest day. */
+  unbilled: protectedProcedure.query(({ ctx }) => unbilledByClient(ctx.prisma, ctx.userId)),
 
   /**
    * Compute from the database (never trust client-sent totals), snapshot the seller's current
@@ -170,6 +180,8 @@ export const invoiceRouter = router({
           notes: z.string().trim().max(1000).default(""),
           includeDetail: z.boolean().default(true),
           compactNotes: z.boolean().default(false),
+          /** Bill time that is already on another invoice too (off by default: the same hours are never billed twice). */
+          includeInvoiced: z.boolean().default(false),
         })
         .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
         .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
@@ -195,6 +207,8 @@ export const invoiceRouter = router({
             user_id: ctx.userId,
             date: { gte: input.from, lte: input.to },
             project: { client_id: client.id },
+            ...(input.includeInvoiced ? {} : { invoice_id: null }),
+            started_at: null, // a running (or resumed) timer is billed once it is stopped
           },
           include: { project: true },
         }),
@@ -212,7 +226,12 @@ export const invoiceRouter = router({
       const currency = effectiveCurrency(client.currency, user.currency); // the client's own, else the account's
       const totals = buildInvoice(entries, rounding);
       if (totals.lines.length === 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "No billable time for this client in that period." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: input.includeInvoiced
+            ? "No billable time for this client in that period."
+            : "No billable time for this client in that period that is not on an invoice already.",
+        });
       }
       if (totals.totalCents === 0) {
         throw new TRPCError({
@@ -286,6 +305,22 @@ export const invoiceRouter = router({
         },
         select: { id: true },
       });
+      // Mark the time it bills, so it is never billed again. If another invoice took some of it in the meantime (two
+      // made at once), this one is taken back: it would bill those hours twice.
+      const billed = entries.filter((e) => e.project.billable && e.minutes > 0 && !e.started_at).map((e) => e.id);
+      // Time billed again on purpose stays marked with the invoice it was first billed on.
+      const marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+      if (!input.includeInvoiced && marked < billed.length) {
+        await ctx.prisma.timeEntry.updateMany({
+          where: { user_id: ctx.userId, invoice_id: created.id },
+          data: { invoice_id: null },
+        });
+        await ctx.prisma.invoice.deleteMany({ where: { id: created.id, user_id: ctx.userId } });
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Some of this time was just put on another invoice. Check the period and try again.",
+        });
+      }
       // The caller gets the logos back inline so it can draw the PDF at once.
       return {
         id: created.id,

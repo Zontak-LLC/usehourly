@@ -55,6 +55,14 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - **Account:** the setup checklist hides when done; no amber tick on section cards; Save business details is a normal button.
 - **Drop-down arrows:** plain chevrons in the text colour (`Caret`, `.field-chevron`), no amber chip.
 
+## Money right: the same hours are never billed twice (2026-10-23, issue #178, migration 0035)
+- `time_entries.invoice_id` (FK to invoices, ON DELETE SET NULL, indexes `(user_id, invoice_id)` and `(invoice_id)`): the invoice the time was billed on; null = not invoiced yet. The migration backfilled old invoices (the client's billable entries in the invoice period, logged before it was made; oldest invoice wins), touching only rows that change.
+- `invoice.create` bills only unbilled, stopped entries (`invoice_id: null, started_at: null`) unless `includeInvoiced`, then marks them (`markInvoiced` in `server/unbilled.ts`, 80 ids per query for D1's 100 bound values, only rows still unbilled); if another invoice took some meanwhile, the new one is deleted and CONFLICT says so. Billed again on purpose, the time keeps its first invoice.
+- `invoice.unbilled` = per client, billable minutes and money not invoiced yet (current rates), oldest and newest day; days marked non-billable and running timers are left out. Clients cards show "$X not invoiced yet" and Make invoice only above 0; the builder opens on the client with the most unbilled money and the period from its oldest unbilled day (at most a year back) to today, warns "H:MM … is already on an invoice" with "Bill it again anyway".
+- `invoice.nextNumber` = highest used that year + 1 (`nextInvoiceNumber` in `lib/unbilled.ts`). Entries on an invoice show "Invoiced" and their edit form says the sent invoice does not change. `entry.merge` refuses to mix billed and unbilled entries.
+- Not done here: the Year summary still prices billed time at today's rates ("Earned"), step 4 (#219).
+- Tests: `ready-to-bill-journey.test.ts` (rules on an in-memory store, mutation-checked: the unbilled filter, the clash rollback; and the migration on a real SQLite: backfill and ON DELETE SET NULL), `e2e/ready-to-bill.spec.ts`. Deploy order: CircleCI applies 0035 before deploying.
+
 ## One clock on Today (2026-10-22, branch `one-clock`)
 - History (superseded 2026-10-23, see "No clocks"): Today once had one day dial that counted the running timer and a slim timer bar. The dial and `day-dial.tsx` are gone; `runningMinutes` in `lib/day-dial.ts` still adds a running timer to the header totals.
 

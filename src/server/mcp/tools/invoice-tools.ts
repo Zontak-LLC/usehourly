@@ -95,7 +95,7 @@ export const INVOICE_WRITE_TOOLS: McpTool[] = [
     name: "create_invoice",
     title: "Create an invoice",
     description:
-      "Issue an invoice for a client from billable time between two dates. Totals are computed on the server from the logged entries (one line per project). The number defaults to the next INV-<year>-NNN. This creates a permanent record; confirm the client, period and dates with the user first.",
+      "Issue an invoice for a client from billable time between two dates. Totals are computed on the server from the logged entries (one line per project). Time already on another invoice is left out, so the same hours are never billed twice. The number defaults to the next free INV-<year>-NNN. This creates a permanent record; confirm the client, period and dates with the user first.",
     access: "write",
     input: z
       .object({

@@ -37,6 +37,10 @@ function mockPrisma() {
       update: vi.fn(async () => ({ id: "c1" })),
     },
     timeEntry: {
+      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+        count: a?.where?.id?.in?.length ?? 0,
+      })),
       count: vi.fn(async () => 0),
       findMany: vi.fn(async () => [
         {
@@ -103,7 +107,14 @@ describe("client invoice journey", () => {
     expect(prisma.client.findFirst).toHaveBeenCalledWith({ where: { id: "c1", user_id: "u1" } });
     expect(prisma.timeEntry.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { user_id: "u1", date: { gte: "2026-10-01", lte: "2026-10-31" }, project: { client_id: "c1" } },
+        // only time not on an invoice yet (the same hours are never billed twice)
+        where: {
+          user_id: "u1",
+          date: { gte: "2026-10-01", lte: "2026-10-31" },
+          project: { client_id: "c1" },
+          invoice_id: null,
+          started_at: null,
+        },
       }),
     );
     expect(snapshot.lines).toEqual([
@@ -410,10 +421,16 @@ describe("client invoice journey", () => {
     expect(prisma.invoice.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: { user_id: "u1" } }));
   });
 
-  it("suggests the next number from the year's count", async () => {
+  it("suggests one more than the highest number used that year, so a deleted invoice never causes a clash", async () => {
     const prisma = mockPrisma();
-    const r = await asCaller(prisma, "u1").invoice.nextNumber({ year: 2026 });
-    expect(r.number).toBe("INV-2026-003");
+    prisma.invoice.findMany.mockResolvedValueOnce([{ number: "INV-2026-001" }, { number: "INV-2026-002" }] as never);
+    expect((await asCaller(prisma, "u1").invoice.nextNumber({ year: 2026 })).number).toBe("INV-2026-003");
+    // INV-2026-002 was deleted: counting would suggest 003, which is taken; the highest + 1 is free.
+    prisma.invoice.findMany.mockResolvedValueOnce([{ number: "INV-2026-001" }, { number: "INV-2026-003" }] as never);
+    expect((await asCaller(prisma, "u1").invoice.nextNumber({ year: 2026 })).number).toBe("INV-2026-004");
+    expect(prisma.invoice.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { user_id: "u1", number: { startsWith: "INV-2026-" } } }),
+    );
   });
 
   it("business details: normalizes the EIN, clears blanks, rejects a malformed EIN or non-image logo", async () => {

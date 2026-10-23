@@ -20,7 +20,11 @@ export function DeleteInvoiceConfirm({
   async function remove(id: string, number: string) {
     try {
       await del.mutateAsync({ id });
-      await utils.invoice.list.invalidate();
+      await Promise.all([
+        utils.invoice.list.invalidate(),
+        utils.invoice.unbilled.invalidate(),
+        utils.entry.list.invalidate(),
+      ]);
       toast.success(`Invoice ${number} deleted.`);
       onClose();
     } catch (err) {

@@ -111,6 +111,10 @@ function setup(over: Partial<TokenRow> = {}) {
       groupBy: vi.fn(),
     },
     timeEntry: {
+      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+        count: a?.where?.id?.in?.length ?? 0,
+      })),
       count: vi.fn(async () => 0),
       findMany: vi.fn(async () => [] as unknown[]),
       findFirst: vi.fn(async () => null as unknown),
@@ -121,7 +125,12 @@ function setup(over: Partial<TokenRow> = {}) {
     },
     invoice: {
       findFirst: vi.fn(async () => null),
-      findMany: vi.fn(async () => []),
+      // Two invoices exist this year (asked for their numbers only when suggesting the next one).
+      findMany: vi.fn(async (a?: { select?: Record<string, boolean> }) =>
+        a?.select && Object.keys(a.select).join() === "number"
+          ? [{ number: "INV-2026-001" }, { number: "INV-2026-002" }]
+          : [],
+      ),
       create: vi.fn(async () => ({ id: "inv1" })),
       count: vi.fn(async () => 2),
       deleteMany: vi.fn(async () => ({ count: 1 })),
@@ -786,8 +795,9 @@ describe("an assistant tracks a day of work", () => {
       issue_date: "2026-11-01",
       due_date: "2026-11-15",
     });
-    expect(s.prisma.invoice.count).toHaveBeenCalledWith({
+    expect(s.prisma.invoice.findMany).toHaveBeenCalledWith({
       where: { user_id: "u1", number: { startsWith: "INV-2026-" } },
+      select: { number: true },
     });
   });
 
@@ -950,8 +960,8 @@ describe("an assistant tracks a day of work", () => {
     expect(year.data?.months).toHaveLength(12);
     expect(year.data?.quarters).toHaveLength(4);
 
-    // Suggested invoice number continues from the two invoices already numbered this year.
-    expect((await s.call("next_invoice_number", { year: 2026 })).data).toEqual({ number: "INV-2026-003" });
+    // Suggested invoice number: one more than the highest used this year (INV-2026-001 above).
+    expect((await s.call("next_invoice_number", { year: 2026 })).data).toEqual({ number: "INV-2026-002" });
 
     // Edit and archive a client: only the owner's rows are touched, the name stays.
     const edited = await s.call("update_client", { client: "Acme", address: "1 New Rd" });

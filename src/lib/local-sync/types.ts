@@ -12,6 +12,8 @@ export type EntryRow = {
   created_at: string;
   updated_at: string;
   author_id: string | null;
+  /** The invoice this time was billed on (absent on rows saved before it existed). */
+  invoice_id?: string | null;
 };
 
 /** A project with its client, as `entry.list` hands them out. */

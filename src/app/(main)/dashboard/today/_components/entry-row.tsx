@@ -31,6 +31,8 @@ export type EntryData = {
   /** The team member who logged it; absent or null for the account's own entries. */
   author?: { name: string | null } | null;
   author_id?: string | null;
+  /** The invoice this time was billed on; null or absent = not invoiced yet. */
+  invoice_id?: string | null;
   project: { name: string; client: { name: string; color: string } };
 };
 
@@ -212,6 +214,11 @@ export function EntryRow({
                   by {entry.author?.name?.trim() || "a team member"}
                 </span>
               )}
+              {entry.invoice_id && (
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
+                  Invoiced
+                </span>
+              )}
             </div>
             {!editing && noteBlock}
           </div>
@@ -316,6 +323,11 @@ export function EntryRow({
               ))}
             </div>
           </div>
+          {entry.invoice_id && (
+            <p className="text-muted-foreground text-sm lg:col-span-2">
+              This time is already on an invoice. Changing it here does not change the invoice you made.
+            </p>
+          )}
           <div className="flex items-center justify-between gap-3 border-foreground/10 border-t pt-3 lg:col-span-2">
             {/* Delete lives here, away from Save, instead of in a separate menu on the row. */}
             <Button

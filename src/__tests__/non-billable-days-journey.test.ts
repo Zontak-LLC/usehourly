@@ -52,6 +52,10 @@ function world(initialDays: { user_id: string; date: string }[] = []) {
     ...days,
     ...memoryInvoiceLogos(),
     timeEntry: {
+      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+        count: a?.where?.id?.in?.length ?? 0,
+      })),
       count: vi.fn(async () => ENTRIES.length),
       findMany: vi.fn(async ({ where }: { where: { user_id: string; date?: { gte: string; lte: string } } }) =>
         ENTRIES.filter(

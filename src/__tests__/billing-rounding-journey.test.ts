@@ -29,6 +29,10 @@ function mockPrisma(round: { round_step: number; round_mode: string; round_min: 
       update: vi.fn(async () => ({ id: "c1" })),
     },
     timeEntry: {
+      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
+      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
+        count: a?.where?.id?.in?.length ?? 0,
+      })),
       findMany: vi.fn(async () => [entry("2026-10-02", 7), entry("2026-10-03", 20), entry("2026-10-04", 61)]),
     },
     invoice: {
@@ -65,8 +69,10 @@ describe("billing rounding", () => {
     expect(snapshot.loggedMinutes).toBe(88);
     expect(snapshot.totalCents).toBe(20000);
     expect(snapshot.rounding).toEqual({ step: 15, mode: "up", min: 0 });
-    // the stored entries are read, never written
-    expect(Object.keys(prisma.timeEntry)).toEqual(["findMany"]);
+    // the stored entries keep their minutes: the only write marks them as billed on this invoice
+    for (const [args] of prisma.timeEntry.updateMany.mock.calls as unknown as [{ data: object }][]) {
+      expect(Object.keys(args.data)).toEqual(["invoice_id"]);
+    }
     expect(JSON.parse(prisma.invoice.create.mock.calls[0][0].data.snapshot).rounding.step).toBe(15);
     // the PDF builds with the rule printed
     expect(buildInvoicePdf(snapshot)).toBeTruthy();
