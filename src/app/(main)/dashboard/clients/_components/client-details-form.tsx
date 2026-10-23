@@ -6,8 +6,8 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAccountCurrency } from "@/components/currency-provider";
+import { ExampleInvoice } from "@/components/example-invoice";
 import { GuideLink } from "@/components/guide-link";
-import { InvoiceSketch } from "@/components/invoice-sketch";
 import { LogoPicker } from "@/components/logo-picker";
 import { StopSlider } from "@/components/stop-slider";
 import { Button } from "@/components/ui/button";
@@ -266,7 +266,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         </div>
 
         <div className="md:pt-6">
-          <InvoiceSketch billTo={{ name: legalName.trim() || name.trim() || c.name, address: address.trim(), logo }} />
+          <ExampleInvoice />
         </div>
       </div>
 
