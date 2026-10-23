@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { startDemo } from "./helpers";
+import { gotoClient, startDemo } from "./helpers";
 
 /** Deleting an invoice asks inside its card; archiving a client or project is immediate with Undo (no pop-ups). */
 test("delete invoice confirms inside the card; archive is immediate with Undo", async ({ page }) => {
@@ -30,7 +30,7 @@ test("delete invoice confirms inside the card; archive is immediate with Undo", 
   });
 
   await test.step("archiving a project happens at once and offers Undo", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Fable Labs"); // the demo client that owns Mobile app
     await page.getByRole("button", { name: "Edit Mobile app" }).click();
     await page.getByRole("button", { name: "Archive project" }).click(); // the red button in the project's edit form
     await expect(page.getByRole("dialog")).toHaveCount(0); // no "Are you sure?"

@@ -10,7 +10,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Rate per hour").fill("100");
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("$100.00/h")).toBeVisible();
+    await expect(page.getByText("$100.00/h").first()).toBeVisible();
     await page.goto("/dashboard/today");
     await page.getByLabel("Time to add").fill("2h");
     await page.getByRole("button", { name: /^Log time/ }).click();
@@ -20,7 +20,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
   const card = page.getByRole("region", { name: "Acme" });
   await test.step("the client shows what is not invoiced yet, with Make invoice", async () => {
     await page.goto("/dashboard/clients");
-    await expect(card).toContainText("$200.00 not invoiced yet");
+    await expect(card.getByTestId("bill-bar")).toContainText("$200.00 not invoiced"); // the bill bar (issue 238)
     await card.getByRole("link", { name: "Make an invoice for Acme" }).click();
     await expect(page).toHaveURL(/\/dashboard\/invoices\/new\?client=/);
     await expect(page.getByText("$200.00").first()).toBeVisible();
@@ -31,7 +31,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
   await test.step("once invoiced, nothing is left to bill and the entry says so", async () => {
     await page.goto("/dashboard/clients");
     await expect(card.getByRole("heading", { name: "Acme" })).toBeVisible();
-    await expect(card).not.toContainText("not invoiced yet");
+    await expect(card.getByTestId("bill-bar")).toHaveCount(0); // all billed up: no bill bar
     await expect(card.getByRole("link", { name: "Make an invoice for Acme" })).toHaveCount(0);
     await page.goto("/dashboard/today");
     await expect(page.getByText("Invoiced", { exact: true }).first()).toBeVisible();

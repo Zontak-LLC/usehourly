@@ -1,4 +1,4 @@
-import { expect, startDemo, startFreshAccount, test } from "./helpers";
+import { expect, gotoClient, startDemo, startFreshAccount, test } from "./helpers";
 
 /**
  * Clients: "New client" is a button in the page header that opens the form as a card at the top of the list; an empty page has
@@ -48,7 +48,7 @@ test("archived clients and projects open from a menu in the header, on a page of
   page,
 }) => {
   await startDemo(page);
-  await page.goto("/dashboard/clients");
+  await gotoClient(page, "Fable Labs"); // the demo client that owns Mobile app
 
   // nothing about the archive hangs at the foot of the page
   await expect(page.getByRole("button", { name: /Archived clients and projects/ })).toHaveCount(0);
@@ -70,5 +70,6 @@ test("archived clients and projects open from a menu in the header, on a page of
 
   await page.getByRole("link", { name: "Clients" }).first().click();
   await expect(page).toHaveURL(/dashboard\/clients$/);
+  await gotoClient(page, "Fable Labs");
   await expect(page.getByText("Mobile app", { exact: true }).first()).toBeVisible(); // back where it was
 });

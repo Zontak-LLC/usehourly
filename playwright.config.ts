@@ -15,12 +15,16 @@ import { defineConfig, devices } from "@playwright/test";
  * about 7.5 minutes instead of about 3. The build takes under a minute. E2E_DEV=1 uses `next dev` instead (no build,
  * and code changes show without restarting: handy while writing one spec).
  */
-const PORT = 3029;
-const MAIL_PORT = 8899;
+// Both can be moved so a second checkout can run the suite beside another one (E2E_PORT=3031 MOCK_RESEND_PORT=8901).
+const PORT = Number(process.env.E2E_PORT ?? 3029);
+const MAIL_PORT = Number(process.env.MOCK_RESEND_PORT ?? 8899);
 const external = process.env.E2E_BASE_URL;
 const BASE = external ?? `http://localhost:${PORT}`;
 // Where the test copy keeps its database. Helpers and teardown read the same variable (workers inherit it).
 if (!external) process.env.E2E_PERSIST ??= ".wrangler/state-e2e";
+// The helpers read the stand-in mailbox from here (workers inherit it).
+process.env.E2E_MAIL_URL ??= `http://127.0.0.1:${MAIL_PORT}`;
+process.env.E2E_PORT ??= String(PORT);
 
 const DEV_SERVER = Boolean(process.env.E2E_DEV);
 
@@ -29,7 +33,7 @@ const SERIAL_SPECS = /support-notice\.spec\.ts$/;
 // testIgnore replaces the top-level one, so it is listed here too.
 const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-control/])];
 const PHONE_SPECS =
-  /(first-day|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal|global-search)\.spec\.ts$/;
+  /(first-day|clients-split|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-tabs|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal|global-search)\.spec\.ts$/;
 
 // A CircleCI container is about twice as slow as a laptop (2 workers, a cold app that compiles each page the first time),
 // so the waits are doubled there. A real regression still fails; a slow machine does not.
@@ -94,6 +98,7 @@ export default defineConfig({
         {
           command: "node e2e/mock-resend.mjs",
           url: `http://127.0.0.1:${MAIL_PORT}/__health`,
+          env: { MOCK_RESEND_PORT: String(MAIL_PORT) },
           reuseExistingServer: true,
           timeout: 20_000,
         },

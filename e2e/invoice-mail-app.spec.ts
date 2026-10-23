@@ -15,7 +15,7 @@ async function invoiceForAcme(page: Page) {
   await page.getByRole("button", { name: "Edit General" }).click();
   await page.getByLabel("Rate per hour").fill("100");
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByText("$100.00/h")).toBeVisible();
+  await expect(page.getByText("$100.00/h").first()).toBeVisible();
   await page.goto("/dashboard/today");
   await page.getByLabel("Time to add").fill("2h");
   await page.getByRole("button", { name: /^Log time/ }).click();

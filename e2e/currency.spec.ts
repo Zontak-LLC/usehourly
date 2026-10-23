@@ -23,7 +23,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
     await expect(page.getByText(/€\d+\/h/).first()).toBeVisible(); // the symbol beside the rate
     await page.getByLabel("Rate per hour").fill("85");
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("€85.00/h")).toBeVisible();
+    await expect(page.getByText("€85.00/h").first()).toBeVisible();
     await expect(page.getByText("$85.00/h")).toHaveCount(0);
   });
 
