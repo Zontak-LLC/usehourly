@@ -309,7 +309,7 @@ function ProjectChip({ timer }: { timer: TodayTimer }) {
       <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: shown.color }} />
       <span className="min-w-0 truncate">
         {shown.name}
-        <span className="text-muted-foreground"> · {shown.clientName}</span>
+        <span className="text-muted-foreground max-sm:hidden"> · {shown.clientName}</span>
       </span>
     </>
   );
@@ -520,7 +520,8 @@ export function TimerControls({
             }
             onClick={timer.onStart}
             disabled={timer.busy || !online}
-            className={`${BUTTON} ring-1 ring-foreground/20 hover:bg-muted`}
+            // Secondary to Log time: a quiet ghost button, not an outlined one that looks like the main action.
+            className={`${BUTTON} text-foreground/80 hover:bg-muted hover:text-foreground`}
           >
             <Play className="size-3.5" fill="currentColor" aria-hidden />
             Start timer

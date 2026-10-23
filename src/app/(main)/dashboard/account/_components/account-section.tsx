@@ -33,7 +33,7 @@ export function Section({
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-20 xl:flex xl:flex-1 xl:flex-col">
       <div className="px-1 pb-4">
-        <h2 id={`${id}-heading`} className="font-display font-extrabold text-3xl leading-none sm:text-4xl">
+        <h2 id={`${id}-heading`} className="font-bold text-xl leading-tight sm:text-2xl">
           {title}
         </h2>
         <p className="mt-2 text-foreground/75">{description}</p>

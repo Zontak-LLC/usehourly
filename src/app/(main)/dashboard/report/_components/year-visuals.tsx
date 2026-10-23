@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import { useMoney } from "@/components/currency-provider";
 import { GoalSummary } from "@/components/goal-summary";
 import { RANGE_INPUT_CLASS } from "@/components/range-input";
-import { StatTile } from "@/components/stat-tile";
 import { formatDuration } from "@/lib/duration";
 import { count } from "@/lib/plural";
 
 import type { AnnualReport } from "./report-body";
+import { SummaryRow } from "./report-table";
 
 const MONTH_NAMES = [
   "January",
@@ -64,14 +64,12 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
           className="flex items-baseline justify-between font-mono text-[11px] text-foreground/75 uppercase tracking-widest"
         >
           Yearly goal
-          <span className="font-display font-extrabold text-base text-foreground normal-case tracking-normal">
-            {goal} h
-          </span>
+          <span className="font-mono font-semibold text-foreground text-sm normal-case tracking-normal">{goal} h</span>
         </label>
         <div className="relative mt-2 h-6">
           <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-amber"
+              className="h-full rounded-full bg-foreground/40"
               style={{ width: `calc(12px + (100% - 24px) * ${(goal - 200) / 2200})` }}
             />
           </div>
@@ -91,69 +89,51 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
   );
 }
 
-/** Six stat tiles: each figure counts up. */
+/**
+ * The money of the year (drawing audit, 2026-10-23): ONE main figure, what the year's work is worth, and the rest as
+ * quiet lines. It replaced six equal stat tiles that shouted together (and showed the hours twice, beside the dial).
+ */
 export function YearFigures({ data }: { data: AnnualReport }) {
   const money = useMoney();
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
   const t = data.totals;
-  const items: {
-    label: string;
-    value: number;
-    display: (n: number) => string;
-    hint: string;
-    tone?: string;
-  }[] = [
-    {
-      label: "Hours worked",
-      value: t.minutes,
-      display: hours,
-      hint: plural(t.workedDays, "day"),
-    },
-    {
-      label: "Billable hours",
-      value: t.billableMinutes,
-      display: hours,
-      hint: t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it",
-    },
-    {
-      label: "Earned",
-      value: t.earnedCents,
-      display: money,
-      hint: "billable hours × rate",
-    },
-    {
-      label: "Invoiced",
-      value: data.invoices.totalCents,
-      display: money,
-      hint: `${plural(data.invoices.count, "invoice")} issued`,
-    },
-    {
-      label: "Received",
-      value: data.received.totalCents,
-      display: money,
-      hint: `${plural(data.received.count, "payment")} · by paid date`,
-    },
-    {
-      label: "Outstanding",
-      value: data.outstanding.totalCents,
-      display: money,
-      hint: `${data.outstanding.count} unpaid at year end`,
-    },
-  ];
   return (
-    <div className="grid h-full auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3">
-      {items.map((i) => (
-        <StatTile
-          key={i.label}
-          label={i.label}
-          value={i.value}
-          display={i.display}
-          hint={i.hint}
-          tone={i.tone}
-          corner
+    <section
+      aria-label="Money this year"
+      className="flex h-full flex-col rounded-3xl bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+    >
+      <div className="flex flex-col gap-1 p-5 pb-4">
+        <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">Earned</span>
+        <p className="font-display font-extrabold text-5xl tabular-nums leading-none">{money(t.earnedCents)}</p>
+        <p className="text-foreground/75 text-sm">billable hours × each project's rate</p>
+      </div>
+      <dl className="mt-auto">
+        {/* On a phone the hours dial is hidden, so its figure is a line here. */}
+        <div className="border-t lg:hidden">
+          <SummaryRow label="Hours worked" value={hours(t.minutes)} hint={plural(t.workedDays, "day")} />
+        </div>
+        <SummaryRow
+          label="Billable hours"
+          value={hours(t.billableMinutes)}
+          hint={t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it"}
         />
-      ))}
-    </div>
+        <SummaryRow
+          label="Invoiced"
+          value={money(data.invoices.totalCents)}
+          hint={`${plural(data.invoices.count, "invoice")} issued`}
+        />
+        <SummaryRow
+          label="Received"
+          value={money(data.received.totalCents)}
+          hint={`${plural(data.received.count, "payment")} · by paid date`}
+        />
+        <SummaryRow
+          label="Outstanding"
+          value={money(data.outstanding.totalCents)}
+          hint={`${data.outstanding.count} unpaid at year end`}
+        />
+      </dl>
+    </section>
   );
 }
 
@@ -181,7 +161,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
               className={`min-h-8 rounded-full px-4 font-semibold text-sm capitalize transition-colors ${
-                mode === m ? "bg-amber text-[#12151b]" : "text-foreground/75 hover:text-foreground"
+                mode === m ? "bg-foreground text-background" : "text-foreground/75 hover:text-foreground"
               }`}
             >
               {m}

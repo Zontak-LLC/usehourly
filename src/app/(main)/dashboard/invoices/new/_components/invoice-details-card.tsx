@@ -25,6 +25,14 @@ const QUICK_PERIODS: PresetKey[] = ["this-month", "last-month", "last-30", "this
 const TERMS = [0, 15, 30, 45, 60];
 const dueFormat = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 
+/** Every choice chip on this form (period and due date) is drawn the same way; the chosen one is ink. */
+const chip = (on: boolean) =>
+  `rounded-full border px-3 py-1.5 text-sm transition-all motion-safe:active:scale-95 ${
+    on
+      ? "border-foreground bg-foreground font-semibold text-background"
+      : "bg-muted/50 hover:border-foreground/30 hover:bg-muted"
+  }`;
+
 export function InvoiceDetailsCard({
   clients,
   values,
@@ -92,11 +100,7 @@ export function InvoiceDetailsCard({
                   onFrom(range.from);
                   onTo(range.to);
                 }}
-                className={`rounded-full border px-3 py-1.5 text-sm transition-all motion-safe:active:scale-95 ${
-                  on
-                    ? "border-amber bg-amber font-semibold text-[#12151b]"
-                    : "bg-muted/50 hover:border-foreground/30 hover:bg-muted"
-                }`}
+                className={chip(on)}
               >
                 {PRESETS.find((p) => p.key === key)?.label}
               </button>
@@ -117,7 +121,7 @@ export function InvoiceDetailsCard({
 
       <FormStep n={3} title="When is it due?">
         <div className="flex flex-col gap-2">
-          <p className="font-display font-extrabold text-foreground text-lg">{dueLabel}</p>
+          <p className="font-medium text-foreground text-sm">{dueLabel}</p>
           <fieldset className="m-0 flex min-w-0 flex-wrap items-center gap-2 border-0 p-0">
             <legend className="sr-only">Payment due</legend>
             {TERMS.map((t) => (
@@ -129,11 +133,7 @@ export function InvoiceDetailsCard({
                   setOtherOpen(false);
                   onNetDays(String(t));
                 }}
-                className={`rounded-full border px-3 py-1.5 font-mono text-xs transition-all motion-safe:active:scale-95 ${
-                  !showOther && days === t
-                    ? "border-foreground bg-foreground text-background"
-                    : "bg-muted/50 hover:bg-muted"
-                }`}
+                className={chip(!showOther && days === t)}
               >
                 {t === 0 ? "On receipt" : `Net ${t}`}
               </button>
@@ -142,9 +142,7 @@ export function InvoiceDetailsCard({
               type="button"
               aria-pressed={showOther}
               onClick={() => setOtherOpen(true)}
-              className={`rounded-full border px-3 py-1.5 font-mono text-xs transition-all motion-safe:active:scale-95 ${
-                showOther ? "border-foreground bg-foreground text-background" : "bg-muted/50 hover:bg-muted"
-              }`}
+              className={chip(showOther)}
             >
               Other…
             </button>

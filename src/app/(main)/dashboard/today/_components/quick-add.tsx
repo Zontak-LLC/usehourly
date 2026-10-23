@@ -325,7 +325,7 @@ export function QuickAdd({
                   durationRef.current?.focus();
                 }}
               >
-                <Plus className="size-3.5 text-amber" aria-hidden strokeWidth={3} />
+                <Plus className="size-3.5 text-foreground/60" aria-hidden strokeWidth={3} />
                 <span className="sm:hidden" aria-hidden="true">
                   {c.short}
                 </span>
@@ -422,15 +422,16 @@ function LogTimeButton({
       type="submit"
       disabled={disabled}
       // The main event: amber with a clock-plus disc (time going in), a soft glow and a lift. While no time is typed
-      // it is a plain neutral, and it comes alive when there is something to add. After a save it says what went in.
+      // it is a pale amber (still the main button, only waiting: drawing audit 2026-10-23), and it comes alive when there
+      // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
       style={logged ? { backgroundColor: "var(--amber)", color: "#12151b" } : undefined} // colour-ok: the same dark ink as the button's own text
-      className="group relative order-last flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber px-6 font-display font-extrabold text-[#12151b] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-muted disabled:font-bold disabled:text-foreground/55 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      className="group relative order-last flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-amber px-6 font-display font-extrabold text-[#12151b] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-amber-soft disabled:font-bold disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}
         style={logged ? { backgroundColor: "#12151b", color: "var(--amber)" } : undefined} // colour-ok: the button's dark ink
-        className="grid size-7 place-items-center rounded-full bg-[#12151b] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/20 group-disabled:text-foreground/70 sm:size-6"
+        className="grid size-7 place-items-center rounded-full bg-[#12151b] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-amber/45 group-disabled:text-[#12151b] sm:size-6"
       >
         {logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />

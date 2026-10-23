@@ -37,8 +37,9 @@ test("choosing euros on Account changes how rates and invoices are written, and 
     await expect(page.getByText("€170.00").first()).toBeVisible(); // 2 hours at €85
 
     await page.goto("/dashboard/account#invoices");
-    const select = page.getByLabel("Currency", { exact: true });
-    await expect(select).toBeDisabled();
+    // Locked: plain text with a lock instead of a drop-down (drawing audit, 2026-10-23).
+    await expect(page.getByLabel("Currency", { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/^EUR · Euro/)).toBeVisible();
     await expect(page.getByText(/fixed because you have made an invoice/)).toBeVisible();
   });
 });

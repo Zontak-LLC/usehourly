@@ -128,7 +128,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
               hint="Printed at the top of every invoice you send."
             />
           </FormStep>
-          <Button type="submit" className="self-start" disabled={updateBusiness.isPending}>
+          <Button type="submit" className="h-10 self-start px-5" disabled={updateBusiness.isPending}>
             Save business details
           </Button>
         </div>

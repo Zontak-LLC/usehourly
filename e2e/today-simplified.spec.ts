@@ -16,14 +16,14 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
     await expect(page.getByRole("button", { name: "15 min", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "4 hours", exact: true })).toHaveCount(0);
     await expect(page.getByText("This day", { exact: true })).toHaveCount(0); // the two stat cards are gone
-    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("0:00 this day · 0:00 this week");
+    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("Nothing yet · 0:00 this week");
   });
 
   await test.step("until a time is typed the Add button is quiet and a line says what to do", async () => {
     const add = page.getByRole("button", { name: /^Log time/ });
     await expect(add).toBeDisabled();
     await expect(page.getByText("Type a time or tap one (tap again to add more), then add it.")).toBeVisible();
-    // while it waits it is a plain grey (not brown, not amber); it turns the one amber once a time is typed
+    // while it waits it is a pale amber (not the full amber, not brown); it turns the one amber once a time is typed
     const background = () => add.evaluate((el) => getComputedStyle(el).backgroundColor);
     const waiting = await background();
     expect(waiting).not.toMatch(/^rgb\((23\d|24\d), (1[3-7]\d)/); // not an amber

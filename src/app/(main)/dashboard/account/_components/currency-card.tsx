@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
+import { Lock } from "lucide-react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/section-card";
@@ -29,31 +30,42 @@ export function CurrencyCard({ me }: { me: AccountMe }) {
       }
     >
       <div className="flex flex-wrap items-center gap-3">
-        <label className="sr-only" htmlFor="currency-select">
-          Currency
-        </label>
-        <NativeSelect
-          id="currency-select"
-          value={me.currency}
-          disabled={locked || setCurrency.isPending}
-          onChange={async (e) => {
-            try {
-              const { currency } = await setCurrency.mutateAsync({ currency: e.target.value as CurrencyCode });
-              await utils.account.me.invalidate();
-              router.refresh(); // the layout reads the currency on the server, so the rest of the app follows
-              toast.success(`Amounts are now written like ${formatMoney(123456, currency)}.`);
-            } catch (err) {
-              toastError(err, "Couldn't change the currency.");
-            }
-          }}
-        >
-          {CURRENCIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.code} · {c.name} ({currencySymbol(c.code)})
-            </option>
-          ))}
-        </NativeSelect>
-        <p className="text-muted-foreground text-sm">Example: {formatMoney(123456, me.currency)}</p>
+        {/* A fixed currency is plain text with a lock, not a greyed-out drop-down that still looks clickable. */}
+        {locked ? (
+          <p className="inline-flex items-center gap-1.5 font-medium">
+            <Lock aria-hidden className="size-4 text-foreground/60" />
+            {me.currency} · {CURRENCIES.find((c) => c.code === me.currency)?.name ?? me.currency} (
+            {currencySymbol(me.currency)})
+          </p>
+        ) : (
+          <>
+            <label className="sr-only" htmlFor="currency-select">
+              Currency
+            </label>
+            <NativeSelect
+              id="currency-select"
+              value={me.currency}
+              disabled={setCurrency.isPending}
+              onChange={async (e) => {
+                try {
+                  const { currency } = await setCurrency.mutateAsync({ currency: e.target.value as CurrencyCode });
+                  await utils.account.me.invalidate();
+                  router.refresh(); // the layout reads the currency on the server, so the rest of the app follows
+                  toast.success(`Amounts are now written like ${formatMoney(123456, currency)}.`);
+                } catch (err) {
+                  toastError(err, "Couldn't change the currency.");
+                }
+              }}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} · {c.name} ({currencySymbol(c.code)})
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-muted-foreground text-sm">Example: {formatMoney(123456, me.currency)}</p>
+          </>
+        )}
       </div>
       {!locked && (
         <p className="text-muted-foreground text-xs">

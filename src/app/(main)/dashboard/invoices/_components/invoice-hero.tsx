@@ -36,23 +36,25 @@ export function InvoiceHero({
       className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-sheet)]"
     >
       <div className="flex min-w-0 flex-col gap-4">
-        <dl className="grid grid-cols-3 gap-4">
+        <dl className="grid gap-2 sm:grid-cols-3 sm:gap-4">
           {(
             [
-              [`Paid · ${percent}%`, money(paid), "text-success"],
+              [`Paid · ${percent}%`, money(paid), ""], // ink: the teal dot and bar carry the colour
               ["Unpaid", money(unpaid), ""],
               ["Of", money(total), ""],
             ] as const
           ).map(([label, value, tone]) => (
             <div
               key={label}
-              className="flex min-w-0 flex-col border-t-2 pt-2"
+              className="flex min-w-0 flex-col border-t-2 pt-2 max-sm:flex-row max-sm:items-baseline max-sm:justify-between max-sm:gap-3"
               style={{ borderTopColor: "color-mix(in oklab, var(--foreground) 18%, transparent)" }}
             >
-              <dd className={`order-1 truncate font-display font-extrabold text-xl tabular-nums sm:text-3xl ${tone}`}>
+              <dd
+                className={`order-1 font-display font-extrabold text-xl tabular-nums max-sm:order-2 sm:text-3xl ${tone}`}
+              >
                 {value}
               </dd>
-              <dt className="order-2 mt-1 font-mono text-[11px] text-foreground/75 uppercase tracking-widest">
+              <dt className="order-2 mt-1 font-mono max-sm:order-1 max-sm:mt-0 text-[11px] text-foreground/75 uppercase tracking-widest">
                 {label === "Of" ? "Invoiced" : label}
               </dt>
             </div>
@@ -72,10 +74,13 @@ export function InvoiceHero({
               <span aria-hidden className="size-2 rounded-full" style={{ background: PALETTE.money.waiting }} /> Waiting{" "}
               {money(soon)}
             </li>
-            <li className="flex items-center gap-1.5">
-              <span aria-hidden className="size-2 rounded-full" style={{ background: PALETTE.money.late }} /> Late{" "}
-              {money(late)}
-            </li>
+            {/* Nothing late is good news: no coral dot for a zero. */}
+            {late > 0 && (
+              <li className="flex items-center gap-1.5">
+                <span aria-hidden className="size-2 rounded-full" style={{ background: PALETTE.money.late }} /> Late{" "}
+                {money(late)}
+              </li>
+            )}
           </ul>
         </div>
       </div>

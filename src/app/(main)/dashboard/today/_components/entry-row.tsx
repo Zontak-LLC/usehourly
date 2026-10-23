@@ -17,6 +17,7 @@ import { useRunningMinutes } from "@/components/use-running-minutes";
 import { DATE_RE, fromISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
+import { QUIET_BELOW_MINUTES, ROW_FIGURE, ROW_FIGURE_QUIET } from "@/lib/figures";
 import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -226,7 +227,9 @@ export function EntryRow({
         <div className="flex shrink-0 items-center gap-1">
           {!editing && (
             // The hours are information, not a second way to edit: only the pencil opens the form (one way, no confusion).
-            <span className="px-1.5 py-0.5 font-display font-extrabold text-xl tabular-nums">
+            <span
+              className={`px-1.5 py-0.5 ${!isRunning && entry.minutes < QUIET_BELOW_MINUTES ? ROW_FIGURE_QUIET : ROW_FIGURE}`}
+            >
               {isRunning ? `${formatDuration(entry.minutes + runningNow)} +` : formatDuration(entry.minutes)}
             </span>
           )}

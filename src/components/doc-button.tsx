@@ -43,7 +43,8 @@ export function DocButton({
         aria-hidden
         className={cn(
           "grid size-10 shrink-0 place-items-center rounded-xl transition-transform duration-500 [&_svg]:size-5",
-          tone === "amber" ? "bg-[#12151b] text-amber" : "bg-amber text-[#12151b]",
+          // The ink button's tile is ink too: amber is kept for the main action (drawing audit, 2026-10-23).
+          tone === "amber" ? "bg-[#12151b] text-amber" : "bg-foreground text-background",
         )}
       >
         {busy ? <Loader2 className="animate-spin" /> : icon}

@@ -115,7 +115,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                       className="flex items-center gap-2 font-display font-extrabold text-lg lg:[html[data-nav-position=left]_&]:hidden"
                     >
                       <LogoMark className="size-6 shrink-0" aria-hidden />
-                      UseHourly
+                      {/* From 1024 to 1360px the centred tab pill would cover the word ("UseHourl"): the clock alone shows there. */}
+                      <span className="lg:max-[85rem]:sr-only">UseHourly</span>
                     </Link>
                   </div>
                   <MobileNav isAdmin={isAdmin} />

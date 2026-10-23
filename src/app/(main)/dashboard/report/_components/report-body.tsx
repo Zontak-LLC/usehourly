@@ -4,7 +4,9 @@ import type { inferRouterOutputs } from "@trpc/server";
 
 import { useMoney } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
+import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { PALETTE } from "@/lib/palette";
 import type { AppRouter } from "@/server/routers/_app";
 
 import { Section, Table } from "./report-table";
@@ -29,6 +31,10 @@ const MONTHS = [
 
 /** Hours on screen are h:mm, as everywhere else in the app (files keep decimals). */
 const h = (m: number) => formatDuration(Math.round(m));
+/** Dates on screen read like the rest of the app ("Oct 9, 2026"); the export keeps YYYY-MM-DD. */
+const dayFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const shortDay = (iso: string) => dayFormat.format(fromISODate(iso));
+
 /** An empty figure is always "–" (never "0:00" in one table and "–" in another). */
 const hOrDash = (m: number) => (m ? h(m) : "–");
 
@@ -102,6 +108,9 @@ function PeriodSections({ data }: { data: AnnualReport }) {
   );
 }
 
+/** Name, hours, money: the grid every client and project row uses. */
+const ROW = "grid grid-cols-[minmax(0,1fr)_4.5rem_6.5rem] items-baseline gap-x-3";
+
 function ClientProjectSection({ data }: { data: AnnualReport }) {
   const money = useMoney();
   return (
@@ -113,25 +122,29 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
       <div className="divide-y">
         {data.clients.map((c) => (
           <div key={c.clientId} className="px-4 py-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-              <p className="font-medium">{c.client}</p>
-              <p className="font-mono text-sm tabular-nums">
-                <span className="text-muted-foreground">{h(c.minutes)} · </span>
-                <span className="font-medium">{money(c.earnedCents)}</span>
+            {/* Client and project rows share two right-aligned columns (hours, money), so the figures line up. */}
+            <div className={ROW}>
+              <p className="min-w-0 font-medium">{c.client}</p>
+              <p className="text-right font-mono font-semibold text-sm tabular-nums">{h(c.minutes)}</p>
+              <p className="text-right font-mono font-semibold text-sm tabular-nums">
+                {c.earnedCents ? money(c.earnedCents) : <span className="font-normal text-muted-foreground">–</span>}
               </p>
             </div>
             <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber to-[color-mix(in_oklab,var(--amber)_60%,white)]"
-                style={{ width: `${(c.minutes / Math.max(1, ...data.clients.map((x) => x.minutes))) * 100}%` }}
+                className="h-full rounded-full"
+                style={{
+                  width: `${(c.minutes / Math.max(1, ...data.clients.map((x) => x.minutes))) * 100}%`,
+                  background: PALETTE.soft,
+                }}
               />
             </div>
             <ul className="mt-2 space-y-0.5">
               {data.projects
                 .filter((p) => p.clientId === c.clientId)
                 .map((p) => (
-                  <li key={p.projectId} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
-                    <span className="text-muted-foreground">
+                  <li key={p.projectId} className={`${ROW} text-sm`}>
+                    <span className="min-w-0 text-muted-foreground">
                       {p.project}
                       {!p.billable && <span className="ml-2 text-xs">non-billable</span>}
                       {p.billable && p.rateCents > 0 && <span className="ml-2 text-xs">{money(p.rateCents)}/h</span>}
@@ -139,9 +152,9 @@ function ClientProjectSection({ data }: { data: AnnualReport }) {
                         <span className="ml-2 text-amber-600 text-xs">no rate set</span>
                       )}
                     </span>
-                    <span className="font-mono tabular-nums">
-                      {h(p.minutes)}
-                      <span className="ml-3">{p.billable ? money(p.earnedCents) : "–"}</span>
+                    <span className="text-right font-mono text-muted-foreground tabular-nums">{h(p.minutes)}</span>
+                    <span className="text-right font-mono text-muted-foreground tabular-nums">
+                      {p.billable && p.earnedCents ? money(p.earnedCents) : "–"}
                     </span>
                   </li>
                 ))}
@@ -169,9 +182,9 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
             rows={data.invoices.list.map((i) => [
               i.number,
               i.client_name,
-              i.issue_date,
+              shortDay(i.issue_date),
               money(i.total_cents),
-              i.paid_date ?? "Unpaid",
+              i.paid_date ? shortDay(i.paid_date) : "Unpaid",
             ])}
             total={["Total", "", "", money(data.invoices.totalCents), ""]}
             phoneSummary={{
@@ -195,7 +208,12 @@ function InvoiceSections({ data, year }: { data: AnnualReport; year: number }) {
           <Table
             textCols={3}
             head={["Invoice", "Client", "Paid on", "Amount"]}
-            rows={data.received.list.map((i) => [i.number, i.client_name, i.paid_date ?? "", money(i.total_cents)])}
+            rows={data.received.list.map((i) => [
+              i.number,
+              i.client_name,
+              i.paid_date ? shortDay(i.paid_date) : "",
+              money(i.total_cents),
+            ])}
             phoneSummary={{ valueIndex: 3, detail: (r) => [r[1], r[2] && `paid ${r[2]}`].filter(Boolean).join(" · ") }}
             total={["Total", "", "", money(data.received.totalCents)]}
           />

@@ -12,7 +12,7 @@ export function ExampleInvoice() {
         target="_blank"
         rel="noopener"
         title="Open the example invoice (PDF)"
-        className="group block overflow-hidden rounded-md shadow-[0_18px_40px_-18px_rgb(0_0_0/0.6)] ring-1 ring-foreground/10 transition-transform hover:-translate-y-0.5 dark:brightness-[0.9]"
+        className="group block overflow-hidden rounded-md shadow-[0_18px_40px_-18px_rgb(0_0_0/0.6)] ring-1 ring-foreground/10 transition-transform hover:-translate-y-0.5 dark:brightness-[0.75]"
       >
         {/* biome-ignore lint/performance/noImgElement: a small static preview; next/image adds nothing here */}
         <img

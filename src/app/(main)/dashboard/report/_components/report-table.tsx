@@ -9,7 +9,7 @@ export function SummaryRow({ label, value, hint }: { label: string; value: strin
         {label}
         {hint && <span className="block text-muted-foreground text-xs">{hint}</span>}
       </dt>
-      <dd className="shrink-0 font-bold font-display text-xl tabular-nums">{value}</dd>
+      <dd className="shrink-0 font-mono font-semibold text-base tabular-nums tracking-tight">{value}</dd>
     </div>
   );
 }

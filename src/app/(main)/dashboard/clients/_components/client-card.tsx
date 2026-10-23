@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { Archive, FileText, Pencil, Plus, X } from "lucide-react";
 
+import { ClientInitial } from "@/components/client-initial";
 import { ClientCurrency, useMoney } from "@/components/currency-provider";
 import { MoreMenu } from "@/components/more-menu";
 import { Button } from "@/components/ui/button";
@@ -81,14 +82,8 @@ export function ClientCard({
     >
       <ClientCurrency currency={c.currency}>
         <header className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:p-4">
-          {/* A plain tile with the initial, in the client's own colour (the uploaded logo is for invoices). */}
-          <span
-            aria-hidden
-            className={`grid size-10 shrink-0 place-items-center rounded-xl font-display font-extrabold text-base text-white ${quiet ? "opacity-50" : ""}`}
-            style={{ background: c.color }}
-          >
-            {c.name.trim().charAt(0).toUpperCase() || "?"}
-          </span>
+          {/* The initial on a tint of the client's own colour (the uploaded logo is for invoices). */}
+          <ClientInitial name={c.name} colour={c.color} quiet={quiet} />
           <div className="min-w-0 flex-1">
             {/* A client with no time this month is quieter: lighter weight and a softer ink (still well above 4.5:1). */}
             <h2
@@ -109,10 +104,12 @@ export function ClientCard({
             </p>
             {latestInvoice && <LastInvoiceLine invoice={latestInvoice} today={today} />}
           </div>
-          <div className="flex items-center gap-2">
+          {/* On a phone the buttons always take their own row, so the name is never squeezed. */}
+          <div className="flex items-center gap-2 max-sm:w-full">
             {/* Time not invoiced yet: one click to an invoice for this client (the builder starts on that time). */}
             {unbilledCents > 0 && (
-              <Button asChild variant="outline" className="h-10 gap-1.5">
+              // The money action is the stronger one: an ink outline; Add project is a quiet ghost.
+              <Button asChild variant="outline" className="h-10 gap-1.5 border-foreground/60 font-semibold">
                 <Link href={`/dashboard/invoices/new?client=${c.id}`} aria-label={`Make an invoice for ${c.name}`}>
                   <FileText /> Make invoice
                 </Link>
@@ -120,7 +117,7 @@ export function ClientCard({
             )}
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               className="h-10 gap-1.5"
               aria-expanded={adding}
               aria-label={`Add a project for ${c.name}`}
