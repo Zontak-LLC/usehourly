@@ -6,6 +6,7 @@ import { Check, Search } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 
 import { ProjectList } from "@/components/project-list";
+import { halo } from "@/components/time-reward";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -39,26 +40,6 @@ function writeIds(key: string, ids: string[]) {
   }
 }
 
-const BIG_ROW = "gap-3 rounded-2xl border-2 border-foreground bg-card px-4 py-3";
-
-/** The large "you are logging to" row: colour dot, project name, client, a check. */
-function CurrentRow({ project }: { project: PickerProject }) {
-  return (
-    <>
-      <span
-        aria-hidden="true"
-        className="size-3 shrink-0 rounded-full"
-        style={{ backgroundColor: project.color ?? "var(--foreground)" }}
-      />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-bold font-display text-lg leading-tight">{project.name}</span>
-        <span className="truncate text-muted-foreground text-sm">{project.clientName}</span>
-      </span>
-      <Check className="size-5 shrink-0" aria-hidden strokeWidth={2.5} />
-    </>
-  );
-}
-
 /** A phone has an on-screen keyboard that would cover a list under the field, so there the search opens at the top. */
 function useIsPhone() {
   return useSyncExternalStore(
@@ -73,18 +54,22 @@ function useIsPhone() {
 }
 
 /**
- * Pick one project. The project you are logging to is one large row; your pinned and recent projects are one-tap pills
- * under it, in an order that stays put while the page is open (the picked pill is pressed, not moved); and with more than three projects a search field takes the place of "More…": type two letters (or press /
- * from anywhere), use the arrow keys, press Enter. The list drops down under the field on a computer and opens at the
- * top of the screen on a phone. A star on any row pins it as a pill.
+ * Pick one project, as one row of pills (2026-10-23 redesign: the big "you are logging to" row is gone). The picked pill
+ * is filled in its client's colour and gives a halo when picked. Up to five projects are all pills; from six, your
+ * pinned and recent ones are pills in an order that stays put while the page is open, and "More…" opens the search
+ * (type two letters, or press / from anywhere, use the arrow keys, press Enter): it drops down on a computer and opens
+ * at the top of the screen on a phone. A star on any row of the search pins it as a pill.
  */
 export function ProjectPicker({
   projects,
   value,
   onChange,
   onPicked,
+  labelledBy,
 }: {
   projects: PickerProject[];
+  /** The id of the words that name the row ("on"). */
+  labelledBy?: string;
   value: string;
   onChange: (id: string) => void;
   /** Called after a project was picked from the search (the form uses it to move on to the time box). */
@@ -95,7 +80,9 @@ export function ProjectPicker({
   const [active, setActive] = useState(0);
   const [recent, setRecent] = useState<string[]>(() => (typeof window === "undefined" ? [] : readIds(RECENT_KEY)));
   const [pins, setPins] = useState<string[]>(() => (typeof window === "undefined" ? [] : readIds(PINNED_KEY)));
-  const field = useRef<HTMLInputElement>(null);
+  // A pick from the search hands the focus to the time box once the search has closed (not back to "More…").
+  const pickedFromSearch = useRef(false);
+  const pillsRef = useRef<HTMLDivElement>(null);
   const phone = useIsPhone();
   const listId = useId();
 
@@ -105,13 +92,14 @@ export function ProjectPicker({
   const many = projects.length > ALL_AS_CHIPS;
   const chips = useMemo(() => chipProjects(projects, recentAtLoad, pins), [projects, recentAtLoad, pins]);
   const current = projects.find((p) => p.id === value) ?? chips[0];
-  const currentIsPill = !!current && chips.some((p) => p.id === current.id);
-  const showPills = chips.some((p) => p.id !== current?.id);
-  const bigIsRadio = !currentIsPill || !showPills;
+  // A project picked from the search that is not a pill yet shows as the first pill, so the choice is always visible.
+  const pills = current && !chips.some((p) => p.id === current.id) ? [current, ...chips.slice(0, -1)] : chips;
   const { sections, flat } = useMemo(() => pickerRows(projects, query, recent), [projects, query, recent]);
 
-  function choose(id: string, fromSearch = false) {
+  function choose(id: string, fromSearch = false, from?: HTMLElement) {
     onChange(id);
+    const colour = projects.find((p) => p.id === id)?.color;
+    if (from && colour) halo(from, colour);
     // Remembered for the search list now and for the pills on the next visit (they never move during this one).
     const next = pushRecentId(recent, id);
     setRecent(next);
@@ -119,7 +107,26 @@ export function ProjectPicker({
     setOpen(false);
     setQuery("");
     setActive(0);
-    if (fromSearch) onPicked?.();
+    pickedFromSearch.current = fromSearch;
+  }
+
+  /** When the search closes: after a pick, on to the time box; otherwise the focus goes back to "More…" as usual. */
+  function onCloseAutoFocus(e: Event) {
+    if (!pickedFromSearch.current) return;
+    pickedFromSearch.current = false;
+    e.preventDefault();
+    onPicked?.();
+  }
+
+  /** The pills are one radio group: one Tab stop, and the arrow keys move to the next project and pick it. */
+  function onPillsKeyDown(e: React.KeyboardEvent) {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const at = pills.findIndex((p) => p.id === current?.id);
+    const next = (at + step + pills.length) % pills.length;
+    choose(pills[next].id);
+    pillsRef.current?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus();
   }
 
   function togglePin(id: string) {
@@ -150,7 +157,7 @@ export function ProjectPicker({
       if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
       if (t && (t.matches("input, textarea, select") || t.isContentEditable)) return;
       e.preventDefault();
-      field.current?.focus();
+      setOpen(true);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -170,106 +177,113 @@ export function ProjectPicker({
     />
   );
 
+  const pillClass =
+    "h-9 max-w-full gap-2 rounded-full px-3.5 transition-[background-color,box-shadow] aria-checked:font-semibold";
+  const more = (
+    <Button
+      type="button"
+      variant="ghost"
+      aria-label="Search projects or clients"
+      aria-expanded={open}
+      // On a computer the popover's own trigger opens and closes it; on a phone this opens the dialog.
+      onClick={phone ? () => setOpen(true) : undefined}
+      className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground"
+    >
+      <Search className="size-4" aria-hidden />
+      More…
+    </Button>
+  );
+  const search = (autoFocus: boolean) => (
+    <div className="relative">
+      <Search
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+      <Input
+        autoFocus={autoFocus}
+        role="combobox"
+        aria-expanded
+        aria-controls={listId}
+        aria-activedescendant={flat[active] ? `${listId}-${active}` : undefined}
+        aria-label="Search projects or clients"
+        autoComplete="off"
+        value={query}
+        placeholder={`Search ${projects.length} projects or clients…`}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setActive(0);
+        }}
+        onKeyDown={onKeyDown}
+        className="h-10 rounded-full pl-9"
+      />
+    </div>
+  );
+
   return (
     <>
-      <div role="radiogroup" aria-labelledby="quick-project-label" className="flex flex-col gap-2">
-        {current && !many && !bigIsRadio && (
-          <div className={`flex items-center ${BIG_ROW}`}>
-            <CurrentRow project={current} />
-          </div>
-        )}
-        {current && (many || bigIsRadio) && (
-          <Button
-            type="button"
-            // While the picked project is also a pill, the pill is the checked radio and this row only opens the search.
-            role={bigIsRadio ? "radio" : undefined}
-            aria-checked={bigIsRadio ? "true" : undefined}
-            variant="outline"
-            onClick={() => many && (phone ? setOpen(true) : field.current?.focus())}
-            title={many ? "Choose another project" : undefined}
-            className={`h-auto w-full justify-start whitespace-normal text-left hover:bg-card ${BIG_ROW}`}
-          >
-            <CurrentRow project={current} />
-          </Button>
-        )}
-        {showPills && (
-          <div className="flex flex-wrap gap-2">
-            {chips.map((p) => (
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div
+          ref={pillsRef}
+          role="radiogroup"
+          aria-labelledby={labelledBy}
+          onKeyDown={onPillsKeyDown}
+          className="contents"
+        >
+          {pills.map((p) => {
+            const on = p.id === current?.id;
+            const colour = p.color ?? "var(--foreground)";
+            return (
               <Button
                 key={p.id}
                 type="button"
                 role="radio"
-                aria-checked={p.id === current?.id}
+                aria-checked={on}
+                tabIndex={on ? 0 : -1}
                 variant="outline"
                 title={`${p.name} · ${p.clientName}`}
-                onClick={() => choose(p.id)}
-                className="h-9 max-w-full gap-2 rounded-full px-3.5 aria-checked:border-foreground aria-checked:bg-muted aria-checked:font-semibold"
+                onClick={(e) => choose(p.id, false, e.currentTarget)}
+                className={pillClass}
+                style={
+                  on
+                    ? {
+                        backgroundColor: `color-mix(in oklab, ${colour} 14%, var(--card))`,
+                        borderColor: colour,
+                        boxShadow: `inset 0 0 0 1px ${colour}`,
+                      }
+                    : undefined
+                }
               >
                 <span
                   aria-hidden="true"
                   className="size-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: p.color ?? "var(--muted-foreground)" }}
+                  style={{ backgroundColor: colour }}
                 />
                 <span className="truncate font-medium">{p.name}</span>
+                {on && <Check className="size-3.5 shrink-0" strokeWidth={3} aria-hidden />}
               </Button>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
         {many && !phone && (
-          <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
-            <PopoverPrimitive.Anchor asChild>
-              <div className="relative">
-                <Search
-                  aria-hidden
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  ref={field}
-                  role="combobox"
-                  aria-expanded={open}
-                  aria-controls={listId}
-                  aria-activedescendant={open && flat[active] ? `${listId}-${active}` : undefined}
-                  aria-label="Search projects or clients"
-                  autoComplete="off"
-                  value={query}
-                  placeholder={`Search ${projects.length} projects or clients…`}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setActive(0);
-                    setOpen(true);
-                  }}
-                  onFocus={() => setOpen(true)}
-                  onKeyDown={onKeyDown}
-                  className="h-11 rounded-full pr-10 pl-9"
-                />
-                <kbd className="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground md:block">
-                  /
-                </kbd>
-              </div>
-            </PopoverPrimitive.Anchor>
+          <PopoverPrimitive.Root
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) setQuery("");
+            }}
+          >
+            <PopoverPrimitive.Trigger asChild>{more}</PopoverPrimitive.Trigger>
             <PopoverContent
               align="start"
-              className="max-h-80 w-[min(28rem,calc(100vw-2rem))] overflow-y-auto p-0"
-              onOpenAutoFocus={(e) => e.preventDefault()}
-              onInteractOutside={(e) => {
-                if (field.current?.contains(e.target as Node)) e.preventDefault();
-              }}
+              onCloseAutoFocus={onCloseAutoFocus}
+              className="flex w-[min(28rem,calc(100vw-2rem))] flex-col gap-2 p-2"
             >
-              {list}
+              {search(true)}
+              <div className="max-h-72 overflow-y-auto">{list}</div>
             </PopoverContent>
           </PopoverPrimitive.Root>
         )}
-        {many && phone && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen(true)}
-            aria-label="Search projects or clients"
-            className="h-11 justify-start gap-2 rounded-full px-4 font-normal text-muted-foreground"
-          >
-            <Search /> Search {projects.length} projects or clients…
-          </Button>
-        )}
+        {many && phone && more}
       </div>
 
       {many && phone && (
@@ -280,33 +294,12 @@ export function ProjectPicker({
             if (!o) setQuery("");
           }}
         >
-          <DialogContent className="flex max-h-[80vh] flex-col gap-3 sm:max-w-md">
+          <DialogContent onCloseAutoFocus={onCloseAutoFocus} className="flex max-h-[80vh] flex-col gap-3 sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Choose a project</DialogTitle>
               <DialogDescription className="sr-only">Search by project or client name.</DialogDescription>
             </DialogHeader>
-            <div className="relative">
-              <Search
-                aria-hidden
-                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                autoFocus
-                role="combobox"
-                aria-expanded
-                aria-controls={listId}
-                aria-activedescendant={flat[active] ? `${listId}-${active}` : undefined}
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setActive(0);
-                }}
-                onKeyDown={onKeyDown}
-                placeholder="Search projects or clients…"
-                aria-label="Search projects or clients"
-                className="pl-8"
-              />
-            </div>
+            {search(true)}
             <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">{list}</div>
           </DialogContent>
         </Dialog>

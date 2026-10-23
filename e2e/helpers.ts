@@ -100,6 +100,19 @@ export async function startDemo(page: Page) {
   }).toPass({ timeout: 90_000, intervals: [1000] });
 }
 
+/** Adds projects to the signed-in account's first client through the API (the picker shows "More…" from six projects). */
+export async function addProjects(page: Page, names: string[]) {
+  const listed = await page.request.get("/api/trpc/clients.list");
+  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
+  const clients = ((await listed.json()) as { result: { data: { id: string }[] } }).result.data;
+  for (const name of names) {
+    const made = await page.request.post("/api/trpc/project.create", {
+      data: { clientId: clients[0].id, name, hourlyRate: 5000 },
+    });
+    expect(made.ok(), `project.create answered ${made.status()}`).toBe(true);
+  }
+}
+
 export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>

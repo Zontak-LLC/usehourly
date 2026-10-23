@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { NoDollar } from "@/components/no-dollar-icon";
+import { useRoll } from "@/components/time-reward";
 import { addDays, fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 
@@ -8,6 +11,32 @@ type Entry = { date: string; minutes: number };
 
 const dayName = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 const fullDay = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+
+/**
+ * A day's hours: when time is added they count up with a small pop (part of the reward for logging; none with reduce
+ * motion). Only real new time counts: `dayTotal` is the day's time across every project, so changing Week's project
+ * filter (which changes `minutes`) never plays it.
+ */
+function DayHours({ minutes, dayTotal, gap }: { minutes: number; dayTotal: number; gap: boolean }) {
+  const before = useRef({ minutes, dayTotal });
+  const { shown, roll } = useRoll(600);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs only when the time changes; `roll` is a fresh function each render
+  useEffect(() => {
+    const was = before.current;
+    if (dayTotal > was.dayTotal && minutes > was.minutes) roll(was.minutes, minutes);
+    before.current = { minutes, dayTotal };
+  }, [minutes, dayTotal]);
+  const value = shown ?? minutes;
+  return (
+    <span
+      className={`font-mono text-[11px] tabular-nums transition-transform duration-300 ${
+        shown !== null ? "scale-125 font-semibold text-foreground" : "text-foreground/80"
+      }`}
+    >
+      {value ? formatDuration(value) : gap ? "No time" : "–"}
+    </span>
+  );
+}
 
 /**
  * The week as one slim row of seven day buttons: the day, its date, the hours and a thin bar for how full it was. The
@@ -68,9 +97,7 @@ export function WeekPills({
               {dayName.format(when)}
             </span>
             <span className="font-display font-extrabold text-lg leading-none">{when.getDate()}</span>
-            <span className="font-mono text-[11px] text-foreground/80 tabular-nums">
-              {minutes ? formatDuration(minutes) : gap ? "No time" : "–"}
-            </span>
+            <DayHours minutes={minutes} dayTotal={sumDay(allEntries ?? entries, d)} gap={gap} />
             <span aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-muted">
               <span
                 className="block h-full bg-foreground/40 transition-[width] duration-700"
