@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /** Small pictures for the home page's feature tiles. Pure markup and colour, nothing to load; they sit on a tinted pad. */
 
-const AMBER = "#F5A524";
+const AMBER = "#5A63D8"; // the accent (v4 periwinkle); the name stays so the drawings did not change
 const GREEN = "#3DDC97";
 const VIOLET = "#8A6CFF";
 
@@ -24,7 +24,7 @@ export function QuickEntryArt() {
         <div className="flex items-center justify-between rounded-xl bg-card px-3 py-2 shadow-sm ring-1 ring-foreground/10">
           <span className="text-base text-foreground">
             1h30
-            <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#F5A524] align-middle" />
+            <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#5A63D8] align-middle" />
           </span>
           <kbd className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">↵</kbd>
         </div>

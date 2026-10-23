@@ -20,19 +20,19 @@ export type EmailSpec = {
   footnote?: { text: string; link?: { label: string; url: string } };
 };
 
-// The Sunshine palette as fixed colours: mail apps ignore CSS variables.
+// The calm (v4) palette as fixed colours: mail apps ignore CSS variables. `sun` is the accent (periwinkle).
 const C = {
-  page: "#fffbf2",
+  page: "#eef2f7",
   card: "#ffffff",
-  line: "#efe7d6",
-  ink: "#2b2216",
-  muted: "#7a6d58",
-  sun: "#f5a524",
-  darkPage: "#1c1812",
-  darkCard: "#26211a",
-  darkLine: "#3a3326",
-  darkInk: "#fbf3e4",
-  darkMuted: "#b5a78d",
+  line: "#dbe2ec",
+  ink: "#1c2434",
+  muted: "#586377",
+  sun: "#5a63d8",
+  darkPage: "#131a26",
+  darkCard: "#1a2232",
+  darkLine: "#2a3447",
+  darkInk: "#e6ebf3",
+  darkMuted: "#9ba7ba",
 };
 
 export const escapeHtml = (value: string): string =>
@@ -78,7 +78,7 @@ function blockHtml(block: EmailBlock): string {
   // A link that is not a web address is shown as plain text, never as something to click.
   if (!href) return `<p class="fg" style="margin:0 0 16px;color:${C.ink};">${escapeHtml(block.button.url)}</p>`;
   return (
-    `<p style="margin:0 0 8px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:${C.sun};color:${C.ink};font-weight:700;text-decoration:none;padding:12px 20px;border-radius:10px;">${escapeHtml(block.button.label)}</a></p>` +
+    `<p style="margin:0 0 8px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:${C.sun};color:white;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:10px;">${escapeHtml(block.button.label)}</a></p>` +
     `<p class="muted" style="margin:0 0 16px;font-size:13px;color:${C.muted};word-break:break-all;">Or paste this link into your browser: ${escapeHtml(href)}</p>`
   );
 }

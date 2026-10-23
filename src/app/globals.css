@@ -63,51 +63,51 @@
 
 /* Theme styles: one palette, light and dark (the colour presets were removed on 2026-10-22). */
 :root {
-  /* The ink-and-paper look (2026-10-22): a cool paper page, white sheets, ink text, ONE amber (the hour hand) that does
-     the pointing, green only for good news. Hex values come straight from the redesign demo. */
+  /* Calm (v4, 2026-10-23): a cool mist page, white sheets, slate ink, and ONE soft periwinkle accent (the hour hand) that
+     does the pointing; progress lines run from sky to lavender. Green only for good news, red only for problems. The
+     token is still called "amber" so every screen follows without renaming: it is the accent, whatever its hue. */
   --radius: 0.875rem;
-  --background: #f2f4f7;
-  --foreground: #12151b;
+  --background: #eef2f7;
+  --foreground: #1c2434;
   --card: #ffffff;
-  --card-foreground: #12151b;
+  --card-foreground: #1c2434;
   --popover: #ffffff;
-  --popover-foreground: #12151b;
-  --primary: #12151b;
-  --primary-foreground: #f2f4f7;
-  --secondary: #e9ecf1;
-  --secondary-foreground: #12151b;
-  --muted: #e9ecf1;
-  --muted-foreground: #5f6775; /* 4.8:1 or better on every light panel (was #666e7c, 4.3:1 on the tab strip) */
-  --accent: #e9ecf1;
-  --accent-foreground: #12151b;
-  --destructive: #d8452f;
-  --amber: #e8920b;
-  --amber-soft: #fdefd3;
-  /* Big amber surfaces (the main button, the latest month bar) use a calmer amber: the bright one glared on a large
-     fill (2026-10-23). Small marks (today's date, a dot) keep --amber. */
-  --amber-fill: color-mix(in oklab, var(--amber) 80%, var(--background));
+  --popover-foreground: #1c2434;
+  --primary: #1c2434;
+  --primary-foreground: #eef2f7;
+  --secondary: #e8edf4;
+  --secondary-foreground: #1c2434;
+  --muted: #e8edf4;
+  --muted-foreground: #586377; /* 5.5:1 on white, 4.9:1 on the mist page */
+  --accent: #e8edf4;
+  --accent-foreground: #1c2434;
+  --destructive: #d04a3a;
+  --amber: #5a63d8;
+  --amber-soft: #eceafc;
+  /* Big accent surfaces (the main button, the latest month bar) and small marks (today's date, a dot) share one hue. */
+  --amber-fill: color-mix(in oklab, var(--amber) 92%, var(--background));
   /* Success is Bright Optimistic Green #50B83C. On white it is only 2.5:1, too pale for words, so it is used for icons,
      bars and fills (--success-bright) and the same hue, darker, writes the words (--success, 7:1). */
   --success-bright: #50b83c;
   --success: oklch(0.45 0.13 141);
   --success-soft: oklch(0.955 0.05 141);
-  --border: #dde1e8;
-  --input: #dde1e8;
-  --ring: #12151b;
-  --chart-1: #12151b;
-  --chart-2: #4f6bf5;
-  --chart-3: #e8920b;
+  --border: #dbe2ec;
+  --input: #d5dce7;
+  --ring: #5a63d8;
+  --chart-1: #1c2434;
+  --chart-2: #6aa9d8;
+  --chart-3: #5a63d8;
   --chart-4: #1fa971;
-  --chart-5: #666e7c;
-  --sidebar: #f2f4f7;
-  --sidebar-foreground: #12151b;
-  --sidebar-primary: #12151b;
-  --sidebar-primary-foreground: #f2f4f7;
-  --sidebar-accent: #e9ecf1;
-  --sidebar-accent-foreground: #12151b;
-  --sidebar-border: #dde1e8;
-  --sidebar-ring: #12151b;
-  --shadow-sheet: 0 1px 0 rgb(18 21 27 / 0.04), 0 12px 32px -18px rgb(18 21 27 / 0.25);
+  --chart-5: #586377;
+  --sidebar: #eef2f7;
+  --sidebar-foreground: #1c2434;
+  --sidebar-primary: #1c2434;
+  --sidebar-primary-foreground: #eef2f7;
+  --sidebar-accent: #e8edf4;
+  --sidebar-accent-foreground: #1c2434;
+  --sidebar-border: #dbe2ec;
+  --sidebar-ring: #5a63d8;
+  --shadow-sheet: 0 1px 0 rgb(28 36 52 / 0.03), 0 18px 40px -26px rgb(40 52 90 / 0.28);
 
   /* Header shades. A card's header is a light tint of its text colour over the card colour (2026-10-21: white headers
      made a project tile's header look like its body). Subtle on purpose (the 8-12% greys looked heavy). One place. */
@@ -141,44 +141,45 @@
 }
 
 .dark {
-  --background: #0c0d11;
-  --foreground: #ecebe7;
-  --card: #14161c;
-  --card-foreground: #ecebe7;
-  --popover: #14161c;
-  --popover-foreground: #ecebe7;
-  --primary: #ecebe7;
-  --primary-foreground: #12151b;
-  --secondary: #1b1e25;
-  --secondary-foreground: #ecebe7;
-  --muted: #1b1e25;
-  --muted-foreground: #8c909b;
-  --accent: #1b1e25;
-  --accent-foreground: #ecebe7;
-  --destructive: #ff7a63;
-  --amber: #f5a524;
-  --amber-soft: #232733; /* a raised neutral: dimmed amber on a dark page reads as brown */
-  --amber-fill: color-mix(in oklab, var(--amber) 78%, var(--background));
+  /* Dark is a deep blue slate, not black: calm at night, and the accent stays soft. */
+  --background: #131a26;
+  --foreground: #e6ebf3;
+  --card: #1a2232;
+  --card-foreground: #e6ebf3;
+  --popover: #1a2232;
+  --popover-foreground: #e6ebf3;
+  --primary: #e6ebf3;
+  --primary-foreground: #131a26;
+  --secondary: #222b3d;
+  --secondary-foreground: #e6ebf3;
+  --muted: #222b3d;
+  --muted-foreground: #9ba7ba;
+  --accent: #222b3d;
+  --accent-foreground: #e6ebf3;
+  --destructive: #ff7d6b;
+  --amber: #8e96ff;
+  --amber-soft: #262f45;
+  --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
   --success-bright: #50b83c;
   --success: oklch(0.8 0.17 141);
   --success-soft: oklch(0.3 0.07 141);
-  --border: #242830;
-  --input: #2b2f38;
-  --ring: #ecebe7;
-  --chart-1: #ecebe7;
-  --chart-2: #7f93ff;
-  --chart-3: #f5a524;
+  --border: #2a3447;
+  --input: #313c52;
+  --ring: #8e96ff;
+  --chart-1: #e6ebf3;
+  --chart-2: #7fb8e4;
+  --chart-3: #8e96ff;
   --chart-4: #3ddc97;
-  --chart-5: #8c909b;
-  --sidebar: #0f1116;
-  --sidebar-foreground: #ecebe7;
-  --sidebar-primary: #ecebe7;
-  --sidebar-primary-foreground: #12151b;
-  --sidebar-accent: #1b1e25;
-  --sidebar-accent-foreground: #ecebe7;
-  --sidebar-border: #242830;
-  --sidebar-ring: #ecebe7;
-  --shadow-sheet: 0 12px 32px -18px rgb(0 0 0 / 0.7);
+  --chart-5: #9ba7ba;
+  --sidebar: #161d2b;
+  --sidebar-foreground: #e6ebf3;
+  --sidebar-primary: #e6ebf3;
+  --sidebar-primary-foreground: #131a26;
+  --sidebar-accent: #222b3d;
+  --sidebar-accent-foreground: #e6ebf3;
+  --sidebar-border: #2a3447;
+  --sidebar-ring: #8e96ff;
+  --shadow-sheet: 0 18px 40px -24px rgb(0 0 0 / 0.6);
 }
 
 /* An invoice sheet settling onto the page, and a PAID stamp landing on it. */
@@ -210,6 +211,13 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: linear-gradient(
+      175deg,
+      color-mix(in oklab, var(--chart-2) 9%, var(--background)) 0%,
+      var(--background) 40%,
+      color-mix(in oklab, var(--amber) 7%, var(--background)) 100%
+    );
+    background-attachment: fixed;
     font-family: var(--font-sans), system-ui, sans-serif;
   }
   html {
@@ -459,5 +467,15 @@ textarea,
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+/* v4 calm surfaces: every bordered white card floats on the mist with a soft shadow and a lighter edge, instead of
+   reading as an outlined box. One rule, so all the cards drawn as "border bg-card" follow without each file changing.
+   Low specificity (:where), so a card that sets its own shadow or ring still wins. */
+@layer components {
+  :where(.bg-card.border):where(.rounded-xl, .rounded-2xl, .rounded-3xl) {
+    border-color: color-mix(in oklab, var(--border) 65%, transparent);
+    box-shadow: var(--shadow-sheet);
   }
 }

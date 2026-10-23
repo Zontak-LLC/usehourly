@@ -55,9 +55,9 @@ export default function LandingPage() {
           Dark mode is the app's own ink, a shade darker down the page; the amber glow is off there because dimmed amber
           on ink reads brown. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem] overflow-hidden">
-        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#F5A524]/25 blur-3xl motion-safe:animate-[drift_14s_ease-in-out_infinite] dark:hidden" />
-        <div className="absolute -top-24 right-[6%] size-[30rem] rounded-full bg-[#8A6CFF]/25 blur-3xl motion-safe:animate-[drift_18s_ease-in-out_infinite_reverse]" />
-        <div className="absolute top-40 left-[42%] size-[24rem] rounded-full bg-[#3DDC97]/15 blur-3xl motion-safe:animate-[drift_22s_ease-in-out_infinite]" />
+        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#6AA9D8]/25 blur-3xl dark:hidden" />
+        <div className="absolute -top-24 right-[6%] size-[30rem] rounded-full bg-[#8A6CFF]/20 blur-3xl" />
+        <div className="absolute top-40 left-[42%] size-[24rem] rounded-full bg-[#B38AE2]/15 blur-3xl" />
       </div>
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
@@ -109,7 +109,7 @@ export default function LandingPage() {
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/auth/v2/register"
-                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-b from-[#F5A524] to-[#e8820b] px-6 font-semibold text-[#12151b] text-base shadow-[0_10px_30px_-10px_#F5A524] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_#F5A524]"
+                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-amber-fill px-6 font-semibold text-white text-base shadow-[0_10px_30px_-14px_var(--amber)] transition-all hover:-translate-y-0.5 hover:brightness-110 dark:text-[var(--background)]"
                 >
                   Create a free account
                 </Link>
