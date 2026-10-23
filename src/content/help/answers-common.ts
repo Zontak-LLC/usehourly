@@ -115,7 +115,7 @@ The maker counts page views per day, with no names and no cookies, to learn whic
 2. Pick when it is due (On receipt, Net 15, Net 30 and so on). The invoice number is under **More options**.
 3. Press **Create invoice**. It is saved and the PDF downloads.
 
-**To send it**, attach the PDF to your own email, or press **Share link** on the Invoices list and copy a private link for your client (see [What your client sees](/help?a=invoice-link)).
+**To send it**, press **Send** (the envelope) on the Invoices list. You get an email to your client, ready to edit, with a private link to the invoice. Press **Open in my email app**, check it and press Send there (see [Sending an invoice](/help?a=invoice-link)).
 
 The invoice is built from your **billable** time for that client: one line per project, hours times the project's hourly rate. An invoice that would total $0.00 is blocked, because a project has no rate yet. Once made, the invoice never changes, even if you edit a rate or an entry later.`,
   },

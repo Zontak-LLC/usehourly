@@ -26,7 +26,10 @@ export const FEATURES = {
   clientCurrency: false,
   /** Per-client billing rounding. */
   rounding: false,
-  /** Emailing an invoice to the client and overdue reminders (the private link stays). */
+  /**
+   * UseHourly emailing an invoice itself, and overdue reminders. Its button was REMOVED from the screens (2026-10-23,
+   * issue 227: people send from their own mail app); the server code stays, so turning this on also needs a button again.
+   */
   invoiceEmail: false,
   /** Sign-off timesheet links for a client. */
   signOff: false,
