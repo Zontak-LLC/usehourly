@@ -29,10 +29,10 @@ A plain number up to **12** means hours (\`4\` is four hours). A bigger plain nu
   {
     id: "timer",
     question: "How does the timer work?",
-    keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard"],
+    keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard", "undo"],
     answer: `Press **Start timer** on Today. The timer runs on the project shown beside it, and the time counts up in the strip and in your totals.
 
-- **Stop timer** gives you the time to check: use − or + 5 min, then **Add to timesheet**. **Resume timer** carries on, and **Discard time** throws it away.
+- **Stop timer** saves the time at once and says so ("Saved 0:42"). Use − or + 5 min to correct it, **Undo** to throw it away, **Resume timer** to carry on, or **Done**.
 - Forgot to start it? Just after you start, **Started earlier?** moves the start back by 15 min, 30 min or 1 hour. After 4 hours, **Still working?** lets you stop it at the time you really stopped.
 - Only **one** timer runs at a time. A timer counts at most 24 hours, so one left running cannot add days.
 - A timer needs a connection. Offline, type the time in the box instead.`,
@@ -42,9 +42,9 @@ A plain number up to **12** means hours (\`4\` is four hours). A bigger plain nu
     oldSlugs: ["moving-and-merging"],
     question: "How do I fix an entry with the wrong time, day or project?",
     keywords: ["edit", "change", "move", "wrong day", "wrong project", "mistake", "delete", "remove", "fix"],
-    answer: `Press **Edit** on the entry. There you can change the **Project**, the **Day** (to move it), the **Time** (the chips add or take away minutes) and the **Description**. **Delete** is at the bottom left of the same form.
+    answer: `Press **Edit** on the entry (or click the entry itself). There you can change the **Project**, the **Day** (to move it), the **Time** (the chips add or take away minutes) and the **Description**. **Delete** is at the bottom left of the same form.
 
-To switch the project in one step, press the project name on the entry and pick the right one.
+After you move an entry to another day, the message that says where it went has **Undo**.
 
 An entry that is already on an invoice says **Invoiced**. You can still change it, but the invoice you made stays as it was.`,
   },

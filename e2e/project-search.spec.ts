@@ -25,7 +25,7 @@ test("type, use the arrow keys and press Enter to pick a project; the time box i
   await page.keyboard.press("/");
   await expect(field).toBeFocused();
   await expect(field).toHaveAttribute("placeholder", /Search 6 projects or clients/);
-  // Scoped to the list: an entry's "Move to another project" select on the page has <option>s of its own.
+  // Scoped to the list, so nothing else on the page can match.
   const options = page.getByRole("listbox", { name: "Projects" }).getByRole("option");
   await expect(options.first()).toBeVisible(); // the list drops down at once
 

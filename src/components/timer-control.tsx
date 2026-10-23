@@ -88,7 +88,7 @@ function useRunningNote(entry: { id: string; note: string } | null) {
 
 /**
  * Today's one timer, a slim strip above the add form. Idle: Start (for the project on the chip). Running: Stop, a description
- * box and, for a moment, "Started earlier?". Stopped: the saved time with - / + 5 min, then Resume / Add / Discard, which
+ * box and, for a moment, "Started earlier?". Stopped: "Saved h:mm" with - / + 5 min, then Undo / Resume / Done, which
  * stay until the person picks one (the time is already saved, so leaving the page keeps it). Every press locks the
  * buttons for a moment, so a double click cannot start and then stop (found 2026-10-23).
  */
@@ -197,9 +197,9 @@ export function useTodayTimer({
       await discard.mutateAsync({ id: stopped.id });
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       setStopped(null);
-      toast.success("Timer discarded. Nothing was saved.");
+      toast.success("Undone. Nothing was saved.");
     } catch (err) {
-      toastError(err, "Couldn't discard the time.");
+      toastError(err, "Couldn't undo that time.");
     }
   }
 
@@ -216,7 +216,7 @@ export function useTodayTimer({
     }
   }
 
-  /** Files the stopped time (it is already saved); false while the buttons are still locked after the stop. */
+  /** Done: the stopped time is already saved, so this only closes the strip; false while the buttons are still locked. */
   function onKeep(): boolean {
     if (locked()) return false;
     playClick("save");
@@ -452,8 +452,8 @@ function StillWorking({ timer }: { timer: TodayTimer }) {
  * Today's timer as one slim strip above the add form (2026-10-23: it replaced the big watch; most people log after the
  * fact, so the timer is there for those who want it without taking a column of the page). One thing at a time:
  * idle = Start timer and the project it starts on; running = a red dot, the elapsed h:mm:ss, the project and Stop timer,
- * then a description box, "Started earlier?" for a moment and "Still working?" after 4 hours; stopped = the time ticket
- * (the entry it became, - / + 5 min, Resume · Add to timesheet · Discard), which stays until one is picked.
+ * then a description box, "Started earlier?" for a moment and "Still working?" after 4 hours; stopped = "Saved 0:42"
+ * (the entry it already is, - / + 5 min, Undo · Resume timer · Done), which stays until one is picked (issue 218).
  */
 export function TimerControls({
   timer,

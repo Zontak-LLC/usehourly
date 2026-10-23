@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { ChevronLeft } from "lucide-react";
+
 import { CalendarSuggestions } from "@/components/calendar-suggestions";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
@@ -91,9 +93,10 @@ export function TodayView() {
           <button
             type="button"
             aria-label="Back to today"
-            className="py-1 font-medium text-foreground underline"
+            className="-ml-1 inline-flex min-h-9 items-center gap-1 rounded-full px-1 font-medium text-foreground hover:bg-muted"
             onClick={() => go(today ?? date)}
           >
+            <ChevronLeft aria-hidden className="size-4" />
             Back to today
           </button>
         ) : undefined
