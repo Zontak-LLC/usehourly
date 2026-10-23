@@ -10,8 +10,24 @@ change goes wrong. Written for the next person on call, including future you.
 | App | One Cloudflare Worker named `hourly` (Next.js through OpenNext) | Cloudflare dashboard > Workers & Pages > `hourly` |
 | Database | Cloudflare D1 `hourly-db` (SQLite) | `npx wrangler d1 ...`; Time Travel keeps 30 days |
 | Public address | https://usehourly.app (custom domain, the only public origin) | `wrangler.jsonc` `routes` |
-| Pipeline | CircleCI: `check`, then `deploy` on `main` | CircleCI project `usehourly` |
+| Pipeline | CircleCI: `check`, `e2e`, then `deploy` and `smoke` on `main` | CircleCI project `useHourly` (see below for the plan) |
 | Secrets | Worker secrets (`AUTH_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAILS`, `TURNSTILE_SECRET_KEY`, OAuth ids/secrets, ...) | `npx wrangler secret list` (names only) |
+
+## CircleCI plan and credits (checked 2026-10-22, issue #201)
+
+- The CircleCI organization (ID `dd08e881-e229-479f-a377-6615ea3e56c8`, slug `circleci/UJ56CWJ43qJrrspUC34hLb`; renamed
+  from `Zontakllc` on 2026-10-22, the name does not matter to pipelines, contexts or secrets) is on the **Free plan**:
+  30,000 credits a month, 2 GB of storage, 30 jobs at once. It also holds MagSmith and Club ADHD.
+- **Open-source credits already apply, with no application:** this repository is public, and the plan page says "Your
+  OS project contributions are not subject to a 30,000 credit limit." In the cycle Oct 14 to Nov 13 the organization
+  used 50,381 credits (useHourly 28,431, MagSmith 16,979, Club ADHD 426, storage 4,545) and was not stopped. So a
+  bigger machine or more containers for `e2e` costs nothing here (issue #197).
+- **What does count against the 30,000:** the private projects (MagSmith, Club ADHD) and storage. Storage was 12.6
+  GB-months against 2 GB, mostly this project's saved test reports, so `e2e` and `smoke` keep their report only when a
+  run fails (`when: on_fail`). The Free plan has no Usage Controls page, so artifact retention cannot be shortened in
+  the settings. Check Plan > Usage at the start of a cycle if MagSmith's builds grow.
+- Support was not contacted: the plan page answered the question. Larger allowances go through
+  https://support.circleci.com/.
 
 ## Is it healthy?
 
