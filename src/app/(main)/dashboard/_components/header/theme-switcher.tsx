@@ -1,43 +1,30 @@
 "use client";
 
-import { Monitor, Moon, Sun } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
+import { Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useToggleTheme } from "@/components/use-toggle-theme";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
-const THEME_CYCLE = ["light", "dark", "system"] as const;
-
+/**
+ * The one appearance control (2026-10-23, issue 217): a sun/moon switch between light and dark. A moon in light mode
+ * (press for dark), a sun in dark mode. It replaced the gear menu, which held only this choice in the first release.
+ */
 export function ThemeSwitcher() {
-  const { themeMode, setPreference } = usePreferencesStore(
-    useShallow((state) => ({
-      themeMode: state.values.theme_mode,
-      setPreference: state.setPreference,
-    })),
-  );
-
-  const cycleTheme = () => {
-    const currentIndex = THEME_CYCLE.indexOf(themeMode);
-    const nextTheme = THEME_CYCLE[(currentIndex + 1) % THEME_CYCLE.length];
-
-    setPreference("theme_mode", nextTheme);
-  };
-
+  const toggle = useToggleTheme();
+  const synced = usePreferencesStore((s) => s.isSynced);
+  const dark = usePreferencesStore((s) => s.resolvedThemeMode === "dark");
   return (
     <Button
       size="icon"
       variant="outline"
-      onClick={cycleTheme}
-      aria-label={`Current theme: ${themeMode}. Click to cycle themes`}
+      onClick={toggle}
+      aria-label="Dark mode"
+      aria-pressed={synced ? dark : undefined}
+      title="Switch between light and dark"
     >
-      {/* SYSTEM */}
-      <Monitor className="hidden [html[data-theme-mode=system]_&]:block" />
-
-      {/* DARK (resolved) */}
-      <Sun className="hidden dark:block [html[data-theme-mode=system]_&]:hidden" />
-
-      {/* LIGHT (resolved) */}
-      <Moon className="block dark:hidden [html[data-theme-mode=system]_&]:hidden" />
+      <Sun className="hidden dark:block" />
+      <Moon className="block dark:hidden" />
     </Button>
   );
 }

@@ -76,9 +76,9 @@ Rules: **no rainbow of weekdays**, no per-tab colours, no coloured stat-tile top
 - **Logos and pictures are managed with one widget,** `components/logo-picker.tsx`: one row with the image on a checkerboard, "Your logo · PNG or JPG", and two plain buttons, Replace and Remove (empty: Upload logo); a file dropped on the row works too. Uploaded logos show on invoices and PDFs; lists use coloured initials and dots instead.
 
 ## Navigation
-- **Phones:** a bottom tab bar (Today, Week, Month, Invoices, Clients, Account where there is room, More).
-- **Wide screens:** the tab strip under the top bar (default) or a side menu down the left (gear, Navigation); the choice is per browser. The side menu keeps the pages in spaced groups (no headings), and marks the current page with an accent bar. Navigation has **no borders**; it is separated by background only.
-- The top bar, top right: **? Guide**, the settings gear (it holds the Light, Dark and System choice) and your name; a signed-out visitor keeps a quick theme switch because they have no gear.
+- **Tabs (2026-10-23, issue 217):** six, everywhere: Today, Week, Month, Invoices, Clients, Year. No "More" menu. A bottom tab bar on a phone, a pill in the top bar on a wide screen.
+- **Wide screens:** the tab pill in the top bar (default) or, only when the appearance extras are switched on, a side menu down the left (gear, Navigation); the choice is per browser. The side menu keeps the pages in spaced groups (no headings), and marks the current page with an accent bar. Navigation has **no borders**; it is separated by background only.
+- The top bar, top right: the search, ONE sun/moon switch (light and dark; the gear only returns with the appearance extras) and the account menu, which shows your picture or initials only (never the name: a long name pushed the bar onto two rows). The account menu holds your name and address, Account, Help, Log out (and Insights for the owner). Below 1280px the search is an icon and the logo is the clock alone. Sign-in pages: one header row in the normal flow (logo left; the other form's link and the switch right), never absolutely placed.
 - **The guide** is its own frame (`/help`): a contents list down the left (a folded "Browse all topics" on a phone), Guide and FAQ buttons that stay pressed on the current page, and no app menu, so there is never a second left menu.
 - Every page's name is the same in the menu, the heading and the browser title **[checked]**.
 
@@ -136,7 +136,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 
 ### Navigation and wayfinding
 - The current place is always marked (bar and tint on the menu item, the page title matches the menu word **[checked]**). Same words everywhere for the same thing.
-- **Two taps to anything common** (Today, Week, Month, Invoices, Clients are in the tab bar); rare pages live under More. No dead ends: every empty or error screen has a way forward.
+- **Two taps to anything common** (Today, Week, Month, Invoices, Clients, Year are tabs); Account and Help are in the account menu. No dead ends: every empty or error screen has a way forward.
 - Links look like links (underline) inside text; buttons look like buttons; nothing that is only informative looks pressable (see "Controls look pressable, labels do not").
 
 ### Colour, contrast and theming

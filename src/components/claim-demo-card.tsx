@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import { useInSectionGroup } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { forgetSampleCopies } from "@/lib/fresh-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -19,6 +21,7 @@ import { trpc } from "@/lib/trpc";
 export function ClaimDemoCard() {
   const grouped = useInSectionGroup();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const claim = trpc.account.claimDemo.useMutation();
   const [startFresh, setStartFresh] = useState(true);
   // One line and a button until the person wants it; the demo banner's link (…/account#claim) opens it at once.
@@ -37,6 +40,17 @@ export function ClaimDemoCard() {
     const password = String(fd.get("password") ?? "");
     try {
       await claim.mutateAsync({ name: String(fd.get("name") ?? ""), email, password, startFresh });
+      // The sample entries, clients and invoices are cached in this page and saved in the browser: drop them all, or
+      // Today would keep showing them until a reload (and the add form would start on a deleted sample project).
+      let storage: Storage | null = null;
+      try {
+        storage = localStorage;
+      } catch {
+        // storage blocked
+      }
+      forgetSampleCopies(storage, startFresh);
+      queryClient.removeQueries({ type: "inactive" }); // the other pages' sample data: gone, loaded afresh on the next visit
+      void queryClient.invalidateQueries(); // this page's own queries load again
       // The account's sign-in token changed, so sign in again with the new details.
       const res = await signIn("credentials", { email, password, redirect: false });
       toast.success("Your account is ready.");

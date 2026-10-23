@@ -41,9 +41,9 @@ Signing out removes the saved pages and data from the device. Time still waiting
     oldSlugs: ["menu-position"],
     question: "How do I switch to dark mode?",
     keywords: ["theme", "dark", "light", "night", "colour", "color", "appearance"],
-    answer: `Press the **gear** at the top right and pick **Light**, **Dark**, or **System** to follow your computer or phone. Your choice follows your account to your other devices.${
-      feature("appearanceExtras") ? " The same menu moves the page menu to the left on a wide screen." : ""
-    }`,
+    answer: feature("appearanceExtras")
+      ? "Press the **gear** at the top right and pick **Light**, **Dark**, or **System** to follow your computer or phone. Your choice follows your account to your other devices. The same menu moves the page menu to the left on a wide screen."
+      : "Press the **moon** button at the top right: the app turns dark. Press it again (it is a sun then) for light. You can also search for **dark mode** and choose it. Your choice follows your account to your other devices.",
   },
   {
     id: "archive",

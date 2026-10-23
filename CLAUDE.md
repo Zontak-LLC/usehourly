@@ -71,6 +71,13 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - **Sign-in** errors show under the password field (`role="alert"`); deleting an account lands on `/account-deleted` (public).
 - `PageShell`'s title block is `flex-1` and the header `items-start`, so actions stay on the title's line on a phone.
 
+## The frame, simpler (2026-10-23, issue 217)
+- **Tabs:** Today · Week · Month · Invoices · Clients · Year (`TAB_IDS` in `header/mobile-nav.tsx`; "Year" is the `short` of Year summary). The "More" menu is gone: Account, Help (Team when switched on, Insights for the owner) are in the account menu (`user-menu.tsx`), which shows initials or the picture only, never the name.
+- **One sun/moon switch** (`theme-switcher.tsx`, "Dark mode" with `aria-pressed`, `use-toggle-theme.ts`: always the opposite of what shows) replaced the gear; `AppearanceControl` brings the gear back only with `appearanceExtras`. Search finds "Dark mode" and choosing it switches the look (`action: "toggle-theme"` in `lib/global-search.ts`). For sample accounts search hides Change password, API tokens, Connect an AI assistant and Delete account (`notForDemo`, `matchPagesAndSettings(q, { demo })`).
+- Top bar: the wide search field and the logo word show from 1280px (`xl`); below that an icon and the clock. Sign-in pages: the header is one flow row (`auth-switch-link.tsx`), no absolute positioning. Demo banner: one line on a phone.
+- **Start fresh** on claiming the demo drops cached queries and the remembered sample projects (`lib/fresh-start.ts`), so Today shows the first-run question without a reload.
+- Tests: `e2e/frame.spec.ts` (mutation-checked: the cache clearing), `fresh-start.test.ts`, `global-search.test.ts`, `nonbillable-check.spec.ts` (the switch).
+
 ## Money right: the same hours are never billed twice (2026-10-23, issue #178, migration 0035)
 - `time_entries.invoice_id` (FK to invoices, ON DELETE SET NULL, indexes `(user_id, invoice_id)` and `(invoice_id)`): the invoice the time was billed on; null = not invoiced yet. The migration backfilled old invoices (the client's billable entries in the invoice period, logged before it was made; oldest invoice wins), touching only rows that change.
 - `invoice.create` bills only unbilled, stopped entries (`invoice_id: null, started_at: null`) unless `includeInvoiced`, then marks them (`markInvoiced` in `server/unbilled.ts`, 80 ids per query for D1's 100 bound values, only rows still unbilled); if another invoice took some meanwhile, the new one is deleted and CONFLICT says so. Billed again on purpose, the time keeps its first invoice.

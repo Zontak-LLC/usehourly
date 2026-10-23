@@ -3,36 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Menu } from "lucide-react";
+import { navLinks } from "@/navigation/sidebar/sidebar-items";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { adminLinks, navLinks } from "@/navigation/sidebar/sidebar-items";
-
-const MAIN = ["today", "week", "month", "invoices", "clients", "account"];
-/**
- * Tabs that only show where there is room: Account from 480px wide. On a narrower phone it stays in the More menu,
- * which hides its own copy once the tab shows. Full class names so Tailwind keeps them.
- */
-const ROOMY: Record<string, { tab: string; menu: string }> = {
-  account: { tab: "max-[479px]:hidden", menu: "min-[480px]:hidden" },
-};
+/** The six tabs, in order. Account, Help (and Insights for the owner) live in the account menu at the top right. */
+export const TAB_IDS = ["today", "week", "month", "invoices", "clients", "report"] as const;
 
 /**
  * The pages used most, as a pill of tabs: centered in the top bar from 1024px up (below that it wraps onto its own line
- * under the logo) and a floating bar at the bottom of a phone, where a thumb reaches. "More" is a real menu: the rarely
- * used pages. The signed-in person and Log out are in the top bar.
+ * under the logo) and a floating bar at the bottom of a phone, where a thumb reaches. Every page a person needs is a tab
+ * (issue 217: the "More" menu is gone); Account and Help are in the account menu.
  */
-export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
+export function MobileNav() {
   const pathname = usePathname();
-  const items = MAIN.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
-  const more = [...navLinks.filter((l) => l.secondary), ...(isAdmin ? adminLinks : [])];
+  const items = TAB_IDS.map((id) => navLinks.find((l) => l.id === id)).filter((l) => l !== undefined);
   const tab =
-    "flex items-center justify-center gap-0.5 whitespace-nowrap rounded-full font-medium transition-colors max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:text-xs sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm lg:gap-2 lg:px-4";
+    "flex min-w-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-full font-medium transition-colors max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:text-xs max-[379px]:text-[11px] sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm lg:gap-2 lg:px-4";
 
   return (
     <nav
@@ -47,7 +32,7 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
               key={item.id}
               href={item.url}
               aria-current={active ? "page" : undefined}
-              className={`${tab} ${ROOMY[item.id] ? `${ROOMY[item.id].tab} ` : ""}${
+              className={`${tab} ${
                 active
                   ? "bg-card text-foreground shadow-sm max-sm:bg-muted"
                   : "text-muted-foreground hover:text-foreground"
@@ -58,23 +43,6 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
             </Link>
           );
         })}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" className={`${tab} text-muted-foreground aria-expanded:text-foreground`}>
-              <Menu className="size-5 sm:size-4 sm:max-lg:hidden" aria-hidden />
-              More
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-56">
-            {more.map((item) => (
-              <DropdownMenuItem key={item.id} asChild className={ROOMY[item.id]?.menu}>
-                <Link href={item.url} prefetch={false}>
-                  <item.icon /> {item.title}
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </nav>
   );

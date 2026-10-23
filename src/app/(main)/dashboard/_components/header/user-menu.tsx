@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import Link from "next/link";
 
-import { CircleHelp, ImagePlus, LogOut, Trash2, User } from "lucide-react";
+import { Activity, CircleHelp, ImagePlus, LogOut, Trash2, User, UsersRound } from "lucide-react";
 
 import { AvatarCropper } from "@/components/avatar-cropper";
 import { Caret } from "@/components/caret";
@@ -22,10 +22,17 @@ import { feature } from "@/lib/features";
 import { signOutOfDevice } from "@/lib/sign-out";
 
 /**
- * The signed-in person at the top right: their picture (or initials) and name, and a menu with their address, Account,
- * Help and Log out. It replaced the name and Log out that used to sit at the bottom of the side menu and in "More".
+ * The signed-in person at the top right: their picture or initials only (a long name used to push the top bar onto two
+ * rows, issue 217), and a menu with their name, address, Account, Help and Log out (Team and Insights when they apply).
+ * It also took over what the tab bar's "More" menu used to hold.
  */
-export function UserMenu({ user }: { user: { name: string; email: string; avatar: string | null } }) {
+export function UserMenu({
+  user,
+  isAdmin = false,
+}: {
+  user: { name: string; email: string; avatar: string | null };
+  isAdmin?: boolean;
+}) {
   const file = useRef<HTMLInputElement>(null);
   const avatar = useAvatarUpload();
   const pictures = feature("avatar");
@@ -52,7 +59,6 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
             className="flex h-10 items-center gap-2 rounded-lg border bg-card pr-2 pl-1 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 aria-expanded:bg-muted"
           >
             <UserAvatar name={user.name} avatar={user.avatar} />
-            <span className="max-w-32 truncate font-medium text-sm max-sm:hidden">{user.name}</span>
             <Caret className="max-sm:hidden" />
           </button>
         </DropdownMenuTrigger>
@@ -78,6 +84,20 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
           {pictures && user.avatar && (
             <DropdownMenuItem disabled={avatar.busy} onSelect={() => void avatar.remove()}>
               <Trash2 /> Remove your picture
+            </DropdownMenuItem>
+          )}
+          {feature("team") && (
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/team" prefetch={false}>
+                <UsersRound /> Team
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {isAdmin && (
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/insights" prefetch={false}>
+                <Activity /> Insights
+              </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
