@@ -34,7 +34,7 @@ export function BillBar({
   return (
     <div
       data-testid="bill-bar"
-      className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t bg-card/90 px-4 py-3 backdrop-blur max-md:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-md:rounded-b-xl max-md:shadow-[var(--shadow-sheet)]"
+      className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t bg-card/90 px-4 py-3 backdrop-blur max-sm:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-sm:rounded-b-xl max-sm:shadow-[var(--shadow-sheet)]"
     >
       <p className="flex min-w-0 flex-1 flex-col">
         <span className="font-semibold">{money(unbilled.cents)} not invoiced</span>
