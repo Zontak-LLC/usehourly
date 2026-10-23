@@ -207,6 +207,7 @@ export function ProjectPicker({
         aria-activedescendant={flat[active] ? `${listId}-${active}` : undefined}
         aria-label="Search projects or clients"
         autoComplete="off"
+        clearable
         value={query}
         placeholder={`Search ${projects.length} projects or clients…`}
         onChange={(e) => {

@@ -214,6 +214,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
               name="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              clearable
               required
               maxLength={80}
             />
@@ -225,6 +226,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
               name="legalName"
               value={legalName}
               onChange={(e) => setLegalName(e.target.value)}
+              clearable
               placeholder={name || c.name}
               maxLength={150}
             />
@@ -237,6 +239,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
               name="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              clearable
               rows={3}
               maxLength={300}
               placeholder={"500 Market St\nSan Francisco, CA 94105"}
@@ -249,6 +252,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
               name="email"
               type="email"
               defaultValue={c.email ?? ""}
+              clearable
               placeholder="accounts@client.com"
               maxLength={254}
               autoComplete="off"
