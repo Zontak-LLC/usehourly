@@ -8,7 +8,6 @@ import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingShowcase } from "@/components/landing-showcase";
-import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
 import { Reveal } from "@/components/reveal";
 import { Supporters } from "@/components/supporters";
@@ -27,7 +26,7 @@ const JSON_LD = {
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   featureList: [
-    "Quick daily time entry and a stopwatch that turns into an entry",
+    "Quick daily time entry, with a timer when you want one",
     "Weekly timesheet that shows the gaps, and a month calendar you can drag entries across",
     "Invoices as PDF or as a private link, with paid, waiting and late at a glance",
     "Each client's month in hours and money, and one tap to make the invoice",
@@ -168,19 +167,6 @@ export default function LandingPage() {
                   Connect yours in a minute: the steps for each assistant
                 </Link>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t bg-gradient-to-b from-[#8A6CFF]/10 via-transparent to-[#3DDC97]/10 dark:border-white/5 dark:bg-none">
-          <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-            <Reveal>
-              <h2 className="max-w-2xl font-extrabold text-3xl tracking-tight md:text-5xl">
-                From hours to paid, without the busywork.
-              </h2>
-            </Reveal>
-            <div className="mt-10">
-              <LandingStory />
             </div>
           </div>
         </section>

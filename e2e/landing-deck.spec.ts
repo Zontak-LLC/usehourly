@@ -36,3 +36,28 @@ test("the screens deck flips with the tabs, the arrows, the dots and the arrow k
     await shows("Log a day in seconds");
   }
 });
+
+/**
+ * Issue 221: the home page shows only what ships, once. The "From hours to paid" story repeated the deck and the
+ * feature tiles, so it was removed; the deck pictures fill their window (no shrunk full page with an empty foot).
+ */
+test("the home page has no repeated story, and the deck picture fills its window", async ({ page, isMobile }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "See it working." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /From hours to paid/ })).toHaveCount(0);
+  // The app draws no clocks: no "Quick entry and a stopwatch" tile and no REC chip.
+  await expect(page.getByText(/Quick entry and a stopwatch/i)).toHaveCount(0);
+  await expect(page.getByText("REC", { exact: true })).toHaveCount(0);
+
+  const deck = page.getByRole("region", { name: "Screens of the app" });
+  await deck.scrollIntoViewIfNeeded();
+  const img = page.getByRole("img", { name: /The Today screen of UseHourly/ });
+  await expect(img).toBeVisible();
+  await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+  const fit = await img.evaluate((el: HTMLImageElement) => {
+    const box = el.getBoundingClientRect();
+    return { picture: el.naturalWidth / el.naturalHeight, box: box.width / box.height };
+  });
+  // On a computer the picture and its frame share a shape, so object-cover crops nothing. A phone has its own picture.
+  if (!isMobile) expect(Math.abs(fit.picture - fit.box)).toBeLessThan(0.12);
+});

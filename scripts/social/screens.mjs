@@ -1,6 +1,7 @@
 // Retakes every promotional picture of the app from the sample-data demo, in the default Neutral light theme:
 //   node scripts/social/screens.mjs [http://localhost:3028]
-// Desktop full-page pictures (1440 wide) -> public/landing/tour/N-name.webp (the landing page's product tour)
+// Desktop pictures (a 1120x1008 window at 2x, saved 1400x1260) -> public/landing/tour/N-name.webp (the home page's
+//   screens deck; the dark set comes from dark-screens.mjs with the same window)
 // Phone pictures (360x640 at 3x = 1080x1920) -> android/store/screenshots/N-name.png (Play Store) and
 //   public/landing/tour-phone/N-name.webp (540 wide, the tour on a phone)
 // Needs the app running (npm run dev), Playwright, and cwebp (brew install webp). Run it after changing how a screen looks.
@@ -48,28 +49,20 @@ async function demo(context) {
   return page;
 }
 
-// Desktop: the whole page content, cropped at the bottom of the page card.
+// Desktop: a tight window, 10:9 (issue 221: a 1440-wide full page left the app small, with an empty lower third).
+// 1120 wide makes the page card (max 1024) fill the window; 2x pixels, saved 1400 wide, so the words stay sharp.
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 2600 }, deviceScaleFactor: 1 });
+  const ctx = await browser.newContext({ viewport: { width: 1120, height: 1008 }, deviceScaleFactor: 2 });
   const page = await demo(ctx);
   for (const [name, url] of SCREENS) {
     await page.goto(`${BASE}${url}`);
     await page.addStyleTag({ content: HIDE });
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(800);
-    const h = await page.evaluate(() => {
-      const card = document.querySelector("h1")?.closest("div[class*='overflow-hidden']");
-      return Math.min(2600, Math.ceil((card ? card.getBoundingClientRect().bottom + window.scrollY : 1200) + 40));
-    });
     const png = `/tmp/uh-screens/${name}.png`;
-    await page.screenshot({
-      path: png,
-      clip: { x: 0, y: 0, width: 1440, height: h },
-      animations: "disabled",
-      caret: "initial",
-    });
-    cwebp(png, resolve(root, `public/landing/tour/${name}.webp`), 80);
-    console.log("desktop", name, h);
+    await page.screenshot({ path: png, animations: "disabled", caret: "initial" });
+    cwebp(png, resolve(root, `public/landing/tour/${name}.webp`), 80, 1400);
+    console.log("desktop", name);
   }
   await ctx.close();
 }
