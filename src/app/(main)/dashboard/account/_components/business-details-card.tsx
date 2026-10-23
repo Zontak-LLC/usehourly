@@ -75,6 +75,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
                 name="businessName"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                clearable
                 placeholder={me.name ?? "Your name or company"}
                 maxLength={100}
               />
@@ -86,6 +87,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
                 name="ein"
                 value={ein}
                 onChange={(e) => setEin(e.target.value)}
+                clearable
                 placeholder="12-3456789"
                 inputMode="numeric"
                 className="font-mono"
@@ -98,6 +100,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
                 name="address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                clearable
                 placeholder={"123 Main St\nSpringfield, IL 62701"}
                 rows={3}
                 maxLength={300}
@@ -112,6 +115,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
                 name="paymentInstructions"
                 value={pay}
                 onChange={(e) => setPay(e.target.value)}
+                clearable
                 placeholder={"Pay by ACH\nAccount name: …\nRouting number: …\nAccount number: …"}
                 rows={4}
                 maxLength={500}

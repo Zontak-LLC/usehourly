@@ -173,6 +173,7 @@ export function InvoiceDetailsCard({
             id="notes"
             value={notes}
             onChange={(e) => onNotes(e.target.value)}
+            clearable
             rows={2}
             maxLength={1000}
             placeholder="e.g. Thanks for a great month!"

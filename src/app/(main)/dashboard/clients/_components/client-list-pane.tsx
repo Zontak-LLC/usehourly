@@ -51,6 +51,7 @@ export function ClientListPane({
             className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
+            clearable
             type="search"
             value={search}
             onChange={(e) => onSearch(e.target.value)}
