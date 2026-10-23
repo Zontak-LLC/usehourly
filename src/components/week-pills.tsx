@@ -41,7 +41,7 @@ function DayHours({ minutes, dayTotal, gap }: { minutes: number; dayTotal: numbe
 /**
  * The week as one slim row of seven day buttons: the day, its date, the hours and a thin bar for how full it was. The
  * day shown is pressed (an amber ring, like the open tab); today has an amber dot; a past weekday with nothing logged shows as a dashed gap ("No time").
- * Tapping a day opens it. Used on Today and Week.
+ * Tapping a day opens it. Week's own control (Today walks one day at a time with its day stepper).
  */
 export function WeekPills({
   entries,

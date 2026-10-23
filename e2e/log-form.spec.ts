@@ -36,7 +36,7 @@ test("the Log time form: layout, the Logged moment, the help line fading out, an
   await test.step("the help line shows for the first few entries only", async () => {
     await time.fill("15m");
     await log.click();
-    await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText("1:45 this day");
+    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("1:45 this day");
     await expect(help).toHaveCount(0);
   });
 
