@@ -9,21 +9,19 @@ export const metadata: Metadata = { title: "Log in · UseHourly" };
 
 export default function LoginPage() {
   return (
-    <>
-      <div className="relative mx-auto flex w-full flex-col justify-center space-y-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)] sm:w-[420px] sm:p-8">
-        <div className="space-y-2 text-center">
-          <h1 className="font-bold font-display text-4xl">Welcome back</h1>
-          <p className="text-muted-foreground text-sm">Log in to track your time.</p>
-        </div>
-        <SocialSignIn />
-        <LoginForm />
-        <div className="text-center text-muted-foreground text-sm">
-          Just looking?
-          <TryDemoButton className="ml-1 inline-block py-2 text-foreground underline underline-offset-4">
-            Try the demo first
-          </TryDemoButton>
-        </div>
+    <div className="relative mx-auto flex w-full flex-col justify-center space-y-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)] sm:w-[420px] sm:p-8">
+      <div className="space-y-2 text-center">
+        <h1 className="font-bold font-display text-4xl">Welcome back</h1>
+        <p className="text-muted-foreground text-sm">Log in to track your time.</p>
       </div>
-    </>
+      <SocialSignIn />
+      <LoginForm />
+      <div className="text-center text-muted-foreground text-sm">
+        Just looking?
+        <TryDemoButton className="ml-1 inline-block py-2 text-foreground underline underline-offset-4">
+          Try the demo first
+        </TryDemoButton>
+      </div>
+    </div>
   );
 }
