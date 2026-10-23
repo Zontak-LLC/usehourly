@@ -312,7 +312,7 @@ function SteelButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={title ?? label.replace("\n", " ")}
+      title={title ?? label.replaceAll("\n", " ")}
       className={`group flex w-full min-w-0 flex-col items-center gap-2 disabled:opacity-50 ${middle ? "col-start-2" : ""}`}
     >
       <span
