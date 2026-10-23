@@ -155,7 +155,7 @@ export default function LandingPage() {
             See it working.
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-muted-foreground">
-            Real screens from the app, with sample data. Scroll to flip through them.
+            Real screens from the app, with sample data. Flip through them with the tabs or the arrows.
           </p>
           <div className="mt-8">
             <LandingShowcase />

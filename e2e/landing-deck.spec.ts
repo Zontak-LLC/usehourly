@@ -1,46 +1,38 @@
 import { expect, test } from "./helpers";
 
-/** "See it working": the screens are a deck pinned on the page; scrolling flips them, and a caption jumps to its screen. */
-test.describe("landing screens deck", () => {
-  test("scrolling flips to the next screen, and a caption jumps to its screen", async ({ page, isMobile }) => {
-    test.skip(isMobile, "the caption list is for wide screens; a phone shows one caption that follows the scroll");
-    await page.goto("/");
-    const section = page.locator("#see-it");
-    await section.waitFor();
-    const list = page.getByRole("list", { name: "Screens of the app" });
-    // Go to the very top of the section (scrollIntoViewIfNeeded can stop part way down the tall track, which
-    // opens a later screen), then the first screen is the open one.
-    await expect(async () => {
-      await page.evaluate(() => {
-        const el = document.querySelector("#see-it") as HTMLElement;
-        window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY);
-      });
-      await expect(list.getByRole("button", { name: /Log a day in seconds/ })).toHaveAttribute("aria-current", "step", {
-        timeout: 3_000,
-      });
-    }).toPass({ timeout: 30_000 });
+/**
+ * "See it working": the real screens as a deck you flip through with the tabs, the arrows, the dots or the arrow keys
+ * (2026-10-23: it used to flip only by scrolling a tall pinned track, which was hard on a desktop).
+ */
+test("the screens deck flips with the tabs, the arrows, the dots and the arrow keys", async ({ page, isMobile }) => {
+  await page.goto("/");
+  const deck = page.getByRole("region", { name: "Screens of the app" });
+  await deck.scrollIntoViewIfNeeded();
+  const tab = (name: string) => deck.getByRole("tab", { name, exact: true });
+  const shows = (title: string) => expect(deck.getByRole("heading", { name: title })).toBeVisible();
 
-    // Scroll a little way into the tall track: the second screen comes to the front. A busy machine can drop the
-    // first scroll event, so the scroll is repeated until the screen flips.
-    await expect(async () => {
-      await page.evaluate(() => {
-        const el = document.querySelector("#see-it [style*='height']") as HTMLElement;
-        window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + window.innerHeight * 0.9);
-      });
-      await expect(list.getByRole("button", { name: /whole week at a glance/ })).toHaveAttribute(
-        "aria-current",
-        "step",
-        { timeout: 3_000 },
-      );
-    }).toPass({ timeout: 30_000 });
-    await expect(page.getByRole("img", { name: /The Week screen of UseHourly/ }).first()).toBeVisible();
+  await expect(tab("Today")).toHaveAttribute("aria-selected", "true");
+  await shows("Log a day in seconds");
 
-    // A caption scrolls to its own screen.
-    await expect(async () => {
-      await list.getByRole("button", { name: /Ready for tax time/ }).click();
-      await expect(list.getByRole("button", { name: /Ready for tax time/ })).toHaveAttribute("aria-current", "step", {
-        timeout: 3_000,
-      });
-    }).toPass({ timeout: 30_000 });
-  });
+  await tab("Invoices").click();
+  await expect(tab("Invoices")).toHaveAttribute("aria-selected", "true");
+  await shows("Paid, waiting, late");
+  await expect(page.getByRole("img", { name: /The Invoices screen of UseHourly/ }).first()).toBeVisible();
+
+  await deck.getByRole("button", { name: "Show the Week screen" }).click(); // a dot
+  await shows("The whole week at a glance");
+
+  if (!isMobile) {
+    await deck.getByRole("button", { name: "Next screen" }).click();
+    await shows("A calendar of what you did");
+    await deck.getByRole("button", { name: "Previous screen" }).click();
+    await deck.getByRole("button", { name: "Previous screen" }).click();
+    await shows("Log a day in seconds");
+    await deck.getByRole("button", { name: "Previous screen" }).click(); // wraps round to the last
+    await shows("Ready for tax time");
+
+    await tab("Year summary").focus();
+    await page.keyboard.press("ArrowRight"); // and back to the first
+    await shows("Log a day in seconds");
+  }
 });
