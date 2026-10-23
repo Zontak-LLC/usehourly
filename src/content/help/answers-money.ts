@@ -25,11 +25,28 @@ If you delete an invoice, its time becomes "not invoiced yet" again.`,
   {
     id: "invoice-link",
     oldSlugs: ["emailing-invoices"],
-    question: "What does my client see when I share an invoice link?",
-    keywords: ["share", "link", "send", "email", "client", "private", "url", "expire"],
-    answer: `On the Invoices list, press **Share link** on the invoice, choose how long the link works (30, 90 or 180 days) and press **Make a link**. Copy it at once: it is shown only once. Then send it to your client yourself, for example in your own email.
+    question: "How do I email an invoice to my client, and what do they see?",
+    keywords: [
+      "share",
+      "link",
+      "send",
+      "email",
+      "mail",
+      "gmail",
+      "outlook",
+      "attach",
+      "client",
+      "private",
+      "url",
+      "expire",
+    ],
+    answer: `On the Invoices list, press **Send** (the envelope) on the invoice. An email to your client opens under it, ready to edit: the amount, the dates, when it is due and a private link to the invoice. The **To** address comes from the client's **Billing details** on Clients.
 
-The link opens a page with the invoice, a **Download PDF** button and how to pay you. Anyone with the link can see it, including your payment details, so keep the lifetime short.`,
+- **Open in my email app** opens a new email in Gmail, Outlook, Apple Mail or your usual app, with everything filled in. Check it and press Send there. UseHourly never sends it for you.
+- **Copy message** is for webmail in another tab: paste it into a new email.
+- **Share with the PDF** (on a phone, and Safari on a Mac) attaches the PDF file itself. Elsewhere, press **Download PDF** and attach it by hand.
+
+The link opens a page with the invoice, a **Download PDF** button and how to pay you. It works for 90 days. Anyone with the link can see it, including your payment details. To stop a link, press **Turn off** beside it under the email.`,
   },
   {
     id: "paid",

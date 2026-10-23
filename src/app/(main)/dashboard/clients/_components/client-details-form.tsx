@@ -150,8 +150,8 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         name: String(fd.get("name")),
         legalName: String(fd.get("legalName") ?? ""),
         address: String(fd.get("address") ?? ""),
-        // Hidden email field sends nothing: the stored address stays as it is.
-        ...(fd.has("email") ? { email: String(fd.get("email") ?? "").trim() } : {}),
+        // The "To" address when you send an invoice from your own mail app (issue 227).
+        email: String(fd.get("email") ?? "").trim(),
         // A locked (or hidden) select sends nothing: leave the currency as it is.
         ...(fd.has("currency") ? { currency: currencyChoice(fd.get("currency")) } : {}),
         // Hidden rounding fields send nothing: the stored rule stays as it is.
@@ -180,7 +180,6 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
 
   const withCurrency = feature("clientCurrency");
   const withRounding = feature("rounding");
-  const withEmail = feature("invoiceEmail");
   if (client.isLoading) return <Skeleton className="m-4 h-32" />;
   if (client.error || !client.data) {
     return <p className="px-4 py-3 text-destructive text-sm">Couldn't load client: {client.error?.message}</p>;
@@ -243,20 +242,18 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
               placeholder={"500 Market St\nSan Francisco, CA 94105"}
             />
           </div>
-          {withEmail && (
-            <div className="grid gap-1.5">
-              <Label htmlFor={`ce-${id}`}>Email for invoices</Label>
-              <Input
-                id={`ce-${id}`}
-                name="email"
-                type="email"
-                defaultValue={c.email ?? ""}
-                placeholder="accounts@client.com"
-                maxLength={254}
-                autoComplete="off"
-              />
-            </div>
-          )}
+          <div className="grid gap-1.5">
+            <Label htmlFor={`ce-${id}`}>Email for invoices</Label>
+            <Input
+              id={`ce-${id}`}
+              name="email"
+              type="email"
+              defaultValue={c.email ?? ""}
+              placeholder="accounts@client.com"
+              maxLength={254}
+              autoComplete="off"
+            />
+          </div>
           {withCurrency && <CurrencyField value={c.currency} locked={c.currency_locked} />}
           {withRounding && <RoundingFields step={c.round_step} mode={c.round_mode} min={c.round_min} />}
           <div className="grid gap-1.5">

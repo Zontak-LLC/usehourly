@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { CircleDollarSign, Download, Link2, Pencil, Search, Trash2 } from "lucide-react";
+import { CircleDollarSign, Download, Mail, Pencil, Search, Trash2 } from "lucide-react";
 
 import { IconAction } from "@/components/icon-action";
 import { MoreMenu } from "@/components/more-menu";
@@ -274,13 +274,13 @@ function InvoiceSlip({
             </Button>
           )}
           <IconAction
-            label={`Share a link to ${i.number}`}
-            tip="Share link"
+            label={`Send ${i.number}`}
+            tip="Send"
             inline
             expanded={panel === "send"}
             onClick={() => toggle("send")}
           >
-            <Link2 />
+            <Mail />
           </IconAction>
           <IconAction
             label={busy ? `Making the PDF of ${i.number}` : `Download ${i.number} as a PDF`}

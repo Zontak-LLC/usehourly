@@ -1,31 +1,17 @@
 import { FEATURES } from "../src/lib/features";
-import {
-  anonymous,
-  clearMail,
-  clientEmail,
-  expect,
-  linkIn,
-  mailTo,
-  menuAction,
-  newUser,
-  seen,
-  sql,
-  test,
-  today,
-} from "./helpers";
+import { anonymous, clearMail, expect, linkIn, mailTo, newUser, seen, test, today } from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
  * A new freelancer's first day, start to finish, the way the product is meant to be used: sign up, say who you work for,
  * log time, fix a mistake, look at the week, set a rate, make an invoice and get it paid, share hours and an invoice with
- * a client, email an invoice, and finally delete the account. Every step takes a screenshot and runs the standard checks.
+ * a client, write the invoice email, and finally delete the account. Every step takes a screenshot and runs the standard checks.
  *
  * `actions` counts what the person has to do (clicks and typed fields) so the effort for each job is a number that can be
  * compared from run to run, and held to a budget where one matters. A job that gets harder to do shows up here.
  */
 test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, isPhone }, info) => {
   const user = newUser();
-  const client = clientEmail();
   const actions = { signup: 0, firstEntry: 0, invoice: 0 };
   const count = (job: keyof typeof actions, n = 1) => {
     actions[job] += n;
@@ -255,17 +241,19 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   let invoiceUrl = "";
-  await test.step("get a private link to the invoice and open it as the client", async () => {
+  await test.step("write the invoice email for my own mail app, and open its private link as the client", async () => {
+    // The Send panel writes the email and makes a private link; nothing is sent from UseHourly (#227).
     // The list refreshes when the link is saved and can close the panel for a moment on a busy machine: open it again if so.
     const linkBox = page.getByLabel("Invoice link");
-    const makeLink = page.getByRole("button", { name: "Make a link" });
     await expect(async () => {
-      if (!(await linkBox.isVisible())) {
-        if (!(await makeLink.isVisible())) await page.getByRole("button", { name: /^Share a link to INV-/ }).click();
-        await makeLink.click();
-      }
+      if (!(await linkBox.isVisible())) await page.getByRole("button", { name: /^Send INV-/ }).click();
       await expect(linkBox).toBeVisible({ timeout: 3000 });
     }).toPass({ timeout: 30_000 });
+    const mailApp = page.getByRole("link", { name: "Open in my email app" });
+    await expect(mailApp).toHaveAttribute("href", /^mailto:\?subject=Invoice%20INV-/);
+    await expect(page.getByLabel("Message")).toHaveValue(new RegExp(`${await linkBox.inputValue()}`));
+    await expect(page.getByRole("button", { name: "Send the email" })).toHaveCount(0); // UseHourly never sends it
+    await shot("send-panel");
     invoiceUrl = await linkBox.inputValue();
     expect(invoiceUrl).toMatch(/\/invoice\/\S{40,}/);
     const anon = await anonymous(browser, info);
@@ -310,44 +298,6 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
     const mail = await mailTo(user.email, /approved your timesheet/);
     expect(mail.subject).toBe("Kirk Test approved your timesheet");
     expect(mail.text).not.toContain(url); // the private link never goes in the email
-  });
-
-  await test.step("email the invoice to the client, who can read it and opt out", async () => {
-    if (!FEATURES.invoiceEmail) return; // hidden in this release (src/lib/features.ts)
-    sql(
-      `UPDATE auth_users SET created_at = strftime('%Y-%m-%dT%H:%M:%f+00:00','now','-3 days') WHERE email='${user.email}'`,
-    );
-    await page.goto("/dashboard/clients");
-    await menuAction(page, "More actions for Acme Studio", "Billing details");
-    await page.getByLabel(/Email \(where you send invoices\)/).fill(client);
-    await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Client updated.")).toBeVisible(); // wait for the save before leaving the page
-    await page.goto("/dashboard/invoices");
-    await page.getByRole("button", { name: /^Send INV-/ }).click();
-    await expect(page.getByText("Loading…")).toBeHidden();
-    await shot("email-panel");
-    await page.getByLabel(/A note to include/).fill("Thanks for a great week.");
-    await page.getByRole("button", { name: "Send the email" }).click();
-    await expect(page.getByText(`Sent to ${client}`)).toBeVisible();
-    const mail = await mailTo(client, /Invoice INV/);
-    expect(mail.reply_to).toBe(user.email);
-    expect(mail.from).toContain("Sam Freelancer via UseHourly");
-    expect(mail.text).toContain("Thanks for a great week.");
-    expect(mail.html).toContain("<!doctype html>");
-    expect(mail.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
-    const anon = await anonymous(browser, info);
-    const reader = await anon.newPage();
-    await reader.goto(linkIn(mail.text, "/invoice/"));
-    await expect(reader.getByRole("heading", { name: /Invoice INV-\d{4}-001/ })).toBeVisible();
-    await reader.goto(linkIn(mail.text, "/stop-emails?"));
-    await reader.getByRole("button", { name: "Yes, stop them" }).click();
-    await expect(reader.getByText(/won.t send invoice emails to that address any more/i)).toBeVisible();
-    await anon.close();
-    // after opting out, the same button refuses
-    await page.reload();
-    await page.getByRole("button", { name: /^Send INV-/ }).click();
-    await page.getByRole("button", { name: "Send the email" }).click();
-    await expect(page.getByText(/asked not to get emails/i)).toBeVisible();
   });
 
   await test.step("the year summary shows the work", async () => {

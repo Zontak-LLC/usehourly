@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { Check, Copy, Link2, Mail, X } from "lucide-react";
+import { Check, Copy, Download, Mail, Share, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Notice } from "@/components/notice";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { feature } from "@/lib/features";
-import { DEFAULT_LINK_EXPIRY_DAYS, LINK_EXPIRY_DAYS, type LinkStatus } from "@/lib/invoice-link";
-import { MAX_INVOICE_NOTE } from "@/lib/invoice-mail";
+import { invoiceDraft, MAILTO_SAFE_LENGTH, mailtoHref, pdfFileName } from "@/lib/invoice-draft";
+import { DEFAULT_LINK_EXPIRY_DAYS, type LinkStatus } from "@/lib/invoice-link";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -22,174 +21,290 @@ const when = (d: Date | string) =>
   new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 const LINK_STATUS: Record<LinkStatus, string> = { live: "Works now", revoked: "Turned off", expired: "Expired" };
 
-/** Email the invoice to the client from "<you> via UseHourly"; their reply comes to you. Optional overdue reminders. */
-function EmailSection({ invoiceId, open }: { invoiceId: string; open: boolean }) {
+type PanelInvoice = {
+  id: string;
+  number: string;
+  total_cents: number;
+  currency: string;
+  period_from: string;
+  period_to: string;
+  issue_date: string;
+  due_date: string | null;
+  paid_date: string | null;
+};
+
+/*
+ * One private link per invoice per page visit: opening the panel again (or React running an effect twice) reuses it
+ * instead of making another, because an invoice may have only a few live links. The token lives in memory only.
+ */
+const linkByInvoice = new Map<string, Promise<{ id: string; url: string }>>();
+
+/** Whether this browser can hand a PDF file to the mail app (phones, Safari on a Mac). */
+function canShareFiles() {
+  if (typeof navigator === "undefined" || typeof navigator.canShare !== "function") return false;
+  try {
+    return navigator.canShare({ files: [new File([""], "invoice.pdf", { type: "application/pdf" })] });
+  } catch {
+    return false;
+  }
+}
+
+async function copyText(text: string, what: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${what} copied.`);
+    return true;
+  } catch {
+    toast.info(`Select the ${what.toLowerCase()} and copy it by hand.`);
+    return false;
+  }
+}
+
+/**
+ * The email, written for the person to send from their own mail app (issue 227). The private link is made when the
+ * panel opens; "Open in my email app" fills in a new email; the person checks it and presses Send there.
+ */
+function MailAppSection({
+  invoice,
+  linkOff,
+  onLink,
+  onRewrite,
+}: {
+  invoice: PanelInvoice;
+  /** The link in this email was turned off below. */
+  linkOff: boolean;
+  onLink: (id: string) => void;
+  onRewrite: () => void;
+}) {
   const utils = trpc.useUtils();
-  const send = trpc.invoiceMail.send.useMutation();
-  const setReminders = trpc.invoiceMail.setReminders.useMutation();
-  const [note, setNote] = useState("");
-  const [remind, setRemind] = useState(false);
-  const info = trpc.invoiceMail.recipient.useQuery({ invoiceId }, { enabled: open });
-  const data = info.data;
+  const createLink = trpc.invoiceLink.create.useMutation();
+  const recipient = trpc.invoiceMail.recipient.useQuery({ invoiceId: invoice.id });
+  const full = trpc.invoice.get.useQuery({ id: invoice.id });
+  const [link, setLink] = useState<string | null>(null);
+  const [linkFailed, setLinkFailed] = useState<string | null>(null);
+  const [to, setTo] = useState<string | null>(null);
+  const [subject, setSubject] = useState<string | null>(null);
+  const [body, setBody] = useState<string | null>(null);
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [shareable] = useState(canShareFiles);
+  const [copied, setCopied] = useState(false);
+
+  // Make (or reuse) this visit's private link.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: made once per invoice; the mutation object changes each render.
+  useEffect(() => {
+    let live = true;
+    let pending = linkByInvoice.get(invoice.id);
+    if (!pending) {
+      pending = createLink
+        .mutateAsync({ invoiceId: invoice.id, expiresInDays: DEFAULT_LINK_EXPIRY_DAYS })
+        .then((out) => ({ id: out.id, url: `${window.location.origin}/invoice/${out.token}` }));
+      linkByInvoice.set(invoice.id, pending);
+      pending.then(
+        () => utils.invoiceLink.list.invalidate({ invoiceId: invoice.id }),
+        () => linkByInvoice.delete(invoice.id),
+      );
+    }
+    pending.then(
+      (made) => {
+        if (!live) return;
+        setLink(made.url);
+        onLink(made.id);
+      },
+      (err: unknown) => live && setLinkFailed(err instanceof Error ? err.message : "Couldn't make a link."),
+    );
+    return () => {
+      live = false;
+    };
+  }, [invoice.id]);
+
+  const snapshot = full.data?.snapshot;
+  const linkSettled = link !== null || linkFailed !== null;
+
+  // Write the draft once everything it needs is here; after that the words are the person's own.
+  useEffect(() => {
+    if (!snapshot || !linkSettled || body !== null) return;
+    const draft = invoiceDraft({
+      number: invoice.number,
+      sellerName: snapshot.seller.name,
+      totalCents: invoice.total_cents,
+      currency: invoice.currency,
+      periodFrom: invoice.period_from,
+      periodTo: invoice.period_to,
+      issueDate: invoice.issue_date,
+      dueDate: invoice.due_date,
+      paidDate: invoice.paid_date,
+      link,
+    });
+    setSubject(draft.subject);
+    setBody(draft.body);
+  }, [snapshot, linkSettled, body, link, invoice]);
 
   useEffect(() => {
-    if (open) setRemind(false);
-  }, [open]);
+    // Without the client's address (or if it could not be read) the box starts empty: the person types one.
+    if (to === null && (recipient.data || recipient.isError)) setTo(recipient.data?.email ?? "");
+  }, [recipient.data, recipient.isError, to]);
 
-  async function submit() {
+  // Build the PDF ahead of time where it can be shared, so the Share button can open the share sheet at once (browsers
+  // only allow it straight after a tap, not after waiting for a download).
+  useEffect(() => {
+    if (!shareable || !snapshot) return;
+    let live = true;
+    void import("@/lib/invoice-pdf")
+      .then(({ buildInvoicePdf }) => buildInvoicePdf(snapshot))
+      .then((doc) => {
+        if (live) setPdf(new File([doc.output("blob")], pdfFileName(snapshot.number), { type: "application/pdf" }));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [shareable, snapshot]);
+
+  async function download() {
+    if (!snapshot) return;
     try {
-      const out = await send.mutateAsync({ invoiceId, note, remindOverdue: remind });
-      toast.success(`Sent to ${out.to}.`);
-      setNote("");
-      await utils.invoiceMail.recipient.invalidate({ invoiceId });
+      const { downloadInvoicePdf } = await import("@/lib/invoice-pdf");
+      await downloadInvoicePdf(snapshot);
     } catch (err) {
-      toastError(err, "Couldn't send the email.");
+      toastError(err, "Couldn't make the PDF.");
     }
   }
 
-  async function toggleReminders(enabled: boolean) {
+  async function share() {
+    if (!pdf || body === null) return;
     try {
-      await setReminders.mutateAsync({ invoiceId, enabled });
-      await utils.invoiceMail.recipient.invalidate({ invoiceId });
+      await navigator.share({ files: [pdf], title: subject ?? "", text: body });
     } catch (err) {
-      toastError(err, "Couldn't change that.");
+      // Closing the share sheet is not a problem.
+      if (!(err instanceof DOMException && err.name === "AbortError"))
+        toast.info("Sharing didn't work. Use Download PDF.");
     }
   }
 
-  const noAddress = data && !data.blocked && !data.email;
+  if (full.isError) {
+    return (
+      <Notice tone="danger" className="flex flex-col items-start gap-2 text-sm">
+        <p>Couldn't load this invoice to write the email.</p>
+        <Button type="button" variant="outline" onClick={() => void full.refetch()}>
+          Try again
+        </Button>
+      </Notice>
+    );
+  }
+  if (body === null || subject === null || to === null) {
+    return <p className="text-muted-foreground text-sm">Writing the email…</p>;
+  }
+
+  const href = mailtoHref(to, subject, body);
+  const tooLong = href.length > MAILTO_SAFE_LENGTH;
+  const id = invoice.id;
 
   return (
-    <section className="flex flex-col gap-3" aria-label="Email the invoice">
-      <div>
-        <h3 className="flex items-center gap-1.5 font-medium">
-          <Mail className="size-4" /> Email it to your client
-        </h3>
-        {data?.email ? (
-          <p className="text-muted-foreground text-sm">
-            To <span className="break-all font-medium text-foreground">{data.email}</span>. They get a button to a
-            private page with the invoice. Their reply comes to you.
+    <section className="flex flex-col gap-3" aria-label="Email from your own app">
+      {linkOff && (
+        <Notice className="flex flex-col items-start gap-2 text-sm">
+          <p>The link in this email is turned off now, so it no longer opens.</p>
+          <Button type="button" variant="outline" onClick={onRewrite}>
+            Write it again with a new link
+          </Button>
+        </Notice>
+      )}
+      {linkFailed && (
+        <Notice tone="danger" className="flex flex-col items-start gap-2 text-sm">
+          <p>
+            {linkFailed} The email has no link, so attach the PDF yourself.
+            {/* The live-link limit: links can be turned off in the list below, then the email written again. */}
+            {/turn (one|some) off/i.test(linkFailed) && " Or turn off a link you no longer need below, then try again."}
           </p>
-        ) : (
-          <p className="text-muted-foreground text-sm">Sent from you via UseHourly. Their reply comes to you.</p>
+          {/turn (one|some) off/i.test(linkFailed) && (
+            <Button type="button" variant="outline" onClick={onRewrite}>
+              Try again with a link
+            </Button>
+          )}
+        </Notice>
+      )}
+      <div className="grid gap-1.5">
+        <Label htmlFor={`mail-to-${id}`}>To</Label>
+        <Input
+          id={`mail-to-${id}`}
+          type="email"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder="client@example.com"
+          autoComplete="off"
+        />
+        {!to && (
+          <p className="text-muted-foreground text-xs">
+            Type it here, or save it under{" "}
+            <Link href="/dashboard/clients" className="underline">
+              Clients
+            </Link>{" "}
+            (Billing details) for next time.
+          </p>
         )}
       </div>
-
-      {info.isLoading && <p className="text-muted-foreground text-sm">Loading…</p>}
-      {data?.blocked && (
-        <p className="rounded-lg border border-destructive/40 p-2 text-destructive text-sm">
-          {data.blocked}{" "}
-          {data.blocked.includes("Confirm your own email") && (
-            <Link href="/dashboard/account" className="font-medium underline">
-              Go to Account
-            </Link>
-          )}
+      <div className="grid gap-1.5">
+        <Label htmlFor={`mail-subject-${id}`}>Subject</Label>
+        <Input id={`mail-subject-${id}`} value={subject} onChange={(e) => setSubject(e.target.value)} />
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor={`mail-body-${id}`}>Message</Label>
+        <Textarea id={`mail-body-${id}`} value={body} onChange={(e) => setBody(e.target.value)} rows={9} />
+      </div>
+      {tooLong && (
+        <p className="text-muted-foreground text-xs">
+          The message is long, so some mail apps may cut it. Use Copy message and paste it instead.
         </p>
       )}
-      {noAddress && (
-        <p className="rounded-lg border p-2 text-sm">
-          {data?.clientName ?? "This client"} has no email address yet.{" "}
-          <Link href="/dashboard/clients" className="font-medium underline">
-            Add one under Clients
-          </Link>
-          , in Billing details.
-        </p>
-      )}
-
-      {data && !data.blocked && data.email && (
-        <>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`mail-note-${invoiceId}`}>A note to include (optional)</Label>
-            <Textarea
-              id={`mail-note-${invoiceId}`}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              maxLength={MAX_INVOICE_NOTE}
-              placeholder="Thanks for the great month. Let me know if anything looks off."
-            />
-            <p className="text-muted-foreground text-xs">It's shown as a note from you, under the invoice summary.</p>
+      <div className="flex flex-wrap gap-2">
+        <a href={href} className={buttonVariants({ className: "gap-1.5" })}>
+          <Mail /> Open in my email app
+        </a>
+        {shareable && (
+          <Button type="button" variant="outline" onClick={share} disabled={!pdf}>
+            <Share /> {pdf ? "Share with the PDF" : "Making the PDF…"}
+          </Button>
+        )}
+        <Button type="button" variant="outline" onClick={async () => setCopied(await copyText(body, "Message"))}>
+          {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy message"}
+        </Button>
+        <Button type="button" variant="outline" onClick={download} disabled={!snapshot}>
+          <Download /> Download PDF
+        </Button>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        Nothing is sent from here. Your mail app opens with this email ready: check it and press Send.
+        {shareable ? " Share with the PDF attaches the invoice file (add the address in your mail app)." : ""}
+      </p>
+      {link && !linkOff && (
+        <div className="grid gap-1.5">
+          <Label htmlFor={`invoice-link-${id}`}>Invoice link</Label>
+          <div className="flex gap-2">
+            <Input id={`invoice-link-${id}`} readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
+            <Button type="button" variant="outline" onClick={() => copyText(link, "Link")}>
+              <Copy /> Copy link
+            </Button>
           </div>
-          {data.dueDate && !data.paid && (
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" checked={remind} onChange={(e) => setRemind(e.target.checked)} />
-              <span>Remind them if it's still unpaid a day after the due date, and again a week after.</span>
-            </label>
-          )}
-          <Button onClick={submit} disabled={send.isPending} className="self-start">
-            <Mail /> {send.isPending ? "Sending…" : "Send the email"}
-          </Button>
-        </>
-      )}
-
-      {data?.remindOverdue && !data.paid && (
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <span className="text-muted-foreground">Reminders are on ({data.remindersSent} of 2 sent).</span>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => toggleReminders(false)}
-            disabled={setReminders.isPending}
-          >
-            Turn off
-          </Button>
+          <p className="text-muted-foreground text-xs">
+            A private page with the invoice and a PDF download. It works for {DEFAULT_LINK_EXPIRY_DAYS} days. Anyone
+            with it can see the invoice.
+          </p>
         </div>
-      )}
-
-      {data && data.history.length > 0 && (
-        <ul className="flex flex-col gap-1 text-muted-foreground text-xs" aria-label="Already sent">
-          {data.history.map((h) => (
-            <li key={`${h.kind}|${h.to_email}|${String(h.created_at)}`}>
-              {h.kind === "reminder" ? "Reminder" : "Invoice"} to {h.to_email} · {when(h.created_at)}
-            </li>
-          ))}
-        </ul>
       )}
     </section>
   );
 }
 
-/** A private link to paste into your own email or message. Shown once, like an API token. */
-function LinkSection({ invoiceId, open, alone = false }: { invoiceId: string; open: boolean; alone?: boolean }) {
+/** The private links made for this invoice, with Turn off for any that still work. */
+function LinkList({ invoiceId, onTurnedOff }: { invoiceId: string; onTurnedOff: (id: string) => void }) {
   const utils = trpc.useUtils();
-  const create = trpc.invoiceLink.create.useMutation();
   const revoke = trpc.invoiceLink.revoke.useMutation();
-  const [expiresInDays, setExpiresInDays] = useState<number>(DEFAULT_LINK_EXPIRY_DAYS);
-  const [link, setLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const links = trpc.invoiceLink.list.useQuery({ invoiceId }, { enabled: open });
-
-  useEffect(() => {
-    if (open) {
-      setLink(null);
-      setCopied(false);
-    }
-  }, [open]);
-
-  async function make() {
-    try {
-      const out = await create.mutateAsync({ invoiceId, expiresInDays });
-      setLink(`${window.location.origin}/invoice/${out.token}`);
-      setCopied(false);
-      await utils.invoiceLink.list.invalidate({ invoiceId });
-    } catch (err) {
-      toastError(err, "Couldn't make the link.");
-    }
-  }
-
-  async function copy() {
-    if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-    } catch {
-      toast.info("Select the link and copy it by hand.");
-    }
-  }
+  const links = trpc.invoiceLink.list.useQuery({ invoiceId });
 
   async function turnOff(id: string) {
     try {
       await revoke.mutateAsync({ id });
+      onTurnedOff(id);
       await utils.invoiceLink.list.invalidate({ invoiceId });
       toast.success("That link is turned off.");
     } catch (err) {
@@ -197,103 +312,44 @@ function LinkSection({ invoiceId, open, alone = false }: { invoiceId: string; op
     }
   }
 
+  if (!links.data || links.data.length === 0) return null;
   return (
-    <section className={alone ? "flex flex-col gap-3" : "flex flex-col gap-3 border-t pt-4"} aria-label="Copy a link">
-      {/* On its own, the panel's heading already says what this is. */}
-      {!alone && (
-        <div>
-          <h3 className="flex items-center gap-1.5 font-medium">
-            <Link2 className="size-4" /> Or copy a link to send yourself
-          </h3>
-          <p className="text-muted-foreground text-sm">A private page with the invoice and a PDF download.</p>
-        </div>
-      )}
-
-      {link ? (
-        <Notice className="flex flex-col gap-2">
-          <p className="font-medium text-sm">Copy it now: it is shown only once.</p>
-          <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Invoice link" />
-          <div className="flex gap-2">
-            <Button type="button" onClick={copy}>
-              {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy link"}
+    <ul className="flex flex-col gap-1 border-t pt-3" aria-label="Links for this invoice">
+      {links.data.map((l) => (
+        <li key={l.id} className="flex items-center justify-between gap-2 text-sm">
+          <span className="text-muted-foreground">
+            Link made {when(l.created_at)} · {LINK_STATUS[l.status]}
+          </span>
+          {l.status === "live" && (
+            <Button type="button" size="sm" variant="ghost" onClick={() => turnOff(l.id)} disabled={revoke.isPending}>
+              Turn off
             </Button>
-            <Button type="button" variant="outline" onClick={() => setLink(null)}>
-              Make another
-            </Button>
-          </div>
-        </Notice>
-      ) : (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="grid gap-1.5">
-            <Label htmlFor={`link-expiry-${invoiceId}`}>Link works for</Label>
-            <select
-              id={`link-expiry-${invoiceId}`}
-              value={expiresInDays}
-              onChange={(e) => setExpiresInDays(Number(e.target.value))}
-              className="h-9 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              {LINK_EXPIRY_DAYS.map((d) => (
-                <option key={d} value={d}>
-                  {d} days
-                </option>
-              ))}
-            </select>
-          </div>
-          <Button onClick={make} disabled={create.isPending}>
-            <Link2 /> {create.isPending ? "Making the link…" : "Make a link"}
-          </Button>
-        </div>
-      )}
-
-      {links.data && links.data.length > 0 && (
-        <ul className="flex flex-col gap-1" aria-label="Links for this invoice">
-          {links.data.map((l) => (
-            <li key={l.id} className="flex items-center justify-between gap-2 text-sm">
-              <span className="text-muted-foreground">
-                Made {when(l.created_at)} · {LINK_STATUS[l.status]}
-              </span>
-              {l.status === "live" && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => turnOff(l.id)}
-                  disabled={revoke.isPending}
-                >
-                  Turn off
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
 /**
- * Everything about getting an invoice to a client, opened inside the invoice's own card (not in a popup): email it from
- * here (when the invoiceEmail feature is on), or copy a link and send it your own way. The card owns whether it is open.
+ * Getting an invoice to a client, opened inside the invoice's own card (not in a popup): an email written for the
+ * person's own mail app, with the private link and the PDF. UseHourly never sends it: the server-sent "Send the email"
+ * button was removed (2026-10-23, issue 227); `invoiceMail.send` and the reminders stay on the server, unused by the screens.
+ * The card owns whether it is open.
  */
-export function SendInvoicePanel({
-  invoice,
-  onClose,
-}: {
-  invoice: { id: string; number: string };
-  onClose: () => void;
-}) {
-  // Emailing is hidden in this release: the panel is then only the private link.
-  const email = feature("invoiceEmail");
-  const title = email ? `Send invoice ${invoice.number}` : `Share invoice ${invoice.number}`;
+export function SendInvoicePanel({ invoice, onClose }: { invoice: PanelInvoice; onClose: () => void }) {
+  const title = `Send invoice ${invoice.number}`;
+  // Which link the email holds, whether it was turned off, and a key that writes the email again from the start.
+  const [linkId, setLinkId] = useState<string | null>(null);
+  const [linkOff, setLinkOff] = useState(false);
+  const [draftKey, setDraftKey] = useState(0);
   return (
     <section aria-label={title} className="flex flex-col gap-4 border-t bg-band-3 px-4 py-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-semibold text-base">{title}</h3>
           <p className="text-foreground/75 text-sm">
-            {email
-              ? "Email it from here, or copy a link and send it your own way."
-              : "Make a private link and send it to your client by email or message. It opens a page with the invoice and a PDF download."}
+            Here is an email to your client, ready to edit. Send it from your own email app.
           </p>
         </div>
         <Button
@@ -307,8 +363,24 @@ export function SendInvoicePanel({
           <X />
         </Button>
       </div>
-      {email && <EmailSection invoiceId={invoice.id} open />}
-      <LinkSection invoiceId={invoice.id} open alone={!email} />
+      <MailAppSection
+        key={draftKey}
+        invoice={invoice}
+        linkOff={linkOff}
+        onLink={setLinkId}
+        onRewrite={() => {
+          setLinkOff(false);
+          setDraftKey((k) => k + 1);
+        }}
+      />
+      <LinkList
+        invoiceId={invoice.id}
+        onTurnedOff={(id) => {
+          if (id !== linkId) return;
+          linkByInvoice.delete(invoice.id); // the next email gets a fresh link
+          setLinkOff(true);
+        }}
+      />
     </section>
   );
 }
