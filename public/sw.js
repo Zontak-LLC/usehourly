@@ -7,9 +7,8 @@
  *   very slow one, once a copy exists) the kept copy opens instead; a page that was never opened falls back to the same
  *   page without its query (a copy of /dashboard/week for /dashboard/week?date=...), then to /offline.html. It never
  *   shows one page under another page's address.
- * - The guide and FAQ (/help, /help/...) are public and hold nothing personal, so they have their own cache that sign-out does
- *   not clear. A page is kept when opened, and the app also fetches every guide page once (a request carrying the header
- *   "x-keep: 1") so the whole guide reads offline. Other requests for those addresses (like Next's own page-data
+ * - The Help page (/help) is public and holds nothing personal, so it has its own cache that sign-out does not clear. It
+ *   is kept when opened, so it reads offline afterwards. Other requests for that address (like Next's own page-data
  *   requests) are left alone.
  * - Nothing else is touched: the API, sign-in, other sites and anything that is not a plain GET go straight through, so
  *   this can never answer for the server.
@@ -19,7 +18,8 @@
 const VERSION = "v1";
 const STATIC = `hourly-static-${VERSION}`;
 const PAGES = `hourly-pages-${VERSION}`;
-const GUIDE = `hourly-guide-${VERSION}`;
+// v2: the one Help page; the old guide's pages (kept in hourly-guide-v1) are deleted on activation.
+const GUIDE = "hourly-help-v2";
 const SLOW_AFTER_MS = 6000;
 
 self.addEventListener("install", (event) => {
@@ -79,7 +79,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   const isGuide = url.pathname === "/help" || url.pathname.startsWith("/help/");
-  if (isGuide && (request.mode === "navigate" || request.headers.get("x-keep") === "1")) {
+  if (isGuide && request.mode === "navigate") {
     event.respondWith(networkFirstPage(request, GUIDE));
   }
 });

@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import Link from "next/link";
 
-import { ImagePlus, LogOut, Trash2, User } from "lucide-react";
+import { CircleHelp, ImagePlus, LogOut, Trash2, User } from "lucide-react";
 
 import { AvatarCropper } from "@/components/avatar-cropper";
 import { Caret } from "@/components/caret";
@@ -22,8 +22,8 @@ import { feature } from "@/lib/features";
 import { signOutOfDevice } from "@/lib/sign-out";
 
 /**
- * The signed-in person at the top right: their picture (or initials) and name, and a menu with their address, Account
- * and Log out. It replaced the name and Log out that used to sit at the bottom of the side menu and in "More".
+ * The signed-in person at the top right: their picture (or initials) and name, and a menu with their address, Account,
+ * Help and Log out. It replaced the name and Log out that used to sit at the bottom of the side menu and in "More".
  */
 export function UserMenu({ user }: { user: { name: string; email: string; avatar: string | null } }) {
   const file = useRef<HTMLInputElement>(null);
@@ -80,6 +80,11 @@ export function UserMenu({ user }: { user: { name: string; email: string; avatar
               <Trash2 /> Remove your picture
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem asChild>
+            <Link href="/help" prefetch={false}>
+              <CircleHelp /> Help
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
             <LogOut /> Log out
           </DropdownMenuItem>

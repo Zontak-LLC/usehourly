@@ -51,7 +51,7 @@ const PAGES: Target[] = shown([
   { title: "Team", href: "/dashboard/team", keywords: "invite people members", feature: "team" },
   { title: "Year summary", href: "/dashboard/report", keywords: "report taxes annual accountant" },
   { title: "Account", href: "/dashboard/account", keywords: "settings profile" },
-  { title: "Guide and FAQ", href: "/help", keywords: "help how to questions support" },
+  { title: "Help", href: "/help", keywords: "help how to questions answers faq guide support" },
 ]);
 
 const SETTINGS: Target[] = shown([

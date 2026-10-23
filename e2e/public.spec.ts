@@ -8,9 +8,7 @@ const PUBLIC_PAGES: [string, string][] = [
   ["/privacy", "privacy"],
   ["/terms", "terms"],
   ["/tools/hours-calculator", "hours calculator"],
-  ["/help", "guide"],
-  ["/help/faq", "faq"],
-  ["/help/making-an-invoice", "guide topic"],
+  ["/help", "help"],
 ];
 
 test.describe("public pages", () => {
@@ -26,10 +24,10 @@ test.describe("public pages", () => {
     });
   }
 
-  test("the landing page links to the guide at the top", async ({ page, isMobile }) => {
+  test("the landing page links to Help at the top", async ({ page, isMobile }) => {
     test.skip(isMobile, "the header link is hidden on a phone to save room");
     await page.goto("/");
-    await page.getByRole("link", { name: "Guide", exact: true }).first().click();
+    await page.getByRole("link", { name: "Help", exact: true }).first().click();
     await expect(page).toHaveURL(/\/help$/);
   });
 

@@ -1,9 +1,9 @@
 import {
   Activity,
   BarChart3,
-  BookOpen,
   CalendarDays,
   CalendarRange,
+  CircleHelp,
   Clock,
   FileText,
   type LucideIcon,
@@ -40,7 +40,7 @@ const allNavLinks: NavLink[] = [
   { id: "clients", title: "Clients", url: "/dashboard/clients", icon: Users },
   { id: "team", title: "Team", url: "/dashboard/team", icon: UsersRound, secondary: true },
   { id: "account", title: "Account", url: "/dashboard/account", icon: UserRound, secondary: true },
-  { id: "guide", title: "Guide", url: "/help", icon: BookOpen, secondary: true },
+  { id: "help", title: "Help", url: "/help", icon: CircleHelp, secondary: true },
 ];
 
 /** The pages in the menus. Team is left out while that feature is hidden (lib/features.ts). */

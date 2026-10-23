@@ -85,20 +85,18 @@ test("signing out leaves no kept pages or saved data on the device", async ({ pa
   expect(left).toEqual({ pages: [], data: null, owner: null });
 });
 
-test("the whole guide reads with no connection, including pages never opened", async ({ page }) => {
+test("the Help page reads with no connection once it has been opened, and its search needs no server", async ({
+  page,
+}) => {
   await startFreshAccount(page);
   await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.goto("/dashboard/today");
-  // the app fetches every guide page once, a few seconds after it opens
-  await page.waitForFunction(() => localStorage.getItem("hourly:guideKept") !== null, undefined, { timeout: 30_000 });
+  await page.goto("/help");
+  await expect(page.getByRole("heading", { name: "Help", level: 1 })).toBeVisible();
 
   await page.context().setOffline(true);
-  await page.goto("/help/making-an-invoice"); // never opened: kept by the once-only fetch
-  await expect(page.getByRole("heading", { name: "Making an invoice", level: 1 })).toBeVisible();
-  await page.goto("/help");
-  await page.getByRole("searchbox", { name: "Search the guide" }).fill("offline");
-  await expect(page.getByRole("link", { name: /Working offline/ }).first()).toBeVisible(); // search needs no server
-  await page.goto("/help/faq");
-  await expect(page.getByRole("heading", { name: "Is UseHourly really free?" })).toBeVisible();
+  await page.goto("/help?a=offline");
+  await expect(page.getByRole("heading", { name: "Help", level: 1 })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search help" }).fill("timer");
+  await expect(page.getByRole("button", { name: "How does the timer work?" })).toBeVisible();
   await page.context().setOffline(false);
 });

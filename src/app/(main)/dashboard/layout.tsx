@@ -9,7 +9,6 @@ import { CurrencyProvider } from "@/components/currency-provider";
 import { DemoBanner } from "@/components/demo-banner";
 import { GlobalSearch } from "@/components/global-search";
 import { GoogleCalendarProvider } from "@/components/google-calendar-config";
-import { GuideKeeper } from "@/components/guide-keeper";
 import { LocalFirst } from "@/components/local-first";
 import { LogoMark } from "@/components/logo";
 import { OfflineGuard } from "@/components/offline-guard";
@@ -19,7 +18,6 @@ import { SwipeNav } from "@/components/swipe-nav";
 import { ThemeSync } from "@/components/theme-sync";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UsageBeacon } from "@/components/usage-beacon";
-import { GUIDE_PATHS, GUIDE_VERSION } from "@/content/guide";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { donateUrl } from "@/lib/donate";
@@ -30,7 +28,6 @@ import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
 import { readSupportNotice } from "@/server/support-notice";
 
-import { GuideButton } from "./_components/header/guide-button";
 import { LayoutControls } from "./_components/header/layout-controls";
 import { MobileNav } from "./_components/header/mobile-nav";
 import { SideNav } from "./_components/header/side-nav";
@@ -106,7 +103,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             >
               <UsageBeacon />
               {feature("swipe") && <SwipeNav />}
-              <GuideKeeper paths={GUIDE_PATHS} version={GUIDE_VERSION} />
               <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
               {session?.user?.demo === true && <DemoBanner />}
               {/* No backdrop-filter on a phone: it would make the fixed bottom tab bar (inside this header) position itself against the header instead of the screen. */}
@@ -125,7 +121,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                   <MobileNav isAdmin={isAdmin} />
                   <div className="flex items-center justify-end gap-2 lg:flex-1">
                     <GlobalSearch />
-                    <GuideButton />
                     <LayoutControls />
                     <UserMenu user={user} />
                   </div>

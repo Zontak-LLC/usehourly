@@ -69,7 +69,7 @@ export default function LandingPage() {
             <ThemeSwitcher />
           </span>
           <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
-            Guide
+            Help
           </Link>
           <Link
             href="/auth/v2/login"
@@ -129,7 +129,10 @@ export default function LandingPage() {
                 <code className="max-w-full break-all rounded-lg bg-muted px-3 py-2 text-foreground text-sm">
                   claude mcp add --transport http usehourly https://usehourly.app/api/mcp
                 </code>
-                <Link href="/help/ai-assistants" className="text-muted-foreground text-sm underline underline-offset-4">
+                <Link
+                  href="/help?a=connect-assistant"
+                  className="text-muted-foreground text-sm underline underline-offset-4"
+                >
                   Works with Claude, ChatGPT, Cursor and other MCP assistants. Setup guide
                 </Link>
               </div>
@@ -311,6 +314,9 @@ export default function LandingPage() {
           >
             Report a bug
           </a>
+          <Link href="/help" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
+            Help
+          </Link>
           <Link href="/privacy" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
             Privacy
           </Link>

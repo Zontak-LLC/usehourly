@@ -27,7 +27,7 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
   return (
     <fieldset className="grid gap-1.5">
       <legend className="flex items-center gap-1 font-medium text-sm">
-        Round the time on invoices <GuideLink topic="rounding" label="rounding time on invoices" />
+        Round the time on invoices <GuideLink topic="invoice-rounding" label="rounding time on invoices" />
       </legend>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-1.5">

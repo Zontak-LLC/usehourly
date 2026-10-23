@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
+import { Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Caret } from "@/components/caret";
@@ -105,11 +105,6 @@ export function ShareExportMenu({
             <Send /> Send to a client for sign-off…
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem asChild>
-          <a href="/help/share-and-export" target="_blank" rel="noopener noreferrer">
-            <CircleHelp /> Which one do I use?
-          </a>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
