@@ -34,17 +34,18 @@ export function PageShell({
   children?: ReactNode;
 }) {
   const Icon = nav ? [...navLinks, ...adminLinks].find((l) => l.id === nav)?.icon : undefined;
+  // v4: no frame around the page. The title sits on the page itself and the cards below are the only surfaces.
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col overflow-clip border bg-muted/60 [--border:color-mix(in_oklab,var(--foreground)_16%,var(--background))] max-sm:-m-2 max-sm:w-[calc(100%+1rem)] max-sm:border-x-0 sm:rounded-2xl">
+    <div className="mx-auto flex w-full max-w-6xl flex-col">
       <header
-        className={`flex flex-wrap items-start justify-between gap-x-2 gap-y-2 border-b bg-card px-3 py-3 sm:px-4`}
+        className={`flex flex-wrap items-start justify-between gap-x-2 gap-y-2 px-1 pt-2 pb-3 sm:px-1 sm:pt-4 sm:pb-5`}
       >
         {/* The title block takes the room left beside the actions; a long description wraps under the title instead of
             pushing the actions onto a row of their own (on a phone they stayed stuck at the left). */}
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           {Icon && (
             <span
-              className={`flex size-10 shrink-0 items-center justify-center rounded-xl border bg-card text-foreground/80`}
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-amber shadow-[var(--shadow-sheet)]`}
             >
               <Icon className="size-5" aria-hidden />
             </span>
@@ -63,11 +64,11 @@ export function PageShell({
         {actions}
       </header>
       {onSwipe ? (
-        <SwipeArea onSwipe={onSwipe} className="flex flex-1 flex-col gap-3 p-1 sm:gap-4 sm:p-4">
+        <SwipeArea onSwipe={onSwipe} className="flex flex-1 flex-col gap-3 sm:gap-5">
           {children}
         </SwipeArea>
       ) : (
-        <div className="flex flex-col gap-3 p-1 sm:gap-4 sm:p-4">{children}</div>
+        <div className="flex flex-col gap-3 sm:gap-5">{children}</div>
       )}
     </div>
   );

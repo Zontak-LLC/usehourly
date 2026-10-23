@@ -12,8 +12,8 @@ const buttonVariants = cva(
           "border border-tint-edge bg-tint text-foreground shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_1px_2px_rgb(0_0_0/0.12)] hover:bg-tint-hover hover:shadow-[0_6px_16px_-6px_rgb(0_0_0/0.35)] focus-visible:ring-primary/30",
         // The one main action on a screen: a solid fill in the accent colour (the soft tint above is for the rest).
         primary:
-          // The one solid button: a calm amber fill, no gradient, glow or shine (they glared, 2026-10-23).
-          "border border-transparent bg-amber-fill font-semibold text-[#12151b] shadow-[0_1px_2px_rgb(0_0_0/0.12)] hover:brightness-105 focus-visible:ring-amber/40",
+          // The one solid button: the calm accent fill with white words, no gradient, glow or shine.
+          "border border-transparent bg-amber-fill font-semibold text-white shadow-[0_1px_2px_rgb(0_0_0/0.12)] hover:brightness-110 focus-visible:ring-amber/40 dark:text-[var(--background)]",
         outline:
           "border-border bg-background hover:border-foreground/30 hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
