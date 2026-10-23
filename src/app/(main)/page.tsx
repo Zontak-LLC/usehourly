@@ -21,7 +21,7 @@ const JSON_LD = {
   name: "UseHourly",
   url: "https://usehourly.app",
   description:
-    "A free time tracking app for freelancers that works with your AI assistant: a built-in MCP server lets Claude, ChatGPT, Cursor and others log time, build timesheets and prepare invoices. Also quick daily entry, a timer, invoices and exports.",
+    "The free time tracker you don't have to learn: type 1.5, press Enter, done. Timesheets, invoices and a tax summary from your hours, and a built-in MCP server so Claude, ChatGPT, Cursor and others can log time for you.",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -38,9 +38,9 @@ const JSON_LD = {
 };
 
 export const metadata: Metadata = {
-  title: "UseHourly: free time tracking for freelancers, built for AI assistants",
+  title: "UseHourly: the free time tracker you don't have to learn",
   description:
-    "UseHourly is a free time tracker with a built-in MCP server. Connect Claude, ChatGPT or Cursor and ask it to log time, build a timesheet for a client and prepare invoices. Or log your day in seconds yourself. No cost, no ads.",
+    "A free, simple time tracker. Type 1.5, press Enter, done. Your hours become timesheets, invoices and a tax summary, and your AI assistant (Claude, ChatGPT, Cursor) can log time for you. No paywall, no ads.",
   alternates: { canonical: "/" },
 };
 
@@ -94,18 +94,17 @@ export default function LandingPage() {
                 <Bot className="size-4" aria-hidden />
                 Free, open source, built for AI assistants
               </p>
-              <h1 className="mt-5 max-w-3xl font-extrabold text-5xl leading-[0.98] tracking-tight md:text-7xl">
-                Log a day in{" "}
+              {/* The headline (chosen 2026-10-23): what it is ("free time tracker", the words people search for) and what
+                  makes it different (you do not have to learn it), proven at once by the line under it. */}
+              <h1 className="mt-5 max-w-4xl text-balance font-extrabold text-5xl leading-[1.02] tracking-tight md:text-7xl">
+                The free time tracker{" "}
                 <span className="bg-gradient-to-r from-[#F5A524] via-[#ff7a45] to-[#8A6CFF] bg-clip-text text-transparent">
-                  seconds.
+                  you don&rsquo;t have to learn.
                 </span>
               </h1>
-              <p className="mt-5 max-w-2xl text-lg text-muted-foreground md:text-xl">
-                Time tracking for freelancers. Type <strong className="text-foreground">1.5</strong> or{" "}
-                <strong className="text-foreground">90m</strong>, press Enter, done. Or tell your AI assistant:{" "}
-                <strong className="text-foreground">
-                  &ldquo;log 3 hours on Acme, then make this week&rsquo;s timesheet.&rdquo;
-                </strong>
+              <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground md:text-xl">
+                Type <strong className="text-foreground">1.5</strong>, press Enter, done. Your hours become timesheets,
+                invoices and a tax summary. No paywall, no ads.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link
@@ -117,7 +116,7 @@ export default function LandingPage() {
                 <TryDemoButton className={secondary}>Try the demo, no sign-up</TryDemoButton>
               </div>
               <p className="mt-3 text-muted-foreground text-sm">
-                No paywall, no ads. The demo has sample data and is deleted after a day.{" "}
+                The demo has sample data and is deleted after a day.{" "}
                 <a href="#ai-assistants" className="underline underline-offset-4">
                   Connect your assistant
                 </a>
