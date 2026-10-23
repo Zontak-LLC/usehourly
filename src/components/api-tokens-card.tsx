@@ -63,7 +63,7 @@ export function ApiTokensCard() {
       <TokenForm busy={create.isPending} onMake={make} />
 
       {fresh && (
-        <div className="grid gap-4 rounded-2xl bg-amber/10 p-4 ring-2 ring-amber/60">
+        <div className="grid gap-4 rounded-2xl bg-card p-4 ring-2 ring-success/50">
           <p className="font-semibold text-sm">
             Copy your new token now. For safety it is shown only once, and UseHourly keeps just a fingerprint of it.
           </p>

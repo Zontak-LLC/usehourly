@@ -118,7 +118,7 @@ export function GuideSearch({
                   setQuery(word);
                   box.current?.focus();
                 }}
-                className="rounded-full border bg-muted/50 px-3 py-1 font-mono text-xs transition-all hover:border-amber hover:bg-amber/15 motion-safe:active:scale-95"
+                className="rounded-full border bg-muted/50 px-3 py-1 font-mono text-xs transition-all hover:border-foreground/30 hover:bg-muted motion-safe:active:scale-95"
               >
                 {word}
               </button>
@@ -190,7 +190,7 @@ export function GuideSearch({
                         <Link
                           href={`/help/${t.slug}`}
                           prefetch={false}
-                          className="group/topic relative -mx-3 flex items-center gap-4 rounded-2xl px-3 py-4 outline-none transition-colors hover:bg-amber/10 focus-visible:ring-4 focus-visible:ring-amber/40"
+                          className="group/topic relative -mx-3 flex items-center gap-4 rounded-2xl px-3 py-4 outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-amber/40"
                         >
                           <span aria-hidden className="w-6 shrink-0 font-mono text-foreground/60 text-xs">
                             {String(n + 1).padStart(2, "0")}
@@ -201,7 +201,7 @@ export function GuideSearch({
                           </span>
                           <span
                             aria-hidden
-                            className="grid size-9 shrink-0 place-items-center rounded-full bg-muted transition-all duration-200 group-hover/topic:translate-x-1 group-hover/topic:bg-amber group-hover/topic:text-[#1b1405]"
+                            className="grid size-9 shrink-0 place-items-center rounded-full bg-muted transition-all duration-200 group-hover/topic:translate-x-1 group-hover/topic:bg-amber group-hover/topic:text-[#12151b]"
                           >
                             <ArrowRight className="size-4" />
                           </span>

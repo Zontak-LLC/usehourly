@@ -85,7 +85,7 @@ export function WeekPills({
             aria-label={`${fullDay.format(when)}, ${minutes ? formatDuration(minutes) : "nothing logged"}${nonBillable?.has(d) ? ", non-billable" : ""}`}
             className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-xl bg-card px-1 py-2 ring-1 transition-colors ${
               picked
-                ? "bg-amber/10 ring-2 ring-amber"
+                ? "bg-card ring-2 ring-amber"
                 : gap
                   ? "border border-foreground/30 border-dashed bg-transparent ring-0 hover:bg-card"
                   : "ring-foreground/10 hover:ring-foreground/30"

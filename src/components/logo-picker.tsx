@@ -78,7 +78,7 @@ export function LogoPicker({
         onDrop={drop}
         className={`flex w-full max-w-md flex-wrap items-center gap-3 rounded-xl p-2 transition-colors ${
           over
-            ? "bg-amber/10 ring-2 ring-amber"
+            ? "bg-muted ring-2 ring-amber"
             : value
               ? "bg-muted/40 ring-1 ring-foreground/10"
               : "border border-foreground/25 border-dashed"

@@ -45,7 +45,7 @@ function InvitePreview({
           <p className="truncate text-muted-foreground text-sm">{label && email ? email : "\u00a0"}</p>
           <span
             aria-hidden
-            className="mt-2 inline-flex rounded-full bg-amber/20 px-3 py-0.5 font-mono text-[11px] uppercase tracking-widest"
+            className="mt-2 inline-flex rounded-full bg-muted px-3 py-0.5 font-mono text-[11px] uppercase tracking-widest"
           >
             Waiting
           </span>

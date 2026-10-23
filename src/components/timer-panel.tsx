@@ -185,7 +185,7 @@ export function TimerPanel() {
         disabled={stopping}
         className="group inline-flex h-11 items-center gap-2 rounded-full border bg-muted px-5 font-medium text-sm transition-colors hover:border-foreground/40 hover:bg-card disabled:opacity-60"
       >
-        <span className="grid size-5 place-items-center rounded-full bg-amber text-[#1b1405]">
+        <span className="grid size-5 place-items-center rounded-full bg-amber text-[#12151b]">
           <Square className="size-2.5" fill="currentColor" aria-hidden />
         </span>
         Stop

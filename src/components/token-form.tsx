@@ -136,7 +136,7 @@ export function TokenForm({
         </div>
       </fieldset>
 
-      <Button type="submit" variant="default" disabled={busy} className="h-12 justify-self-start px-6">
+      <Button type="submit" variant="primary" disabled={busy} className="h-12 justify-self-start px-6">
         <KeyRound className="size-4" aria-hidden />
         Make token
       </Button>

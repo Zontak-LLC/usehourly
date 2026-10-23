@@ -138,7 +138,7 @@ function PersonRow({ person }: { person: Person }) {
   const _hue = [...person.label.toLowerCase()].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 0);
   const _badge = {
     active: "bg-success-soft text-success",
-    pending: "bg-amber/20 text-foreground",
+    pending: "bg-muted text-foreground",
     expired: "bg-destructive/15 text-destructive",
     removed: "bg-muted text-foreground/75",
   }[person.status];
@@ -147,7 +147,7 @@ function PersonRow({ person }: { person: Person }) {
   ];
   const badge = {
     active: "bg-success-soft text-success",
-    pending: "bg-amber/20 text-foreground",
+    pending: "bg-muted text-foreground",
     expired: "bg-destructive/15 text-destructive",
     removed: "bg-muted text-foreground/75",
   }[person.status];
@@ -155,7 +155,7 @@ function PersonRow({ person }: { person: Person }) {
     person.status
   ];
   return (
-    <li className="transition-colors hover:bg-amber/5">
+    <li className="transition-colors hover:bg-muted">
       <div className={`${COLS} items-center gap-x-4 gap-y-3 px-5 py-4`}>
         <div className="flex min-w-0 items-center gap-3">
           <Avatar label={person.label} className="size-12 text-xl" />

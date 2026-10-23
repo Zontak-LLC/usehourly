@@ -24,7 +24,7 @@ function Item({ item, active }: { item: NavLink; active: boolean }) {
       aria-current={active ? "page" : undefined}
       className={`group/item relative flex min-h-11 items-center gap-3 rounded-full px-3 text-sm outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-amber/40 ${
         active
-          ? "bg-gradient-to-b from-amber to-[color-mix(in_oklab,var(--amber)_80%,#b45309)] font-bold text-[#1b1405] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_8px_18px_-8px_color-mix(in_oklab,var(--amber)_80%,transparent)]"
+          ? "bg-gradient-to-b from-[color-mix(in_oklab,var(--amber)_82%,white)] to-amber font-bold text-[#12151b] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_8px_18px_-8px_color-mix(in_oklab,var(--amber)_80%,transparent)]"
           : "font-medium text-foreground/75 hover:bg-muted hover:text-foreground"
       }`}
     >
@@ -32,8 +32,8 @@ function Item({ item, active }: { item: NavLink; active: boolean }) {
         aria-hidden
         className={`grid size-7 shrink-0 place-items-center rounded-full transition-colors ${
           active
-            ? "bg-[#1b1405] text-amber"
-            : "bg-muted text-foreground/75 group-hover/item:bg-amber/20 group-hover/item:text-foreground"
+            ? "bg-[#12151b] text-amber"
+            : "bg-muted text-foreground/75 group-hover/item:bg-foreground/10 group-hover/item:text-foreground"
         }`}
       >
         <item.icon className="size-4" />

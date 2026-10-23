@@ -181,7 +181,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
               className={`min-h-8 rounded-full px-4 font-semibold text-sm capitalize transition-colors ${
-                mode === m ? "bg-amber text-[#1b1405]" : "text-foreground/75 hover:text-foreground"
+                mode === m ? "bg-amber text-[#12151b]" : "text-foreground/75 hover:text-foreground"
               }`}
             >
               {m}
