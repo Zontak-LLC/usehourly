@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const SCREENS = [
   {
@@ -8,7 +10,7 @@ const SCREENS = [
     label: "Today",
     file: "1-today",
     title: "Log a day in seconds",
-    text: "Type 1h30, tap a chip, press Enter. Or start the stopwatch and add what it hands you to the timesheet.",
+    text: "Type 1h30 or tap a quick time, pick the project, press Enter. A timer is there when you want one.",
   },
   {
     id: "week",
@@ -116,97 +118,115 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
   );
 }
 
-/** Which screen is in front, from how far the tall track has scrolled past the top of the window. */
-function useScrollStep(count: number) {
-  const track = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0);
-  useEffect(() => {
-    let frame = 0;
-    const read = () => {
-      frame = 0;
-      const el = track.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const span = Math.max(1, rect.height - window.innerHeight);
-      const progress = Math.min(1, Math.max(0, -rect.top / span));
-      setStep(Math.min(count - 1, Math.floor(progress * count)));
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(read);
-    };
-    read();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [count]);
-  const goTo = useCallback(
-    (i: number) => {
-      const el = track.current;
-      if (!el) return;
-      const span = Math.max(1, el.offsetHeight - window.innerHeight);
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + ((i + 0.5) / count) * span, behavior: "smooth" });
-    },
-    [count],
-  );
-  return { track, step, goTo };
-}
-
 /**
- * The real app as a deck of windows. The stage stays pinned while the page scrolls past it: each screen lifts off the
- * stack and the next one comes forward, with the captions on the left following along. Tapping a caption scrolls to it.
+ * The real app as a deck of windows you flip through (2026-10-23: it used to flip only by scrolling a tall pinned
+ * track, which was hard to move through on a desktop and made the page long). Tabs name each screen, the arrows and the
+ * dots step through them, the left and right arrow keys work when the deck has focus, and a swipe works on a touch
+ * screen. The front window lifts off and the next one comes forward; nothing moves on its own.
  */
 export function LandingShowcase() {
-  const { track, step, goTo } = useScrollStep(SCREENS.length);
+  const [step, setStep] = useState(0);
+  const count = SCREENS.length;
+  const go = (i: number) => setStep(((i % count) + count) % count);
   const screen = SCREENS[step];
+  const touch = useRef<number | null>(null);
+  const arrow =
+    "grid size-11 place-items-center rounded-full bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-transform hover:scale-105 active:scale-95";
+
   return (
-    <div ref={track} className="relative" style={{ height: `${SCREENS.length * 70 + 30}vh` }}>
-      <div className="sticky top-16 mx-auto grid max-w-6xl items-center gap-8 py-4 lg:min-h-[calc(100dvh-6rem)] lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
-        <ol className="hidden flex-col gap-1 lg:flex" aria-label="Screens of the app">
-          {SCREENS.map((s, i) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => goTo(i)}
-                aria-current={i === step ? "step" : undefined}
-                className={`w-full rounded-xl border-l-4 py-2.5 pr-3 pl-4 text-left transition-colors ${
-                  i === step
-                    ? "border-amber bg-muted/60"
-                    : "border-transparent text-foreground/60 hover:text-foreground"
-                }`}
-              >
-                <span className="block font-bold font-display text-lg">{s.title}</span>
-                {i === step && <span className="mt-1 block text-muted-foreground text-sm">{s.text}</span>}
-              </button>
-            </li>
-          ))}
-        </ol>
-        <div className="lg:hidden">
-          <p className="text-center">
-            <span className="font-bold font-display text-xl">{screen.title}</span>
-            <span className="mx-auto mt-1 block max-w-xl text-muted-foreground text-sm">{screen.text}</span>
+    <section
+      aria-roledescription="carousel"
+      aria-label="Screens of the app"
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight") go(step + 1);
+        else if (e.key === "ArrowLeft") go(step - 1);
+        else return;
+        e.preventDefault();
+      }}
+      className="mx-auto max-w-6xl"
+    >
+      <div role="tablist" aria-label="Screens" className="flex flex-wrap justify-center gap-2">
+        {SCREENS.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            aria-selected={i === step}
+            tabIndex={i === step ? 0 : -1}
+            onClick={() => go(i)}
+            className={`h-10 rounded-full px-4 font-medium text-sm transition-colors ${
+              i === step
+                ? "bg-foreground text-background"
+                : "bg-card text-foreground/70 ring-1 ring-foreground/10 hover:text-foreground"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8 grid items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
+        <div className="text-center lg:text-left" aria-live="polite">
+          <p className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+            {step + 1} / {count}
           </p>
+          <h3 className="mt-2 font-bold font-display text-2xl">{screen.title}</h3>
+          <p className="mx-auto mt-2 max-w-md text-muted-foreground lg:mx-0">{screen.text}</p>
         </div>
-        <div className="relative mx-auto w-full max-w-3xl pb-24">
-          <div className="relative aspect-[9/14] w-full sm:aspect-[1000/900]">
+        <div className="relative mx-auto w-full max-w-3xl pb-14">
+          <div
+            role="tabpanel"
+            aria-label={screen.label}
+            className="relative aspect-[9/14] w-full touch-pan-y sm:aspect-[1000/900]"
+            onTouchStart={(e) => {
+              touch.current = e.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const start = touch.current;
+              touch.current = null;
+              const end = e.changedTouches[0]?.clientX;
+              if (start === null || end === undefined || Math.abs(end - start) < 50) return;
+              go(end < start ? step + 1 : step - 1);
+            }}
+          >
             {SCREENS.map((s, i) => (
               <Card key={s.id} screen={s} offset={i - step} />
             ))}
           </div>
-          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2" aria-hidden>
+          <button
+            type="button"
+            aria-label="Previous screen"
+            onClick={() => go(step - 1)}
+            className={`absolute top-[45%] -left-4 z-50 hidden sm:grid lg:-left-6 ${arrow}`}
+          >
+            <ChevronLeft className="size-5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Next screen"
+            onClick={() => go(step + 1)}
+            className={`absolute top-[45%] -right-4 z-50 hidden sm:grid lg:-right-6 ${arrow}`}
+          >
+            <ChevronRight className="size-5" aria-hidden />
+          </button>
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1">
             {SCREENS.map((s, i) => (
-              <span
+              <button
                 key={s.id}
-                className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-amber" : "w-1.5 bg-foreground/25"}`}
-              />
+                type="button"
+                aria-label={`Show the ${s.label} screen`}
+                aria-current={i === step ? "true" : undefined}
+                onClick={() => go(i)}
+                className="grid h-8 place-items-center px-1"
+              >
+                <span
+                  className={`block h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-amber" : "w-1.5 bg-foreground/25"}`}
+                />
+              </button>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

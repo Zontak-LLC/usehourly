@@ -5,8 +5,8 @@ export const APP_CONFIG = {
   version: packageJson.version,
   copyright: `© ${new Date().getFullYear()} Zontak LLC`,
   meta: {
-    title: "UseHourly: free time tracking for freelancers",
+    title: "UseHourly: the free time tracker you don't have to learn",
     description:
-      "A free time tracking app for freelancers. Log your day in seconds, with a start/stop timer and a weekly timesheet.",
+      "A free, simple time tracker. Type 1.5, press Enter, done. Your hours become timesheets, invoices and a tax summary.",
   },
 };
