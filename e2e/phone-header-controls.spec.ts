@@ -14,16 +14,17 @@ async function gapToHeaderEdge(control: Locator) {
  * On a phone the page card's header controls sit on their own row under the title and must fill it (a short row of
  * buttons stuck at the left with empty space beside it looked broken on Today and Clients).
  */
-test("on a phone the header controls share the title's line on Today and on Clients", async ({ page }, info) => {
+test("on a phone the header controls share the title's line on Clients", async ({ page }, info) => {
   test.skip(info.project.name !== "phone", "the wrapped header row only exists on a phone");
   await startFreshAccount(page);
-
-  await page.goto("/dashboard/today");
-  const next = page.getByRole("button", { name: "Next day" });
-  await expect(next).toBeVisible();
-  expect((await gapToHeaderEdge(next)).right).toBeLessThan(20); // the last button reaches the card's right padding
-  const todayHeading = await page.getByRole("heading", { level: 1 }).boundingBox();
-  const nextBox = await next.boundingBox();
-  if (!todayHeading || !nextBox) throw new Error("heading or button not on screen");
-  expect(Math.abs(nextBox.y + nextBox.height / 2 - (todayHeading.y + todayHeading.height / 2))).toBeLessThan(16); // same line as "Today"
+  // (Today has no header controls since 2026-10-23: its day buttons live in the day card.)
+  await page.goto("/dashboard/clients");
+  // The last header control: the page's ··· menu (New client sits before it).
+  const add = page.getByRole("button", { name: "More actions for Clients" });
+  await expect(add).toBeVisible();
+  expect((await gapToHeaderEdge(add)).right).toBeLessThan(20); // the last button reaches the card's right padding
+  const heading = await page.getByRole("heading", { level: 1 }).boundingBox();
+  const box = await add.boundingBox();
+  if (!heading || !box) throw new Error("heading or button not on screen");
+  expect(Math.abs(box.y + box.height / 2 - (heading.y + heading.height / 2))).toBeLessThan(16); // same line as "Clients"
 });

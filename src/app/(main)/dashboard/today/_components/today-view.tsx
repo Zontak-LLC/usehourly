@@ -4,8 +4,6 @@ import { useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-
 import { CalendarSuggestions } from "@/components/calendar-suggestions";
 import { EntryList } from "@/components/entry-list";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";
@@ -14,23 +12,22 @@ import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
 import { TimerControls, useTodayTimer } from "@/components/timer-control";
 import { TimerPanel } from "@/components/timer-panel";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
 import { useRunningMinutes } from "@/components/use-running-minutes";
-import { WeekPills } from "@/components/week-pills";
 import { addDays, DATE_RE, fromISODate, monthBounds, startOfWeek } from "@/lib/dates";
-import { formatDuration } from "@/lib/duration";
+import { MISSED_LOOKBACK_DAYS, missedDays } from "@/lib/day-nav";
 import { feature } from "@/lib/features";
 import { trpc } from "@/lib/trpc";
 import { useOnline } from "@/lib/use-offline";
 import { useToday } from "@/lib/use-today";
 
+import { DayCard } from "./day-card";
 import { FirstRun } from "./first-run";
+import { MissedDays } from "./missed-days";
 import { QuickAdd } from "./quick-add";
 import { TodayLayout } from "./today-layout";
 
-const _longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 const shortDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 
 export function TodayView() {
@@ -59,17 +56,16 @@ export function TodayView() {
   trpc.project.budgets.useQuery(date ? monthBounds(date) : { from: "", to: "" }, { enabled: !!date });
   useProjectLogos();
   const calendarFirst = useSavedCalendar().calendar !== null;
+  // The week, plus the day on each side of it: the day buttons beside the day show their hours too.
   const week = trpc.entry.list.useQuery(
-    { from: weekStart ?? "", to: weekStart ? addDays(weekStart, 6) : "" },
+    { from: weekStart ? addDays(weekStart, -1) : "", to: weekStart ? addDays(weekStart, 7) : "" },
     { enabled: !!weekStart },
   );
 
-  // Marked days never count as a gap in the week row (same batch as the week's entries: no extra round trip).
-  const nonBillableDays = trpc.entry.nonBillableDays.useQuery(
-    { from: weekStart ?? "", to: weekStart ? addDays(weekStart, 6) : "" },
-    { enabled: !!weekStart },
-  );
-  const nonBillableSet = new Set(nonBillableDays.data ?? []);
+  // The last week before today, for the "no time logged on" buttons (started with the rest: still one request).
+  const lookback = { from: today ? addDays(today, -MISSED_LOOKBACK_DAYS) : "", to: today ? addDays(today, -1) : "" };
+  const recent = trpc.entry.list.useQuery(lookback, { enabled: !!today });
+  const recentNonBillable = trpc.entry.nonBillableDays.useQuery(lookback, { enabled: !!today });
 
   if (!date) return <Skeleton className="h-64 w-full max-w-5xl" />;
 
@@ -78,70 +74,35 @@ export function TodayView() {
   const sum = (xs: { minutes: number }[]) => xs.reduce((a, e) => a + e.minutes, 0);
   // The running timer counts in the day and week totals, so they never disagree with the timesheet.
   const dayTotal = sum(dayEntries) + timerMinutes;
-  const weekTotal = week.data ? sum(week.data) + timerMinutes : null;
+  const weekEnd = weekStart ? addDays(weekStart, 6) : "";
+  const weekEntries = week.data?.filter((e) => weekStart && e.date >= weekStart && e.date <= weekEnd);
+  const weekTotal = weekEntries ? sum(weekEntries) + timerMinutes : null;
+  const missed = today && recent.data ? missedDays(recent.data, today, new Set(recentNonBillable.data ?? [])) : [];
+  const minutesOn = (d: string) => sum(week.data?.filter((e) => e.date === d) ?? []);
   const hasProjects = (clients.data ?? []).some((c) => c.projects.length > 0);
-  // The two totals are one line under the title (they were two stat cards): this day, and this week.
-  const totalsText = week.data
-    ? `${formatDuration(dayTotal)} this day · ${formatDuration(weekTotal ?? 0)} this week`
-    : "";
-  // On a wide screen they sit in the header line; on a phone that line has the arrows too, so they go under it.
-  const totals = totalsText ? <span className="max-sm:hidden"> · {totalsText}</span> : null;
-
   return (
     <PageShell
       nav="today"
       title={date === today ? "Today" : shortDate.format(fromISODate(date))}
       description={
-        date === today ? (
-          <>
-            {shortDate.format(fromISODate(date))}
-            {hasProjects && totals}
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              aria-label="Back to today"
-              className="py-1 font-medium text-foreground underline"
-              onClick={() => go(today ?? date)}
-            >
-              Today
-            </button>
-            {hasProjects && totals}
-          </>
-        )
+        !hasProjects ? (
+          shortDate.format(fromISODate(date))
+        ) : date !== today ? (
+          <button
+            type="button"
+            aria-label="Back to today"
+            className="py-1 font-medium text-foreground underline"
+            onClick={() => go(today ?? date)}
+          >
+            Back to today
+          </button>
+        ) : undefined
       }
       descriptionOnPhone
       inlineDescription
-      // Swipe left for the next day, right for the previous one (the arrows in the header do the same).
+      // Swipe left for the next day, right for the previous one (the day buttons do the same).
       onSwipe={feature("swipe") ? (direction) => go(addDays(date, direction === "left" ? 1 : -1)) : undefined}
-      actions={
-        hasProjects && (
-          <div className="flex items-center gap-1">
-            <Button
-              size="icon"
-              variant="outline"
-              className="size-10"
-              onClick={() => go(addDays(date, -1))}
-              aria-label="Previous day"
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              size="icon"
-              variant="outline"
-              className="size-10"
-              onClick={() => go(addDays(date, 1))}
-              aria-label="Next day"
-            >
-              <ChevronRight />
-            </Button>
-          </div>
-        )
-      }
     >
-      {hasProjects && totalsText && <p className="text-foreground/75 text-sm sm:hidden">{totalsText}</p>}
-
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : !hasProjects ? (
@@ -149,24 +110,26 @@ export function TodayView() {
       ) : (
         <TodayLayout
           pills={
-            week.data && weekStart ? (
-              <WeekPills
-                entries={week.data}
-                weekStart={weekStart}
-                date={date}
-                today={today}
-                onPick={go}
-                nonBillable={nonBillableSet}
-              />
-            ) : (
-              <Skeleton className="h-16 w-full" />
-            )
+            <DayCard
+              date={date}
+              today={today}
+              minutesOn={minutesOn}
+              dayTotal={dayTotal}
+              weekTotal={weekTotal}
+              onPick={go}
+              footer={
+                // The timer (on today only) and the days with no time share the card's footer.
+                date === today || missed.some((d) => d !== date) ? (
+                  <>
+                    {date === today && <TimerControls timer={todayTimer} online={online} bare />}
+                    <MissedDays days={missed} date={date} onPick={go} />
+                  </>
+                ) : null
+              }
+            />
           }
-          timerBar={
-            // On today the timer is a slim strip (it replaced the big watch on 2026-10-23); on another day only a
-            // running timer shows, as the bar with Stop.
-            date === today ? <TimerControls timer={todayTimer} online={online} /> : <TimerPanel />
-          }
+          // On another day a running timer shows as its own bar with Stop.
+          timerBar={date === today ? null : <TimerPanel />}
           form={<QuickAdd date={date} showDate={false} dayMinutes={sum(dayEntries)} onTimerContext={setTimerContext} />}
           calendarTop={
             feature("calendar") && calendarFirst && clients.data ? (
