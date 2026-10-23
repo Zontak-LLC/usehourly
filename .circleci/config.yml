@@ -78,7 +78,8 @@ jobs:
       - store_artifacts:
           path: e2e/report
           destination: e2e-report
-          when: always
+          # Kept only when a run fails: saved reports were most of the organization's storage (docs/operations.md).
+          when: on_fail
 
   deploy:
     executor: node
@@ -140,7 +141,8 @@ jobs:
       - store_artifacts:
           path: e2e/report
           destination: smoke-report
-          when: always
+          # Kept only when a run fails: saved reports were most of the organization's storage (docs/operations.md).
+          when: on_fail
 
 workflows:
   build-and-deploy:
