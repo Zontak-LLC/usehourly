@@ -20,10 +20,11 @@ test("type, use the arrow keys and press Enter to pick a project; the time box i
   await page.locator("body").click({ position: { x: 5, y: 5 } });
   await page.keyboard.press("/");
   await expect(field).toBeFocused();
-  await expect(page.getByRole("option").first()).toBeVisible(); // the list drops down at once
+  // Scoped to the list: an entry's "Move to another project" select on the page has <option>s of its own.
+  const options = page.getByRole("listbox", { name: "Projects" }).getByRole("option");
+  await expect(options.first()).toBeVisible(); // the list drops down at once
 
   await field.fill("mob");
-  const options = page.getByRole("option");
   await expect(options.first()).toContainText("Mobile");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("radio", { name: /Mobile/ }).first()).toBeChecked();

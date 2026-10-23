@@ -160,6 +160,9 @@ export async function anonymous(browser: Browser, info: TestInfo): Promise<Brows
  * a page that scrolls sideways, and (on a phone) controls too small to tap.
  */
 export async function auditPage(page: Page, label: string, isPhone: boolean) {
+  // After a client-side navigation a built app sets the new page's title a moment after its content shows; give it
+  // that moment, so "page has no title" means the page really has none (still none after it: the check below reports it).
+  await page.waitForFunction(() => document.title.trim() !== "", undefined, { timeout: 5_000 }).catch(() => undefined);
   const { problems, advice } = await page.evaluate((phone) => {
     const out: string[] = [];
     const tips: string[] = [];

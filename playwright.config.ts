@@ -9,6 +9,11 @@ import { defineConfig, devices } from "@playwright/test";
  * - the test copy of the app has its OWN local database folder (.wrangler/state-e2e), so a normal dev server running at
  *   the same time never shares files with it (sharing them breaks both).
  * Set E2E_BASE_URL to test an already-running site instead (then no server is started and nothing is deleted).
+ *
+ * The test copy is a BUILT app (`next build`, then `next start`), not `next dev`: a dev server compiles each page the
+ * first time it is asked for and renders everything in React's slow development mode, which made the whole run take
+ * about 7.5 minutes instead of about 3. The build takes under a minute. E2E_DEV=1 uses `next dev` instead (no build,
+ * and code changes show without restarting: handy while writing one spec).
  */
 const PORT = 3029;
 const MAIL_PORT = 8899;
@@ -16,6 +21,8 @@ const external = process.env.E2E_BASE_URL;
 const BASE = external ?? `http://localhost:${PORT}`;
 // Where the test copy keeps its database. Helpers and teardown read the same variable (workers inherit it).
 if (!external) process.env.E2E_PERSIST ??= ".wrangler/state-e2e";
+
+const DEV_SERVER = Boolean(process.env.E2E_DEV);
 
 const SERIAL_SPECS = /support-notice\.spec\.ts$/;
 // The slow "every control does something" sweep is not part of the normal run (npm run e2e:sweep runs it). A project's own
@@ -91,12 +98,13 @@ export default defineConfig({
           timeout: 20_000,
         },
         {
-          command: `npx next dev -p ${PORT}`,
+          // E2E_SERVE=1 is set only for `next start` (it gives the built app the local database); never while building.
+          command: DEV_SERVER ? `npx next dev -p ${PORT}` : `npx next build && E2E_SERVE=1 npx next start -p ${PORT}`,
           url: BASE,
           reuseExistingServer: true,
-          timeout: 240_000,
+          timeout: 480_000,
           env: {
-            NEXT_DIST_DIR: ".next-e2e",
+            NEXT_DIST_DIR: DEV_SERVER ? ".next-e2e" : ".next-e2e-build",
             E2E_PERSIST: process.env.E2E_PERSIST ?? "",
             GOOGLE_CALENDAR_CLIENT_ID: "e2e-test.apps.googleusercontent.com", // switches the Google Calendar button on (Google itself is faked)
             GOOGLE_CALENDAR_PUBLIC: "1", // shows it to every test account (in production it is for the owner until Google verifies the app)

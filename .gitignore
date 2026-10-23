@@ -65,6 +65,7 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /.next-e2e/
+/.next-e2e-build/
 
 # mutation testing
 .stryker-tmp/

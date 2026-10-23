@@ -7,9 +7,9 @@ import { expect, startFreshAccount, test } from "./helpers";
  */
 const LAST_DATA = "hourly:queryCache";
 
-// `next dev` cannot start a page with no connection (its hot-reload socket is cut), so these need a production build:
-// build, `opennextjs-cloudflare preview --port 3028`, then run with E2E_BASE_URL=http://localhost:3028 (see CLAUDE.md).
-test.skip(!process.env.E2E_BASE_URL, "needs a production build (set E2E_BASE_URL)");
+// `next dev` cannot start a page with no connection (its hot-reload socket is cut), so these need a built app: the
+// normal run serves one (playwright.config.ts); only E2E_DEV=1 (the dev server) skips them.
+test.skip(Boolean(process.env.E2E_DEV) && !process.env.E2E_BASE_URL, "needs a built app (not E2E_DEV)");
 
 test("the app opens offline with what you last saw, takes an entry, and syncs when the connection returns", async ({
   page,
