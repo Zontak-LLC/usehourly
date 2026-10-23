@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 
+import Link from "next/link";
+
 import { CircleDollarSign, Download, Mail, Pencil, Search, Trash2 } from "lucide-react";
 
+import { ClientInitial } from "@/components/client-initial";
 import { IconAction } from "@/components/icon-action";
 import { MoreMenu } from "@/components/more-menu";
 import { Pagination } from "@/components/pagination";
@@ -222,27 +225,19 @@ function InvoiceSlip({
           : undefined
       }
     >
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:px-4">
-        <span
-          aria-hidden
-          className="grid size-10 place-items-center rounded-xl font-display font-extrabold text-base text-white"
-          style={{ background: colour ?? "color-mix(in oklab, var(--foreground) 45%, transparent)" }}
-        >
-          {i.client_name.trim().charAt(0).toUpperCase() || "?"}
-        </span>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_15rem] sm:px-4">
+        <ClientInitial name={i.client_name} colour={colour} />
 
         <div className="min-w-0">
           <p className="truncate text-sm">
-            {/* The number is the invoice: a click downloads its PDF, and you stay on the list. */}
-            <button
-              type="button"
-              onClick={() => !busy && handlers.onDownload(i)}
-              title="Download the PDF"
-              aria-label={`${i.number}: download the PDF`}
+            {/* The number is the invoice: it opens the invoice's own page (issue 219; it used to download the PDF). */}
+            <Link
+              href={`/dashboard/invoices/${i.id}`}
+              aria-label={`${i.number}: open the invoice`}
               className="font-semibold underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground"
             >
               {i.number}
-            </button>
+            </Link>
             <span className="text-foreground/75"> · {i.client_name}</span>
           </p>
           {i.summary && <p className="truncate text-foreground/75 text-sm">{i.summary}</p>}
@@ -253,7 +248,7 @@ function InvoiceSlip({
         </div>
 
         <div className="text-right">
-          <p className="font-display font-extrabold text-xl tabular-nums leading-tight">
+          <p className="font-mono font-semibold text-base tabular-nums leading-tight tracking-tight">
             {formatMoney(i.total_cents, i.currency)}
           </p>
           <p className="inline-flex items-center gap-1.5 text-xs" style={{ color: state.colour }}>

@@ -14,7 +14,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
     await page.goto("/dashboard/today");
     await page.getByLabel("Time to add").fill("2h");
     await page.getByRole("button", { name: /^Log time/ }).click();
-    await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText("2:00 this day");
+    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:00 this day");
   });
 
   const card = page.getByRole("region", { name: "Acme" });

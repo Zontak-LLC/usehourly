@@ -26,6 +26,8 @@ const PUBLIC_FOR_EVERYONE = new Set([
   "/verify-email",
   "/reminders/off",
   "/stop-emails",
+  // Where deleting an account lands: the visitor is signed out by then.
+  "/account-deleted",
   "/oauth/authorize",
   "/tools/hours-calculator",
   "/manifest.webmanifest",

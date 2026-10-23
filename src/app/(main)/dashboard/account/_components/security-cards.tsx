@@ -77,14 +77,12 @@ export function SignOutCard() {
   const signOutEverywhere = trpc.account.signOutEverywhere.useMutation();
 
   return (
+    // One Log out (issue 219): it lives in the menu under your name. This card is only for every device at once.
     <SectionCard
-      title="Log out"
-      description="Log out here, or on every device at once. Logging out everywhere also disconnects every AI assistant; connect them again with a new token."
+      title="Log out on all devices"
+      description="Signs you out on every phone and computer at once, for example after using a shared one. It also disconnects every AI assistant; connect them again with a new token."
     >
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => signOutOfDevice({ callbackUrl: "/auth/v2/login" })}>
-          Log out
-        </Button>
         <Button
           variant="outline"
           disabled={signOutEverywhere.isPending}

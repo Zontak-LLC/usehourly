@@ -28,7 +28,7 @@ test("Today's timer is a slim strip on today only, and Week has a progress line 
   await test.step("Week: no clock, the week's hours against 40 as a progress line", async () => {
     await page.getByRole("button", { name: "1 hour", exact: true }).click();
     await page.getByRole("button", { name: /^Log time/ }).click();
-    await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText("1:00 this day");
+    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("1:00 this day");
     await page.goto("/dashboard/week");
     await expect(page.getByRole("region", { name: "This week" })).toContainText("1:00 of 40:00 this week");
     await expect(page.getByRole("progressbar", { name: "Hours this week, out of 40" })).toHaveAttribute(

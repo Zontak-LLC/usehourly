@@ -86,15 +86,7 @@ export function InvoicesView() {
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
-          {groups[0] && (
-            <InvoiceHero
-              invoices={invoices.data ?? []}
-              currency={groups[0].currency}
-              total={groups[0].total}
-              unpaid={groups[0].unpaid}
-              today={today}
-            />
-          )}
+          {groups[0] && <InvoiceHero currency={groups[0].currency} total={groups[0].total} unpaid={groups[0].unpaid} />}
           <section
             id="invoice-list"
             aria-label="Your invoices"

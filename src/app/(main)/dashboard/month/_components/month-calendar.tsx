@@ -44,11 +44,15 @@ type CellState = {
 function cellClass(s: CellState): string {
   const base =
     "group relative flex min-h-14 cursor-pointer flex-col gap-1 overflow-hidden border-r border-b p-1 text-left transition-colors hover:bg-muted focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 sm:min-h-24 sm:p-2";
-  const quiet = !s.inMonth ? "bg-muted/30 text-muted-foreground/70" : s.isWeekend ? "bg-foreground/[0.025]" : "";
+  const quiet = !s.inMonth
+    ? "bg-foreground/[0.04] text-muted-foreground/70"
+    : s.isWeekend
+      ? "bg-foreground/[0.025]"
+      : "";
   // Only one background at a time (two bg classes would fight over the order in the stylesheet).
   const tone = s.isDropTarget || s.isPicked ? "" : quiet;
-  // Amber marks where you are: the open day (and a day an entry is being dragged over) gets an amber ring.
-  const ring = s.isOpen || s.isDropTarget ? "z-[1] ring-2 ring-amber ring-inset" : "";
+  // The open day has an ink ring (amber is for today's date and the main button); a drop target stays amber.
+  const ring = s.isOpen && !s.isDropTarget ? "z-[1] ring-2 ring-foreground ring-inset" : "";
   const drop = s.isDropTarget ? "bg-amber-soft ring-2 ring-amber ring-inset" : "";
   const picked = s.isPicked ? "bg-tint outline-2 outline-primary -outline-offset-2" : "";
   return [base, tone, ring, drop, picked].filter(Boolean).join(" ");
@@ -119,7 +123,7 @@ function DayCell({
       </span>
 
       {mins > 0 ? (
-        <span className="mt-auto text-right font-display font-extrabold text-foreground text-xs tabular-nums sm:text-lg">
+        <span className="mt-auto text-right font-medium font-mono text-foreground/85 text-xs tabular-nums tracking-tight sm:text-sm">
           {formatDuration(mins)}
         </span>
       ) : state.isGap ? (
@@ -143,13 +147,17 @@ function DayCell({
         </span>
       )}
 
-      {/* How full the day is, against the busiest day of the month: a soft grey line along the foot of the cell. */}
+      {/* How full the day is, against the busiest day of the month: a soft grey line on a faint track, inset at the foot of the cell (the same drawing as Week's tiles). */}
       {mins > 0 && (
         <span
           aria-hidden
-          className="absolute bottom-0 left-0 h-1 rounded-tr-full sm:h-1.5"
-          style={{ width: `${Math.max(6, (mins / max) * 100)}%`, backgroundColor: PALETTE.soft }}
-        />
+          className="absolute inset-x-1.5 bottom-1 h-1 overflow-hidden rounded-full bg-foreground/10 sm:inset-x-2 sm:bottom-1.5"
+        >
+          <span
+            className="block h-full rounded-full"
+            style={{ width: `${Math.max(6, (mins / max) * 100)}%`, backgroundColor: PALETTE.soft }}
+          />
+        </span>
       )}
     </button>
   );
@@ -301,8 +309,9 @@ export function MonthCalendar({
               {/* The week's total (this month's days only), at the end of its row. */}
               <div className="hidden flex-col items-end justify-end border-b bg-band-2 p-2 sm:flex">
                 <span className="sr-only">Week of {weekOf.format(fromISODate(w[0]))}: </span>
-                <span className="font-bold font-display text-base text-foreground tabular-nums">
-                  {weekTotal ? formatDuration(weekTotal) : <span className="text-muted-foreground">0:00</span>}
+                <span className="font-mono font-semibold text-foreground/85 text-sm tabular-nums tracking-tight">
+                  {/* An empty week is blank, not a bold "0:00". */}
+                  {weekTotal ? formatDuration(weekTotal) : ""}
                 </span>
               </div>
             </div>

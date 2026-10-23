@@ -34,7 +34,7 @@ export function DocButton({
       className={cn(
         "group/doc relative inline-flex min-h-14 items-center gap-3 overflow-hidden rounded-2xl py-2 pr-5 pl-2 text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-amber/40 disabled:pointer-events-none disabled:opacity-50 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.98]",
         tone === "amber"
-          ? "bg-gradient-to-b from-[color-mix(in_oklab,var(--amber)_82%,white)] to-amber text-[#12151b] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_10px_24px_-10px_color-mix(in_oklab,var(--amber)_90%,transparent)] hover:shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_16px_30px_-10px_color-mix(in_oklab,var(--amber)_95%,transparent)]"
+          ? "bg-amber-fill text-[#12151b] shadow-[0_1px_2px_rgb(0_0_0/0.12)] hover:brightness-105"
           : "bg-gradient-to-b from-card to-muted text-foreground shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_10px_24px_-14px_rgb(0_0_0/0.6)] ring-1 ring-foreground/15 hover:shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_0_0_4px_color-mix(in_oklab,var(--amber)_16%,transparent),0_16px_30px_-12px_color-mix(in_oklab,var(--amber)_45%,transparent)] hover:ring-amber/70",
         className,
       )}
@@ -43,7 +43,8 @@ export function DocButton({
         aria-hidden
         className={cn(
           "grid size-10 shrink-0 place-items-center rounded-xl transition-transform duration-500 [&_svg]:size-5",
-          tone === "amber" ? "bg-[#12151b] text-amber" : "bg-amber text-[#12151b]",
+          // The ink button's tile is ink too: amber is kept for the main action (drawing audit, 2026-10-23).
+          tone === "amber" ? "bg-[#12151b] text-amber" : "bg-foreground text-background",
         )}
       >
         {busy ? <Loader2 className="animate-spin" /> : icon}

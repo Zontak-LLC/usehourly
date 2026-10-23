@@ -72,14 +72,14 @@ export function ExportEverything({
         icon={<Archive />}
         title={busy ? "Preparing your zip…" : "Download everything"}
         hint="A zip of spreadsheets and CSV files"
-        label={busy ? "Preparing your zip…" : "Download everything (.zip)"}
+        label={busy ? "Preparing your zip…" : "Download everything"}
         className={className}
       />
     );
   }
   return (
     <Button variant={variant} className={className} onClick={run} disabled={busy}>
-      <Archive /> {busy ? "Preparing your zip…" : "Download everything (.zip)"}
+      <Archive /> {busy ? "Preparing your zip…" : "Download everything"}
     </Button>
   );
 }

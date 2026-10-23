@@ -309,7 +309,7 @@ function ProjectChip({ timer }: { timer: TodayTimer }) {
       <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: shown.color }} />
       <span className="min-w-0 truncate">
         {shown.name}
-        <span className="text-muted-foreground"> · {shown.clientName}</span>
+        <span className="text-muted-foreground max-sm:hidden"> · {shown.clientName}</span>
       </span>
     </>
   );
@@ -455,11 +455,24 @@ function StillWorking({ timer }: { timer: TodayTimer }) {
  * then a description box, "Started earlier?" for a moment and "Still working?" after 4 hours; stopped = the time ticket
  * (the entry it became, - / + 5 min, Resume · Add to timesheet · Discard), which stays until one is picked.
  */
-export function TimerControls({ timer, online }: { timer: TodayTimer; online: boolean }) {
+export function TimerControls({
+  timer,
+  online,
+  bare = false,
+}: {
+  timer: TodayTimer;
+  online: boolean;
+  /** Inside another card (Today's day card footer): no frame of its own. */
+  bare?: boolean;
+}) {
   return (
     <section
       aria-label="Timer"
-      className="flex flex-col gap-3 rounded-2xl bg-card px-4 py-3 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+      className={
+        bare
+          ? "flex min-w-0 flex-1 basis-72 flex-col gap-3"
+          : "flex flex-col gap-3 rounded-2xl bg-card px-4 py-3 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
+      }
     >
       {timer.stopped ? (
         <TimeTicket timer={timer} />
@@ -507,7 +520,8 @@ export function TimerControls({ timer, online }: { timer: TodayTimer; online: bo
             }
             onClick={timer.onStart}
             disabled={timer.busy || !online}
-            className={`${BUTTON} ring-1 ring-foreground/20 hover:bg-muted`}
+            // Secondary to Log time: a quiet ghost button, not an outlined one that looks like the main action.
+            className={`${BUTTON} text-foreground/80 hover:bg-muted hover:text-foreground`}
           >
             <Play className="size-3.5" fill="currentColor" aria-hidden />
             Start timer

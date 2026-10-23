@@ -2,6 +2,7 @@
 
 import { toggleProjectFilter } from "@/components/project-filter";
 import { formatDuration } from "@/lib/duration";
+import { ROW_FIGURE } from "@/lib/figures";
 import { PALETTE } from "@/lib/palette";
 import type { buildSheet } from "@/lib/timesheet";
 
@@ -91,9 +92,7 @@ export function WeekTotalCard({
                     </span>
                     <span className="sr-only">{r.client}</span>
                   </span>
-                  <span className="shrink-0 font-bold font-display text-lg tabular-nums">
-                    {formatDuration(r.total)}
-                  </span>
+                  <span className={`shrink-0 ${ROW_FIGURE}`}>{formatDuration(r.total)}</span>
                 </button>
               </li>
             );

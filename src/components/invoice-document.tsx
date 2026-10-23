@@ -22,7 +22,17 @@ export function readSnapshot(json: string): InvoiceSnapshot | null {
  * notes, how to pay, the time detail, and Download PDF / Print. The client's private link page and the freelancer's own
  * invoice page both show this, so the two can never differ.
  */
-export function InvoiceDocument({ s, paidDate }: { s: InvoiceSnapshot; paidDate: string | null }) {
+export function InvoiceDocument({
+  s,
+  paidDate,
+  inApp = false,
+}: {
+  s: InvoiceSnapshot;
+  paidDate: string | null;
+  /** Shown inside the app (the page has its own title): the invoice's title is a second-level heading. */
+  inApp?: boolean;
+}) {
+  const Title = inApp ? "h2" : "h1";
   const today = new Date().toISOString().slice(0, 10);
   const overdue = !paidDate && s.dueDate !== null && s.dueDate < today;
   return (
@@ -43,7 +53,7 @@ export function InvoiceDocument({ s, paidDate }: { s: InvoiceSnapshot; paidDate:
           </div>
         </div>
         <div className="text-right">
-          <h1 className="font-semibold text-2xl tracking-tight">Invoice {s.number}</h1>
+          <Title className="font-semibold text-2xl tracking-tight">Invoice {s.number}</Title>
           <p className="text-muted-foreground text-sm">Issued {day(s.issueDate)}</p>
           {s.dueDate && <p className="text-muted-foreground text-sm">Due {day(s.dueDate)}</p>}
           <p className="text-muted-foreground text-sm">

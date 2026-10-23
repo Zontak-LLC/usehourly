@@ -8,7 +8,6 @@ import { formatDecimalHours } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import type { buildInvoice } from "@/lib/invoice";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
-import { useCountUp } from "@/lib/use-count-up";
 
 export type InvoiceTotals = ReturnType<typeof buildInvoice>;
 
@@ -26,9 +25,10 @@ export function InvoicePreviewCard({
   clientName: string | undefined;
 }) {
   const money = useMoney();
-  const total = useCountUp(totals.totalCents, 800, totals.totalCents);
+  // The exact total at once: a money figure that rolls passes through wrong amounts (drawing audit, 2026-10-23).
+  const total = totals.totalCents;
   return (
-    // A sheet of paper: it settles onto the page, and its total counts up.
+    // A sheet of paper: it settles onto the page; its total is shown exact at once.
     <div className="overflow-hidden rounded-md border bg-card shadow-[var(--shadow-sheet)] motion-safe:animate-[settle_.7s_cubic-bezier(.2,.8,.2,1)]">
       <h2 className="border-b bg-band-2 px-4 py-3 font-semibold text-base">Preview</h2>
       {!validRange ? (

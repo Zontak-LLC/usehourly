@@ -69,7 +69,7 @@ test("an invoice says its state in words, unpaid ones have Mark paid, and the ta
   for (const row of await invoices.all())
     await expect(row).toContainText(/Paid \w{3} \d+|Due in \d+ days?|\d+ days? late|Due today|Waiting/);
   // the number is a button that downloads the PDF
-  await expect(invoices.first().getByRole("button", { name: /^INV-\d{4}-\d{3}: download the PDF$/ })).toBeVisible();
+  await expect(invoices.first().getByRole("link", { name: /^INV-\d{4}-\d{3}: open the invoice$/ })).toBeVisible();
 
   await test.step("the tabs: All is chosen, Paid shows only paid ones, Waiting only unpaid ones", async () => {
     const tabs = page.getByRole("tablist", { name: "Show invoices" });
@@ -102,4 +102,35 @@ test("an invoice says its state in words, unpaid ones have Mark paid, and the ta
   await expect(
     page.getByRole("searchbox", { name: "Search invoices" }).or(page.getByLabel("Search invoices")),
   ).toBeVisible();
+});
+
+test("an invoice's number opens the invoice's own page (issue 219); the download icon still downloads", async ({
+  page,
+}) => {
+  await startDemo(page);
+  await page.goto("/dashboard/invoices");
+  const number = page.getByRole("link", { name: /^INV-\d{4}-\d{3}: open the invoice$/ }).first();
+  const name = ((await number.getAttribute("aria-label")) ?? "").split(":")[0];
+  await number.click();
+  await expect(page).toHaveURL(/\/dashboard\/invoices\/[^/]+$/);
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: `Invoice ${name}` })).toBeVisible();
+  const [pdf] = await Promise.all([
+    page.waitForEvent("download"),
+    page
+      .getByRole("button", { name: /Download PDF/ })
+      .first()
+      .click(),
+  ]);
+  expect(pdf.suggestedFilename()).toBe(`${name}.pdf`);
+  await page.getByRole("link", { name: "Back to invoices" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/invoices$/);
+  const [file] = await Promise.all([
+    page.waitForEvent("download"),
+    page
+      .getByRole("button", { name: /^Download INV-\d{4}-\d{3} as a PDF$/ })
+      .first()
+      .click(),
+  ]);
+  expect(file.suggestedFilename()).toMatch(/^INV-\d{4}-\d{3}\.pdf$/);
 });

@@ -36,7 +36,7 @@ test("time field: a chip's token flies in, the value is ready at once, and the c
     await chip("2 hours").click();
     await chip("2 hours").click();
     await time.press("Enter");
-    await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText("4:00 this day");
+    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("4:00 this day");
     await expect(time).toHaveValue("");
   });
 });

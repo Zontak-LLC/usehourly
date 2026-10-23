@@ -19,7 +19,7 @@ async function invoiceForAcme(page: Page) {
   await page.goto("/dashboard/today");
   await page.getByLabel("Time to add").fill("2h");
   await page.getByRole("button", { name: /^Log time/ }).click();
-  await expect(page.getByRole("heading", { level: 1 }).locator("xpath=..")).toContainText("2:00 this day");
+  await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:00 this day");
   await page.goto("/dashboard/clients");
   await menuAction(page, "More actions for Acme", "Billing details");
   await page.getByLabel("Email for invoices").fill("accounts@client.example");
@@ -29,7 +29,7 @@ async function invoiceForAcme(page: Page) {
   await page.getByRole("button", { name: /Create invoice/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
   const first = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
-  const number = (await first.getByRole("button", { name: /: download the PDF$/ }).innerText()).trim();
+  const number = (await first.getByRole("link", { name: /: open the invoice$/ }).innerText()).trim();
   return { user, number };
 }
 

@@ -67,7 +67,7 @@ const SETTINGS: Target[] = shown([
     keywords: "weekly notification",
     feature: "weeklyReminder",
   },
-  { title: "Log out", href: "/dashboard/account#account", keywords: "sign out" },
+  { title: "Log out on all devices", href: "/dashboard/account#account", keywords: "log out sign out everywhere" },
   { title: "Business details and logo", href: "/dashboard/account#invoices", keywords: "ein address invoice" },
   { title: "Currency", href: "/dashboard/account#invoices", keywords: "euro dollar pound money" },
   { title: "Export everything", href: "/dashboard/account#data", keywords: "download zip csv excel backup" },

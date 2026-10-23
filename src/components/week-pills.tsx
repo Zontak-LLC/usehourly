@@ -29,8 +29,12 @@ function DayHours({ minutes, dayTotal, gap }: { minutes: number; dayTotal: numbe
   const value = shown ?? minutes;
   return (
     <span
-      className={`font-mono text-[11px] tabular-nums transition-transform duration-300 ${
-        shown !== null ? "scale-125 font-semibold text-foreground" : "text-foreground/80"
+      className={`font-mono font-semibold text-sm tabular-nums tracking-tight transition-transform duration-300 ${
+        shown !== null
+          ? "scale-125 text-foreground"
+          : value
+            ? "text-foreground/90"
+            : "font-normal text-foreground/50 text-xs"
       }`}
     >
       {value ? formatDuration(value) : gap ? "No time" : "–"}
@@ -40,8 +44,9 @@ function DayHours({ minutes, dayTotal, gap }: { minutes: number; dayTotal: numbe
 
 /**
  * The week as one slim row of seven day buttons: the day, its date, the hours and a thin bar for how full it was. The
- * day shown is pressed (an amber ring, like the open tab); today has an amber dot; a past weekday with nothing logged shows as a dashed gap ("No time").
- * Tapping a day opens it. Used on Today and Week.
+ * day shown is pressed (an ink ring); today's date is a filled amber circle, as on Month; a past weekday with nothing logged shows
+ * as a dashed gap ("No time"). The hours are the stronger figure, the date the quieter one (the same drawing as Month's cells).
+ * Tapping a day opens it. Week's own control (Today walks one day at a time with its day stepper).
  */
 export function WeekPills({
   entries,
@@ -85,22 +90,33 @@ export function WeekPills({
             aria-label={`${fullDay.format(when)}, ${minutes ? formatDuration(minutes) : "nothing logged"}${nonBillable?.has(d) ? ", non-billable" : ""}`}
             className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-xl bg-card px-1 py-2 ring-1 transition-colors ${
               picked
-                ? "bg-card ring-2 ring-amber"
+                ? "bg-card ring-2 ring-foreground"
                 : gap
                   ? "border border-foreground/30 border-dashed bg-transparent ring-0 hover:bg-card"
                   : "ring-foreground/10 hover:ring-foreground/30"
             }`}
           >
-            {d === today && <span aria-hidden className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-amber" />}
             {nonBillable?.has(d) && <NoDollar className="absolute top-1 left-1 size-3" />}
             <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-wider">
               {dayName.format(when)}
             </span>
-            <span className="font-display font-extrabold text-lg leading-none">{when.getDate()}</span>
+            <span
+              className={
+                d === today
+                  ? "inline-flex size-6 items-center justify-center rounded-full bg-amber font-semibold text-neutral-950 text-sm"
+                  : "inline-flex h-6 items-center font-medium text-foreground/75 text-sm"
+              }
+            >
+              {when.getDate()}
+            </span>
             <DayHours minutes={minutes} dayTotal={sumDay(allEntries ?? entries, d)} gap={gap} />
-            <span aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-muted">
+            {/* How full the day is: inset on a faint track, rounded at both ends (the same drawing as Month's cells). */}
+            <span
+              aria-hidden
+              className="absolute inset-x-2 bottom-1.5 h-1 overflow-hidden rounded-full bg-foreground/10"
+            >
               <span
-                className="block h-full bg-foreground/40 transition-[width] duration-700"
+                className="block h-full rounded-full bg-foreground/45 transition-[width] duration-700"
                 style={{ width: `${Math.min(100, (minutes / goal) * 100)}%` }}
               />
             </span>

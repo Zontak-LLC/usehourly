@@ -35,7 +35,7 @@ export function DataHub({ account }: { account: AccountMe }) {
       )}
 
       <section aria-label="Download everything" className={`grid content-start gap-4 p-5 sm:p-6 ${CARD}`}>
-        <DataPanelHead icon={Archive} title="Take it all with you.">
+        <DataPanelHead icon={Archive} title="Download everything">
           One zip with everything you have ever logged: a workbook with every client and every day,
           {clients.data ? ` ${count(clients.data.length, "sheet")}, one for each client,` : " a sheet for each client,"}{" "}
           and plain CSV files that any tool can open.
