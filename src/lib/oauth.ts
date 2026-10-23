@@ -159,12 +159,17 @@ export function authorizationServerMetadata(appUrl: string) {
     authorization_endpoint: `${appUrl}/oauth/authorize`,
     token_endpoint: `${appUrl}/api/oauth/token`,
     registration_endpoint: `${appUrl}/api/oauth/register`,
+    revocation_endpoint: `${appUrl}/api/oauth/revoke`,
+    revocation_endpoint_auth_methods_supported: ["none"],
     scopes_supported: ["read", "write"],
     response_types_supported: ["code"],
     response_modes_supported: ["query"],
     grant_types_supported: ["authorization_code"],
     token_endpoint_auth_methods_supported: ["none"],
     code_challenge_methods_supported: ["S256"],
+    // RFC 9207: every answer sent back to the app's redirect address names this server as `iss`, so an app that
+    // talks to several servers can tell a mix-up attack from a real answer.
+    authorization_response_iss_parameter_supported: true,
     service_documentation: "https://github.com/Zontak-LLC/usehourly",
   };
 }

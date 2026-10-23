@@ -22,6 +22,21 @@ export default function PrivacyPage() {
           else; we cannot see your email, files or repositories there.
         </li>
         <li>What you enter: clients, projects, time entries, notes, rates and invoices.</li>
+        <li>
+          If you connect an AI assistant (with an access token you make, or by approving an app), we keep the
+          connection's name, whether it may change things, when it expires and when it was last used. We keep only a
+          fingerprint of the token itself, never the token. You can delete a connection on the Account page at any time,
+          and changing your password ends them all.
+        </li>
+        <li>
+          To stop abuse such as password guessing and mass sign-ups, we count some requests per internet address (and
+          per account). Each count is kept with the address only for its short time window (an hour at most) and is
+          deleted automatically within a few hours. It is not used for anything else.
+        </li>
+        <li>
+          Sample-data demo accounts (&ldquo;Try it with sample data&rdquo;) are temporary and are deleted automatically
+          after about a day, unless you turn one into a real account.
+        </li>
       </ul>
       <h2>What we do with it</h2>
       <ul>
@@ -51,10 +66,27 @@ export default function PrivacyPage() {
         </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>
+      <h2>Cookies and your browser</h2>
+      <ul>
+        <li>
+          We use one cookie to keep you signed in, and a few small cookies that remember display choices such as light
+          or dark mode. We use no advertising or tracking cookies.
+        </li>
+        <li>
+          Some conveniences, such as the project you used last, are remembered in your browser's own storage. They stay
+          on your device.
+        </li>
+        <li>
+          Cloudflare Web Analytics counts visits to our pages. It uses no cookies and does not follow you across other
+          sites.
+        </li>
+      </ul>
       <h2>Where it lives</h2>
       <p>
-        Your data is stored with our hosting provider, Cloudflare. Donations are handled by GitHub Sponsors, which has
-        its own privacy policy; we never see your payment details.
+        Your data is stored with our hosting provider, Cloudflare. Our emails are sent by Resend, an email service,
+        which receives your address and the message to deliver it. When the sign-up robot check is on, it is run by
+        Cloudflare Turnstile. Donations are handled by GitHub Sponsors, which has its own privacy policy; we never see
+        your payment details.
       </p>
       <h2>Your choices</h2>
       <ul>
