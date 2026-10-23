@@ -88,7 +88,7 @@ With no connection you can still open the pages you have opened before and add t
     ],
     answer: `**Take it with you** any time: open **Account**, **Your data**, then **Download everything**. You get a zip with all your clients, entries and invoices as spreadsheets and plain CSV files.
 
-**Delete account** is on **Account**, **Profile**. If you sign in with a password you confirm with it; if you sign in with Google or GitHub you type your email address. Your clients, projects, entries, invoices, links and tokens are removed **straight away**, and this cannot be undone. Backups held by the hosting provider age out within 30 days.
+**Delete account** is on **Account**, **Profile**. If you sign in with a password you confirm with it; if you sign in with Google or GitHub you type your email address. Then slide the handle all the way to the right (or press End on the keyboard); let go early and nothing happens. Your clients, projects, entries, invoices, links and tokens are removed **straight away**, and this cannot be undone. Backups held by the hosting provider age out within 30 days.
 
 The code is open source (MIT), so you can also run your own copy.`,
   },
