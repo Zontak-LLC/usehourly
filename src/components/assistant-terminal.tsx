@@ -88,7 +88,7 @@ export function AssistantTerminal() {
       ref={ref}
       role="img"
       aria-label="A terminal showing Claude Code with UseHourly connected. It is asked to make last week's timesheet for every client. It builds three, finds a missing Tuesday for one client and asks about it. After a yes it logs two hours and creates three private sign-off links."
-      className="overflow-hidden rounded-2xl border border-[#262A33] bg-[#0b0c10] shadow-[0_30px_90px_-40px_#F5A524]"
+      className="overflow-hidden rounded-2xl border border-[#262A33] bg-[#0b0c10] shadow-[0_30px_90px_-40px_#F5A524] dark:shadow-[0_30px_90px_-30px_rgb(0_0_0/0.9)]"
     >
       <div aria-hidden className="flex items-center gap-1.5 border-[#1c1e26] border-b px-4 py-3">
         <i className="size-2.5 rounded-full bg-[#FF5F57]" />

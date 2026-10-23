@@ -196,7 +196,7 @@ describe("the offline service worker", () => {
     expect(expired.store.get("hourly-pages-v1")?.size ?? 0).toBe(0);
   });
 
-  it("keeps the public guide in its own cache, whole, so it reads offline and survives signing out", async () => {
+  it("keeps the public Help page in its own cache once opened, so it reads offline and survives signing out", async () => {
     let online = true;
     const w = loadWorker(async (req) => {
       if (!online) throw new TypeError("Failed to fetch");
@@ -204,35 +204,35 @@ describe("the offline service worker", () => {
     });
     await w.waitUntil("install");
 
-    // opening a guide page keeps it, in the guide's cache and not among the person's own pages
-    await w.request(page("/help/offline"));
-    expect([...(w.store.get("hourly-guide-v1")?.keys() ?? [])]).toEqual([`${ORIGIN}/help/offline`]);
+    // opening the Help page keeps it, in its own cache and not among the person's own pages
+    await w.request(page("/help"));
+    expect([...(w.store.get("hourly-help-v2")?.keys() ?? [])]).toEqual([`${ORIGIN}/help`]);
     expect(w.store.get("hourly-pages-v1")?.size ?? 0).toBe(0);
 
-    // the app's own once-only fetch of every guide page (a plain request carrying x-keep) keeps those too
-    for (const path of ["/help", "/help/faq", "/help/rounding"]) await w.request({ url: path, keep: true });
-    expect(w.store.get("hourly-guide-v1")?.size).toBe(4);
+    // nothing fetches the rest in the background any more: a plain request carrying the old x-keep header is left alone
+    expect(await w.request({ url: "/help/rounding", keep: true })).toBeUndefined();
+    expect(w.store.get("hourly-help-v2")?.size).toBe(1);
 
-    // a page the person never opened still opens offline, and a topic opened with a query falls back to the plain page
+    // offline, the kept page opens, also with a search or an answer in its address
     online = false;
-    expect(await text(await w.request(page("/help/rounding")))).toBe("<main>guide /help/rounding</main>");
-    expect(await text(await w.request(page("/help/faq")))).toBe("<main>guide /help/faq</main>");
+    expect(await text(await w.request(page("/help")))).toBe("<main>guide /help</main>");
     expect(await text(await w.request(page("/help?q=round")))).toBe("<main>guide /help</main>");
-    // a topic that was never kept does not borrow another page: the offline page shows
+    expect(await text(await w.request(page("/help?a=offline")))).toBe("<main>guide /help</main>");
+    // an address that was never kept does not borrow another page: the offline page shows
     expect(await text(await w.request(page("/help/budgets")))).toBe("the offline page");
 
     // signing out clears the person's pages but not the public guide
     w.store.set("hourly-pages-v1", new Map([[`${ORIGIN}/dashboard/today`, basic("private")]]));
     await w.waitUntil("message", { data: "clear" });
-    expect([...w.store.keys()].sort()).toEqual(["hourly-guide-v1", "hourly-static-v1"]);
+    expect([...w.store.keys()].sort()).toEqual(["hourly-help-v2", "hourly-static-v1"]);
 
-    // an old version of the guide cache is removed on activation, the current one stays
-    w.store.set("hourly-guide-v0", new Map());
+    // the old guide's cache (its topic pages) is removed on activation, the current one stays
+    w.store.set("hourly-guide-v1", new Map([[`${ORIGIN}/help/making-an-invoice`, basic("the old guide")]]));
     await w.waitUntil("activate");
-    expect([...w.store.keys()].sort()).toEqual(["hourly-guide-v1", "hourly-static-v1"]);
+    expect([...w.store.keys()].sort()).toEqual(["hourly-help-v2", "hourly-static-v1"]);
   });
 
-  it("leaves the guide's background requests alone: only a page opening or the app's own keep-fetch is answered", async () => {
+  it("leaves the Help page's background requests alone: only a page opening is answered", async () => {
     const w = loadWorker(async () => basic("x"));
     expect(await w.request({ url: "/help/rounding?_rsc=abc", mode: "cors" })).toBeUndefined();
     expect(await w.request({ url: "/help", mode: "navigate", method: "POST" })).toBeUndefined();

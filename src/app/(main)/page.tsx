@@ -4,6 +4,7 @@ import { ArrowRight, Bot, Code2, Heart, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
 import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
+import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos";
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingShowcase } from "@/components/landing-showcase";
@@ -21,7 +22,7 @@ const JSON_LD = {
   name: "UseHourly",
   url: "https://usehourly.app",
   description:
-    "The free time tracker you don't have to learn: type 1.5, press Enter, done. Timesheets, invoices and a tax summary from your hours, and a built-in MCP server so Claude, ChatGPT, Cursor and others can log time for you.",
+    "Intuitive time tracking. Free. Type 1.5, press Enter, done. Timesheets, invoices and a tax summary from your hours, and a built-in MCP server so Claude, ChatGPT, Cursor and others can log time for you.",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -38,7 +39,7 @@ const JSON_LD = {
 };
 
 export const metadata: Metadata = {
-  title: "UseHourly: the free time tracker you don't have to learn",
+  title: "UseHourly: intuitive time tracking. Free.",
   description:
     "A free, simple time tracker. Type 1.5, press Enter, done. Your hours become timesheets, invoices and a tax summary, and your AI assistant (Claude, ChatGPT, Cursor) can log time for you. No paywall, no ads.",
   alternates: { canonical: "/" },
@@ -49,10 +50,13 @@ const secondary =
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-dvh overflow-x-clip bg-background text-foreground dark:bg-[linear-gradient(180deg,#1c1040_0%,#140f33_28%,#0f1a38_62%,#1d1040_100%)]">
-      {/* The aurora: three soft colour glows (amber, violet, mint) behind the top of the page, the same palette as the Zontak LLC site. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[44rem] overflow-hidden">
-        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#F5A524]/25 blur-3xl motion-safe:animate-[drift_14s_ease-in-out_infinite]" />
+    <div className="relative isolate min-h-dvh overflow-x-clip bg-background text-foreground dark:bg-[linear-gradient(180deg,#14161d_0%,#101218_45%,#0c0d11_100%)]">
+      {/* The aurora: three soft colour glows (amber, violet, mint) behind the top of the page, the same palette as the Zontak LLC site.
+          -z-10 inside the isolated page keeps it UNDER the text: drawn over it, the amber glow turned the black headline brown.
+          Dark mode is the app's own ink, a shade darker down the page; the amber glow is off there because dimmed amber
+          on ink reads brown. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem] overflow-hidden">
+        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#F5A524]/25 blur-3xl motion-safe:animate-[drift_14s_ease-in-out_infinite] dark:hidden" />
         <div className="absolute -top-24 right-[6%] size-[30rem] rounded-full bg-[#8A6CFF]/25 blur-3xl motion-safe:animate-[drift_18s_ease-in-out_infinite_reverse]" />
         <div className="absolute top-40 left-[42%] size-[24rem] rounded-full bg-[#3DDC97]/15 blur-3xl motion-safe:animate-[drift_22s_ease-in-out_infinite]" />
       </div>
@@ -69,7 +73,7 @@ export default function LandingPage() {
             <ThemeSwitcher />
           </span>
           <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
-            Guide
+            Help
           </Link>
           <Link
             href="/auth/v2/login"
@@ -94,13 +98,10 @@ export default function LandingPage() {
                 <Bot className="size-4" aria-hidden />
                 Free, open source, built for AI assistants
               </p>
-              {/* The headline (chosen 2026-10-23): what it is ("free time tracker", the words people search for) and what
-                  makes it different (you do not have to learn it), proven at once by the line under it. */}
+              {/* The headline (chosen by the owner 2026-10-23): what it is and what makes it different, then the price.
+                  The line under it proves "intuitive" at once. */}
               <h1 className="mt-5 max-w-4xl text-balance font-extrabold text-5xl leading-[1.02] tracking-tight md:text-7xl">
-                The free time tracker{" "}
-                <span className="bg-gradient-to-r from-[#F5A524] via-[#ff7a45] to-[#8A6CFF] bg-clip-text text-transparent">
-                  you don&rsquo;t have to learn.
-                </span>
+                Intuitive time tracking. <span className="text-amber">Free.</span>
               </h1>
               <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground md:text-xl">
                 Type <strong className="text-foreground">1.5</strong>, press Enter, done. Your hours become timesheets,
@@ -123,21 +124,52 @@ export default function LandingPage() {
               </p>
             </div>
             <div id="ai-assistants" className="w-full max-w-4xl scroll-mt-6">
-              <h2 className="sr-only">Ask your AI assistant. It&rsquo;s in your timesheet.</h2>
+              {/* The AI connection is a main reason to pick UseHourly, so it is said in words, not only shown. */}
+              <div className="mx-auto mb-8 flex max-w-2xl flex-col items-center gap-3 text-center">
+                <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.3em]">
+                  Built-in MCP server
+                </p>
+                <h2 className="text-balance font-display font-extrabold text-3xl tracking-tight md:text-5xl">
+                  Or just ask your AI assistant.
+                </h2>
+                <p className="text-balance text-lg text-muted-foreground">
+                  Connect Claude, ChatGPT or Cursor and say what you need: it logs your time, finds the gaps, builds
+                  timesheets and prepares invoices. It asks you before it shares or bills anything.
+                </p>
+                <ul className="mt-1 flex flex-wrap items-center justify-center gap-2" aria-label="Works with">
+                  {[
+                    { name: "Claude", Mark: ClaudeMark },
+                    { name: "ChatGPT", Mark: OpenAIMark },
+                    { name: "Cursor", Mark: CursorMark },
+                    { name: "Claude Code", Mark: ClaudeMark },
+                  ].map(({ name, Mark }) => (
+                    <li
+                      key={name}
+                      className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 font-medium text-sm"
+                    >
+                      <Mark aria-hidden className="size-4" />
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <AssistantTerminal />
               <div className="mt-6 flex flex-col items-center gap-3 text-center">
                 <code className="max-w-full break-all rounded-lg bg-muted px-3 py-2 text-foreground text-sm">
                   claude mcp add --transport http usehourly https://usehourly.app/api/mcp
                 </code>
-                <Link href="/help/ai-assistants" className="text-muted-foreground text-sm underline underline-offset-4">
-                  Works with Claude, ChatGPT, Cursor and other MCP assistants. Setup guide
+                <Link
+                  href="/help?a=connect-assistant"
+                  className="text-muted-foreground text-sm underline underline-offset-4"
+                >
+                  Connect yours in a minute: the steps for each assistant
                 </Link>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="border-t bg-gradient-to-b from-[#8A6CFF]/10 via-transparent to-[#3DDC97]/10">
+        <section className="border-t bg-gradient-to-b from-[#8A6CFF]/10 via-transparent to-[#3DDC97]/10 dark:border-white/5 dark:bg-none">
           <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
             <Reveal>
               <h2 className="max-w-2xl font-extrabold text-3xl tracking-tight md:text-5xl">
@@ -181,17 +213,13 @@ export default function LandingPage() {
               id="promises-heading"
               className="mt-3 text-center font-display font-extrabold text-4xl tracking-tight md:text-6xl"
             >
-              Free. Open.{" "}
-              <span className="bg-gradient-to-r from-[#ff5d8f] via-[#F5A524] to-[#3DDC97] bg-clip-text text-transparent">
-                Honest.
-              </span>
+              Free. Open. <span className="text-amber">Honest.</span>
             </h2>
           </Reveal>
           <ul className="mt-12 grid gap-5 md:grid-cols-3">
             {[
               {
                 Icon: Heart,
-                color: "#ff5d8f",
                 title: "Free, really",
                 body: "No paywall, no ads. The owner pays for the servers. If it saves you time, you can chip in.",
                 action: donateUrl() ? (
@@ -199,7 +227,7 @@ export default function LandingPage() {
                     href={donateUrl() ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#ff5d8f] px-4 py-2 font-semibold text-[#1b0610] text-sm transition-transform hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-full bg-amber px-4 py-2 font-semibold text-[#12151b] text-sm transition-transform hover:-translate-y-0.5"
                   >
                     <Heart className="size-4" aria-hidden /> Support on {DONATE_PLATFORM}
                   </a>
@@ -207,7 +235,6 @@ export default function LandingPage() {
               },
               {
                 Icon: Code2,
-                color: "#3DDC97",
                 title: "Open source",
                 body: "MIT licensed. Read every line on GitHub, report a bug, or run your own copy.",
                 action: (
@@ -215,7 +242,7 @@ export default function LandingPage() {
                     href="https://github.com/Zontak-LLC/usehourly"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#3DDC97] px-4 py-2 font-semibold text-[#04170e] text-sm transition-transform hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 font-semibold text-foreground text-sm transition-transform hover:-translate-y-0.5"
                   >
                     <Code2 className="size-4" aria-hidden /> View the code
                   </a>
@@ -223,12 +250,11 @@ export default function LandingPage() {
               },
               {
                 Icon: Sparkles,
-                color: "#8A6CFF",
                 title: "Proudly created with AI",
                 body: "One person set the direction and judged every screen. An AI assistant wrote the code, the tests and the words, and checked its own work.",
                 action: null,
               },
-            ].map(({ Icon, color, title, body, action }, n) => (
+            ].map(({ Icon, title, body, action }, n) => (
               <Reveal
                 as="li"
                 delay={n * 120}
@@ -237,13 +263,7 @@ export default function LandingPage() {
               >
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full opacity-30 blur-3xl transition-opacity duration-500 group-hover/promise:opacity-60"
-                  style={{ backgroundColor: color }}
-                />
-                <span
-                  aria-hidden
-                  className="relative grid size-12 place-items-center rounded-2xl"
-                  style={{ backgroundColor: `${color}26`, color }}
+                  className="relative grid size-12 place-items-center rounded-2xl bg-foreground/[0.06] text-foreground"
                 >
                   <Icon className="size-6" />
                 </span>
@@ -257,29 +277,29 @@ export default function LandingPage() {
         <Supporters />
 
         <section aria-labelledby="start-heading" className="mx-auto max-w-6xl px-6 pt-8 pb-20 md:pb-28">
-          <Reveal className="relative isolate overflow-hidden rounded-[2.5rem] bg-[length:300%_100%] bg-[linear-gradient(120deg,#F5A524,#ff7a45,#8A6CFF,#3DDC97,#F5A524)] px-6 py-16 text-center text-[#0B0C10] shadow-[0_30px_80px_-30px_#8A6CFF] motion-safe:animate-[hue-shift_16s_ease-in-out_infinite] md:py-24">
+          <Reveal className="relative isolate overflow-hidden rounded-[2.5rem] bg-[#12151b] px-6 py-16 text-center text-white shadow-[0_30px_80px_-30px_rgb(18_21_27/0.6)] md:py-24 dark:bg-card dark:ring-1 dark:ring-foreground/10">
             <p className="font-mono text-xs uppercase tracking-[0.3em] opacity-70">Ready when you are</p>
             <h2 id="start-heading" className="mt-3 font-display font-extrabold text-5xl tracking-tight md:text-7xl">
               Start tracking today.
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-balance text-[#0B0C10]/80 text-lg">
+            <p className="mx-auto mt-4 max-w-md text-balance text-lg text-white/75 dark:text-muted-foreground">
               It takes a minute to set up, and seconds a day after that.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3">
               <Link
                 href="/auth/v2/register"
-                className="group/cta relative inline-flex h-16 items-center gap-4 overflow-hidden rounded-full bg-white py-2 pr-3 pl-8 font-bold font-display text-[#0B0C10] text-xl shadow-[0_18px_40px_-14px_rgb(60_20_0/0.55),0_0_0_6px_rgb(255_255_255/0.28)] transition-all duration-300 hover:shadow-[0_24px_50px_-14px_rgb(60_20_0/0.6),0_0_0_10px_rgb(255_255_255/0.32)] motion-safe:active:scale-[0.98] motion-safe:hover:-translate-y-1"
+                className="group/cta relative inline-flex h-16 items-center gap-4 overflow-hidden rounded-full bg-amber py-2 pr-3 pl-8 font-bold font-display text-[#12151b] text-xl shadow-[0_0_0_6px_rgb(255_255_255/0.08)] transition-all duration-300 hover:shadow-[0_0_0_10px_rgb(255_255_255/0.12)] motion-safe:active:scale-[0.98] motion-safe:hover:-translate-y-1"
               >
                 Create a free account
-                <span className="grid size-12 place-items-center rounded-full bg-[#0B0C10] text-[#F5A524] transition-transform duration-300 group-hover/cta:translate-x-1 group-hover/cta:rotate-[-12deg]">
+                <span className="grid size-12 place-items-center rounded-full bg-[#12151b] text-amber transition-transform duration-300 group-hover/cta:translate-x-1 group-hover/cta:rotate-[-12deg]">
                   <ArrowRight className="size-6" aria-hidden />
                 </span>
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-[#F5A524]/40 to-transparent opacity-0 transition-all duration-700 group-hover/cta:left-full group-hover/cta:opacity-100"
+                  className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 transition-all duration-700 group-hover/cta:left-full group-hover/cta:opacity-100"
                 />
               </Link>
-              <TryDemoButton className="inline-flex items-center rounded-full border border-white/50 bg-white/20 px-5 py-2 font-semibold text-[#0B0C10] text-sm backdrop-blur transition-colors hover:bg-white/35">
+              <TryDemoButton className="inline-flex items-center rounded-full border border-white/25 px-5 py-2 font-semibold text-sm text-white transition-colors hover:bg-white/10 dark:border-foreground/20 dark:text-foreground dark:hover:bg-muted">
                 or try the demo first, no sign-up
               </TryDemoButton>
             </div>
@@ -311,6 +331,9 @@ export default function LandingPage() {
           >
             Report a bug
           </a>
+          <Link href="/help" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
+            Help
+          </Link>
           <Link href="/privacy" className="inline-block whitespace-nowrap py-2 hover:text-foreground">
             Privacy
           </Link>

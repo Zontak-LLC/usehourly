@@ -165,9 +165,10 @@ export function YearArt() {
           ["Q4", 78],
         ].map(([q, h], i) => (
           <div key={q} className="flex flex-col items-center gap-1">
+            {/* the latest quarter in amber, the rest soft grey (a faded coral read as brown on the dark page) */}
             <span
-              className="w-7 rounded-t-md"
-              style={{ height: Number(h), backgroundColor: i === 3 ? AMBER : CORAL, opacity: i === 3 ? 1 : 0.55 }}
+              className={i === 3 ? "w-7 rounded-t-md" : "w-7 rounded-t-md bg-foreground/20"}
+              style={{ height: Number(h), ...(i === 3 ? { backgroundColor: AMBER } : {}) }}
             />
             <span className="text-[10px] text-muted-foreground">{q}</span>
           </div>

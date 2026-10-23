@@ -38,7 +38,7 @@ test("the dark-mode choice lives in the gear menu, not as a second button in the
   await expect(menu.getByText("Theme Mode")).toBeVisible();
   await expect(menu.getByRole("radio", { name: "Toggle dark" })).toBeVisible();
 
-  // a signed-out visitor has no gear, so the guide keeps the quick switch for them
+  // a signed-out visitor has no gear, so Help keeps the quick switch for them
   const visitor = await page
     .context()
     .browser()

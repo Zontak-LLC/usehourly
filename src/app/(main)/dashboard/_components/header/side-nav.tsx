@@ -14,7 +14,7 @@ const GROUPS = [
   { title: "Track", ids: ["today", "week", "month"] },
   { title: "Bill", ids: ["invoices", "report"] },
   { title: "Manage", ids: ["clients", "team"] },
-  { title: "Settings", ids: ["account", "guide", "insights"] },
+  { title: "Settings", ids: ["account", "help", "insights"] },
 ] as const;
 
 function Item({ item, active }: { item: NavLink; active: boolean }) {

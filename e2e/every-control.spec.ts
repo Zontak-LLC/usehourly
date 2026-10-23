@@ -25,8 +25,6 @@ const PAGES = [
   "/dashboard/account#ai",
   "/dashboard/team",
   "/help",
-  "/help/faq",
-  "/help/rounding",
 ].filter((p) => !process.env.SWEEP_PAGES || p.includes(process.env.SWEEP_PAGES));
 
 /** Never clicked: they end the session or the account. Everything else is clicked, destructive ones included (the data is throwaway). */
