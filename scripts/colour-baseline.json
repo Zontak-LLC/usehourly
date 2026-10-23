@@ -25,7 +25,6 @@
   "src/components/ui/button.tsx": 1,
   "src/lib/demo.ts": 3,
   "src/lib/email-template.ts": 11,
-  "src/lib/line-color.ts": 1,
   "src/lib/logo.ts": 2,
   "src/server/mcp/tools/client-project-tools.ts": 1
 }

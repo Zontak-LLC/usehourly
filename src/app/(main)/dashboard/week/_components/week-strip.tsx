@@ -3,19 +3,15 @@
 import { toggleProjectFilter } from "@/components/project-filter";
 import { formatDuration } from "@/lib/duration";
 import { ROW_FIGURE } from "@/lib/figures";
-import { PALETTE } from "@/lib/palette";
 import type { buildSheet } from "@/lib/timesheet";
 
 export const longDayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
 type Sheet = ReturnType<typeof buildSheet>;
 
-const WEEK_GOAL_MINUTES = 40 * 60;
-
 /**
- * The week at a glance: the hours against a 40-hour week as one progress line (it replaced the clock on 2026-10-23: the
- * clock told the time of day and the date of today, not of the week shown), then one row per project; a row filters
- * the whole page when pressed.
+ * The week at a glance: the week's hours (2026-10-23, issue 218: no progress line against 40 hours, a goal nobody set), then
+ * one row per project; a row filters the whole page when pressed.
  */
 export function WeekTotalCard({
   sheet,
@@ -24,7 +20,7 @@ export function WeekTotalCard({
   onProjectId,
 }: {
   sheet: Sheet;
-  /** The whole week, whatever project is picked: the line measures the week, the rows below follow the filter. */
+  /** The whole week, whatever project is picked: the total is the week's, the rows below follow the filter. */
   weekMinutes: number;
   projectId: string;
   onProjectId: (id: string) => void;
@@ -36,28 +32,10 @@ export function WeekTotalCard({
       data-headerless="a summary list beside the day"
       className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
     >
-      <div className="px-4 pt-4">
-        <p className="text-sm">
-          <span className="font-bold font-display text-2xl tabular-nums">{formatDuration(weekMinutes)}</span>{" "}
-          <span className="text-muted-foreground">of {formatDuration(WEEK_GOAL_MINUTES)} this week</span>
-        </p>
-        <div
-          role="progressbar"
-          aria-label="Hours this week, out of 40"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(Math.min(1, weekMinutes / WEEK_GOAL_MINUTES) * 100)}
-          className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
-        >
-          <div
-            className="h-full rounded-full transition-[width] duration-700"
-            style={{
-              width: `${Math.min(1, weekMinutes / WEEK_GOAL_MINUTES) * 100}%`,
-              background: `linear-gradient(90deg, ${PALETTE.brandBlend.join(", ")})`,
-            }}
-          />
-        </div>
-      </div>
+      <p className="px-4 pt-4 text-sm">
+        <span className="font-bold font-display text-2xl tabular-nums">{formatDuration(weekMinutes)}</span>{" "}
+        <span className="text-muted-foreground">this week</span>
+      </p>
       <h2 className="px-4 pt-4 pb-2 font-mono font-normal text-[11px] text-muted-foreground uppercase tracking-widest">
         By project · {formatDuration(sheet.total)}
       </h2>

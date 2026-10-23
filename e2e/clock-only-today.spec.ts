@@ -2,7 +2,7 @@ import { expect, startFreshAccount, test } from "./helpers";
 
 // No clocks in the app (2026-10-23): most people log after the fact, so Today's timer is a slim strip above the add form
 // (only on today's date: a timer runs only today), and Week shows its hours as a progress line.
-test("Today's timer is a slim strip on today only, and Week has a progress line instead of a clock", async ({
+test("Today's timer is a slim strip on today only, and Week shows its hours with no clock and no goal", async ({
   page,
 }) => {
   await startFreshAccount(page, "Acme");
@@ -25,16 +25,14 @@ test("Today's timer is a slim strip on today only, and Week has a progress line 
     await expect(timer).toBeVisible();
   });
 
-  await test.step("Week: no clock, the week's hours against 40 as a progress line", async () => {
+  await test.step("Week: no clock and no goal, just the week's hours (#218: 40 hours is a goal nobody set)", async () => {
     await page.getByRole("button", { name: "1 hour", exact: true }).click();
     await page.getByRole("button", { name: /^Log time/ }).click();
     await expect(page.getByRole("navigation", { name: "Days" })).toContainText("1:00 this day");
     await page.goto("/dashboard/week");
-    await expect(page.getByRole("region", { name: "This week" })).toContainText("1:00 of 40:00 this week");
-    await expect(page.getByRole("progressbar", { name: "Hours this week, out of 40" })).toHaveAttribute(
-      "aria-valuenow",
-      "3",
-    );
+    await expect(page.getByRole("region", { name: "This week" })).toContainText("1:00 this week");
+    await expect(page.getByRole("region", { name: "This week" })).not.toContainText("40:00");
+    await expect(page.getByRole("progressbar", { name: /Hours this week/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Timer" })).toHaveCount(0);
   });
 });

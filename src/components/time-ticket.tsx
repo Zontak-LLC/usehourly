@@ -1,156 +1,71 @@
 "use client";
 
-import { useRef } from "react";
-
-import { Check, RotateCcw, Trash2 } from "lucide-react";
+import { CircleCheck, RotateCcw, Undo2 } from "lucide-react";
 
 import { MAX_MINUTES, MIN_MINUTES, NUDGE, type TodayTimer } from "@/components/timer-control";
 import { formatDuration } from "@/lib/duration";
 
-const dayLine = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
-
-const reduceMotion = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/**
- * Fly the ticket into Today's timesheet: a copy of it travels to the entry's row and fades into it, and the row glows
- * once so the eye follows. Without the row on screen (or with reduced motion) it simply does nothing.
- */
-function flyToEntry(ticket: HTMLElement, entryId: string) {
-  const target = document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(entryId)}"]`);
-  if (!target || reduceMotion()) return;
-  const from = ticket.getBoundingClientRect();
-  const to = target.getBoundingClientRect();
-  const ghost = ticket.cloneNode(true) as HTMLElement;
-  Object.assign(ghost.style, {
-    position: "fixed",
-    left: `${from.left}px`,
-    top: `${from.top}px`,
-    width: `${from.width}px`,
-    height: `${from.height}px`,
-    margin: "0",
-    zIndex: "60",
-    pointerEvents: "none",
-    transformOrigin: "top left",
-  });
-  ghost.removeAttribute("id");
-  ghost.setAttribute("aria-hidden", "true");
-  document.body.appendChild(ghost);
-  const dx = to.left - from.left;
-  const dy = to.top - from.top;
-  const sx = to.width / from.width;
-  const sy = Math.max(0.2, to.height / from.height);
-  const flight = ghost.animate(
-    [
-      { transform: "translate(0, 0) scale(1) rotate(-1.5deg)", opacity: 1 },
-      { transform: `translate(${dx * 0.55}px, ${dy * 0.35 - 40}px) scale(${(1 + sx) / 2}) rotate(2deg)`, opacity: 1 },
-      { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy}) rotate(0deg)`, opacity: 0.2 },
-    ],
-    { duration: 650, easing: "cubic-bezier(.5,0,.3,1)" },
-  );
-  flight.onfinish = () => {
-    ghost.remove();
-    target.animate(
-      [{ backgroundColor: "color-mix(in oklab, var(--amber) 28%, transparent)" }, { backgroundColor: "transparent" }],
-      { duration: 1400, easing: "ease-out" },
-    );
-  };
-}
+const NUDGE_BUTTON =
+  "grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40";
+const LINK_BUTTON = "inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm hover:bg-muted";
 
 /**
- * After Stop, the timer strip shows a time ticket (2026-10-23; plain since the watch went the same day): it shows exactly the entry it becomes (project and client, what you worked on, the day, the time with − / + to correct
- * it). "Add to timesheet" files it: the ticket flies into Today's timesheet and lands as the new row. Discard drops it,
- * Resume slides it back and the stopwatch carries on.
+ * After Stop (issue 218, 2026-10-23): the time is ALREADY an entry in the timesheet, so the strip says so ("Saved 0:42") instead
+ * of asking to "Add to timesheet". Beside it: - / + 5 min to correct it, Undo (the entry goes away, as if the timer never
+ * ran), Resume (the stopwatch carries on with the same entry) and Done (the strip goes back to Start timer).
  */
 export function TimeTicket({ timer }: { timer: TodayTimer }) {
-  const ref = useRef<HTMLFieldSetElement>(null);
   const s = timer.stopped;
   if (!s) return null;
   const minutes = s.minutes;
 
-  function leave(keyframes: Keyframe[], then: () => void) {
-    const el = ref.current;
-    if (!el || reduceMotion()) return then();
-    el.animate(keyframes, { duration: 260, easing: "ease-in", fill: "forwards" }).onfinish = then;
-  }
-
   return (
-    <fieldset
-      ref={ref}
-      className="m-0 w-full min-w-0 border-0 p-0 motion-safe:animate-[ticket-print_.45s_cubic-bezier(.2,.9,.3,1)]"
-    >
-      <legend className="sr-only">Time ticket: add this time to your timesheet, resume the timer or discard it</legend>
-      <div className="relative">
-        <div className="flex items-baseline justify-between font-mono text-[9px] text-muted-foreground uppercase tracking-[0.25em]">
-          <span>Time ticket</span>
-          <span>{dayLine.format(new Date())}</span>
-        </div>
-        <p className="mt-2 truncate font-semibold text-sm">{s.where}</p>
-        <p className="truncate text-muted-foreground text-xs">{s.note?.trim() || "No description"}</p>
-
-        <div className="mt-3 flex items-center justify-between border-foreground/15 border-y border-dashed py-2">
+    <fieldset className="m-0 w-full min-w-0 border-0 p-0">
+      <legend className="sr-only">Saved time: correct it, undo it or resume the timer</legend>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <p className="flex min-w-0 flex-1 basis-48 items-center gap-2" aria-live="polite">
+          <CircleCheck className="size-4 shrink-0" aria-hidden />
+          <span className="min-w-0">
+            <span className="font-semibold">Saved {formatDuration(minutes)}</span>
+            <span className="text-muted-foreground"> · {s.where}</span>
+          </span>
+        </p>
+        <div className="flex items-center gap-2">
           <button
             type="button"
             aria-label="Take off 5 min"
             disabled={minutes <= MIN_MINUTES}
             onClick={() => timer.onNudge(-NUDGE)}
-            className="grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40"
+            className={NUDGE_BUTTON}
           >
             −
           </button>
-          <span className="font-mono font-semibold text-3xl tabular-nums tracking-tight">
-            {formatDuration(minutes)}
-          </span>
           <button
             type="button"
             aria-label="Add 5 min"
             disabled={minutes >= MAX_MINUTES}
             onClick={() => timer.onNudge(NUDGE)}
-            className="grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40"
+            className={NUDGE_BUTTON}
           >
             +
           </button>
         </div>
-
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1">
         <button
           type="button"
-          onClick={() => {
-            // Fly only when it is really filed (the buttons are locked for a moment after a stop); the ticket is
-            // still on screen here, because React redraws after this handler.
-            if (timer.onKeep() && ref.current) flyToEntry(ref.current, s.id);
-          }}
-          className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-foreground font-semibold text-background text-sm transition-transform active:translate-y-px"
+          onClick={() => void timer.onDiscard()}
+          disabled={timer.discarding}
+          className={LINK_BUTTON}
         >
-          <Check className="size-4" aria-hidden /> Add to timesheet
+          <Undo2 className="size-3.5" aria-hidden /> Undo
         </button>
-        <div className="mt-2 flex justify-between text-xs">
-          <button
-            type="button"
-            onClick={() =>
-              leave(
-                [{ transform: "translateY(0)" }, { transform: "translateY(-24px)", opacity: 0 }],
-                () => void timer.onResume(),
-              )
-            }
-            disabled={timer.resuming}
-            className="inline-flex min-h-9 items-center gap-1.5 px-1 text-muted-foreground hover:text-foreground"
-          >
-            <RotateCcw className="size-3.5" aria-hidden /> Resume timer
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              leave(
-                [{ transform: "translateY(0) rotate(0)" }, { transform: "translateY(30px) rotate(6deg)", opacity: 0 }],
-                () => void timer.onDiscard(),
-              )
-            }
-            disabled={timer.discarding}
-            className="inline-flex min-h-9 items-center gap-1.5 px-1 text-destructive hover:underline"
-          >
-            <Trash2 className="size-3.5" aria-hidden /> Discard time
-          </button>
-        </div>
+        <button type="button" onClick={() => void timer.onResume()} disabled={timer.resuming} className={LINK_BUTTON}>
+          <RotateCcw className="size-3.5" aria-hidden /> Resume timer
+        </button>
+        <button type="button" onClick={() => timer.onKeep()} className={`${LINK_BUTTON} ml-auto font-semibold`}>
+          Done
+        </button>
       </div>
     </fieldset>
   );
