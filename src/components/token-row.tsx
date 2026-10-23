@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound } from "lucide-react";
+import { KeyRound, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,21 +20,24 @@ function when(epoch: number | null): string {
     : "never";
 }
 
-/** One access token as a row: a key icon, its name and fingerprint, what it may do, when it was last used, and Revoke. */
+/**
+ * One access token as a row: a key icon, its name and fingerprint, what it may do, when it was last used, and Delete.
+ * Deleting an active token asks once in the row (anything using it stops working); a revoked or expired one goes at once.
+ */
 export function TokenRow({
   token: t,
   confirming,
   busy,
   onAsk,
   onCancel,
-  onRevoke,
+  onDelete,
 }: {
   token: Token;
   confirming: boolean;
   busy: boolean;
   onAsk: () => void;
   onCancel: () => void;
-  onRevoke: () => void;
+  onDelete: () => void;
 }) {
   const live = t.state === "active";
   return (
@@ -62,21 +65,27 @@ export function TokenRow({
           Last used {when(t.last_used_at)} · {t.expires_at ? `expires ${when(t.expires_at)}` : "never expires"}
         </span>
       </div>
-      {live &&
-        (confirming ? (
-          <div className="flex gap-2">
-            <Button size="sm" variant="destructive" disabled={busy} onClick={onRevoke}>
-              Yes, revoke
-            </Button>
-            <Button size="sm" variant="outline" onClick={onCancel}>
-              Keep it
-            </Button>
-          </div>
-        ) : (
-          <Button size="sm" variant="outline" onClick={onAsk}>
-            Revoke
+      {confirming ? (
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <span className="text-sm">Anything using it stops working right away.</span>
+          <Button size="sm" variant="destructive" disabled={busy} onClick={onDelete}>
+            Yes, delete
           </Button>
-        ))}
+          <Button size="sm" variant="outline" onClick={onCancel}>
+            Keep it
+          </Button>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          aria-label={`Delete ${t.name}`}
+          onClick={live ? onAsk : onDelete}
+        >
+          <Trash2 aria-hidden /> Delete
+        </Button>
+      )}
     </li>
   );
 }

@@ -17,12 +17,12 @@ import { paginate } from "@/lib/paginate";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-/** Make, copy and revoke the personal access tokens that let an AI assistant use /api/mcp. */
+/** Make, copy and delete the personal access tokens that let an AI assistant use /api/mcp. */
 export function ApiTokensCard() {
   const utils = trpc.useUtils();
   const tokens = trpc.account.listApiTokens.useQuery();
   const create = trpc.account.createApiToken.useMutation();
-  const revoke = trpc.account.revokeApiToken.useMutation();
+  const remove = trpc.account.deleteApiToken.useMutation();
   const [fresh, setFresh] = useState<{ token: string; name: string } | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   // A long list is paged like the invoices: 3 to a page on a phone, 10 on a wide screen.
@@ -44,21 +44,21 @@ export function ApiTokensCard() {
     }
   }
 
-  async function stop(id: string) {
+  async function drop(id: string, live: boolean) {
     try {
-      await revoke.mutateAsync({ id });
+      await remove.mutateAsync({ id });
       setConfirming(null);
       await utils.account.listApiTokens.invalidate();
-      toast.success("Token revoked. It stops working right away.");
+      toast.success(live ? "Token deleted. Anything using it stopped working." : "Token deleted.");
     } catch (err) {
-      toastError(err, "Couldn't revoke the token.");
+      toastError(err, "Couldn't delete the token.");
     }
   }
 
   return (
     <SectionCard
       title="API tokens"
-      description="An API token (also called an API key or access token) lets an app or a script sign in as you. Make one, copy it once, and revoke it whenever you like."
+      description="An API token (also called an API key or access token) lets an app or a script sign in as you. Make one, copy it once, and delete it whenever you like."
     >
       <TokenForm busy={create.isPending} onMake={make} />
 
@@ -84,10 +84,10 @@ export function ApiTokensCard() {
               key={t.id}
               token={t}
               confirming={confirming === t.id}
-              busy={revoke.isPending}
+              busy={remove.isPending}
               onAsk={() => setConfirming(t.id)}
               onCancel={() => setConfirming(null)}
-              onRevoke={() => stop(t.id)}
+              onDelete={() => drop(t.id, t.state === "active")}
             />
           ))}
         </ul>

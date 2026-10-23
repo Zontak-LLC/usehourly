@@ -92,4 +92,14 @@ export const tokenProcedures = {
     if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Token not found." });
     return { ok: true };
   }),
+
+  // Deleting is the one action the token list offers: the row goes, so the token stops working at once (the MCP check
+  // finds no row for its hash) and the list keeps only tokens worth keeping. Only the caller's own tokens.
+  deleteApiToken: protectedProcedure
+    .input(z.object({ id: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      const { count } = await ctx.prisma.apiToken.deleteMany({ where: { id: input.id, user_id: ctx.userId } });
+      if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Token not found." });
+      return { ok: true };
+    }),
 };
