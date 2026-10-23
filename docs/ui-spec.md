@@ -21,7 +21,7 @@ Yellow is small on purpose. Colour is for dials, the main button, "now", and mon
 | Colour | Where | Means |
 |---|---|---|
 | **Amber** `PALETTE.accent` | the one solid button (Log time, New client...), today (week bar, Month day, Today pill), the open Account tab, the latest month on the Year chart, focus | "act here" or "now" |
-| **Brand blend** (amber, coral, pink, violet) `PALETTE.brandBlend` | the goal meters, Week's "This week" line, Today's timesheet line, the Month "This month" bar, the home page | time and progress |
+| **Brand blend** (amber, coral, pink, violet) `PALETTE.brandBlend` | the goal meters, the time field's halo after a quick-time chip (30 min amber, 1 hour coral, 2 hours violet), Week's "This week" line, Today's timesheet line, the Month "This month" bar, the home page | time and progress |
 | **Teal** `PALETTE.money.paid` | Invoices: paid ring, bar, Paid pill | money received |
 | **Violet** `PALETTE.money.waiting` | Invoices: waiting part of the bar, Unpaid pill | money expected |
 | **Coral** `PALETTE.money.late` | Invoices: late, the overdue row stripe | money overdue |

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { ClockPlus, Plus } from "lucide-react";
+import { ClockPlus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -10,6 +10,7 @@ import { ClientCurrency } from "@/components/currency-provider";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
+import { flyIn, glowEntry, haloColour, spin, useRoll } from "@/components/time-reward";
 import { TIMER_STARTED_EVENT } from "@/components/timer-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,11 @@ export function QuickAdd({
   // Tapping the same chip again adds its time again (2 hours, again = 4 hours); typing or another chip starts over.
   const [chipRun, setChipRun] = useState<{ minutes: number; taps: number } | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
+  const logIconRef = useRef<HTMLSpanElement>(null);
+  // The reward for adding time: the field's value and the day total roll up after a chip (decoration only: the real
+  // value is already set, so typing, Enter or a save never waits for it).
+  const fieldRoll = useRoll();
+  const dayRoll = useRoll();
 
   const projects = clients.data?.flatMap((c) => c.projects) ?? [];
   // The month of the day being logged: the budget for the project picked below, if it has one.
@@ -124,6 +130,9 @@ export function QuickAdd({
     // One id for this entry, kept if the send has to be retried, so the server saves it once however many times it arrives.
     const clientId = crypto.randomUUID();
     const finish = () => {
+      fieldRoll.stop();
+      dayRoll.stop();
+      setChipRun(null);
       setDuration("");
       setNote("");
       durationRef.current?.focus();
@@ -138,7 +147,11 @@ export function QuickAdd({
         : null;
     const undo = row ? await optimistic.add(row) : null;
     const typed = { duration, note };
-    if (row) finish();
+    spin(logIconRef.current);
+    if (row) {
+      finish();
+      glowEntry(clientId);
+    }
     try {
       await create.mutateAsync({ projectId, date, minutes: parsed, note, clientId });
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
@@ -219,21 +232,53 @@ export function QuickAdd({
         )}
 
         <div className={`flex flex-col gap-2 ${wc("lg:col-start-2 lg:row-span-2 lg:row-start-1")}`}>
-          <Input
-            id="quick-duration"
-            ref={durationRef}
-            value={duration}
-            onChange={(e) => {
-              setDuration(e.target.value);
-              setChipRun(null);
-            }}
-            placeholder="Time: 1.5, 1:30 or 90m"
-            aria-label="Time to add"
-            aria-invalid={invalid}
-            inputMode="decimal"
-            enterKeyHint="next"
-            className="h-11 text-base"
-          />
+          <div className="relative">
+            <Input
+              id="quick-duration"
+              ref={durationRef}
+              value={duration}
+              onChange={(e) => {
+                setDuration(e.target.value);
+                setChipRun(null);
+                fieldRoll.stop();
+                dayRoll.stop();
+              }}
+              placeholder="Time: 1.5, 1:30 or 90m"
+              aria-label="Time to add"
+              aria-invalid={invalid}
+              inputMode="decimal"
+              enterKeyHint="next"
+              className={`h-11 pr-11 text-base ${fieldRoll.shown !== null ? "text-transparent" : ""}`}
+            />
+            {/* While the value rolls up after a chip, this shows the rolling figure over the (already final) value. */}
+            {fieldRoll.shown !== null && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-[calc(0.75rem+1px)] flex items-center text-base tabular-nums md:text-sm"
+              >
+                {chipText(fieldRoll.shown)}
+              </span>
+            )}
+            {duration && (
+              <button
+                type="button"
+                aria-label="Clear time"
+                title="Clear time"
+                onClick={() => {
+                  setDuration("");
+                  setChipRun(null);
+                  fieldRoll.stop();
+                  dayRoll.stop();
+                  durationRef.current?.focus();
+                }}
+                className="absolute inset-y-0 right-1.5 my-auto grid size-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <span className="grid size-5 place-items-center rounded-full bg-foreground/10">
+                  <X className="size-3" strokeWidth={3} aria-hidden />
+                </span>
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-2">
             {DURATION_CHIPS.map((c) => (
               <Button
@@ -242,12 +287,18 @@ export function QuickAdd({
                 variant={parsed === c.minutes ? "secondary" : "outline"}
                 aria-pressed={parsed === c.minutes}
                 className="h-10 gap-1 rounded-full px-1 text-sm sm:text-base"
-                onClick={() => {
+                onClick={(e) => {
                   // Same chip, field still untouched since the last tap: add the chip's time once more.
                   const again = chipRun?.minutes === c.minutes && parsed === c.minutes * chipRun.taps;
                   const taps = again ? chipRun.taps + 1 : 1;
+                  const from = again ? c.minutes * chipRun.taps : 0;
+                  const to = c.minutes * taps;
                   setChipRun({ minutes: c.minutes, taps });
-                  setDuration(chipText(c.minutes * taps));
+                  setDuration(chipText(to));
+                  fieldRoll.roll(from, to);
+                  dayRoll.roll(dayMinutes + from, dayMinutes + to);
+                  if (durationRef.current)
+                    flyIn(e.currentTarget, durationRef.current, `+${c.short}`, haloColour(c.minutes));
                   durationRef.current?.focus();
                 }}
               >
@@ -263,7 +314,7 @@ export function QuickAdd({
             {invalid
               ? "Try 1.5, 1:30 or 90m"
               : parsed
-                ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayMinutes + (parsed ?? 0))} h`
+                ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayRoll.shown ?? dayMinutes + (parsed ?? 0))} h`
                 : "Type a time or tap one (tap again to add more), then add it."}
           </p>
         </div>
@@ -295,7 +346,10 @@ export function QuickAdd({
           // plain neutral (not brown, not a dashed box), and it comes alive when there is something to add.
           className={`group relative flex h-14 w-full items-center justify-center gap-3 ${wc("lg:col-start-2 lg:row-start-3")} rounded-2xl bg-amber font-display font-extrabold text-[#1b1405] text-lg shadow-[0_10px_28px_-10px_color-mix(in_oklab,var(--amber)_70%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_color-mix(in_oklab,var(--amber)_80%,transparent)] active:translate-y-0 active:scale-[0.99] disabled:translate-y-0 disabled:bg-muted disabled:font-bold disabled:text-foreground/55 disabled:shadow-none`}
         >
-          <span className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/20 group-disabled:text-foreground/70">
+          <span
+            ref={logIconRef}
+            className="grid size-7 place-items-center rounded-full bg-[#1b1405] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/20 group-disabled:text-foreground/70"
+          >
             <ClockPlus className="size-4" strokeWidth={2.5} aria-hidden />
           </span>
           Log time

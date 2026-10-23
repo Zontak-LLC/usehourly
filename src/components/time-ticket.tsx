@@ -81,7 +81,7 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
     >
       <legend className="sr-only">Time ticket: add this time to your timesheet, resume the timer or discard it</legend>
       <div className="relative">
-        <div className="flex items-baseline justify-between font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+        <div className="flex items-baseline justify-between font-mono text-[9px] text-muted-foreground uppercase tracking-[0.25em]">
           <span>Time ticket</span>
           <span>{dayLine.format(new Date())}</span>
         </div>
