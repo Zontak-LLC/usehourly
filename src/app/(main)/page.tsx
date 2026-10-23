@@ -49,11 +49,13 @@ const secondary =
 
 export default function LandingPage() {
   return (
-    <div className="relative isolate min-h-dvh overflow-x-clip bg-background text-foreground dark:bg-[linear-gradient(180deg,#1c1040_0%,#190e3a_45%,#150c31_100%)]">
+    <div className="relative isolate min-h-dvh overflow-x-clip bg-background text-foreground dark:bg-[linear-gradient(180deg,#14161d_0%,#101218_45%,#0c0d11_100%)]">
       {/* The aurora: three soft colour glows (amber, violet, mint) behind the top of the page, the same palette as the Zontak LLC site.
-          -z-10 inside the isolated page keeps it UNDER the text: drawn over it, the amber glow turned the black headline brown. */}
+          -z-10 inside the isolated page keeps it UNDER the text: drawn over it, the amber glow turned the black headline brown.
+          Dark mode is the app's own ink, a shade darker down the page; the amber glow is off there because dimmed amber
+          on ink reads brown. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem] overflow-hidden">
-        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#F5A524]/25 blur-3xl motion-safe:animate-[drift_14s_ease-in-out_infinite]" />
+        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#F5A524]/25 blur-3xl motion-safe:animate-[drift_14s_ease-in-out_infinite] dark:hidden" />
         <div className="absolute -top-24 right-[6%] size-[30rem] rounded-full bg-[#8A6CFF]/25 blur-3xl motion-safe:animate-[drift_18s_ease-in-out_infinite_reverse]" />
         <div className="absolute top-40 left-[42%] size-[24rem] rounded-full bg-[#3DDC97]/15 blur-3xl motion-safe:animate-[drift_22s_ease-in-out_infinite]" />
       </div>
