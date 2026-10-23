@@ -25,7 +25,7 @@ export function DataHub({ account }: { account: AccountMe }) {
   const clients = trpc.clients.list.useQuery();
   const projects = clients.data?.reduce((n, c) => n + c.projects.length, 0);
   return (
-    <div className="flex flex-col gap-5 [&>*:last-child]:grow">
+    <div className="flex flex-col gap-5">
       {clients.data && (
         <p className="text-foreground/75 text-sm">
           <strong className="text-foreground">{clients.data.length}</strong> {word(clients.data.length, "client")} ·{" "}
@@ -34,7 +34,7 @@ export function DataHub({ account }: { account: AccountMe }) {
         </p>
       )}
 
-      <section aria-label="Download everything" className={`grid gap-5 p-5 sm:p-6 ${CARD}`}>
+      <section aria-label="Download everything" className={`grid content-start gap-4 p-5 sm:p-6 ${CARD}`}>
         <DataPanelHead icon={Archive} title="Take it all with you.">
           One zip with everything you have ever logged: a workbook with every client and every day,
           {clients.data ? ` ${count(clients.data.length, "sheet")}, one for each client,` : " a sheet for each client,"}{" "}

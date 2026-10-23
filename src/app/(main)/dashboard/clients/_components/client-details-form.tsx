@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useAccountCurrency } from "@/components/currency-provider";
 import { GuideLink } from "@/components/guide-link";
+import { InvoiceSketch } from "@/components/invoice-sketch";
 import { LogoPicker } from "@/components/logo-picker";
 import { StopSlider } from "@/components/stop-slider";
 import { Button } from "@/components/ui/button";
@@ -205,7 +206,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
       </header>
 
       {/* The fields on the left; on the right, the "Bill to" block exactly as an invoice will show it, live. */}
-      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <div className="flex flex-col gap-4">
           <div className="grid gap-1.5">
             <Label htmlFor={`cn-${id}`}>Name in UseHourly</Label>
@@ -264,7 +265,9 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
           </div>
         </div>
 
-        <InvoiceSketch billTo={legalName.trim() || name.trim() || c.name} address={address.trim()} logo={logo} />
+        <div className="md:pt-6">
+          <InvoiceSketch billTo={{ name: legalName.trim() || name.trim() || c.name, address: address.trim(), logo }} />
+        </div>
       </div>
 
       <div className="flex items-center justify-end gap-2 border-foreground/10 border-t pt-4 max-sm:flex-col-reverse max-sm:items-stretch">
@@ -276,54 +279,5 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         </Button>
       </div>
     </form>
-  );
-}
-
-/**
- * Where these details land on an invoice: a small sheet of paper, slightly tilted, drawn mostly as quiet lines (your
- * name, the dates, the lines, the total) with the "Bill to" block in real text, marked in amber, following the typing.
- * The paper is dimmed in dark mode so it never glares.
- */
-function InvoiceSketch({ billTo, address, logo }: { billTo: string; address: string; logo: string | null }) {
-  const line = "h-1.5 rounded-full bg-[rgb(20_22_27/0.12)]";
-  return (
-    <figure aria-hidden className="mx-auto w-full max-w-[15rem] md:pt-6">
-      <div className="-rotate-[1.5deg] rounded-md bg-[rgb(250_249_246)] p-4 text-[rgb(20_22_27)] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.6)] transition-transform duration-300 hover:rotate-0 dark:brightness-[0.82]">
-        {/* Your side of the invoice: shown as lines, it is not edited here. */}
-        <div className="flex items-start justify-between">
-          <div className="flex w-20 flex-col gap-1">
-            <span className={`${line} w-full`} />
-            <span className={`${line} w-3/4`} />
-          </div>
-          <span className="font-semibold text-[9px] tracking-[0.2em] opacity-60">INVOICE</span>
-        </div>
-
-        {/* The part this form fills in. */}
-        <div className="mt-4 flex items-start justify-between gap-2 rounded-r-sm border-amber border-l-2 bg-[rgb(245_165_36/0.12)] py-1.5 pr-1.5 pl-2">
-          <div className="min-w-0 text-[10px] leading-snug">
-            <p className="text-[8px] uppercase tracking-wider opacity-55">Bill to</p>
-            <p className="break-words font-semibold">{billTo}</p>
-            {address && <p className="line-clamp-4 whitespace-pre-line break-words">{address}</p>}
-          </div>
-          {logo && (
-            // biome-ignore lint/performance/noImgElement: a small data URL logo
-            <img src={logo} alt="" className="h-6 w-10 shrink-0 object-contain" />
-          )}
-        </div>
-
-        <div className="mt-4 flex flex-col gap-1.5">
-          {[0.9, 0.7, 0.8].map((w) => (
-            <div key={w} className="flex items-center justify-between gap-3">
-              <span className={line} style={{ width: `${w * 60}%` }} />
-              <span className={`${line} w-8`} />
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex justify-end border-[rgb(20_22_27/0.12)] border-t pt-2">
-          <span className="h-2 w-14 rounded-full bg-[rgb(20_22_27/0.3)]" />
-        </div>
-      </div>
-      <figcaption className="mt-3 text-center text-foreground/60 text-xs">Where this goes on the invoice</figcaption>
-    </figure>
   );
 }
