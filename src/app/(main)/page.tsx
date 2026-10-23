@@ -4,6 +4,7 @@ import { ArrowRight, Bot, Code2, Heart, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
 import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
+import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos";
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingShowcase } from "@/components/landing-showcase";
@@ -123,7 +124,35 @@ export default function LandingPage() {
               </p>
             </div>
             <div id="ai-assistants" className="w-full max-w-4xl scroll-mt-6">
-              <h2 className="sr-only">Ask your AI assistant. It&rsquo;s in your timesheet.</h2>
+              {/* The AI connection is a main reason to pick UseHourly, so it is said in words, not only shown. */}
+              <div className="mx-auto mb-8 flex max-w-2xl flex-col items-center gap-3 text-center">
+                <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.3em]">
+                  Built-in MCP server
+                </p>
+                <h2 className="text-balance font-display font-extrabold text-3xl tracking-tight md:text-5xl">
+                  Or just ask your AI assistant.
+                </h2>
+                <p className="text-balance text-lg text-muted-foreground">
+                  Connect Claude, ChatGPT or Cursor and say what you need: it logs your time, finds the gaps, builds
+                  timesheets and prepares invoices. It asks you before it shares or bills anything.
+                </p>
+                <ul className="mt-1 flex flex-wrap items-center justify-center gap-2" aria-label="Works with">
+                  {[
+                    { name: "Claude", Mark: ClaudeMark },
+                    { name: "ChatGPT", Mark: OpenAIMark },
+                    { name: "Cursor", Mark: CursorMark },
+                    { name: "Claude Code", Mark: ClaudeMark },
+                  ].map(({ name, Mark }) => (
+                    <li
+                      key={name}
+                      className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 font-medium text-sm"
+                    >
+                      <Mark aria-hidden className="size-4" />
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <AssistantTerminal />
               <div className="mt-6 flex flex-col items-center gap-3 text-center">
                 <code className="max-w-full break-all rounded-lg bg-muted px-3 py-2 text-foreground text-sm">
@@ -133,7 +162,7 @@ export default function LandingPage() {
                   href="/help?a=connect-assistant"
                   className="text-muted-foreground text-sm underline underline-offset-4"
                 >
-                  Works with Claude, ChatGPT, Cursor and other MCP assistants. Setup guide
+                  Connect yours in a minute: the steps for each assistant
                 </Link>
               </div>
             </div>
