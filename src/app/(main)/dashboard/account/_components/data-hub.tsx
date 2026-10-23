@@ -8,6 +8,7 @@ import { ExportEverything } from "@/components/export-everything";
 import { GuideLink } from "@/components/guide-link";
 import { ImportTime } from "@/components/import-time";
 import { LocalFirstCard } from "@/components/local-first-card";
+import { count, word } from "@/lib/plural";
 import { trpc } from "@/lib/trpc";
 
 import type { AccountMe } from "./account-section";
@@ -26,17 +27,17 @@ export function DataHub({ account }: { account: AccountMe }) {
     <div className="flex flex-col gap-5 [&>*:last-child]:grow">
       {clients.data && (
         <p className="text-foreground/75 text-sm">
-          <strong className="text-foreground">{clients.data.length}</strong> clients ·{" "}
-          <strong className="text-foreground">{projects}</strong> projects. It is all yours: take it with you any time,
-          in files any tool can open.
+          <strong className="text-foreground">{clients.data.length}</strong> {word(clients.data.length, "client")} ·{" "}
+          <strong className="text-foreground">{projects}</strong> {word(projects ?? 0, "project")}. It is all yours:
+          take it with you any time, in files any tool can open.
         </p>
       )}
 
       <section aria-label="Download everything" className={`grid gap-5 p-5 sm:p-6 ${CARD}`}>
         <DataPanelHead icon={Archive} title="Take it all with you.">
           One zip with everything you have ever logged: a workbook with every client and every day,
-          {clients.data ? ` ${clients.data.length} sheets, one for each client,` : " a sheet for each client,"} and
-          plain CSV files that any tool can open.
+          {clients.data ? ` ${count(clients.data.length, "sheet")}, one for each client,` : " a sheet for each client,"}{" "}
+          and plain CSV files that any tool can open.
         </DataPanelHead>
         <ExportEverything big className="justify-self-start" />
       </section>

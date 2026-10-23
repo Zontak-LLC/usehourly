@@ -1,5 +1,6 @@
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { count } from "@/lib/plural";
 
 const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 
@@ -15,7 +16,7 @@ export function PeriodGlance({ dayTotals, days }: { dayTotals: Record<string, nu
   const total = worked.reduce((sum, [, minutes]) => sum + minutes, 0);
   const facts: [string, string, string][] = [
     ["Busiest day", formatDuration(busiest), day.format(fromISODate(busiestDate))],
-    ["Average on a worked day", formatDuration(Math.round(total / worked.length)), `${worked.length} days`],
+    ["Average on a worked day", formatDuration(Math.round(total / worked.length)), count(worked.length, "day")],
     ["Days with time", `${worked.length}`, `of ${days}`],
   ];
   return (

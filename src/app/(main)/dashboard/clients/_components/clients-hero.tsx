@@ -4,6 +4,7 @@ import { Dial } from "@/components/day-dial";
 import { StatTile, TileRing } from "@/components/stat-tile";
 import { formatDuration } from "@/lib/duration";
 import { PALETTE } from "@/lib/palette";
+import { count } from "@/lib/plural";
 
 import type { ClientRow, ProjectTotals } from "./client-types";
 
@@ -72,7 +73,7 @@ export function ClientsHero({
         ))}
         {rest.length > 0 && (
           <StatTile
-            label={`${rest.length} other clients · listed below`}
+            label={`${count(rest.length, "other client")} · listed below`}
             value={restMinutes}
             display={formatDuration}
             title={<span className="truncate">Everyone else</span>}

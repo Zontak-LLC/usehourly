@@ -41,7 +41,7 @@ export const FAQ: FaqItem[] = [
     id: "rounding",
     question: "Does it round my time?",
     keywords: ["round up", "increments", "billing"],
-    answer: `Never in your own records. You can choose rounding per client for invoices only. See [Rounding time on invoices](/help/rounding).`,
+    answer: `Only the timer, which counts a running time up to the next whole minute. Nothing else in your own records is rounded. You can choose rounding per client for invoices only. See [Rounding time on invoices](/help/rounding).`,
   },
   {
     id: "demo",

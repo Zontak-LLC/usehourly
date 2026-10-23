@@ -3,7 +3,7 @@ import packageJson from "../../package.json";
 export const APP_CONFIG = {
   name: "UseHourly",
   version: packageJson.version,
-  copyright: `© ${new Date().getFullYear()} UseHourly.`,
+  copyright: `© ${new Date().getFullYear()} Zontak LLC`,
   meta: {
     title: "UseHourly: free time tracking for freelancers",
     description:

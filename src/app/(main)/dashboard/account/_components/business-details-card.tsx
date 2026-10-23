@@ -79,7 +79,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="ein">EIN</Label>
+              <Label htmlFor="ein">Tax ID (EIN)</Label>
               <Input
                 id="ein"
                 name="ein"
@@ -146,7 +146,7 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
             )}
             <span className="text-right">
               <span className="block font-display font-extrabold text-2xl tracking-tight">INVOICE</span>
-              <span className="block font-mono text-[#8b8f98] text-xs">INV-2026-001</span>
+              <span className="block font-mono text-[#6b7080] text-xs">INV-2026-001</span>
             </span>
           </div>
           <div className="text-sm leading-relaxed">
@@ -156,17 +156,17 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Bill to</p>
+              <p className="font-mono text-[#6b7080] text-xs uppercase tracking-widest">Bill to</p>
               <p className="mt-1 font-semibold">Your client</p>
-              <p className="text-[#8b8f98]">Their address</p>
+              <p className="text-[#6b7080]">Their address</p>
             </div>
             <div>
-              <p className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Due</p>
+              <p className="font-mono text-[#6b7080] text-xs uppercase tracking-widest">Due</p>
               <p className="mt-1 font-semibold">In 30 days</p>
             </div>
           </div>
           <div aria-hidden className="text-sm">
-            <div className="flex justify-between border-[#12151b] border-b pb-1 font-mono text-[#8b8f98] text-xs uppercase tracking-widest">
+            <div className="flex justify-between border-[#12151b] border-b pb-1 font-mono text-[#6b7080] text-xs uppercase tracking-widest">
               <span>Project</span>
               <span>Amount</span>
             </div>
@@ -180,15 +180,15 @@ export function BusinessDetailsCard({ me }: { me: AccountMe }) {
               </div>
             ))}
             <div className="flex items-baseline justify-between pt-3">
-              <span className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">Total</span>
+              <span className="font-mono text-[#6b7080] text-xs uppercase tracking-widest">Total</span>
               <span className="font-display font-extrabold text-2xl">$697.50</span>
             </div>
           </div>
           <div className="rounded-xl bg-[#f6f7f9] p-4 text-sm">
-            <p className="font-mono text-[#8b8f98] text-xs uppercase tracking-widest">How to pay</p>
+            <p className="font-mono text-[#6b7080] text-xs uppercase tracking-widest">How to pay</p>
             <p className="mt-1 whitespace-pre-line text-[#4b5160]">{pay || "Nothing printed"}</p>
           </div>
-          <p className="text-center text-[#8b8f98] text-xs">
+          <p className="text-center text-[#6b7080] text-xs">
             The lines above are an example. Yours come from your time.
           </p>
         </aside>

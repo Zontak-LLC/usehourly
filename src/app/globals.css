@@ -76,7 +76,7 @@
   --secondary: #e9ecf1;
   --secondary-foreground: #12151b;
   --muted: #e9ecf1;
-  --muted-foreground: #666e7c;
+  --muted-foreground: #5f6775; /* 4.8:1 or better on every light panel (was #666e7c, 4.3:1 on the tab strip) */
   --accent: #e9ecf1;
   --accent-foreground: #12151b;
   --destructive: #d8452f;

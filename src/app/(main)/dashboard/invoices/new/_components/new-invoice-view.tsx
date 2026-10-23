@@ -29,7 +29,7 @@ function MissingProfileNotice({ ein, address }: { ein?: string | null; address?:
     <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
       <span>
-        Your {!ein ? "EIN" : ""}
+        Your {!ein ? "tax ID (EIN)" : ""}
         {!ein && !address ? " and " : ""}
         {!address ? "address" : ""} {!ein && !address ? "are" : "is"} missing and won't appear on the invoice.{" "}
         <Link href="/dashboard/account" className="inline-block py-1 font-medium underline">

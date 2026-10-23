@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
 import { addDays, addMonths, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
+import { count } from "@/lib/plural";
 import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
@@ -122,7 +123,7 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             defaultGoalHours={160}
             minHours={40}
             maxHours={240}
-            note={`${Object.values(sheet.dayTotals).filter((m) => m > 0).length} days worked`}
+            note={`${count(Object.values(sheet.dayTotals).filter((m) => m > 0).length, "day")} worked`}
           />
           {/* The calendar is the page: it gets the full width. The dial and the lists sit under it. */}
           {selectMode && (

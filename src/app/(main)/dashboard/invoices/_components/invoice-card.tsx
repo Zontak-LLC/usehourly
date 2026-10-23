@@ -87,7 +87,7 @@ function InvoiceActions({
       <IconAction
         label={i.paid_date ? `Edit payment for ${i.number}` : `Mark ${i.number} as paid`}
         tip={i.paid_date ? "Edit payment" : "Mark as paid"}
-        text={i.paid_date ? "Edit payment" : "Mark paid"}
+        text={i.paid_date ? "Edit payment" : "Mark as paid"}
         inline={!words}
         expanded={panel === "paid"}
         // Green means "this invoice is paid": only the paid state is green; marking it paid is a plain action.

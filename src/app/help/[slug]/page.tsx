@@ -32,10 +32,15 @@ export default async function TopicPage({ params }: Props) {
       {related.length > 0 && (
         <section className="mt-10 border-t pt-6">
           <h2 className="mb-3 font-semibold text-base">More in this group</h2>
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col">
             {related.map((t) => (
               <li key={t.slug}>
-                <Link href={`/help/${t.slug}`} prefetch={false} className="underline underline-offset-4">
+                {/* a 44px-tall row, so each link is easy to tap on a phone (the text was 22px) */}
+                <Link
+                  href={`/help/${t.slug}`}
+                  prefetch={false}
+                  className="inline-flex min-h-11 items-center underline underline-offset-4"
+                >
                   {t.title}
                 </Link>
               </li>

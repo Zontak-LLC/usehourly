@@ -7,6 +7,7 @@ import { Dial } from "@/components/day-dial";
 import { RANGE_INPUT_CLASS } from "@/components/range-input";
 import { StatTile } from "@/components/stat-tile";
 import { formatDecimalHours } from "@/lib/duration";
+import { count } from "@/lib/plural";
 
 import type { AnnualReport } from "./report-body";
 
@@ -56,7 +57,7 @@ export function YearDial({ data, year }: { data: AnnualReport; year: number }) {
         minutes={data.totals.minutes}
         goal={goal * 60}
         footLeft={`Goal ${goal} h`}
-        footRight={`${data.totals.workedDays} days worked`}
+        footRight={`${count(data.totals.workedDays, "day")} worked`}
       />
       <div className="px-2">
         <label

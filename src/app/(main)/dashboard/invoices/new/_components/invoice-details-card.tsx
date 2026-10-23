@@ -126,7 +126,7 @@ export function InvoiceDetailsCard({
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <Label htmlFor="net">Payment due in (days)</Label>
-            <span className="font-display font-extrabold text-amber text-lg">{dueLabel}</span>
+            <span className="font-display font-extrabold text-foreground text-lg">{dueLabel}</span>
           </div>
           {/* The slider moves the same number the box holds: 0 to 90 days in steps of 5, with the usual terms as stops. */}
           <div className="relative h-6">
