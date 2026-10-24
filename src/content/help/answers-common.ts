@@ -57,13 +57,16 @@ For an app that wants a token instead, make one under **API tokens** on the same
       "home screen",
       "install",
       "ios",
-
+      "shortcut",
+      "badge",
       "internet",
     ],
     answer: `Yes. UseHourly is a website that works on any phone. There is no app-store app, but you can add it to your home screen and it opens like one, straight to Today:
 
 - **iPhone (Safari):** tap **Share**, then **Add to Home Screen**.
 - **Android (Chrome):** open the menu (three dots), then **Install app** or **Add to Home screen**.
+
+Where the phone can do it, your account menu (your initials at the top right) also has **Install the app** (one tap) or **Add to Home Screen** (these steps). Once it is installed, press and hold the icon to jump straight to **Log time**, **This week**, **This month** or **Invoices**. While a timer runs, the icon shows a small badge.
 
 With no connection you can still open the pages you have opened before and add time. The time is kept on your phone and sent once you are back online. See [Working offline](/help?a=offline).`,
   },
