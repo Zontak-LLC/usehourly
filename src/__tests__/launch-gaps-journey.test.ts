@@ -33,6 +33,7 @@ async function world() {
     invoiceLink: [{ user_id: "u1" }, { user_id: "u2" }],
     invoiceEmail: [{ user_id: "u1" }, { user_id: "u2" }],
     nonBillableDay: [{ user_id: "u1" }, { user_id: "u2" }],
+    expense: [{ user_id: "u1" }, { user_id: "u1" }, { user_id: "u2" }],
     entryChange: [{ user_id: "u1" }, { user_id: "u2" }],
     // u1 owns a team, u2 owns a team, and u1 is a member of u2's team: deleting u1 removes the first and the last.
     teamMember: [{ owner_id: "u1" }, { owner_id: "u2" }, { owner_id: "u2", member_id: "u1" }],
@@ -60,6 +61,7 @@ async function world() {
     entryChange: model("entryChange"),
     invoiceEmail: model("invoiceEmail"),
     nonBillableDay: model("nonBillableDay"),
+    expense: model("expense"),
     teamMember: {
       deleteMany: vi.fn(async ({ where }: { where: { OR: { owner_id?: string; member_id?: string }[] } }) => {
         const hit = (r: Row) =>
@@ -106,6 +108,8 @@ describe("deleting your own account", () => {
       "invoiceLink",
       "invoiceEmail",
       "entryChange",
+      "nonBillableDay",
+      "expense",
     ]) {
       expect(w.count(t, "u1"), t).toBe(0);
     }
@@ -113,6 +117,7 @@ describe("deleting your own account", () => {
     expect(w.tables.teamMember).toEqual([{ owner_id: "u2" }]);
     expect(w.count("timeEntry", "u2")).toBe(1);
     expect(w.count("invoice", "u2")).toBe(1);
+    expect(w.count("expense", "u2")).toBe(1);
     expect(w.count("apiToken", "u2")).toBe(1);
     expect(w.count("authUser", "u2")).toBe(1);
   });

@@ -16,6 +16,7 @@ import { isCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
+import { ExpensesSection, yearRange } from "./expenses-section";
 import { ReportBody } from "./report-body";
 
 export function ReportView() {
@@ -37,6 +38,10 @@ export function ReportView() {
     { year: year ?? 2000, currency: isCurrency(picked) ? picked : undefined },
     { enabled: year !== null },
   );
+  // Expenses (switched off in this release) are asked for in the same render as the report, so the page stays one request.
+  const withExpenses = feature("expenses");
+  const expenses = trpc.expense.list.useQuery(yearRange(year ?? 2000), { enabled: withExpenses && year !== null });
+  const clients = trpc.clients.list.useQuery(undefined, { enabled: withExpenses });
   const [exporting, setExporting] = useState(false);
   const emailIt = trpc.report.email.useMutation();
 
@@ -48,11 +53,15 @@ export function ReportView() {
     if (!data) return;
     setExporting(true);
     try {
-      await downloadAnnualXlsx(data, {
-        name: me.data?.business_name ?? me.data?.name ?? null,
-        ein: me.data?.ein ?? null,
-        currency: data.currency,
-      });
+      await downloadAnnualXlsx(
+        data,
+        {
+          name: me.data?.business_name ?? me.data?.name ?? null,
+          ein: me.data?.ein ?? null,
+          currency: data.currency,
+        },
+        withExpenses ? (expenses.data ?? []).filter((e) => e.currency === data.currency) : undefined,
+      );
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     } finally {
@@ -149,17 +158,30 @@ export function ReportView() {
         </p>
       ) : report.isLoading || !data ? (
         <Skeleton className="h-96 w-full" />
-      ) : data.totals.entryCount === 0 && data.invoices.count === 0 ? (
-        <EmptyState className="py-14">No time logged or invoices issued in {year}.</EmptyState>
       ) : (
         <ClientCurrency currency={data.currency}>
-          {data.currencies.length > 1 && (
-            <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
-              Showing the clients billed in <strong>{data.currency}</strong>. Your other currencies have their own
-              figures: pick one above. Amounts in different currencies are never added together.
-            </p>
+          {data.totals.entryCount === 0 && data.invoices.count === 0 ? (
+            <EmptyState className="py-14">No time logged or invoices issued in {year}.</EmptyState>
+          ) : (
+            <>
+              {data.currencies.length > 1 && (
+                <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
+                  Showing the clients billed in <strong>{data.currency}</strong>. Your other currencies have their own
+                  figures: pick one above. Amounts in different currencies are never added together.
+                </p>
+              )}
+              <ReportBody data={data} year={year} />
+            </>
           )}
-          <ReportBody data={data} year={year} />
+          {withExpenses && expenses.data && (
+            <ExpensesSection
+              year={year}
+              currency={data.currency}
+              receivedCents={data.received.totalCents}
+              rows={expenses.data}
+              clients={clients.data ?? []}
+            />
+          )}
         </ClientCurrency>
       )}
     </PageShell>
