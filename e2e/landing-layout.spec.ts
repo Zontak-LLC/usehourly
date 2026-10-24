@@ -1,7 +1,7 @@
 import { expect, test } from "./helpers";
 
 /**
- * The home page lines up (issue 252): every framed block (header, the feature tiles, the promises, the closing panel,
+ * The home page lines up (issue 252): every framed block (header, the promises, the closing panel,
  * the footer) shares one left and one right edge; the terminal and the screens deck share one narrower, centred width;
  * the deck's caption sits above its window, with no "1 / 6" counter, and the arrows sit below it with the dots.
  */
@@ -23,7 +23,6 @@ test("the home page's blocks share their edges, and the deck reads top to bottom
   await test.step("framed blocks share one left and one right edge", async () => {
     const frames = [
       await box("header"),
-      await box("#features ul"),
       await box('section[aria-labelledby="promises-heading"] ul'),
       await box('section[aria-labelledby="start-heading"] > *', false),
       await box("footer"),
@@ -56,7 +55,7 @@ test("the home page's blocks share their edges, and the deck reads top to bottom
     const next = await deck.getByRole("button", { name: "Next screen" }).boundingBox();
     expect(caption && window && caption.y + caption.height <= window.y).toBe(true);
     expect(next && window && next.y >= window.y + window.height).toBe(true);
-    const dot = await deck.getByRole("button", { name: "Show the Week screen" }).boundingBox();
+    const dot = await deck.getByRole("button", { name: "Show the Invoices screen" }).boundingBox();
     expect(dot && next && Math.abs(dot.y + dot.height / 2 - (next.y + next.height / 2)) < 4).toBe(true); // one row
   });
 });

@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+// Two screens, the start and the end of the story (2026-10-24, the owner: "two would do"): logging a day, and the
+// invoices it turns into. The other pictures stay in public/landing for the Play Store listing.
 const SCREENS = [
   {
     id: "today",
@@ -13,39 +15,11 @@ const SCREENS = [
     text: "Type 1h30 or tap a quick time, pick the project, press Enter. A timer is there when you want one.",
   },
   {
-    id: "week",
-    label: "Week",
-    file: "2-week",
-    title: "The whole week at a glance",
-    text: "Seven day tiles with their totals. A weekday with no time stands out, so nothing slips through.",
-  },
-  {
-    id: "month",
-    label: "Month",
-    file: "3-month",
-    title: "A calendar of what you did",
-    text: "Day and week totals on one calendar. Logged on the wrong day? Drag the entry onto the right one.",
-  },
-  {
     id: "invoices",
     label: "Invoices",
     file: "4-invoices",
     title: "Paid, waiting, late",
     text: "Every invoice saved exactly as sent. Download the PDF, share a private link, and mark it paid.",
-  },
-  {
-    id: "clients",
-    label: "Clients",
-    file: "5-clients",
-    title: "Clients, projects and rates",
-    text: "Each client's month in hours and money, the rate on every project, and Make invoice one tap away.",
-  },
-  {
-    id: "year",
-    label: "Year summary",
-    file: "6-year",
-    title: "Ready for tax time",
-    text: "Hours, earned, invoiced and received for the year, month by month, with an Excel export for your accountant.",
   },
 ] as const;
 
@@ -81,7 +55,7 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
         <span className="size-2.5 rounded-full bg-[#FEBC2E]" />
         <span className="size-2.5 rounded-full bg-[#28C840]" />
         <span className="ml-3 rounded-md bg-card px-3 py-0.5 font-mono text-[11px] text-foreground/70">
-          usehourly.app/dashboard/{screen.id === "year" ? "report" : screen.id}
+          usehourly.app/dashboard/{screen.id}
         </span>
       </div>
       {/* The light picture on a light page, the dark one on a dark page. Both are a 1120x1008 window (10:9, the deck's own
