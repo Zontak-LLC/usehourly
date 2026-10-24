@@ -10,6 +10,7 @@ import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 import { assertWithinQuota } from "@/lib/quotas";
 
+import { drillError, faultActive } from "../drill";
 import { nonBillableDates } from "../non-billable";
 import { protectedProcedure, router } from "../trpc";
 
@@ -66,6 +67,8 @@ export const entryRouter = router({
    * carries `non_billable`: true when its day is marked non-billable (exports, reports and invoices skip those).
    */
   list: protectedProcedure.input(listSchema).query(async ({ ctx, input }) => {
+    // A staging drill only (lib/drill.ts); on production this returns false without a database read.
+    if (await faultActive(ctx.prisma, "entry-list-500")) throw drillError("no such table: time_entries");
     // Four independent reads started together (one round trip, not a chain): the entries, the non-billable days, the
     // account's projects and its clients. Letting Prisma join them itself (`include`) would run entries, then projects,
     // then clients, one after another, and D1 charges a round trip for each. Every read is filtered by the account.
