@@ -18,6 +18,8 @@
 
 # database dumps made by npm run d1:backup (they hold everyone's data)
 /backups/
+# stress-test SQL (scripts/stress/seed.mjs): holds a password hash and millions of rows
+/.stress/
 
 # misc
 .DS_Store

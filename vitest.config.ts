@@ -5,11 +5,11 @@ import path from "node:path";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "packages/*/test/**/*.test.ts"],
     coverage: {
       provider: "v8",
       // The logic lives in lib/ and server/; screens are exercised by the Playwright suite (e2e/).
-      include: ["src/lib/**", "src/server/**"],
+      include: ["src/lib/**", "src/server/**", "packages/*/src/**"],
       exclude: ["src/**/*.test.ts", "src/__tests__/**", "src/lib/**/*.client.ts"],
       reporter: ["text-summary", "json-summary"],
       // A floor, not a target: set a few points under what was measured on 2026-10-18 (88 / 83 / 91 / 89),
@@ -17,5 +17,10 @@ export default defineConfig({
       thresholds: { statements: 87, branches: 82, functions: 90, lines: 88 },
     },
   },
-  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      "trpc-mcp-server": path.resolve(__dirname, "packages/trpc-mcp/src/index.ts"),
+    },
+  },
 });

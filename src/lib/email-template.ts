@@ -9,7 +9,21 @@ export type EmailBlock =
   | { heading: string }
   | { quote: string }
   | { rows: [label: string, value: string][] }
+  /** Small muted print, e.g. a note under a table. */
+  | { small: string }
+  /** Figures as small boxes: two per row, one per row on a phone. */
+  | { figures: EmailFigure[] }
+  /** A table with a header, rows and an optional bold total row; `textCols` leading columns are text, the rest numbers. */
+  | { table: EmailTable }
   | { button: { label: string; url: string } };
+
+export type EmailFigure = { label: string; value: string; hint?: string };
+/** A row is its cells; a `sub` row (a project under its client) is indented and muted. */
+export type EmailTableRow = string[] | { cells: string[]; sub: true };
+export type EmailTable = { head: string[]; rows: EmailTableRow[]; total?: string[]; textCols?: number };
+
+const cellsOf = (row: EmailTableRow) => (Array.isArray(row) ? row : row.cells);
+const isSub = (row: EmailTableRow) => !Array.isArray(row);
 
 export type EmailSpec = {
   /** The <title> of the HTML (mail apps may show it); the subject is set by the caller. */
@@ -27,7 +41,7 @@ const C = {
   line: "#dbe2ec",
   ink: "#1c2434",
   muted: "#586377",
-  sun: "#5a63d8",
+  sun: "#2563c9",
   darkPage: "#131a26",
   darkCard: "#1a2232",
   darkLine: "#2a3447",
@@ -55,6 +69,61 @@ export function safeUrl(url: string): string | null {
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
+function figuresHtml(figures: EmailFigure[]): string {
+  const box = (f: EmailFigure) =>
+    `<td class="stat" width="50%" style="padding:4px;vertical-align:top;"><div class="line" style="border:1px solid ${C.line};border-radius:10px;padding:10px 12px;">` +
+    `<p class="muted" style="margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:${C.muted};">${escapeHtml(f.label)}</p>` +
+    `<p class="fg" style="margin:2px 0 0;font-size:20px;font-weight:700;color:${C.ink};white-space:nowrap;">${escapeHtml(f.value)}</p>` +
+    (f.hint
+      ? `<p class="muted" style="margin:2px 0 0;font-size:12px;line-height:1.4;color:${C.muted};">${escapeHtml(f.hint)}</p>`
+      : "") +
+    "</div></td>";
+  const rows: string[] = [];
+  for (let i = 0; i < figures.length; i += 2) {
+    const pair = figures.slice(i, i + 2);
+    rows.push(`<tr>${pair.map(box).join("")}${pair.length === 1 ? '<td class="stat" width="50%"></td>' : ""}</tr>`);
+  }
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;">${rows.join("")}</table>`;
+}
+
+function tableHtml(t: EmailTable): string {
+  const textCols = t.textCols ?? 1;
+  const align = (i: number) => (i < textCols ? "text-align:left;" : "text-align:right;white-space:nowrap;");
+  const cell = (tag: "th" | "td", value: string, i: number, style: string, cls: string) =>
+    `<${tag} class="${cls}" style="padding:6px ${i === 0 ? "8px 6px 0" : "0 6px 8px"};${align(i)}${style}">${escapeHtml(value)}</${tag}>`;
+  const head = `<tr>${t.head
+    .map((v, i) =>
+      cell(
+        "th",
+        v,
+        i,
+        `font-weight:600;font-size:12px;color:${C.muted};border-bottom:1px solid ${C.line};`,
+        "muted line",
+      ),
+    )
+    .join("")}</tr>`;
+  const body = t.rows
+    .map((row) => {
+      const sub = isSub(row);
+      return `<tr>${cellsOf(row)
+        .map((v, i) =>
+          cell(
+            "td",
+            v,
+            i,
+            `color:${sub ? C.muted : C.ink};${sub && i === 0 ? "padding-left:14px;" : ""}${sub ? "" : "font-weight:600;"}border-bottom:1px solid ${C.line};`,
+            `${sub ? "muted" : "fg"} line`,
+          ),
+        )
+        .join("")}</tr>`;
+    })
+    .join("");
+  const total = t.total
+    ? `<tr>${t.total.map((v, i) => cell("td", v, i, `font-weight:700;color:${C.ink};`, "fg")).join("")}</tr>`
+    : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;font-size:13px;line-height:1.4;border-collapse:collapse;">${head}${body}${total}</table>`;
+}
+
 function blockHtml(block: EmailBlock): string {
   if (typeof block === "string") {
     return `<p class="fg" style="margin:0 0 16px;color:${C.ink};">${escapeHtml(block)}</p>`;
@@ -65,6 +134,11 @@ function blockHtml(block: EmailBlock): string {
   if ("quote" in block) {
     return `<p class="fg quote" style="margin:0 0 16px;padding:8px 14px;border-left:3px solid ${C.sun};color:${C.ink};white-space:pre-wrap;">${escapeHtml(block.quote)}</p>`;
   }
+  if ("small" in block) {
+    return `<p class="muted" style="margin:-8px 0 16px;font-size:13px;color:${C.muted};">${escapeHtml(block.small)}</p>`;
+  }
+  if ("figures" in block) return figuresHtml(block.figures);
+  if ("table" in block) return tableHtml(block.table);
   if ("rows" in block) {
     const rows = block.rows
       .map(
@@ -83,8 +157,29 @@ function blockHtml(block: EmailBlock): string {
   );
 }
 
+/** A table as aligned plain text: text columns padded on the right, numbers on the left, so the figures line up. */
+function tableText(t: EmailTable): string {
+  const textCols = t.textCols ?? 1;
+  const lines = [
+    t.head,
+    ...t.rows.map((r) => (isSub(r) ? cellsOf(r).map((v, i) => (i === 0 ? `  ${v}` : v)) : cellsOf(r))),
+    ...(t.total ? [t.total] : []),
+  ];
+  const widths = t.head.map((_, i) => Math.max(...lines.map((l) => (l[i] ?? "").length)));
+  return lines
+    .map((l) =>
+      `  ${l.map((v, i) => (i < textCols ? (v ?? "").padEnd(widths[i]) : (v ?? "").padStart(widths[i]))).join("  ")}`.trimEnd(),
+    )
+    .join("\n");
+}
+
 function blockText(block: EmailBlock): string {
   if (typeof block === "string") return block;
+  if ("small" in block) return block.small;
+  if ("figures" in block) {
+    return block.figures.map((f) => `  ${f.label.padEnd(15)} ${f.value}${f.hint ? `  (${f.hint})` : ""}`).join("\n");
+  }
+  if ("table" in block) return tableText(block.table);
   if ("heading" in block) return block.heading;
   if ("quote" in block) return `"${block.quote}"`;
   if ("rows" in block) return block.rows.map(([label, value]) => `  ${label.padEnd(13)} ${value}`).join("\n");
@@ -119,6 +214,10 @@ export function renderEmail(spec: EmailSpec): { html: string; text: string } {
   .card { background: ${C.darkCard} !important; border-color: ${C.darkLine} !important; }
   .fg { color: ${C.darkInk} !important; }
   .muted { color: ${C.darkMuted} !important; }
+  .line { border-color: ${C.darkLine} !important; }
+}
+@media (max-width: 520px) {
+  .stat { display: block !important; width: 100% !important; box-sizing: border-box; }
 }
 </style>
 </head>

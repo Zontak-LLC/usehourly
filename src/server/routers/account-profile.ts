@@ -5,6 +5,7 @@ import { isDemoSession } from "@/lib/demo";
 import { CURRENCY_CODES } from "@/lib/money";
 import { isValidTimeZone, localParts, reminderTimePassed, weekKey } from "@/lib/reminder";
 import { NO_PASSWORD_HASH } from "@/lib/social-login";
+import { MAX_TAX_NAME, MAX_TAX_NUMBER, MAX_TAX_RATE } from "@/lib/tax";
 import { isThemeMode } from "@/lib/theme-sync";
 
 import { avatarSchema, logoSchema } from "../logo-schema";
@@ -65,6 +66,9 @@ export const profileProcedures = {
         address: true,
         logo: true,
         payment_instructions: true,
+        tax_name: true,
+        tax_rate: true,
+        tax_number: true,
         email_verified_at: true,
         is_demo: true,
         weekly_reminder: true,
@@ -174,4 +178,26 @@ export const profileProcedures = {
         select: { id: true },
       }),
     ),
+
+  /**
+   * The tax added to invoices (issue #71 step 4): its name, its rate in basis points (2000 = 20%; 0 = none added) and
+   * the seller's tax number. Each new invoice can still leave it off (a reverse-charge client, say); issued invoices
+   * never change.
+   */
+  setTax: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().trim().max(MAX_TAX_NAME, `Keep the name under ${MAX_TAX_NAME} characters.`),
+        rate: z.number().int().min(0).max(MAX_TAX_RATE, "A tax rate can be at most 100%."),
+        number: z.string().trim().max(MAX_TAX_NUMBER, `Keep the tax number under ${MAX_TAX_NUMBER} characters.`),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.authUser.update({
+        where: { id: ctx.userId },
+        data: { tax_name: input.name || null, tax_rate: input.rate || null, tax_number: input.number || null },
+        select: { id: true },
+      });
+      return { name: input.name || null, rate: input.rate || null, number: input.number || null };
+    }),
 };

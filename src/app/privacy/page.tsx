@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/legal-page";
+import { feature } from "@/lib/features";
 
 export const metadata: Metadata = {
   title: "Privacy policy | UseHourly",
@@ -21,7 +22,10 @@ export default function PrivacyPage() {
           or GitHub, we receive your name, your verified email address and your account number with them, and nothing
           else; we cannot see your email, files or repositories there.
         </li>
-        <li>What you enter: clients, projects, time entries, notes, rates and invoices.</li>
+        <li>
+          What you enter: clients, projects, time entries, notes, rates and invoices
+          {feature("expenses") && ", and the expenses and trips you record (amounts and notes; no receipt images)"}.
+        </li>
         <li>
           If you connect an AI assistant (with an access token you make, or by approving an app), we keep the
           connection's name, whether it may change things, when it expires and when it was last used. We keep only a
@@ -93,8 +97,9 @@ export default function PrivacyPage() {
         <li>You can export everything you have entered at any time from the Account page.</li>
         <li>
           You can delete your account yourself on the Account page, in the Delete account card under Profile. That
-          removes your clients, projects, time entries, invoices and settings from our database straight away. Backups
-          kept by our hosting provider for disaster recovery expire on their own within 30 days.
+          removes your clients, projects, time entries, invoices{feature("expenses") && ", expenses"} and settings from
+          our database straight away. Backups kept by our hosting provider for disaster recovery expire on their own
+          within 30 days.
         </li>
         <li>If an email address bounces or is reported as spam, we stop sending reminders to it.</li>
       </ul>

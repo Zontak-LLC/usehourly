@@ -96,7 +96,7 @@ export function buildDemoData(todayIso: string): DemoData {
     {
       key: "northwind",
       name: "Northwind Studio",
-      color: "#6366f1",
+      color: "#2563c9",
       legalName: "Northwind Studio LLC",
       address: "88 Harbor Way\nPortland, OR 97201",
     },

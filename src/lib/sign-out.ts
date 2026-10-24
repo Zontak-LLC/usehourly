@@ -19,6 +19,9 @@ export async function signOutOfDevice(options?: SignOutOptions, forgetEverything
   stopSaving(); // before clearing, so the save that happens as the page is left cannot put the copy back
   await clearLocalCopy(forgetEverything); // sends what is waiting if it can, then forgets the copy
   await clearOfflineData();
+  // A running timer's badge on the home-screen icon belongs to the person leaving (issue 70).
+  const nav = navigator as Navigator & { clearAppBadge?: () => Promise<void> };
+  await nav.clearAppBadge?.().catch(() => undefined); // not supported or not installed
   try {
     localStorage.removeItem(AI_KEY_STORAGE); // the person's own AI key never stays on a shared device
     localStorage.removeItem(CALENDAR_KEY); // nor their calendar

@@ -16,15 +16,17 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, MAX_QUERY_DAYS, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { feature } from "@/lib/features";
 import { buildInvoice } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import type { Rounding } from "@/lib/rounding";
+import { invoiceTax } from "@/lib/tax";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import type { Unbilled } from "@/lib/unbilled";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
-import { InvoiceNotices, InvoicePreviewCard } from "./invoice-preview";
+import { InvoiceNotices, InvoicePreviewCard, TaxChoice } from "./invoice-preview";
 
 function MissingProfileNotice({ ein, address }: { ein?: string | null; address?: string | null }) {
   return (
@@ -106,6 +108,8 @@ export function NewInvoiceView() {
   const [includeDetail, setIncludeDetail] = useState(true);
   const [compactNotes, setCompactNotes] = useState(false);
   const [includeInvoiced, setIncludeInvoiced] = useState(false);
+  // The account's tax is added unless the person leaves it off this one invoice (a reverse-charge client, say).
+  const [addTax, setAddTax] = useState(true);
   // The period follows the chosen client's unbilled time until the person sets the dates themselves.
   const [rangeTouched, setRangeTouched] = useState(false);
   const unbilled = trpc.invoice.unbilled.useQuery();
@@ -170,6 +174,9 @@ export function NewInvoiceView() {
   const alreadyInvoiced = (entries.data ?? [])
     .filter((e) => e.project.client_id === clientId && e.invoice_id && e.project.billable && !e.non_billable)
     .reduce((a, e) => a + e.minutes, 0);
+  const taxSetting =
+    feature("invoiceTax") && me.data?.tax_rate ? { name: me.data.tax_name, rate: me.data.tax_rate } : null;
+  const tax = addTax ? invoiceTax(totals.totalCents, taxSetting) : null;
   // A $0.00 invoice is never what anyone means: block it and say why.
   const nothingToBill = totals.lines.length > 0 && totals.totalCents === 0;
 
@@ -189,6 +196,7 @@ export function NewInvoiceView() {
         includeDetail,
         compactNotes,
         includeInvoiced,
+        addTax: !!taxSetting && addTax,
       });
       await Promise.all([
         utils.invoice.list.invalidate(),
@@ -212,7 +220,9 @@ export function NewInvoiceView() {
 
   if (clients.isLoading || me.isLoading || !today) return <Skeleton className="mx-auto h-96 w-full max-w-5xl" />;
 
-  const missingProfile = !me.data?.ein || !me.data?.address;
+  // A tax number (VAT, GST) stands in for the US EIN when tax on invoices is on.
+  const hasTaxId = !!me.data?.ein || (feature("invoiceTax") && !!me.data?.tax_number);
+  const missingProfile = !hasTaxId || !me.data?.address;
   const hasClients = (clients.data ?? []).length > 0;
 
   return (
@@ -230,7 +240,7 @@ export function NewInvoiceView() {
           </>
         }
       >
-        {missingProfile && <MissingProfileNotice ein={me.data?.ein} address={me.data?.address} />}
+        {missingProfile && <MissingProfileNotice ein={hasTaxId ? "set" : null} address={me.data?.address} />}
 
         {!hasClients ? (
           <EmptyState>Add a client and project first, then log some time to invoice.</EmptyState>
@@ -268,7 +278,9 @@ export function NewInvoiceView() {
                   error={entries.error?.message ?? null}
                   totals={totals}
                   clientName={client?.name}
+                  tax={tax}
                 />
+                {taxSetting && <TaxChoice tax={taxSetting} add={addTax} onAdd={setAddTax} />}
 
                 <AlreadyInvoiced minutes={alreadyInvoiced} include={includeInvoiced} onInclude={setIncludeInvoiced} />
                 <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />

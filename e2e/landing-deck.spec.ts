@@ -19,21 +19,25 @@ test("the screens deck flips with the tabs, the arrows, the dots and the arrow k
   await shows("Paid, waiting, late");
   await expect(page.getByRole("img", { name: /The Invoices screen of UseHourly/ }).first()).toBeVisible();
 
-  await deck.getByRole("button", { name: "Show the Week screen" }).click(); // a dot
-  await shows("The whole week at a glance");
+  // Two screens only (2026-10-24): the day you log and the invoice it becomes.
+  await expect(deck.getByRole("tab")).toHaveCount(2);
+  for (const gone of ["Week", "Month", "Clients", "Year summary"]) await expect(tab(gone)).toHaveCount(0);
+
+  await deck.getByRole("button", { name: "Show the Today screen" }).click(); // a dot
+  await shows("Log a day in seconds");
 
   if (!isMobile) {
     await deck.getByRole("button", { name: "Next screen" }).click();
-    await shows("A calendar of what you did");
-    await deck.getByRole("button", { name: "Previous screen" }).click();
-    await deck.getByRole("button", { name: "Previous screen" }).click();
+    await shows("Paid, waiting, late");
+    await deck.getByRole("button", { name: "Next screen" }).click(); // wraps round to the first
     await shows("Log a day in seconds");
-    await deck.getByRole("button", { name: "Previous screen" }).click(); // wraps round to the last
-    await shows("Ready for tax time");
+    await deck.getByRole("button", { name: "Previous screen" }).click(); // and back round to the last
+    await shows("Paid, waiting, late");
 
-    await tab("Year summary").focus();
-    await page.keyboard.press("ArrowRight"); // and back to the first
+    await tab("Invoices").focus();
+    await page.keyboard.press("ArrowRight");
     await shows("Log a day in seconds");
+    await expect(tab("Today")).toBeFocused(); // focus follows the selection
   }
 });
 
@@ -45,7 +49,8 @@ test("the home page has no repeated story, and the deck picture fills its window
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "See it working." })).toBeVisible();
   await expect(page.getByRole("heading", { name: /From hours to paid/ })).toHaveCount(0);
-  // The app draws no clocks: no "Quick entry and a stopwatch" tile and no REC chip.
+  // The feature grid repeated the deck, so it went (2026-10-24); the app draws no clocks and no REC chip.
+  await expect(page.getByRole("heading", { name: "Everything a freelancer needs." })).toHaveCount(0);
   await expect(page.getByText(/Quick entry and a stopwatch/i)).toHaveCount(0);
   await expect(page.getByText("REC", { exact: true })).toHaveCount(0);
 

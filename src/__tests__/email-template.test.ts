@@ -167,12 +167,67 @@ describe("what the HTML is made of", () => {
     expect(html).toContain('name="color-scheme" content="light dark"');
     expect(html).toContain("max-width:560px");
     expect(html).toContain("prefers-color-scheme: dark");
-    expect(html).toContain("#5a63d8"); // the accent button (v4 periwinkle)
+    expect(html).toContain("#2563c9"); // the accent button (ocean blue, 2026-10-24)
   });
 
   it("loads nothing from anywhere else: no images, scripts, fonts or stylesheets", () => {
     expect(html).not.toMatch(/<img|<script|<link|<iframe|@import|url\(/i);
     expect(html).not.toMatch(/src=/i);
+  });
+});
+
+describe("figures, tables and small print (the year summary email, issue 174)", () => {
+  const evil = "<b>Fern</b> & Co";
+  const { html, text } = renderEmail({
+    title: "t",
+    greeting: "Hi,",
+    blocks: [
+      {
+        figures: [
+          { label: "Received", value: "$475.00", hint: "1 payment" },
+          { label: evil, value: "18:45" },
+          { label: "Odd", value: "1" },
+        ],
+      },
+      {
+        table: {
+          head: ["Client", "Rate", "Hours", "Earned"],
+          rows: [[evil, "", "12:30", "$1,187.50"], { cells: ["Site", "$95.00/h", "2:00", "–"], sub: true }],
+          total: ["Total", "", "14:30", "$1,187.50"],
+          textCols: 2,
+        },
+      },
+      { small: "Only months with activity are shown." },
+    ],
+  });
+
+  it("draws figures as boxes, two to a row, that stack to one column on a phone", () => {
+    expect(html.match(/class="stat"/g)).toHaveLength(4); // three figures and one empty cell to finish the row
+    expect(html).toMatch(
+      /@media \(max-width: 520px\)[^}]*\.stat \{ display: block !important; width: 100% !important;/,
+    );
+    expect(html).toContain("1 payment");
+  });
+
+  it("escapes every cell and label, and keeps the numbers right-aligned", () => {
+    expect(html).not.toContain("<b>Fern</b>");
+    expect(html).toContain("&lt;b&gt;Fern&lt;/b&gt; &amp; Co");
+    expect(html).toMatch(/text-align:right;white-space:nowrap;[^>]*>\$1,187\.50</);
+    expect(html).toContain("padding-left:14px;"); // the project row sits under its client
+  });
+
+  it("writes the same figures and table in the text part, with the columns lined up", () => {
+    expect(text).toContain("  Received        $475.00  (1 payment)");
+    const lines = text.split("\n");
+    const client = lines.find((l) => l.includes("12:30")) as string;
+    const sub = lines.find((l) => l.includes("Site")) as string;
+    const total = lines.find((l) => l.trimStart().startsWith("Total")) as string;
+    expect(sub).toMatch(/^ {4}Site/); // indented under its client
+    // numbers end in the same column, so a plain-text reader can read them down
+    expect(client.indexOf("$1,187.50") + 9).toBe(client.length);
+    expect(total.length).toBe(client.length);
+    expect(sub.indexOf("2:00") + 4).toBe(client.indexOf("12:30") + 5);
+    expect(text).toContain("Only months with activity are shown.");
   });
 });
 

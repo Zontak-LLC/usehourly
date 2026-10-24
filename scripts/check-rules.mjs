@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
-const files = execFileSync("git", ["ls-files", "src", "e2e", "scripts", "bridge", "custom-worker.ts"], {
+const files = execFileSync("git", ["ls-files", "src", "e2e", "scripts", "bridge", "packages", "custom-worker.ts"], {
   encoding: "utf8",
 })
   .split("\n")

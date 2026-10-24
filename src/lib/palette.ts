@@ -4,11 +4,14 @@
  */
 export const PALETTE = {
   /** The one accent (the hour hand, a soft periwinkle since v4): the main button, today, the open tab, focus. */
-  accent: "#5A63D8",
-  /** Progress lines: the brand blend, sky to lavender (v4). */
-  brandBlend: ["#6aa9d8", "#7c8ce4", "#9a86e6", "#b38ae2"],
+  accent: "#2563C9",
+  /** Progress lines: the brand blend, sky to ocean blue (2026-10-24, the owner chose ocean blue). */
+  brandBlend: ["#7cc4ec", "#5aa8e6", "#3f86da", "#2563c9"],
   /** Money states on Invoices: paid, waiting, late. Used for nothing else. */
-  money: { paid: "#1fb8a0", waiting: "#8a6cff", late: "#ff5d73" },
+  money: { paid: "#1fb8a0", waiting: "#2563c9", late: "#ff5d73" },
   /** Bars and lines that are not "now": a soft grey that follows light and dark. */
   soft: "color-mix(in oklab, var(--foreground) 32%, transparent)",
 } as const;
+
+/** A client's colour when none was picked (2026-10-24: ocean blue; it used to be indigo, which read as purple). */
+export const DEFAULT_CLIENT_COLOR = PALETTE.accent.toLowerCase();

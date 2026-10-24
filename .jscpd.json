@@ -1,5 +1,5 @@
 {
-  "path": ["src"],
+  "path": ["src", "packages"],
   "minLines": 10,
   "minTokens": 70,
   "threshold": 1,

@@ -3,6 +3,7 @@ import { fromISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
 import { describeRounding } from "@/lib/rounding";
+import { taxNumberLine, taxRowLabel } from "@/lib/tax";
 
 const day = (iso: string) =>
   fromISODate(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -49,6 +50,7 @@ export function InvoiceDocument({
               <p className="whitespace-pre-line text-muted-foreground text-sm">{s.seller.address}</p>
             )}
             {s.seller.ein && <p className="text-muted-foreground text-sm">EIN {s.seller.ein}</p>}
+            {s.seller.taxNumber && <p className="text-muted-foreground text-sm">{taxNumberLine(s.seller.taxNumber)}</p>}
             <p className="text-muted-foreground text-sm">{s.seller.email}</p>
           </div>
         </div>
@@ -107,6 +109,22 @@ export function InvoiceDocument({
             ))}
           </tbody>
           <tfoot>
+            {s.tax && (
+              <>
+                <tr>
+                  <td className="px-3 pt-3" colSpan={3}>
+                    Subtotal
+                  </td>
+                  <td className="px-3 pt-3 text-right">{formatMoney(s.subtotalCents ?? 0, s.currency)}</td>
+                </tr>
+                <tr>
+                  <td className="px-3 pt-1" colSpan={3}>
+                    {taxRowLabel(s.tax)}
+                  </td>
+                  <td className="px-3 pt-1 text-right">{formatMoney(s.tax.cents, s.currency)}</td>
+                </tr>
+              </>
+            )}
             <tr className="font-semibold">
               <td className="px-3 py-3">Total</td>
               <td className="px-3 py-3 text-right">{formatDecimalHours(s.totalMinutes)}</td>

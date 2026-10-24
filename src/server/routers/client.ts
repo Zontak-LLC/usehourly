@@ -5,6 +5,7 @@ import { z } from "zod";
 import { isDemoSession } from "@/lib/demo";
 import { emailField } from "@/lib/email";
 import { CURRENCY_CODES, effectiveCurrency } from "@/lib/money";
+import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
 import { assertWithinQuota } from "@/lib/quotas";
 import { roundingSchema } from "@/lib/rounding";
 
@@ -150,7 +151,9 @@ export const clientRouter = router({
         "clients",
         isDemoSession(ctx.session),
       );
-      return ctx.prisma.client.create({ data: { user_id: ctx.userId, ...input } });
+      return ctx.prisma.client.create({
+        data: { user_id: ctx.userId, ...input, color: input.color ?? DEFAULT_CLIENT_COLOR },
+      });
     }),
 
   archive: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {

@@ -24,6 +24,17 @@ export const FEATURES = {
   budgets: false,
   /** A client billed in its own currency (the account's one currency stays). */
   clientCurrency: false,
+  /**
+   * Tax on invoices (issue #71 step 4, 2026-10-23): a Tax card on Account > Invoices (name, rate, tax number) and an
+   * "Add VAT (20%)" choice in the invoice builder. Built and tested; off until the owner chooses to show it.
+   */
+  invoiceTax: false,
+  /**
+   * Expenses and mileage on the Year summary (issue 100 first slice, 2026-10-23): record what you spent (or a trip at a
+   * per-mile rate), see it by category and quarter, net of payments received, and in the Excel export. Built and tested;
+   * off until the owner chooses to show it.
+   */
+  expenses: false,
   /** Per-client billing rounding. */
   rounding: false,
   /**

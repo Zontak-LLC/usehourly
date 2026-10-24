@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+// Two screens, the start and the end of the story (2026-10-24, the owner: "two would do"): logging a day, and the
+// invoices it turns into. The other pictures stay in public/landing for the Play Store listing.
 const SCREENS = [
   {
     id: "today",
@@ -13,39 +15,11 @@ const SCREENS = [
     text: "Type 1h30 or tap a quick time, pick the project, press Enter. A timer is there when you want one.",
   },
   {
-    id: "week",
-    label: "Week",
-    file: "2-week",
-    title: "The whole week at a glance",
-    text: "Seven day tiles with their totals. A weekday with no time stands out, so nothing slips through.",
-  },
-  {
-    id: "month",
-    label: "Month",
-    file: "3-month",
-    title: "A calendar of what you did",
-    text: "Day and week totals on one calendar. Logged on the wrong day? Drag the entry onto the right one.",
-  },
-  {
     id: "invoices",
     label: "Invoices",
     file: "4-invoices",
     title: "Paid, waiting, late",
     text: "Every invoice saved exactly as sent. Download the PDF, share a private link, and mark it paid.",
-  },
-  {
-    id: "clients",
-    label: "Clients",
-    file: "5-clients",
-    title: "Clients, projects and rates",
-    text: "Each client's month in hours and money, the rate on every project, and Make invoice one tap away.",
-  },
-  {
-    id: "year",
-    label: "Year summary",
-    file: "6-year",
-    title: "Ready for tax time",
-    text: "Hours, earned, invoiced and received for the year, month by month, with an Excel export for your accountant.",
   },
 ] as const;
 
@@ -81,7 +55,7 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
         <span className="size-2.5 rounded-full bg-[#FEBC2E]" />
         <span className="size-2.5 rounded-full bg-[#28C840]" />
         <span className="ml-3 rounded-md bg-card px-3 py-0.5 font-mono text-[11px] text-foreground/70">
-          usehourly.app/dashboard/{screen.id === "year" ? "report" : screen.id}
+          usehourly.app/dashboard/{screen.id}
         </span>
       </div>
       {/* The light picture on a light page, the dark one on a dark page. Both are a 1120x1008 window (10:9, the deck's own
@@ -89,9 +63,9 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
           desktop screen shrunk to a phone is too small to read. */}
       <div className="min-h-0 flex-1 dark:hidden">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=8`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone/${screen.file}.webp?v=9`} />
           <img
-            src={`/landing/tour/${screen.file}.webp?v=8`}
+            src={`/landing/tour/${screen.file}.webp?v=9`}
             alt={offset === 0 ? `The ${screen.label} screen of UseHourly: ${screen.title.toLowerCase()}` : ""}
             width={1400}
             height={1260}
@@ -103,9 +77,9 @@ function Card({ screen, offset }: { screen: Screen; offset: number }) {
       </div>
       <div className="hidden min-h-0 flex-1 dark:block">
         <picture className="block size-full">
-          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=8`} />
+          <source media="(max-width: 639px)" srcSet={`/landing/tour-phone-dark/${screen.file}.webp?v=9`} />
           <img
-            src={`/landing/tour-dark/${screen.file}.webp?v=8`}
+            src={`/landing/tour-dark/${screen.file}.webp?v=9`}
             alt=""
             width={1400}
             height={1260}
@@ -131,6 +105,7 @@ export function LandingShowcase() {
   const go = (i: number) => setStep(((i % count) + count) % count);
   const screen = SCREENS[step];
   const touch = useRef<number | null>(null);
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const arrow =
     "grid size-11 place-items-center rounded-full bg-card shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-transform hover:scale-105 active:scale-95";
 
@@ -139,10 +114,13 @@ export function LandingShowcase() {
       aria-roledescription="carousel"
       aria-label="Screens of the app"
       onKeyDown={(e) => {
-        if (e.key === "ArrowRight") go(step + 1);
-        else if (e.key === "ArrowLeft") go(step - 1);
-        else return;
+        const move = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (!move) return;
         e.preventDefault();
+        const next = (((step + move) % count) + count) % count;
+        go(next);
+        // On a tab, focus follows the selection (the tab pattern), so a screen reader is not left on a deselected tab.
+        if ((e.target as HTMLElement).getAttribute("role") === "tab") tabs.current[next]?.focus();
       }}
       className="mx-auto max-w-6xl"
     >
@@ -152,6 +130,11 @@ export function LandingShowcase() {
             key={s.id}
             type="button"
             role="tab"
+            id={`screen-tab-${s.id}`}
+            aria-controls="screen-panel"
+            ref={(el) => {
+              tabs.current[i] = el;
+            }}
             aria-selected={i === step}
             tabIndex={i === step ? 0 : -1}
             onClick={() => go(i)}
@@ -166,18 +149,23 @@ export function LandingShowcase() {
         ))}
       </div>
 
-      <div className="mt-8 grid items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
-        <div className="text-center lg:text-left" aria-live="polite">
-          <p className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-            {step + 1} / {count}
-          </p>
-          <h3 className="mt-2 font-bold font-display text-2xl">{screen.title}</h3>
-          <p className="mx-auto mt-2 max-w-md text-muted-foreground lg:mx-0">{screen.text}</p>
-        </div>
-        <div className="relative mx-auto w-full max-w-3xl pb-14">
+      {/* The caption sits right above the window it describes (issue 252: beside it, it floated in an empty column).
+          It keeps the room of two lines, so the window never jumps when a shorter caption comes in. */}
+      <div className="mx-auto mt-6 max-w-2xl text-center" aria-live="polite">
+        <h3 className="flex min-h-[4.5rem] items-end justify-center font-bold font-display text-2xl text-balance sm:min-h-0 sm:text-3xl">
+          {screen.title}
+        </h3>
+        <p className="mt-2 min-h-[6.5rem] text-pretty text-muted-foreground sm:min-h-[3.5rem] sm:text-lg">
+          {screen.text}
+        </p>
+      </div>
+
+      <div className="mt-4">
+        <div className="relative mx-auto w-full max-w-4xl pb-16">
           <div
             role="tabpanel"
-            aria-label={screen.label}
+            id="screen-panel"
+            aria-labelledby={`screen-tab-${screen.id}`}
             className="relative aspect-[9/14] w-full touch-pan-y sm:aspect-[10/9]"
             onTouchStart={(e) => {
               touch.current = e.touches[0]?.clientX ?? null;
@@ -194,37 +182,31 @@ export function LandingShowcase() {
               <Card key={s.id} screen={s} offset={i - step} />
             ))}
           </div>
-          <button
-            type="button"
-            aria-label="Previous screen"
-            onClick={() => go(step - 1)}
-            className={`absolute top-[45%] -left-4 z-50 hidden sm:grid lg:-left-6 ${arrow}`}
-          >
-            <ChevronLeft className="size-5" aria-hidden />
-          </button>
-          <button
-            type="button"
-            aria-label="Next screen"
-            onClick={() => go(step + 1)}
-            className={`absolute top-[45%] -right-4 z-50 hidden sm:grid lg:-right-6 ${arrow}`}
-          >
-            <ChevronRight className="size-5" aria-hidden />
-          </button>
-          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1">
-            {SCREENS.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                aria-label={`Show the ${s.label} screen`}
-                aria-current={i === step ? "true" : undefined}
-                onClick={() => go(i)}
-                className="grid h-8 place-items-center px-1"
-              >
-                <span
-                  className={`block h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-amber" : "w-1.5 bg-foreground/25"}`}
-                />
-              </button>
-            ))}
+          {/* Below the window, in one row: the arrows on either side of the dots (issue 252: on the window's sides they
+              crowded the picture). */}
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3">
+            <button type="button" aria-label="Previous screen" onClick={() => go(step - 1)} className={arrow}>
+              <ChevronLeft className="size-5" aria-hidden />
+            </button>
+            <div className="flex items-center gap-1">
+              {SCREENS.map((s, i) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-label={`Show the ${s.label} screen`}
+                  aria-current={i === step ? "true" : undefined}
+                  onClick={() => go(i)}
+                  className="grid h-8 place-items-center px-1"
+                >
+                  <span
+                    className={`block h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-amber" : "w-1.5 bg-foreground/25"}`}
+                  />
+                </button>
+              ))}
+            </div>
+            <button type="button" aria-label="Next screen" onClick={() => go(step + 1)} className={arrow}>
+              <ChevronRight className="size-5" aria-hidden />
+            </button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import type { InvoiceSnapshot } from "@/lib/invoice";
 import { formatMoneyForPdf as formatMoney } from "@/lib/money";
 import { shortNote } from "@/lib/notes";
 import { describeRounding } from "@/lib/rounding";
+import { taxNumberLine, taxRowLabel } from "@/lib/tax";
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric" });
 const fmtDate = (iso: string) => dateFmt.format(fromISODate(iso));
@@ -125,6 +126,7 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
     ...(s.seller.logo ? [s.seller.name] : []),
     ...(s.seller.address ? lines(s.seller.address) : []),
     ...(s.seller.ein ? [`EIN ${s.seller.ein}`] : []),
+    ...(s.seller.taxNumber ? [taxNumberLine(s.seller.taxNumber)] : []),
     s.seller.email,
   ];
   doc
@@ -190,12 +192,22 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
     });
   }
 
+  const footRows = s.tax ? 3 : 1;
   autoTable(doc, {
     startY: y,
     margin: { left: MARGIN, right: MARGIN },
     head: [["Description", "Hours", "Rate", "Amount"]],
     body,
-    foot: [["Total", formatDecimalHours(s.totalMinutes), "", formatMoney(s.totalCents, s.currency)]],
+    // With a tax: Subtotal and the tax row above the Total (hours sit on the Total row either way).
+    foot: [
+      ...(s.tax
+        ? [
+            ["Subtotal", "", "", formatMoney(s.subtotalCents ?? 0, s.currency)],
+            [taxRowLabel(s.tax), "", "", formatMoney(s.tax.cents, s.currency)],
+          ]
+        : []),
+      ["Total", formatDecimalHours(s.totalMinutes), "", formatMoney(s.totalCents, s.currency)],
+    ],
     theme: "plain",
     styles: tableStyles,
     headStyles: head,
@@ -208,6 +220,11 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
     didParseCell: (d) => {
       if (d.section === "head" && d.column.index > 0) d.cell.styles.halign = "right";
       if (d.section === "foot" && d.column.index > 0) d.cell.styles.halign = "right";
+      // Subtotal and tax rows are plain; only the Total is bold.
+      if (d.section === "foot" && d.row.index < footRows - 1) {
+        d.cell.styles.fontStyle = "normal";
+        d.cell.styles.fontSize = 10;
+      }
       if (d.section === "body") {
         const k = kinds[d.row.index];
         if (k?.kind === "project") {
@@ -223,7 +240,7 @@ export async function buildInvoicePdf(snapshot: InvoiceSnapshot) {
     didDrawCell: (d) => {
       // Rule under each project group (not between a project and its notes).
       const closes = d.section === "body" ? kinds[d.row.index]?.last : false;
-      if (closes || d.section === "foot") {
+      if (closes || (d.section === "foot" && d.row.index === 0)) {
         const { x, y: cy, width, height } = d.cell;
         const ly = cy + (d.section === "foot" ? 0 : height);
         doc.setDrawColor(...RULE).setLineWidth(0.5);

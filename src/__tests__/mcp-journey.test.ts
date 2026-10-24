@@ -725,7 +725,7 @@ describe("an assistant tracks a day of work", () => {
   it("manages clients and projects, converting dollars to cents", async () => {
     s.prisma.client.findFirst.mockResolvedValueOnce(null as never);
     await s.call("create_client", { name: "Initech" });
-    expect(s.prisma.client.create).toHaveBeenCalledWith({ data: { user_id: "u1", name: "Initech" } });
+    expect(s.prisma.client.create).toHaveBeenCalledWith({ data: { user_id: "u1", name: "Initech", color: "#2563c9" } });
 
     s.prisma.client.findFirst.mockResolvedValue(acme as never);
     s.prisma.project.findFirst.mockResolvedValue(null as never);

@@ -31,6 +31,7 @@
     "staging:migrate": "wrangler d1 migrations apply DB --remote --config wrangler.staging.jsonc",
     "staging:deploy": "node scripts/staging-deploy.mjs",
     "staging:smoke": "node scripts/staging-smoke.mjs",
+    "stress:seed": "node scripts/stress/seed.mjs",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "d1:backup": "mkdir -p backups && wrangler d1 export hourly-db --remote --output=backups/hourly-$(date +%F).sql",

@@ -4,10 +4,11 @@ import { useRef } from "react";
 
 import Link from "next/link";
 
-import { Activity, CircleHelp, ImagePlus, LogOut, Trash2, User, UsersRound } from "lucide-react";
+import { Activity, CircleHelp, ImagePlus, LogOut, Smartphone, Trash2, User, UsersRound } from "lucide-react";
 
 import { AvatarCropper } from "@/components/avatar-cropper";
 import { Caret } from "@/components/caret";
+import { useInstallApp } from "@/components/install-app";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ import {
 import { useAvatarUpload } from "@/components/use-avatar-upload";
 import { UserAvatar } from "@/components/user-avatar";
 import { feature } from "@/lib/features";
+import { INSTALL_HELP_URL } from "@/lib/install-app";
 import { signOutOfDevice } from "@/lib/sign-out";
 
 /**
@@ -36,6 +38,7 @@ export function UserMenu({
   const file = useRef<HTMLInputElement>(null);
   const avatar = useAvatarUpload();
   const pictures = feature("avatar");
+  const app = useInstallApp();
   return (
     <>
       {/* Outside the menu, so choosing the entry (which closes the menu) does not take the file box with it. */}
@@ -97,6 +100,19 @@ export function UserMenu({
             <DropdownMenuItem asChild>
               <Link href="/dashboard/insights" prefetch={false}>
                 <Activity /> Insights
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {/* Install the app (issue 70): one tap where the browser offers it, the steps on an iPhone, nothing once installed. */}
+          {app.offer === "prompt" && (
+            <DropdownMenuItem onSelect={() => void app.install()}>
+              <Smartphone /> Install the app
+            </DropdownMenuItem>
+          )}
+          {app.offer === "help" && (
+            <DropdownMenuItem asChild>
+              <Link href={INSTALL_HELP_URL} prefetch={false}>
+                <Smartphone /> Add to Home Screen
               </Link>
             </DropdownMenuItem>
           )}

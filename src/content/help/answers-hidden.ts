@@ -6,6 +6,19 @@ import type { Answer } from "./types";
  */
 export const HIDDEN_ANSWERS: Answer[] = [
   {
+    id: "invoice-tax",
+    feature: "invoiceTax",
+    question: "How do I add VAT, GST or sales tax to my invoices?",
+    keywords: ["vat", "gst", "hst", "sales tax", "tax rate", "tax number", "registration", "reverse charge"],
+    answer: `On **Account**, **Invoices**, fill in the **Tax** card: the name of the tax (VAT, GST, HST, Sales tax or your own word), the **rate** as a percentage (for example 20 or 7.5) and **your tax number**. Press **Save tax**.
+
+Each new invoice then shows a **Subtotal**, the tax row (for example "VAT (20%)") and the **Total** the client pays. The tax is worked out once on the subtotal and rounded to the cent.
+
+- To leave the tax off one invoice (a client who accounts for it themselves), untick **Add VAT (20%)** under the preview when you make it.
+- Your tax number prints on every new invoice when it is filled in, with or without the tax.
+- Invoices you already made never change. Leave the rate empty to add no tax.`,
+  },
+  {
     id: "budgets",
     feature: "budgets",
     question: "How do I set a budget for a project?",
@@ -205,5 +218,17 @@ One email arrives each Friday from about 4 pm **your** time, with your week so f
     question: "Can more than one person use it?",
     keywords: ["team", "employees", "studio", "share", "multi user"],
     answer: `In a first version, yes: you can invite someone to log time on the clients you choose. Invoices stay yours alone. See [Inviting someone](/help?a=teams).`,
+  },
+  {
+    id: "expenses",
+    feature: "expenses",
+    question: "Can I record expenses and mileage?",
+    keywords: ["expenses", "mileage", "miles", "receipts", "costs", "spending", "deductions", "net income"],
+    answer: `Yes, on the **Year summary**. Open the **Expenses** section and press **Add expense**.
+
+- **Expense:** the date, the amount, a category (software, equipment, travel and so on), an optional client and a note.
+- **Mileage:** the distance in miles or km and a rate per mile or km. The rate starts at 0.70, the IRS rate for 2025: change it to the rate for your year or country. UseHourly works out the amount.
+
+The section adds the year up by category and by quarter, and shows **Net**: payments received minus your expenses. Net is an estimate to plan with, not tax advice. **Export Excel** adds an **Expenses** sheet. Receipts are not stored: keep them yourself, and use the note to say where.`,
   },
 ];

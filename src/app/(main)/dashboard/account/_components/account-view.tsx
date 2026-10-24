@@ -24,6 +24,7 @@ import { DataHub } from "./data-hub";
 import { FridayReminderCard } from "./friday-reminder-card";
 import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
+import { TaxCard } from "./tax-card";
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -85,6 +86,7 @@ export function AccountView() {
       <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
         <BusinessDetailsCard me={account} />
         <CurrencyCard me={account} />
+        {feature("invoiceTax") && <TaxCard me={account} />}
       </Section>
     ),
     data: (

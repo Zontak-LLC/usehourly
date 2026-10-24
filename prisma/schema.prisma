@@ -19,6 +19,11 @@ model AuthUser {
   address       String?   // multi-line
   logo          String?   // data URL (png/jpeg), resized client-side
   payment_instructions String? // free text printed on invoices (ACH, check...)
+  // Tax added to invoices (issue #71 step 4, lib/tax.ts): name ("VAT"), rate in basis points (2000 = 20%; null/0 = none)
+  // and the seller's tax number (VAT/GST registration), printed on invoices.
+  tax_name      String?
+  tax_rate      Int?
+  tax_number    String?
   token_version Int      @default(0) // bump to sign out every device (see lib/session-version.ts)
   email_verified_at DateTime? // set when the address was confirmed through an emailed link
   email_bounced_at DateTime? // set when the address bounced for good or reported spam; no more reminder mail
@@ -49,6 +54,7 @@ model AuthUser {
   entries  TimeEntry[]
   invoices Invoice[]
   non_billable_days NonBillableDay[]
+  expenses Expense[]
   team_members_owned TeamMember[] @relation("TeamOwner")
   team_memberships   TeamMember[] @relation("TeamMemberOf")
   authored_entries   TimeEntry[]  @relation("EntryAuthor")
@@ -87,6 +93,7 @@ model Client {
   projects Project[]
   team_grants TeamMemberClient[]
   invoices Invoice[]
+  expenses Expense[]
 
   @@unique([user_id, name])
   @@map("clients")
@@ -154,6 +161,31 @@ model TimeEntry {
   // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
   // account. Prisma cannot express a partial index, so it lives only in the SQL.
   @@map("time_entries")
+}
+
+// Money spent for the business (issue #100): a plain expense or a trip (mileage). Integer cents in `currency` (the
+// account's when it was made). A trip keeps its distance (tenths of a mile or km) and rate (tenths of a cent per unit)
+// and its amount is worked out from them. `client_id` is optional; deleting the client keeps the expense.
+model Expense {
+  id            String   @id @default(uuid())
+  user_id       String
+  date          String   // YYYY-MM-DD
+  kind          String   @default("expense") // "expense" | "mileage"
+  category      String   // lib/expenses.ts EXPENSE_CATEGORIES
+  amount_cents  Int
+  currency      String   @default("USD")
+  note          String?
+  client_id     String?
+  distance      Int?     // mileage only, tenths
+  distance_unit String?  // mileage only, "mi" | "km"
+  mileage_rate  Int?     // mileage only, tenths of a cent per unit
+  created_at    DateTime @default(now())
+
+  user   AuthUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  client Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, date])
+  @@map("expenses")
 }
 
 // A day the account has marked non-billable: its time stays on screen but is left out of invoices, exports and the

@@ -1,5 +1,6 @@
 import type { AnnualReport } from "@/lib/annual-report";
 
+import { addExpenseSheets, type ExpenseSheetRow } from "./expenses-xlsx";
 import { excelMoneyFormat } from "./money";
 
 const MONTH_NAMES = [
@@ -27,7 +28,11 @@ export type ReportBusiness = { name: string | null; ein: string | null; currency
  * bundle. Sheets: Summary (totals + quarters), Monthly, Clients & projects, Invoices — with live
  * SUM formulas so edits in Excel keep the totals honest.
  */
-export async function buildAnnualWorkbook(report: AnnualReport, business: ReportBusiness) {
+export async function buildAnnualWorkbook(
+  report: AnnualReport,
+  business: ReportBusiness,
+  expenses?: ExpenseSheetRow[],
+) {
   const { default: ExcelJS } = await import("exceljs");
   const wb = new ExcelJS.Workbook();
   wb.creator = "UseHourly";
@@ -223,12 +228,15 @@ export async function buildAnnualWorkbook(report: AnnualReport, business: Report
   pay.getColumn(4).width = 14;
   pay.getColumn(5).width = 16;
 
+  // ── Expenses (only when the Year summary shows them) ──────────────
+  if (expenses) addExpenseSheets(wb, expenses, { year: report.year, receivedCents: report.received.totalCents, money });
+
   return wb;
 }
 
 /** Browser-only: build the workbook and trigger the download. */
-export async function downloadAnnualXlsx(report: AnnualReport, business: ReportBusiness) {
-  const wb = await buildAnnualWorkbook(report, business);
+export async function downloadAnnualXlsx(report: AnnualReport, business: ReportBusiness, expenses?: ExpenseSheetRow[]) {
+  const wb = await buildAnnualWorkbook(report, business, expenses);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);

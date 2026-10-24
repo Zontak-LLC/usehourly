@@ -130,7 +130,7 @@ export function ProjectEditCard({
         <header className="flex items-center gap-3">
           <ProjectMark
             projectId={p.id}
-            color={clients?.find((cl) => cl.id === p.client_id)?.color ?? "#6366f1"}
+            color={clients?.find((cl) => cl.id === p.client_id)?.color ?? "#2563c9"}
             logos={logos}
             size={36}
           />

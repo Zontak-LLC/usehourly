@@ -9,6 +9,7 @@ import { CurrencyProvider } from "@/components/currency-provider";
 import { DemoBanner } from "@/components/demo-banner";
 import { GlobalSearch } from "@/components/global-search";
 import { GoogleCalendarProvider } from "@/components/google-calendar-config";
+import { TimerBadge } from "@/components/install-app";
 import { LocalFirst } from "@/components/local-first";
 import { LogoMark } from "@/components/logo";
 import { OfflineGuard } from "@/components/offline-guard";
@@ -102,6 +103,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               )}
             >
               <UsageBeacon />
+              <TimerBadge />
               {feature("swipe") && <SwipeNav />}
               <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />
               {session?.user?.demo === true && <DemoBanner />}
