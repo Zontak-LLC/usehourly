@@ -1,4 +1,4 @@
-import { addDays, fromISODate, startOfWeek } from "@/lib/dates";
+import { addDays, DATE_RE, fromISODate, startOfWeek } from "@/lib/dates";
 
 /*
  * How Today moves between days (2026-10-23). Week shows the whole week as seven tiles; Today is about ONE day, so it
@@ -34,6 +34,50 @@ export function missedDays(
     if (isWeekday(d) && !logged.has(d) && !nonBillable.has(d)) out.push(d);
   }
   return out;
+}
+
+/** The last weekday before `today` (Friday when today is Saturday, Sunday or Monday). */
+export function lastWorkday(today: string): string {
+  let d = addDays(today, -1);
+  while (!isWeekday(d)) d = addDays(d, -1);
+  return d;
+}
+
+/**
+ * The day the gentle "Nothing logged on Thursday" line on Today points at (issue 99): the last weekday before today,
+ * when it is one of the missed days (so it had no time, was not marked non-billable, and came after the person started)
+ * and "Not now" was not pressed for it. Null otherwise. Older missed days stay as the quiet "No time:" buttons.
+ */
+export function nudgeDay(missed: readonly string[], today: string, notNow: ReadonlySet<string>): string | null {
+  const d = lastWorkday(today);
+  return missed.includes(d) && !notNow.has(d) ? d : null;
+}
+
+/** Where "Not now" is remembered: dates only, in this browser. */
+export const NOT_NOW_KEY = "hourly:missedNotNow";
+const MAX_NOT_NOW = 30;
+
+type StorageLike = Pick<Storage, "getItem" | "setItem">;
+
+/** The dates "Not now" was pressed for (empty when none or storage is unreadable). */
+export function loadNotNow(storage: StorageLike | null): Set<string> {
+  try {
+    const raw: unknown = JSON.parse(storage?.getItem(NOT_NOW_KEY) ?? "[]");
+    return new Set(Array.isArray(raw) ? raw.filter((d): d is string => typeof d === "string" && DATE_RE.test(d)) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+/** Remembers "Not now" for a date (the newest few are kept). */
+export function saveNotNow(storage: StorageLike | null, date: string): Set<string> {
+  const next = new Set([...loadNotNow(storage), date]);
+  try {
+    storage?.setItem(NOT_NOW_KEY, JSON.stringify([...next].sort().slice(-MAX_NOT_NOW)));
+  } catch {
+    // storage blocked: the line comes back on the next visit, nothing worse
+  }
+  return next;
 }
 
 /** The six-or-fewer Monday-first weeks that show a month: each a list of seven dates (days of other months included). */

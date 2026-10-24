@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { type CalendarEvent, MAX_EVENTS } from "@/lib/calendar-events";
 import { MAX_LINK_CHARS } from "@/lib/calendar-link";
+import { type CalendarRule, MAX_RULE_CHARS, MAX_RULES } from "@/lib/calendar-suggest";
 
 /**
  * The imported calendar (issue #99), kept ONLY in this browser (localStorage), under the account that imported it. The
@@ -14,6 +15,8 @@ export const CALENDAR_SKIPPED_KEY = "hourly:calendarSkipped";
 export const CALENDAR_LINK_KEY = "hourly:calendarLink";
 /** Set when the calendar was read straight from Google Calendar (slice 4): there is no secret, only "connected". */
 export const CALENDAR_GOOGLE_KEY = "hourly:calendarGoogle";
+/** The person's meeting rules ("acme" meetings go on Acme / Design), issue 99. */
+export const CALENDAR_RULES_KEY = "hourly:calendarRules";
 export const CALENDAR_EVENT = "hourly:calendar-changed";
 /** How far back an import keeps meetings, and how many "skipped" marks are remembered. */
 export const KEEP_DAYS = 90;
@@ -129,7 +132,7 @@ export function saveGoogle(storage: StorageLike | null, userId: string, on: bool
   }
 }
 
-/** Forgets the calendar, its address and the "skipped" marks. */
+/** Forgets the calendar, its address, the "skipped" marks and the meeting rules. */
 export function forgetCalendar(storage: StorageLike | null): void {
   cancelCalendarReads();
   try {
@@ -137,6 +140,7 @@ export function forgetCalendar(storage: StorageLike | null): void {
     storage?.removeItem(CALENDAR_SKIPPED_KEY);
     storage?.removeItem(CALENDAR_LINK_KEY);
     storage?.removeItem(CALENDAR_GOOGLE_KEY);
+    storage?.removeItem(CALENDAR_RULES_KEY);
   } catch {
     // storage blocked
   }
@@ -162,6 +166,36 @@ export function addSkipped(storage: StorageLike | null, userId: string, id: stri
     storage.setItem(CALENDAR_SKIPPED_KEY, JSON.stringify({ userId, ids }));
   } catch {
     // storage full or blocked: the meeting may be offered again, nothing worse
+  }
+}
+
+/** This account's meeting rules, oldest first (empty when none, another account's, damaged or unreadable). */
+export function loadRules(storage: StorageLike | null, userId: string | null | undefined): CalendarRule[] {
+  if (!storage || !userId) return [];
+  try {
+    const parsed = z
+      .object({
+        userId: z.string(),
+        rules: z
+          .array(z.object({ word: z.string().min(1).max(MAX_RULE_CHARS), projectId: z.string().min(1).max(100) }))
+          .max(MAX_RULES),
+      })
+      .safeParse(JSON.parse(storage.getItem(CALENDAR_RULES_KEY) ?? "null"));
+    return parsed.success && parsed.data.userId === userId ? parsed.data.rules : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Keeps this account's meeting rules; an empty list forgets them. False when storage refuses. */
+export function saveRules(storage: StorageLike | null, userId: string, rules: readonly CalendarRule[]): boolean {
+  if (!storage || !userId) return false;
+  try {
+    if (rules.length === 0) storage.removeItem(CALENDAR_RULES_KEY);
+    else storage.setItem(CALENDAR_RULES_KEY, JSON.stringify({ userId, rules: rules.slice(-MAX_RULES) }));
+    return true;
+  } catch {
+    return false;
   }
 }
 

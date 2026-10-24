@@ -27,9 +27,10 @@ test("Today: the arrows, the day calendar and the days with no time all open the
     await expect(page.getByText(/1:00 this day/).first()).toBeVisible();
     await page.goto("/dashboard/today");
     const missed = page.getByRole("navigation", { name: "Days with no time" });
-    // Between a week ago and today there are always at least four weekdays; three show, the rest are counted.
+    // Between a week ago and today there are always at least four weekdays: the last one has its own line ("Nothing
+    // logged on ...", issue 99), and of the rest three show as buttons, any more are counted.
+    await expect(page.getByRole("region", { name: "Missed day" })).toContainText("Nothing logged on");
     await expect(missed.getByRole("button")).toHaveCount(3);
-    await expect(missed).toContainText(/and \d+ more/);
     const first = missed.getByRole("button").first();
     const label = (await first.getAttribute("aria-label")) ?? "";
     await first.click();
