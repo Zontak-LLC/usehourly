@@ -85,15 +85,14 @@ test("sample account: every main page loads, and an entry can be added, edited a
     });
   }
 
-  await test.step("Month: a day opens as a card and closes again", async () => {
+  await test.step("Month: a picked day shows beside the calendar, and Whole month lists the month", async () => {
     await page.goto("/dashboard/month");
-    await page
-      .getByRole("button", { name: /^\d{4}-\d\d-\d\d: / })
-      .nth(10)
-      .click();
-    const card = page.getByRole("region", { name: /^\w+day, \w+ \d+, \d{4}$/ });
-    await expect(card).toBeVisible();
-    await card.getByRole("button", { name: "Close" }).click();
-    await expect(card).toHaveCount(0);
+    const day = page.getByRole("button", { name: /^\d{4}-\d\d-15: / }); // the 15th is always in the month
+    await day.click();
+    await expect(day).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/date=\d{4}-\d\d-\d\d/);
+    await expect(page.getByRole("region", { name: /^\w+day, \w+ \d+$/ })).toBeVisible();
+    await page.getByRole("button", { name: "Whole month", exact: true }).click();
+    await expect(page).toHaveURL(/view=month/);
   });
 });

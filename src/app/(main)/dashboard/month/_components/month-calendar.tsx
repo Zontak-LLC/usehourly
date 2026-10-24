@@ -39,7 +39,7 @@ type CellState = {
 
 function cellClass(s: CellState): string {
   const base =
-    "group relative flex min-h-14 cursor-pointer flex-col gap-1 overflow-hidden border-r border-b p-1 text-left transition-colors hover:bg-muted focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 sm:min-h-24 sm:p-2";
+    "group relative flex min-h-12 cursor-pointer flex-col gap-0.5 overflow-hidden border-r border-b p-1 text-left transition-colors hover:bg-muted focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2";
   const quiet = !s.inMonth
     ? "bg-foreground/[0.04] text-muted-foreground/70"
     : s.isWeekend
@@ -93,11 +93,10 @@ function DayCell({
       onPointerEnter={onPointerEnter}
       onClick={onClick}
       {...dropHandlers}
-      aria-pressed={selectMode ? state.isPicked : undefined}
-      aria-expanded={selectMode ? undefined : state.isOpen}
+      // Pressed = the day showing on the right (or, while picking several days, one of the picked days).
+      aria-pressed={selectMode ? state.isPicked : state.isOpen}
       aria-current={state.isToday ? "date" : undefined}
       aria-label={cellLabel(d, mins, state, nonBillable, projects)}
-      title={state.isOpen ? "Close this day" : undefined}
       data-drop-target={state.isDropTarget || undefined}
       className={cellClass(state)}
     >
@@ -116,18 +115,15 @@ function DayCell({
       </span>
 
       {mins > 0 ? (
-        <span className="mt-auto text-right font-medium font-mono text-foreground/85 text-xs tabular-nums tracking-tight sm:text-sm">
+        <span className="mt-auto text-right font-medium font-mono text-[11px] text-foreground/85 tabular-nums tracking-tight sm:text-xs">
           {formatDuration(mins)}
         </span>
       ) : state.isGap ? (
-        // A weekday that went by with nothing logged: a quiet dashed frame (and the words on a wider screen), as on Week.
-        <>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-1 rounded-[6px] border border-foreground/15 border-dashed"
-          />
-          <span className="mt-auto hidden text-right text-muted-foreground text-xs sm:block">No time</span>
-        </>
+        // A weekday that went by with nothing logged: a quiet dashed frame, as on Week (the cell's name says so in words).
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-1 rounded-[6px] border border-foreground/15 border-dashed"
+        />
       ) : null}
     </button>
   );
@@ -156,8 +152,8 @@ export function MonthCalendar({
   /** The month's project rows (`buildSheet`), for the dots in each day. */
   rows: SheetRow[];
   inMonth: (d: string) => boolean;
-  /** The day whose card is open under the calendar. */
-  openDay: string | null;
+  /** The day showing on the right (an ink ring). */
+  openDay: string;
   selectMode: boolean;
   /** Dragging a rectangle of days with the mouse picks them ("Add to several days"); off with that feature. */
   rangeSelect: boolean;
@@ -167,8 +163,8 @@ export function MonthCalendar({
   nonBillable: ReadonlySet<string>;
   /** An entry dragged from the open day card: every other day accepts it. */
   drag: EntryDrag;
-  /** Opens a day's card, or closes it (null) when that day is already open. */
-  onOpenDay: (d: string | null) => void;
+  /** Shows a day on the right (also from a neighbouring month's padding day: that month opens). */
+  onOpenDay: (d: string) => void;
 }) {
   const { picked, setPicked, drag: rect, setDrag: setRect, suppressClick } = selection;
   const byDay = projectsByDay(rows);
@@ -198,12 +194,12 @@ export function MonthCalendar({
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]">
-      <div className="grid select-none grid-cols-7 text-sm sm:grid-cols-[repeat(7,minmax(0,1fr))_4.5rem]">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-sheet)]">
+      <div className="grid select-none grid-cols-7 text-sm sm:grid-cols-[repeat(7,minmax(0,1fr))_3.25rem]">
         {[...weekdayNames, "Week"].map((n, i) => (
           <div
             key={n}
-            className={`border-b px-0.5 py-2 text-center font-mono text-[11px] uppercase tracking-widest sm:px-2 ${
+            className={`border-b px-0.5 py-2 text-center font-mono text-[10px] uppercase tracking-wider ${
               n === "Week"
                 ? "hidden bg-band-2 text-foreground/75 sm:block"
                 : i >= 5
@@ -263,7 +259,7 @@ export function MonthCalendar({
                         suppressClick.current = false;
                         return;
                       }
-                      if (!selectMode) return onOpenDay(d === openDay ? null : d);
+                      if (!selectMode) return onOpenDay(d);
                       if (!here) return;
                       setPicked((prev) => {
                         const next = new Set(prev);
@@ -275,9 +271,9 @@ export function MonthCalendar({
                 );
               })}
               {/* The week's total (this month's days only), at the end of its row. */}
-              <div className="hidden flex-col items-end justify-end border-b bg-band-2 p-2 sm:flex">
+              <div className="hidden flex-col items-end justify-end border-b bg-band-2 p-1 sm:flex">
                 <span className="sr-only">Week of {weekOf.format(fromISODate(w[0]))}: </span>
-                <span className="font-mono font-semibold text-foreground/85 text-sm tabular-nums tracking-tight">
+                <span className="font-mono font-semibold text-[11px] text-foreground/85 tabular-nums tracking-tight sm:text-xs">
                   {/* An empty week is blank, not a bold "0:00". */}
                   {weekTotal ? formatDuration(weekTotal) : ""}
                 </span>

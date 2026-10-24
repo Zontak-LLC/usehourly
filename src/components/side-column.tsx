@@ -1,20 +1,21 @@
 import type { ReactNode } from "react";
 
 /**
- * The side column of a two-column page (an experiment, 2026-10-24: the owner may drop it; then remove this file, the
- * `.side-scroll` block in globals.css and the two uses). From 768px the card is min(its own content, the main column):
- * a card shorter than the main column keeps its own height (no empty block under it); a longer one stops at the main
- * column's foot and only its list scrolls (`SideScroll`). The box never gets shorter than 24rem, so folding the main
- * column cannot leave a tiny scroll box. On a phone the columns stack and nothing changes. Pure CSS: the cell stretches
- * with the grid row and its content sits absolutely inside it (so the content's height does not count toward the row),
- * and the card is `max-h-full` of that box.
+ * The side column of a two-column page (Week's "This week" card, Month's calendar). From 768px the card is min(its own
+ * content, the main column): a card shorter than the main column keeps its own height (no empty block under it); a
+ * longer one stops at the main column's foot and only its list scrolls (`SideScroll`). The box never gets shorter than
+ * 24rem, so a short main column cannot leave a tiny scroll box. On a phone the columns stack and nothing changes. Pure
+ * CSS: the cell stretches with the grid row and its content sits absolutely inside it (so the content's height does not
+ * count toward the row), and the card is `max-h-full` of that box.
  *
  * The card inside takes `SIDE_CARD` and wraps its rows in `SideScroll`; its header stays put.
  */
-export function SideColumn({ children }: { children: ReactNode }) {
+export function SideColumn({ children, inFlow = false }: { children: ReactNode; inFlow?: boolean }) {
   return (
-    <div data-side-column className="relative min-w-0 md:min-h-96 md:self-stretch">
-      <div className="flex flex-col gap-4 md:absolute md:inset-0">{children}</div>
+    <div data-side-column className={`relative min-w-0 md:self-stretch ${inFlow ? "" : "md:min-h-96"}`}>
+      {/* `inFlow` (Month's calendar): the content counts toward the row's height, so a short right column never cuts it
+          off; the card is still sticky inside the stretched cell. */}
+      <div className={`flex flex-col gap-4 ${inFlow ? "md:h-full" : "md:absolute md:inset-0"}`}>{children}</div>
     </div>
   );
 }

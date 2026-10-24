@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-
+import { PeriodStepper } from "@/components/period-stepper";
 import { ProjectFilter } from "@/components/project-filter";
 import { ShareExportMenu, SharePanel, type SharePanelKind } from "@/components/share-export-menu";
 import { Button } from "@/components/ui/button";
@@ -41,29 +40,14 @@ export function WeekToolbar({
           are quieter and sit at the end. "This week" only shows when you are looking at another week. */}
       <div data-testid="timesheet-toolbar" className="flex w-full flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 max-sm:w-full">
-          <div className="flex items-center overflow-hidden rounded-lg border border-foreground/25 bg-card max-sm:flex-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-10 rounded-none"
-              onClick={() => onWeek(addDays(start, -7))}
-              aria-label="Previous week"
-            >
-              <ChevronLeft />
-            </Button>
-            <span className="min-w-36 flex-1 border-x px-3 text-center font-medium text-sm tabular-nums leading-10">
-              {range.format(fromISODate(start))} – {range.format(fromISODate(end))}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-10 rounded-none"
-              onClick={() => onWeek(addDays(start, 7))}
-              aria-label="Next week"
-            >
-              <ChevronRight />
-            </Button>
-          </div>
+          <PeriodStepper
+            className="max-sm:flex-1"
+            label={`${range.format(fromISODate(start))} – ${range.format(fromISODate(end))}`}
+            prev="Previous week"
+            next="Next week"
+            onPrev={() => onWeek(addDays(start, -7))}
+            onNext={() => onWeek(addDays(start, 7))}
+          />
           {today && startOfWeek(today) !== start && (
             <Button variant="outline" className="h-10" onClick={() => onWeek(startOfWeek(today))}>
               This week
