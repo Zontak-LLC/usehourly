@@ -184,6 +184,52 @@
   --shadow-sheet: 0 18px 40px -24px rgb(0 0 0 / 0.6);
 }
 
+/* The side column's scrolling list (components/side-column.tsx, an experiment the owner may drop: remove this block with
+   it). The rows fade out at an edge only when there is more to scroll that way: a scroll-driven animation moves the two
+   fade lengths, so a list that does not scroll (a phone, a short list) has no timeline and no fade. Browsers without
+   scroll timelines show no fade. It follows the scroll position only, so there is no motion to reduce. */
+@property --side-fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --side-fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.side-scroll {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--side-fade-top),
+    black calc(100% - var(--side-fade-bottom)),
+    transparent
+  );
+}
+@supports (animation-timeline: scroll()) {
+  .side-scroll {
+    animation: side-fade linear both;
+    animation-timeline: scroll(self);
+  }
+}
+@keyframes side-fade {
+  0% {
+    --side-fade-top: 0px;
+    --side-fade-bottom: 2.5rem;
+  }
+  8% {
+    --side-fade-top: 2.5rem;
+  }
+  92% {
+    --side-fade-bottom: 2.5rem;
+  }
+  100% {
+    --side-fade-top: 2.5rem;
+    --side-fade-bottom: 0px;
+  }
+}
+
 /* An invoice sheet settling onto the page, and a PAID stamp landing on it. */
 @keyframes settle {
   from {

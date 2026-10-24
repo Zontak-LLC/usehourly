@@ -1,6 +1,7 @@
 "use client";
 
 import { toggleProjectFilter } from "@/components/project-filter";
+import { SIDE_CARD, SideScroll } from "@/components/side-column";
 import { formatDuration } from "@/lib/duration";
 import { ROW_FIGURE } from "@/lib/figures";
 import type { buildSheet } from "@/lib/timesheet";
@@ -31,7 +32,7 @@ export function WeekTotalCard({
     <section
       aria-label="This week"
       data-headerless="a summary list beside the day"
-      className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
+      className={`${SIDE_CARD} overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]`}
     >
       <p className="px-4 pt-4 text-sm">
         <span className="font-bold font-display text-2xl tabular-nums">{formatDuration(weekMinutes)}</span>{" "}
@@ -55,40 +56,42 @@ export function WeekTotalCard({
       {sheet.rows.length === 0 ? (
         <p className="px-4 pb-4 text-muted-foreground text-sm">No entries this week yet.</p>
       ) : (
-        <ul className="divide-y border-t">
-          {sheet.rows.map((r) => {
-            const on = projectId === r.projectId;
-            return (
-              <li key={r.projectId}>
-                <button
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => onProjectId(toggleProjectFilter(projectId, r.projectId))}
-                  title={on ? "Show all projects" : `Show only ${r.project}`}
-                  className={`flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-muted ${
-                    on ? "bg-tint" : projectId ? "text-muted-foreground" : ""
-                  }`}
-                >
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{r.project}</span>
-                    <span aria-hidden className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
-                      <span
-                        className="block h-full rounded-full"
-                        style={{
-                          width: `${(r.total / longest) * 100}%`,
-                          backgroundColor: "color-mix(in oklab, var(--foreground) 38%, transparent)",
-                        }}
-                      />
+        <SideScroll>
+          <ul className="divide-y border-t">
+            {sheet.rows.map((r) => {
+              const on = projectId === r.projectId;
+              return (
+                <li key={r.projectId}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => onProjectId(toggleProjectFilter(projectId, r.projectId))}
+                    title={on ? "Show all projects" : `Show only ${r.project}`}
+                    className={`flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                      on ? "bg-tint" : projectId ? "text-muted-foreground" : ""
+                    }`}
+                  >
+                    <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{r.project}</span>
+                      <span aria-hidden className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
+                        <span
+                          className="block h-full rounded-full"
+                          style={{
+                            width: `${(r.total / longest) * 100}%`,
+                            backgroundColor: "color-mix(in oklab, var(--foreground) 38%, transparent)",
+                          }}
+                        />
+                      </span>
+                      <span className="sr-only">{r.client}</span>
                     </span>
-                    <span className="sr-only">{r.client}</span>
-                  </span>
-                  <span className={`shrink-0 ${ROW_FIGURE}`}>{formatDuration(r.total)}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                    <span className={`shrink-0 ${ROW_FIGURE}`}>{formatDuration(r.total)}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </SideScroll>
       )}
     </section>
   );
