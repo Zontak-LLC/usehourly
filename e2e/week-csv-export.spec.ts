@@ -61,6 +61,19 @@ test("the week's CSV has its name, the header and one row per entry the page sho
   expect(lines.join("\n")).not.toContain("Still running");
 });
 
+test("an entry on a day marked non-billable is not in the CSV", async ({ page }) => {
+  const { general, add } = await seed(page);
+  await add(general, "2026-09-08", 90, "Design");
+  await add(general, "2026-09-09", 60, "Day off work");
+  await call(page, "entry.setNonBillable", { date: "2026-09-09", nonBillable: true });
+
+  await page.goto(WEEK);
+  await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("Day off work");
+  const { lines } = await downloadCsv(page);
+
+  expect(lines).toEqual([HEADER, "2026-09-08,Acme,General,Design,1.5,90,Yes,100,150,USD"]);
+});
+
 test("with a project filter the CSV holds only that project's entries", async ({ page }) => {
   const { clientId, general, add } = await seed(page);
   const other = await call<{ id: string }>(page, "project.create", { clientId, name: "Support", hourlyRate: 5000 });
