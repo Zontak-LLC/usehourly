@@ -23,6 +23,34 @@ If the dates you pick hold time that is already on an invoice, the builder says 
 If you delete an invoice, its time becomes "not invoiced yet" again.`,
   },
   {
+    id: "invoice-schedule",
+    question: "Can UseHourly remind me when it is time to invoice a client?",
+    keywords: [
+      "schedule",
+      "monthly",
+      "every month",
+      "every 2 weeks",
+      "biweekly",
+      "due",
+      "remind",
+      "recurring",
+      "period",
+    ],
+    answer: `Yes. Open **Clients**, pick the client, open **Billing details** and set **Invoice this client** to **Every month** or **Every 2 weeks** (for two weeks, pick the first day of the first period). Press **Save**.
+
+When a period is over and its time is not invoiced yet, **Invoices** and the client's page say so, for example "October invoice for Acme is due · 12:30 h · $1,250.00". **Make invoice** opens a new invoice for exactly that period. Once an invoice covers the period, the note goes away.
+
+Every month means the whole calendar month before, due on the 1st. Nothing is sent by UseHourly and nothing is made without you.`,
+  },
+  {
+    id: "overdue-reminder",
+    question: "How do I remind a client about a late invoice?",
+    keywords: ["overdue", "late", "unpaid", "remind", "reminder", "chase", "follow up", "nudge"],
+    answer: `Open **Invoices** and choose **Overdue**. On the late invoice, press the bell (**Write a reminder**). A polite email opens under the invoice, with the amount, how many days late it is and a private link to the invoice. Change the words if you like, then press **Open in my email app** and send it from there.
+
+UseHourly never sends the reminder itself. To send the invoice email again instead, use the **···** menu on the invoice.`,
+  },
+  {
     id: "invoice-link",
     oldSlugs: ["emailing-invoices"],
     question: "How do I email an invoice to my client, and what do they see?",
@@ -94,6 +122,6 @@ Your **client's** name, address and logo are on **Clients**: open **···** on 
     keywords: ["round up", "rounding", "increments", "15 minutes", "quarter hour", "minimum"],
     answer: feature("rounding")
       ? `Your own records are never rounded. Only a stopped timer is counted up to the next whole minute. For invoices you can choose rounding per client: see [Rounding time on invoices](/help?a=invoice-rounding).`
-      : `No. Invoices bill the exact minutes you logged. Only a stopped timer is counted up to the next whole minute, and you can still change the time before you add it.`,
+      : `No. Invoices bill the exact minutes you logged. Only a stopped timer is counted up to the next whole minute, and you can still correct it with − or + 5 min right after you stop.`,
   },
 ];

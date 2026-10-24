@@ -30,7 +30,7 @@ A plain number up to **12** means hours (\`4\` is four hours). A bigger plain nu
     id: "timer",
     question: "How does the timer work?",
     keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard", "undo"],
-    answer: `Press **Start timer** on Today. The timer runs on the project shown beside it, and the time counts up in the strip and in your totals.
+    answer: `Pick the project in the **Log time** card on Today, then press **Start timer** at the foot of the card. The timer runs on that project. While it runs, it shows at the top of the same card, and the time counts up there and in your totals.
 
 - **Stop timer** saves the time at once and says so ("Saved 0:42"). Use − or + 5 min to correct it, **Undo** to throw it away, **Resume timer** to carry on, or **Done**.
 - Forgot to start it? Just after you start, **Started earlier?** moves the start back by 15 min, 30 min or 1 hour. After 4 hours, **Still working?** lets you stop it at the time you really stopped.
@@ -55,5 +55,58 @@ An entry that is already on an invoice says **Invoiced**. You can still change i
     answer: `Put that time on a **not billable** project. When you add a project on **Clients**, tick **Not billable**; for a project you already have, press **Edit** and untick **Billable**.
 
 A not billable project has no rate and never goes on an invoice. Its time still shows in your day, week and month totals.`,
+  },
+  {
+    id: "calendar-suggestions",
+    feature: "calendar",
+    question: "How do I turn calendar meetings into time entries?",
+    keywords: [
+      "calendar",
+      "meetings",
+      "ics",
+      "google calendar",
+      "outlook",
+      "apple calendar",
+      "suggest",
+      "import",
+      "secret address",
+      "ical",
+      "link",
+      "sync",
+    ],
+    answer: `On **Today**, **Turn meetings into time entries** offers the ways to connect a calendar. Each day then shows **From your calendar**: the day's meetings with their time and length. Press **Add** to log one (its title becomes the description) or **Skip** to hide it for good. Nothing is added unless you press Add.
+
+- **Add a calendar file:** an **.ics** file. Google Calendar: Settings, **Import & export**, **Export** (open the zip). Apple Calendar: File, **Export**. Outlook: save as iCalendar. **Update** reads a newer file.
+- **Use a private address:** Google: Settings, your calendar, **Integrate calendar**, **Secret address in iCal format** (Outlook and iCloud work too). It is read again when you open Today after half an hour; **Refresh** reads it now. Anyone with the address can read the calendar: if it leaks, reset it in Google.
+- **Connect Google Calendar**, where this site has it set up: read-only, straight from Google to your browser.
+
+**Remove calendar** forgets it. See [how the project is picked](/help?a=calendar-projects) and what stays on your device.`,
+  },
+  {
+    id: "calendar-projects",
+    feature: "calendar",
+    question: "How does UseHourly pick the project for a calendar meeting?",
+    keywords: ["calendar", "meetings", "rule", "always", "project", "privacy", "declined", "all-day"],
+    answer: `A meeting gets a project when its title names one clearly: a project's own name, or a client with a single project. Otherwise you pick it.
+
+When you pick a project yourself and press **Add**, UseHourly asks once: **Always put "acme" meetings on Design?** Press **Always**: from then on a meeting with that word in its title has that project picked (the row says "your rule for acme"). You can still change it before you press Add. **Forget my meeting rules**, under the list, removes them.
+
+## What is shown
+Meetings that start that day. All-day events, events marked free, cancelled ones, meetings you declined, blocks over 8 hours and meetings already logged (same description and length) are left out.
+
+## What stays on your device
+The calendar is read **in your browser**. Only the title, start and end of meetings from the last 3 months are kept, with your rules, in this browser for your account. They are removed when you log out or press **Remove calendar**. A private address passes through UseHourly's server only to fetch the calendar; it is not stored or logged there.`,
+  },
+  {
+    id: "missed-days",
+    question: 'Today says "Nothing logged on Thursday". What is that?',
+    keywords: ["missed", "forgot", "no time", "empty day", "gap", "reminder", "not now", "yesterday"],
+    answer: `When your last working day has no time, **Today** says so in one line at the foot of the day card: **Nothing logged on Thursday**.
+
+- **Add it now** opens that day, so you can log what you did.
+- **Not now** hides the line for that day, on this device.
+- Older weekdays of the last week with no time show as small buttons after **No time:**. Each opens its day.
+
+Days before you started logging are never counted, and neither are weekends. UseHourly only says this in the app: it never emails you about it.`,
   },
 ];

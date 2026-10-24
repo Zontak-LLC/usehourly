@@ -92,7 +92,7 @@ export function DayEditorPanel({
     <div className="flex flex-col gap-4">
       {entries.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-          Couldn't load this day: {entries.error.message}
+          Couldn't load entries: {entries.error.message}
         </p>
       ) : entries.isLoading ? (
         <Skeleton className="h-24 w-full" />
@@ -152,7 +152,7 @@ function DayCard({
             {/* The day's own name, so the card still says which day it is once the day row has scrolled away. */}
             <h2 className="font-semibold text-base">{title ?? dayTitle.format(fromISODate(date))}</h2>
             <p className="text-foreground/75 text-sm">
-              {rows.length === 0 ? "Nothing logged yet" : `${rows.length} ${rows.length === 1 ? "entry" : "entries"}`}
+              {rows.length === 0 ? "No entries yet" : `${rows.length} ${rows.length === 1 ? "entry" : "entries"}`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">

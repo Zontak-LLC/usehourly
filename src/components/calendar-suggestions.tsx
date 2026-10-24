@@ -11,7 +11,7 @@ import { HeaderCard } from "@/components/header-card";
 import { SwipeArea } from "@/components/swipe-area";
 import { Button } from "@/components/ui/button";
 import { useSavedCalendar } from "@/components/use-calendar";
-import { type SuggestProject, suggestionsForDay } from "@/lib/calendar-suggest";
+import { type CalendarRule, ruleToOffer, type SuggestProject, suggestionsForDay } from "@/lib/calendar-suggest";
 import { formatDuration } from "@/lib/duration";
 import { preloadGoogleIdentity } from "@/lib/google-identity";
 import type { ClientWithProjects } from "@/lib/optimistic-entries";
@@ -47,8 +47,8 @@ export function CalendarSuggestions({
     [clients],
   );
   const suggestions = useMemo(
-    () => (cal.calendar ? suggestionsForDay(cal.calendar.events, date, projects, entries, cal.skipped) : []),
-    [cal.calendar, date, projects, entries, cal.skipped],
+    () => (cal.calendar ? suggestionsForDay(cal.calendar.events, date, projects, entries, cal.skipped, cal.rules) : []),
+    [cal.calendar, date, projects, entries, cal.skipped, cal.rules],
   );
 
   // Google's popup must open straight from the tap, so its script is fetched as soon as the card is shown.
@@ -248,7 +248,15 @@ export function CalendarSuggestions({
       ) : (
         <ul className="flex flex-col divide-y">
           {suggestions.map((s) => (
-            <SuggestionRow key={s.id} suggestion={s} date={date} clients={clients} onSkip={() => cal.skip(s.id)} />
+            <SuggestionRow
+              key={`${s.id}:${s.projectId ?? ""}`}
+              suggestion={s}
+              date={date}
+              clients={clients}
+              rules={cal.rules}
+              onRule={cal.addRule}
+              onSkip={() => cal.skip(s.id)}
+            />
           ))}
         </ul>
       )}
@@ -270,6 +278,11 @@ export function CalendarSuggestions({
         <button type="button" className="py-1 underline" onClick={cal.remove}>
           {cal.google ? "Disconnect" : "Remove calendar"}
         </button>
+        {cal.rules.length > 0 && (
+          <button type="button" className="py-1 underline" onClick={cal.forgetRules}>
+            Forget {cal.rules.length === 1 ? "my meeting rule" : `my ${cal.rules.length} meeting rules`}
+          </button>
+        )}
       </p>
     </HeaderCard>
   );
@@ -279,11 +292,15 @@ function SuggestionRow({
   suggestion: s,
   date,
   clients,
+  rules,
+  onRule,
   onSkip,
 }: {
   suggestion: ReturnType<typeof suggestionsForDay>[number];
   date: string;
   clients: readonly ClientWithProjects[];
+  rules: readonly CalendarRule[];
+  onRule: (rule: CalendarRule) => boolean;
   onSkip: () => void;
 }) {
   const utils = trpc.useUtils();
@@ -301,6 +318,21 @@ function SuggestionRow({
         note: s.title,
         clientId: crypto.randomUUID(),
       });
+      // Picked by hand: offer to remember it, one tap (the row leaves the list once it is logged, so a toast carries it).
+      const word = ruleToOffer(s.title, projectId, s.projectId, rules);
+      const project = clients.flatMap((c) => c.projects).find((p) => p.id === projectId);
+      if (word && project) {
+        toast.success(`Added. Always put “${word}” meetings on ${project.name}?`, {
+          duration: 12_000,
+          action: {
+            label: "Always",
+            onClick: () => {
+              if (onRule({ word, projectId })) toast.success(`“${word}” meetings now go on ${project.name}.`);
+              else toast.error("Couldn't keep that rule on this device.");
+            },
+          },
+        });
+      }
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
     } catch (err) {
       toastError(err, "Couldn't add that.");
@@ -324,6 +356,7 @@ function SuggestionRow({
           </p>
           <p className="text-muted-foreground text-xs tabular-nums">
             {time.format(s.start)} · {formatDuration(s.minutes)}
+            {s.rule && <> · your rule for “{s.rule}”</>}
           </p>
         </div>
         <select

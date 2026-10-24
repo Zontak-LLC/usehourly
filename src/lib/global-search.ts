@@ -98,9 +98,9 @@ const SETTINGS: Target[] = shown([
     feature: "accountingExport",
   },
   {
-    title: "Import from Toggl or Clockify",
+    title: "Import from Toggl, Clockify or Harvest",
     href: "/dashboard/account#data",
-    keywords: "csv history",
+    keywords: "csv history move switch migrate",
     feature: "importTime",
   },
   { title: "Keep a copy on this device", href: "/dashboard/account#data", keywords: "offline", feature: "localFirst" },

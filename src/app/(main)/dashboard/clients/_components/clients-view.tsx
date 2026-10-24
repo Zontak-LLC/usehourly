@@ -15,6 +15,7 @@ import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUnbilled } from "@/components/use-unbilled";
 import { clientIdFromPath, clientListLine, clientPath, defaultClientId, groupClientList } from "@/lib/client-list";
 import { toISODate } from "@/lib/dates";
 import { feature } from "@/lib/features";
@@ -83,7 +84,7 @@ export function ClientsView() {
   const totals = trpc.project.totals.useQuery(month);
   const budgets = trpc.project.budgets.useQuery(month, { enabled: feature("budgets") });
   const invoices = trpc.invoice.list.useQuery();
-  const unbilled = trpc.invoice.unbilled.useQuery();
+  const unbilled = useUnbilled();
   const today = useToday();
 
   const unbilledOf = (id: string) => unbilled.data?.find((u) => u.clientId === id);

@@ -1,5 +1,7 @@
 /** Billing rules shared by the server and the screens: time not invoiced yet, and the next invoice number. */
 
+import { addDays, MAX_QUERY_DAYS } from "./dates";
+
 export type Unbilled = {
   clientId: string;
   /** Billable minutes not on any invoice yet. */
@@ -9,7 +11,15 @@ export type Unbilled = {
   /** The oldest and newest day with unbilled time. */
   from: string;
   to: string;
+  /**
+   * The client is on an invoice schedule (lib/invoice-schedule.ts) and the latest period that is over has time not
+   * billed yet, with no invoice covering it: "October invoice for Acme is due". Only when the screen sent its today.
+   */
+  due?: DueInvoice | null;
 };
+
+/** An invoice that is due under the client's schedule: the period, and the unbilled time and money in it. */
+export type DueInvoice = { from: string; to: string; minutes: number; cents: number };
 
 /** The next free number for a year: one more than the highest used (a count would clash after a delete). */
 export function nextInvoiceNumber(year: number, used: string[]): string {
@@ -21,4 +31,14 @@ export function nextInvoiceNumber(year: number, used: string[]): string {
     if (Number.isFinite(k) && k > highest) highest = k;
   }
   return `${prefix}${String(highest + 1).padStart(3, "0")}`;
+}
+
+/**
+ * Where a new invoice's period starts by default: the client's oldest unbilled day ("since the last invoice"), else the
+ * first of this month; never more than a year back (the longest period an invoice may cover).
+ */
+export function invoicePeriodStart(today: string, unbilledFrom: string | undefined): string {
+  const earliest = addDays(today, -(MAX_QUERY_DAYS - 1));
+  const start = unbilledFrom && unbilledFrom < today ? unbilledFrom : `${today.slice(0, 7)}-01`;
+  return start < earliest ? earliest : start;
 }

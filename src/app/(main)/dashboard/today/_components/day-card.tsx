@@ -81,7 +81,7 @@ const DAY_GOAL_MINUTES = 480;
  * Today's own way of moving, "the day card" (2026-10-23, direction A of the five designs): ONE card on top of the page.
  * Inside it, the day shown is the big ringed tile (amber when it is today, ink otherwise) (its name, a progress line toward 8 hours, the day's and week's
  * totals; a tap opens the month calendar), with the day before and the day after beside it as big buttons; the card's
- * footer holds the timer and the days with no time. Month has its calendar, Week its seven tiles; Today is about a
+ * footer holds the days with no time. Month has its calendar, Week its seven tiles; Today is about a
  * single day, so it walks one day at a time.
  */
 export function DayCard({
@@ -100,7 +100,7 @@ export function DayCard({
   dayTotal: number;
   weekTotal: number | null;
   onPick: (d: string) => void;
-  /** The timer and the days with no time, under the days. */
+  /** The days with no time, under the days. */
   footer?: React.ReactNode;
 }) {
   const shown = useSweepIn(Math.min(1, dayTotal / DAY_GOAL_MINUTES));

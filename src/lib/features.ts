@@ -9,7 +9,7 @@
  */
 export const FEATURES = {
   /** Calendar import on Today (file, private address, Google). */
-  calendar: false,
+  calendar: true,
   /** Inviting people to log time for you (/dashboard/team). */
   team: false,
   /** "Polish" descriptions with your own AI key. */
@@ -18,8 +18,8 @@ export const FEATURES = {
   localFirst: false,
   /** Xero / QuickBooks CSV export. */
   accountingExport: false,
-  /** Importing time from a CSV (Toggl, Clockify or any). */
-  importTime: false,
+  /** Importing time from a CSV (Toggl Track, Clockify, Harvest or any): on since 2026-10-24 ("Move here in two minutes"). */
+  importTime: true,
   /** Project budgets and the budget bar. */
   budgets: false,
   /** A client billed in its own currency (the account's one currency stays). */

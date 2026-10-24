@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { isDemoSession } from "@/lib/demo";
 import { emailField } from "@/lib/email";
+import { invoiceScheduleSchema } from "@/lib/invoice-schedule";
 import { CURRENCY_CODES, effectiveCurrency } from "@/lib/money";
 import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
 import { assertWithinQuota } from "@/lib/quotas";
@@ -90,6 +91,8 @@ export const clientRouter = router({
         round_mode: true,
         round_min: true,
         currency: true,
+        invoice_every: true,
+        invoice_anchor: true,
       },
     });
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
@@ -112,6 +115,8 @@ export const clientRouter = router({
         rounding: roundingSchema.optional(),
         // This client's billing currency. Left out = unchanged; null = use the account's currency (issue #71 step 2).
         currency: z.enum(CURRENCY_CODES).nullable().optional(),
+        // How often this client is invoiced (issue 100). Left out = unchanged; every: null = when I choose.
+        schedule: invoiceScheduleSchema.optional(),
         logo: logoSchema,
       }),
     )
@@ -131,6 +136,13 @@ export const clientRouter = router({
           legal_name: input.legalName || null,
           address: input.address || null,
           ...(input.email === undefined ? {} : { email: input.email || null }),
+          ...(input.schedule
+            ? {
+                invoice_every: input.schedule.every,
+                // The anchor only means something for "every 2 weeks".
+                invoice_anchor: input.schedule.every === "2weeks" ? input.schedule.anchor : null,
+              }
+            : {}),
           ...(input.rounding
             ? { round_step: input.rounding.step, round_mode: input.rounding.mode, round_min: input.rounding.min }
             : {}),

@@ -1,7 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { amountCents } from "@/lib/invoice";
-import type { Unbilled } from "@/lib/unbilled";
+import { duePeriod, periodInvoiced, type SchedulePeriod, scheduleOf } from "@/lib/invoice-schedule";
+import type { DueInvoice, Unbilled } from "@/lib/unbilled";
 
 import { nonBillableDates } from "./non-billable";
 
@@ -30,12 +31,89 @@ export async function markInvoiced(
   return marked;
 }
 
+type ProjectRow = { id: string; client_id: string; billable: boolean; hourly_rate: number };
+
+/**
+ * For clients on an invoice schedule: the unbilled time inside the latest period that is over (issue 100), unless an
+ * invoice for the client already covers that whole period. `offDays` are the account's non-billable days.
+ */
+async function dueInvoices(
+  prisma: PrismaClient,
+  userId: string,
+  periods: Map<string, SchedulePeriod>,
+  projects: ProjectRow[],
+  offDays: Set<string>,
+): Promise<Map<string, DueInvoice>> {
+  const out = new Map<string, DueInvoice>();
+  const ids = [...periods.keys()];
+  if (ids.length === 0) return out;
+  const all = [...periods.values()];
+  const from = all.reduce((a, p) => (p.from < a ? p.from : a), all[0].from);
+  const to = all.reduce((a, p) => (p.to > a ? p.to : a), all[0].to);
+  const byId = new Map(projects.map((p) => [p.id, p]));
+  const minutesByProject = new Map<string, Map<string, number>>(); // client -> project -> minutes
+  const covered = new Set<string>();
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const group = ids.slice(i, i + CHUNK);
+    const [rows, invoices] = await Promise.all([
+      prisma.timeEntry.findMany({
+        where: {
+          user_id: userId,
+          invoice_id: null,
+          started_at: null,
+          minutes: { gt: 0 },
+          date: { gte: from, lte: to },
+          project: { client_id: { in: group } },
+        },
+        select: { project_id: true, date: true, minutes: true },
+      }),
+      prisma.invoice.findMany({
+        where: { user_id: userId, client_id: { in: group }, period_to: { gte: from } },
+        select: { client_id: true, period_from: true, period_to: true },
+      }),
+    ]);
+    for (const id of group) {
+      const p = periods.get(id) as SchedulePeriod;
+      if (
+        periodInvoiced(
+          p,
+          invoices.filter((inv) => inv.client_id === id),
+        )
+      )
+        covered.add(id);
+    }
+    for (const r of rows) {
+      const project = byId.get(r.project_id);
+      const p = project && periods.get(project.client_id);
+      if (!project?.billable || !p || r.date < p.from || r.date > p.to || offDays.has(r.date)) continue;
+      const perProject = minutesByProject.get(project.client_id) ?? new Map<string, number>();
+      perProject.set(project.id, (perProject.get(project.id) ?? 0) + r.minutes);
+      minutesByProject.set(project.client_id, perProject);
+    }
+  }
+  for (const [clientId, perProject] of minutesByProject) {
+    if (covered.has(clientId)) continue;
+    const p = periods.get(clientId) as SchedulePeriod;
+    let minutes = 0;
+    let cents = 0;
+    for (const [projectId, m] of perProject) {
+      minutes += m;
+      cents += amountCents(m, byId.get(projectId)?.hourly_rate ?? 0);
+    }
+    if (minutes > 0) out.set(clientId, { from: p.from, to: p.to, minutes, cents });
+  }
+  return out;
+}
+
 /**
  * Per client: the billable time not invoiced yet (running timers left out). One grouped read over the entries plus the
- * account's projects; the account filter on both is the isolation boundary.
+ * account's projects; the account filter on both is the isolation boundary. With the browser's `today`, each row also
+ * says whether an invoice is due under the client's schedule (`due`).
  */
-export async function unbilledByClient(prisma: PrismaClient, userId: string): Promise<Unbilled[]> {
-  const [groups, projects] = await Promise.all([
+export async function unbilledByClient(prisma: PrismaClient, userId: string, today?: string): Promise<Unbilled[]> {
+  // Independent reads started together (one round trip); the grouped sum is served by the partial index on
+  // unbilled time (migration 0038), so it reads what is waiting to be billed, not the account's whole history.
+  const [groups, projects, offDays, scheduled] = await Promise.all([
     prisma.timeEntry.groupBy({
       by: ["project_id"],
       where: { user_id: userId, invoice_id: null, started_at: null, minutes: { gt: 0 } },
@@ -47,9 +125,15 @@ export async function unbilledByClient(prisma: PrismaClient, userId: string): Pr
       where: { user_id: userId },
       select: { id: true, client_id: true, billable: true, hourly_rate: true },
     }),
+    // Time on days marked non-billable is never invoiced, so it is not waiting to be billed either.
+    nonBillableDates(prisma, userId),
+    today
+      ? prisma.client.findMany({
+          where: { user_id: userId, archived: false, invoice_every: { not: null } },
+          select: { id: true, invoice_every: true, invoice_anchor: true },
+        })
+      : Promise.resolve([]),
   ]);
-  // Time on days marked non-billable is never invoiced, so it is not waiting to be billed either.
-  const offDays = await nonBillableDates(prisma, userId);
   const offMinutes = new Map<string, number>();
   const days = [...offDays];
   for (let i = 0; i < days.length; i += CHUNK) {
@@ -83,6 +167,17 @@ export async function unbilledByClient(prisma: PrismaClient, userId: string): Pr
     if (g._min.date < row.from) row.from = g._min.date;
     if (g._max.date > row.to) row.to = g._max.date;
     out.set(p.client_id, row);
+  }
+  if (today) {
+    // Only clients with unbilled time at all can have an invoice due.
+    const periods = new Map<string, SchedulePeriod>();
+    for (const c of scheduled) {
+      const s = scheduleOf(c);
+      const p = s && out.has(c.id) ? duePeriod(s, today) : null;
+      if (p) periods.set(c.id, p);
+    }
+    const due = await dueInvoices(prisma, userId, periods, projects, offDays);
+    for (const row of out.values()) row.due = due.get(row.clientId) ?? null;
   }
   return [...out.values()];
 }

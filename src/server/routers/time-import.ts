@@ -3,12 +3,12 @@ import { z } from "zod";
 
 import { DATE_RE } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
-import { IMPORT_CHUNK } from "@/lib/import-csv";
+import { CHECK_CHUNK, IMPORT_CHUNK } from "@/lib/import-csv";
 import { NOTE_MAX } from "@/lib/notes";
 import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
 import { assertWithinQuota } from "@/lib/quotas";
 
-import { protectedProcedure, router } from "../trpc";
+import { type Context, protectedProcedure, router } from "../trpc";
 
 // D1 allows about 100 bound values per statement, and an entry row binds about nine, so insert in small groups.
 const INSERT_GROUP = 8;
@@ -27,6 +27,9 @@ const rowSchema = z.object({
   rateCents: z.number().int().min(0).max(1_000_000).nullable().optional(),
 });
 
+type Row = z.infer<typeof rowSchema>;
+type Ctx = Pick<Context, "prisma" | "session"> & { userId: string };
+
 const lower = (s: string) => s.trim().toLowerCase();
 const isUnique = (e: unknown) => (e as { code?: string } | null)?.code === "P2002";
 
@@ -37,86 +40,117 @@ function mode(values: number[]): number | undefined {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
 }
 
+/**
+ * What these rows would do to the account, worked out WITHOUT writing anything: the clients and projects that are new,
+ * the rows already here (same project, day, minutes and description) and the rows to add. Every read is filtered by the
+ * caller's own id. Throws when a quota would be passed, before anything is created, so a file that would pass the entry
+ * limit leaves no new clients or projects behind. Shared by `check` (the preview) and `importRows`.
+ */
+async function planImport(ctx: Ctx, rows: Row[]) {
+  const { prisma, userId } = ctx;
+  const [clients, projects] = await Promise.all([
+    prisma.client.findMany({ where: { user_id: userId }, select: { id: true, name: true, archived: true } }),
+    prisma.project.findMany({
+      where: { user_id: userId },
+      select: { id: true, name: true, client_id: true, archived: true },
+    }),
+  ]);
+  const clientByName = new Map(clients.map((c) => [lower(c.name), c]));
+  const projectByKey = new Map(projects.map((p) => [`${p.client_id}\u0000${lower(p.name)}`, p]));
+
+  // What the file needs, in order of first appearance.
+  const wantedClients = new Map<string, string>();
+  const wantedProjects = new Map<
+    string,
+    { client: string; name: string; rates: number[]; billable: (boolean | null)[] }
+  >();
+  for (const r of rows) {
+    if (!wantedClients.has(lower(r.client))) wantedClients.set(lower(r.client), r.client);
+    const key = `${lower(r.client)}\u0000${lower(r.project)}`;
+    const cur = wantedProjects.get(key) ?? { client: r.client, name: r.project, rates: [], billable: [] };
+    if (r.rateCents != null) cur.rates.push(r.rateCents);
+    cur.billable.push(r.billable ?? null);
+    wantedProjects.set(key, cur);
+  }
+
+  const newClients = [...wantedClients.keys()].filter((k) => !clientByName.has(k));
+  const newProjects = [...wantedProjects.entries()].flatMap(([key, p]) => {
+    const c = clientByName.get(lower(p.client));
+    return !c || !projectByKey.has(`${c.id}\u0000${lower(p.name)}`) ? [key] : [];
+  });
+  assertWithinQuota(clients.length, newClients.length, "clients", isDemoSession(ctx.session));
+  assertWithinQuota(projects.length, newProjects.length, "projects", isDemoSession(ctx.session));
+
+  // Skip what is already there: a multiset, so two identical rows in the file are both kept. A row for a project that
+  // does not exist yet can have no entry yet, so it is always new.
+  const existingProjectId = (r: { client: string; project: string }) => {
+    const c = clientByName.get(lower(r.client));
+    return c ? projectByKey.get(`${c.id}\u0000${lower(r.project)}`)?.id : undefined;
+  };
+  const dates = rows.map((r) => r.date).sort();
+  const [present, entryCount] = await Promise.all([
+    prisma.timeEntry.findMany({
+      where: { user_id: userId, date: { gte: dates[0], lte: dates[dates.length - 1] } },
+      select: { project_id: true, date: true, minutes: true, note: true },
+    }),
+    prisma.timeEntry.count({ where: { user_id: userId } }),
+  ]);
+  const have = new Map<string, number>();
+  const entryKey = (projectId: string, date: string, minutes: number, note: string) =>
+    `${projectId}\u0000${date}\u0000${minutes}\u0000${note}`;
+  for (const e of present) {
+    const k = entryKey(e.project_id, e.date, e.minutes, e.note);
+    have.set(k, (have.get(k) ?? 0) + 1);
+  }
+  const newRows: Row[] = [];
+  let duplicates = 0;
+  for (const r of rows) {
+    const pid = existingProjectId(r);
+    const k = pid ? entryKey(pid, r.date, r.minutes, r.note) : "";
+    const n = pid ? (have.get(k) ?? 0) : 0;
+    if (n > 0) {
+      have.set(k, n - 1);
+      duplicates++;
+      continue;
+    }
+    newRows.push(r);
+  }
+  assertWithinQuota(entryCount, newRows.length, "entries", isDemoSession(ctx.session));
+  return { clientByName, projectByKey, wantedClients, wantedProjects, newClients, newProjects, newRows, duplicates };
+}
+
 export const timeImportRouter = router({
   /**
-   * Add entries from a Toggl / Clockify / generic CSV the page has already read and cleaned.
+   * The preview: what importing these rows would add, without writing anything. `newClients` and `newProjects` are
+   * lowercase keys (client, and client + project) so the page can join the answers for a file sent in several parts.
+   */
+  check: protectedProcedure
+    .input(z.object({ rows: z.array(rowSchema).min(1).max(CHECK_CHUNK) }))
+    .mutation(async ({ ctx, input }) => {
+      const plan = await planImport(ctx, input.rows);
+      return {
+        entries: plan.newRows.length,
+        duplicates: plan.duplicates,
+        newClients: plan.newClients,
+        newProjects: plan.newProjects,
+      };
+    }),
+
+  /**
+   * Add entries from a Toggl / Clockify / Harvest / generic CSV the page has already read and cleaned.
    * Clients and projects are matched by name (any capitalisation) or created; archived ones that
-   * receive time are restored. An entry that is already there (same project, day, minutes and
-   * description) is skipped, so importing the same file twice changes nothing.
+   * receive time are restored. A NEW project takes the file's billable flag and its most common rate; an existing
+   * project is never changed. An entry that is already there is skipped, so importing the same file twice changes
+   * nothing. `newest` is the latest day that got an entry (null when nothing was added).
    */
   importRows: protectedProcedure
     .input(z.object({ rows: z.array(rowSchema).min(1).max(IMPORT_CHUNK) }))
     .mutation(async ({ ctx, input }) => {
       const { prisma, userId } = ctx;
-      const [clients, projects] = await Promise.all([
-        prisma.client.findMany({ where: { user_id: userId }, select: { id: true, name: true, archived: true } }),
-        prisma.project.findMany({
-          where: { user_id: userId },
-          select: { id: true, name: true, client_id: true, archived: true },
-        }),
-      ]);
-      const clientByName = new Map(clients.map((c) => [lower(c.name), c]));
-      const projectByKey = new Map(projects.map((p) => [`${p.client_id}\u0000${lower(p.name)}`, p]));
-
-      // What the file needs, in order of first appearance.
-      const wantedClients = new Map<string, string>();
-      const wantedProjects = new Map<
-        string,
-        { client: string; name: string; rates: number[]; billable: (boolean | null)[] }
-      >();
-      for (const r of input.rows) {
-        if (!wantedClients.has(lower(r.client))) wantedClients.set(lower(r.client), r.client);
-        const key = `${lower(r.client)}\u0000${lower(r.project)}`;
-        const cur = wantedProjects.get(key) ?? { client: r.client, name: r.project, rates: [], billable: [] };
-        if (r.rateCents != null) cur.rates.push(r.rateCents);
-        cur.billable.push(r.billable ?? null);
-        wantedProjects.set(key, cur);
-      }
-
-      const newClients = [...wantedClients.keys()].filter((k) => !clientByName.has(k));
-      const newProjectCount = [...wantedProjects.values()].filter((p) => {
-        const c = clientByName.get(lower(p.client));
-        return !c || !projectByKey.has(`${c.id}\u0000${lower(p.name)}`);
-      }).length;
-      assertWithinQuota(clients.length, newClients.length, "clients", isDemoSession(ctx.session));
-      assertWithinQuota(projects.length, newProjectCount, "projects", isDemoSession(ctx.session));
-
-      // Skip what is already there: a multiset, so two identical rows in the file are both kept. Worked out BEFORE
-      // anything is created, so a file that would pass the entry limit leaves no new clients or projects behind.
-      // A row for a project that does not exist yet can have no entry yet, so it is always new.
-      const existingProjectId = (r: { client: string; project: string }) => {
-        const c = clientByName.get(lower(r.client));
-        return c ? projectByKey.get(`${c.id}\u0000${lower(r.project)}`)?.id : undefined;
-      };
-      const dates = input.rows.map((r) => r.date).sort();
-      const [present, entryCount] = await Promise.all([
-        prisma.timeEntry.findMany({
-          where: { user_id: userId, date: { gte: dates[0], lte: dates[dates.length - 1] } },
-          select: { project_id: true, date: true, minutes: true, note: true },
-        }),
-        prisma.timeEntry.count({ where: { user_id: userId } }),
-      ]);
-      const have = new Map<string, number>();
-      const entryKey = (projectId: string, date: string, minutes: number, note: string) =>
-        `${projectId}\u0000${date}\u0000${minutes}\u0000${note}`;
-      for (const e of present) {
-        const k = entryKey(e.project_id, e.date, e.minutes, e.note);
-        have.set(k, (have.get(k) ?? 0) + 1);
-      }
-      const newRows: typeof input.rows = [];
-      let duplicates = 0;
-      for (const r of input.rows) {
-        const pid = existingProjectId(r);
-        const k = pid ? entryKey(pid, r.date, r.minutes, r.note) : "";
-        const n = pid ? (have.get(k) ?? 0) : 0;
-        if (n > 0) {
-          have.set(k, n - 1);
-          duplicates++;
-          continue;
-        }
-        newRows.push(r);
-      }
-      assertWithinQuota(entryCount, newRows.length, "entries", isDemoSession(ctx.session));
+      const { clientByName, projectByKey, wantedClients, wantedProjects, newRows, duplicates } = await planImport(
+        ctx,
+        input.rows,
+      );
 
       const unarchiveClients = new Set<string>();
       const unarchiveProjects = new Set<string>();
@@ -204,6 +238,7 @@ export const timeImportRouter = router({
       for (let i = 0; i < toInsert.length; i += INSERT_GROUP) {
         await prisma.timeEntry.createMany({ data: toInsert.slice(i, i + INSERT_GROUP) });
       }
-      return { created: toInsert.length, duplicates, clientsCreated, projectsCreated };
+      const newest = toInsert.reduce<string | null>((max, e) => (max === null || e.date > max ? e.date : max), null);
+      return { created: toInsert.length, duplicates, clientsCreated, projectsCreated, newest };
     }),
 });

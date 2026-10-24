@@ -10,7 +10,7 @@ test("a click on an entry opens Edit, and a move by the Day field can be undone"
   await page.getByLabel("Time to add").fill("1");
   await page.getByLabel("Description").fill("row click opens edit");
   await page.getByRole("button", { name: /Log time/ }).click();
-  const sheet = page.getByRole("region", { name: "Today's timesheet" });
+  const sheet = page.getByRole("region", { name: "Today's entries" });
   const row = sheet.getByRole("listitem").filter({ hasText: "row click opens edit" });
   await expect(row).toBeVisible();
   await expect(row).not.toHaveAttribute("aria-busy", "true");
@@ -42,10 +42,10 @@ test("a click on an entry opens Edit, and a move by the Day field can be undone"
     await expect(page.getByText("row click opens edit")).toHaveCount(0); // it left today
     await moved.getByRole("button", { name: "Undo" }).click();
     await expect(page.locator("[data-sonner-toast]").filter({ hasText: /Moved back to/ })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Today's timesheet" })).toContainText("row click opens edit");
+    await expect(page.getByRole("region", { name: "Today's entries" })).toContainText("row click opens edit");
     // and the server agrees: after a reload it is still on today
     await page.reload();
-    await expect(page.getByRole("region", { name: "Today's timesheet" })).toContainText("row click opens edit");
+    await expect(page.getByRole("region", { name: "Today's entries" })).toContainText("row click opens edit");
     expect(today).not.toBe(yesterday);
   });
 });

@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
+import { dateSchema, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { summarizeInvoice } from "@/lib/invoice-summary";
@@ -19,8 +19,6 @@ import { markInvoiced, unbilledByClient } from "../unbilled";
 
 const MAX_SNAPSHOT_CHARS = 900_000; // D1 rows top out at 2 MB; keep well under
 const MAX_SEARCH_CHARS = 50_000;
-
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 
 const summary = {
   id: true,
@@ -166,7 +164,13 @@ export const invoiceRouter = router({
     }),
 
   /** Per client: billable time not on any invoice yet, what it is worth, and its oldest and newest day. */
-  unbilled: protectedProcedure.query(({ ctx }) => unbilledByClient(ctx.prisma, ctx.userId)),
+  /**
+   * Per client: the time not invoiced yet. With the browser's `today` (the Worker runs in UTC), each row also says
+   * whether an invoice is due under the client's invoice schedule (issue 100).
+   */
+  unbilled: protectedProcedure
+    .input(z.object({ today: dateSchema }).optional())
+    .query(({ ctx, input }) => unbilledByClient(ctx.prisma, ctx.userId, input?.today)),
 
   /**
    * Compute from the database (never trust client-sent totals), snapshot the seller's current

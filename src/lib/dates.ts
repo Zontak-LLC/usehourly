@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /** Local-date helpers. Dates are YYYY-MM-DD strings, never timezone-shifted. */
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -7,6 +9,12 @@ export function isRealDate(s: string): boolean {
   const d = new Date(`${s}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
+
+/** A real YYYY-MM-DD calendar date, for request inputs. */
+export const dateSchema = z
+  .string()
+  .regex(DATE_RE, "Use YYYY-MM-DD")
+  .refine((s) => isRealDate(s), "That is not a real date.");
 
 /** Days from `from` to `to`, both included (a single day is 1). */
 export function spanDays(from: string, to: string): number {

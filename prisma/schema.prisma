@@ -86,6 +86,10 @@ model Client {
   round_min  Int      @default(0)    // minimum billed minutes per entry (0 = none)
   // ISO 4217; null = the account's currency (lib/money.ts effectiveCurrency). Locked once the client has an invoice.
   currency   String?
+  // How often this client is invoiced (lib/invoice-schedule.ts): null = when I choose, "month" | "2weeks".
+  invoice_every  String?
+  // The first day of the first two-week period (YYYY-MM-DD); only used with "2weeks".
+  invoice_anchor String?
   archived   Boolean  @default(false)
   created_at DateTime @default(now())
 
@@ -160,6 +164,8 @@ model TimeEntry {
   @@index([user_id, started_at])
   // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
   // account. Prisma cannot express a partial index, so it lives only in the SQL.
+  // Migration 0038 adds another, time_entries_unbilled_idx: stopped, unbilled entries only, covering the
+  // "not invoiced yet" sum (invoice.unbilled) so it never reads the account's whole history.
   @@map("time_entries")
 }
 

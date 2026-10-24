@@ -2,7 +2,7 @@ import { parseDuration } from "@/lib/duration";
 import { NOTE_MAX } from "@/lib/notes";
 
 /**
- * Reads a time export from Toggl Track or Clockify (or any CSV with a date, a duration and,
+ * Reads a time export from Toggl Track, Clockify or Harvest (or any CSV with a date, a duration and,
  * ideally, a project) into entries UseHourly can store. Pure and browser-safe: the page parses and
  * previews the file locally, and only the cleaned rows are sent to the server.
  */
@@ -11,6 +11,8 @@ export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 export const MAX_IMPORT_ROWS = 20_000;
 /** Most rows one server call carries; the page sends bigger files in several calls. */
 export const IMPORT_CHUNK = 300;
+/** Most rows one preview call (`timeImport.check`, which writes nothing) carries. */
+export const CHECK_CHUNK = 1_000;
 export const DEFAULT_CLIENT = "No client";
 export const DEFAULT_PROJECT = "General";
 const NAME_MAX = 80;
@@ -28,7 +30,7 @@ export type ImportRow = {
   rateCents: number | null;
 };
 
-export type ImportFormat = "toggl" | "clockify" | "generic";
+export type ImportFormat = "toggl" | "clockify" | "harvest" | "generic";
 export type DateOrder = "mdy" | "dmy";
 
 export type ImportPreview = {
@@ -116,7 +118,10 @@ export function detectFormat(headers: string[]): ImportFormat {
   ) {
     return "clockify";
   }
-  if (h.includes("user") && h.includes("email") && h.includes("start date") && h.includes("duration")) return "toggl";
+  // Harvest's time report: decimal "Hours", "Hours Rounded", and flags with a question mark ("Billable?").
+  if (h.includes("hours rounded") || (h.includes("billable?") && h.includes("hours"))) return "harvest";
+  if ((h.includes("user") || h.includes("member")) && h.includes("start date") && h.includes("duration"))
+    return "toggl";
   return "generic";
 }
 
@@ -214,6 +219,14 @@ function parseRate(raw: string | undefined): number | null {
   return Number.isFinite(n) && n >= 0 && n <= 10_000 ? Math.round(n * 100) : null;
 }
 
+/** The billable flag and rate of one row (a missing column reads as undefined, so as "the file doesn't say"). */
+function billing(billableCell: string | undefined, rateCell: string | undefined) {
+  const billable = parseBillable(billableCell);
+  // A rate only says something on billable time: Harvest and Clockify write 0 (or nothing) on the rest.
+  const rateCents = billable === false ? null : parseRate(rateCell) || null;
+  return { billable, rateCents };
+}
+
 // ----------------------------------------------------------------------------------- the import
 
 export function readTimeCsv(text: string, opts: { dateOrder?: DateOrder } = {}): ImportResult {
@@ -240,7 +253,9 @@ export function readTimeCsv(text: string, opts: { dateOrder?: DateOrder } = {}):
   const clientCol = findColumn(headers, ["client"]);
   const projectCol = findColumn(headers, ["project"]);
   const noteCol = findColumn(headers, ["description", "note", "notes", "task description"]);
-  const billableCol = findColumn(headers, ["billable"]);
+  // Harvest names a task on most rows and often leaves Notes empty: the task then says what the time was for.
+  const taskCol = findColumn(headers, ["task"]);
+  const billableCol = findColumn(headers, ["billable", "billable?"]);
   const rateCol = headers.findIndex((h) => /^(billable )?rate\b/.test(h));
 
   const body = table.slice(1);
@@ -278,7 +293,8 @@ export function readTimeCsv(text: string, opts: { dateOrder?: DateOrder } = {}):
       skipped.push({ line, reason: "Longer than 24 hours" });
       return;
     }
-    let note = (r[noteCol] ?? "").trim();
+    // A note written on several lines keeps its lines, with plain \n (a Windows export writes \r\n inside the quotes).
+    let note = (r[noteCol] ?? "").replace(/\r\n?/g, "\n").trim() || clean(r[taskCol]);
     if (note.length > NOTE_MAX) {
       note = note.slice(0, NOTE_MAX);
       truncatedNotes++;
@@ -289,8 +305,7 @@ export function readTimeCsv(text: string, opts: { dateOrder?: DateOrder } = {}):
       date,
       minutes: whole,
       note,
-      billable: billableCol >= 0 ? parseBillable(r[billableCol]) : null,
-      rateCents: rateCol >= 0 ? parseRate(r[rateCol]) : null,
+      ...billing(r[billableCol], r[rateCol]),
     });
   });
 

@@ -122,7 +122,8 @@ export async function clearOfflineData(storage: StorageLike | null = safeStorage
   }
 }
 
-function safeStorage(): StorageLike | null {
+/** This browser's localStorage, or null where it is missing or blocked (private windows, tests). */
+export function safeStorage(): StorageLike | null {
   try {
     return typeof localStorage === "undefined" ? null : localStorage;
   } catch {

@@ -47,7 +47,7 @@ test("a calendar file turns the day's meetings into one-tap suggestions, and not
   });
 
   await test.step("nothing was logged by importing", async () => {
-    await expect(page.getByRole("region", { name: "Today's timesheet" })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Today's entries" })).toHaveCount(0);
   });
 
   await test.step("Add logs it with the meeting's title and length, and it leaves the list", async () => {
@@ -56,7 +56,7 @@ test("a calendar file turns the day's meetings into one-tap suggestions, and not
       .filter({ hasText: "Offline Co planning" })
       .getByRole("button", { name: "Add" })
       .click();
-    const today = page.getByRole("region", { name: "Today's timesheet" });
+    const today = page.getByRole("region", { name: "Today's entries" });
     await expect(today.getByText("Offline Co planning")).toBeVisible();
     await expect(today.getByText("0:45").first()).toBeVisible();
     await expect(card.getByText("Offline Co planning")).toHaveCount(0);

@@ -14,7 +14,8 @@ import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { addDays, MAX_QUERY_DAYS, toISODate } from "@/lib/dates";
+import { useUnbilled } from "@/components/use-unbilled";
+import { addDays, isRealDate, MAX_QUERY_DAYS, spanDays, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { buildInvoice } from "@/lib/invoice";
@@ -23,7 +24,7 @@ import type { Rounding } from "@/lib/rounding";
 import { invoiceTax } from "@/lib/tax";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
-import type { Unbilled } from "@/lib/unbilled";
+import { invoicePeriodStart, type Unbilled } from "@/lib/unbilled";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
 import { InvoiceNotices, InvoicePreviewCard, TaxChoice } from "./invoice-preview";
@@ -61,6 +62,12 @@ function defaultClientId(clients: { id: string }[], unbilled: Unbilled[], wanted
   return best;
 }
 
+/** `?from=&to=` as a period an invoice may cover (real dates, in order, at most a year), else null. */
+function periodFromParams(from: string | null, to: string | null): { from: string; to: string } | null {
+  if (!from || !to || !isRealDate(from) || !isRealDate(to) || from > to) return null;
+  return spanDays(from, to) <= MAX_QUERY_DAYS ? { from, to } : null;
+}
+
 /** Time in the period already on an invoice: left out unless the person asks for it, and said so plainly. */
 function AlreadyInvoiced({
   minutes,
@@ -89,9 +96,34 @@ function AlreadyInvoiced({
   );
 }
 
+/**
+ * The chosen client's entries for the period, asked for only once the period has settled. Before, the builder fetched
+ * every client's entries for this month and then again for up to a year (megabytes on a busy account). It still reads
+ * "loading" while the client or the period is being worked out, so the preview never flashes "no time".
+ */
+function useClientEntries(o: {
+  from: string;
+  to: string;
+  clientId: string;
+  validRange: boolean;
+  periodSettled: boolean;
+  unbilledPending: boolean;
+}) {
+  const entries = trpc.entry.list.useQuery(
+    { from: o.from, to: o.to, clientId: o.clientId },
+    { enabled: o.validRange && !!o.clientId && o.periodSettled },
+  );
+  const entriesLoading =
+    entries.isLoading || (o.validRange && !!o.clientId && !o.periodSettled) || (!o.clientId && o.unbilledPending);
+  return { entries, entriesLoading };
+}
+
 export function NewInvoiceView() {
   const router = useRouter();
-  const wantedClient = useSearchParams().get("client");
+  const params = useSearchParams();
+  const wantedClient = params.get("client");
+  // A period asked for in the address (the "invoice due" prompt, issue 100): used as given when it is a real one.
+  const [wantedRange] = useState(() => periodFromParams(params.get("from"), params.get("to")));
   const utils = trpc.useUtils();
   const me = trpc.account.me.useQuery();
   const clients = trpc.clients.list.useQuery();
@@ -111,15 +143,15 @@ export function NewInvoiceView() {
   // The account's tax is added unless the person leaves it off this one invoice (a reverse-charge client, say).
   const [addTax, setAddTax] = useState(true);
   // The period follows the chosen client's unbilled time until the person sets the dates themselves.
-  const [rangeTouched, setRangeTouched] = useState(false);
-  const unbilled = trpc.invoice.unbilled.useQuery();
+  const [rangeTouched, setRangeTouched] = useState(wantedRange !== null);
+  const unbilled = useUnbilled();
 
   useEffect(() => {
     const t = toISODate(new Date());
     setToday(t);
-    setFrom(`${t.slice(0, 7)}-01`);
-    setTo(t);
-  }, []);
+    setFrom(wantedRange?.from ?? `${t.slice(0, 7)}-01`);
+    setTo(wantedRange?.to ?? t);
+  }, [wantedRange]);
 
   const year = today ? Number(today.slice(0, 4)) : 0;
   const next = trpc.invoice.nextNumber.useQuery({ year }, { enabled: year > 0 });
@@ -129,7 +161,6 @@ export function NewInvoiceView() {
 
   const client = clients.data?.find((c) => c.id === clientId);
   const validRange = !!from && !!to && from <= to;
-  const entries = trpc.entry.list.useQuery({ from, to }, { enabled: validRange });
 
   // Open on the client with the most unbilled money (or the one asked for). Chosen once; the person's own choice is
   // never overwritten.
@@ -139,14 +170,20 @@ export function NewInvoiceView() {
   }, [clients.data, clientId, unbilled.data, wantedClient]);
   // The period starts at the client's oldest unbilled day ("since the last invoice") and ends today.
   const unbilledFrom = unbilled.data?.find((u) => u.clientId === clientId)?.from;
+  const defaultFrom = today ? invoicePeriodStart(today, unbilledFrom) : "";
   useEffect(() => {
     if (rangeTouched || !today) return;
-    // At most a year back (the longest period an invoice may cover).
-    const earliest = addDays(today, -(MAX_QUERY_DAYS - 1));
-    const start = unbilledFrom && unbilledFrom < today ? unbilledFrom : `${today.slice(0, 7)}-01`;
-    setFrom(start < earliest ? earliest : start);
+    setFrom(defaultFrom);
     setTo(today);
-  }, [unbilledFrom, rangeTouched, today]);
+  }, [defaultFrom, rangeTouched, today]);
+  const { entries, entriesLoading } = useClientEntries({
+    from,
+    to,
+    clientId,
+    validRange,
+    periodSettled: rangeTouched || (!unbilled.isPending && from === defaultFrom),
+    unbilledPending: unbilled.isPending,
+  });
 
   // Live preview uses the same math the server will snapshot.
   const rounding: Rounding = useMemo(
@@ -274,7 +311,7 @@ export function NewInvoiceView() {
               <ClientCurrency currency={client?.currency}>
                 <InvoicePreviewCard
                   validRange={validRange}
-                  loading={entries.isLoading}
+                  loading={entriesLoading}
                   error={entries.error?.message ?? null}
                   totals={totals}
                   clientName={client?.name}

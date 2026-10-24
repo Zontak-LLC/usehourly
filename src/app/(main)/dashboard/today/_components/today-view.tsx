@@ -12,7 +12,7 @@ import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
-import { TimerControls, useTodayTimer } from "@/components/timer-control";
+import { TimerControls, TimerStartLine, useTodayTimer } from "@/components/timer-control";
 import { TimerPanel } from "@/components/timer-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
@@ -121,19 +121,26 @@ export function TodayView() {
               weekTotal={weekTotal}
               onPick={go}
               footer={
-                // The timer (on today only) and the days with no time share the card's footer.
-                date === today || missed.some((d) => d !== date) ? (
-                  <>
-                    {date === today && <TimerControls timer={todayTimer} online={online} bare />}
-                    <MissedDays days={missed} date={date} onPick={go} />
-                  </>
+                // The days with no time, the one place that tells about them (issue 99 nudge; the timer is in the Log time card).
+                today && missed.some((d) => d !== date) ? (
+                  <MissedDays days={missed} date={date} today={today} onPick={go} />
                 ) : null
               }
             />
           }
           // On another day a running timer shows as its own bar with Stop.
           timerBar={date === today ? null : <TimerPanel />}
-          form={<QuickAdd date={date} showDate={false} dayMinutes={sum(dayEntries)} onTimerContext={setTimerContext} />}
+          form={
+            <QuickAdd
+              date={date}
+              showDate={false}
+              dayMinutes={sum(dayEntries)}
+              onTimerContext={setTimerContext}
+              // One project picker on Today (issue 218): the timer runs inside the Log time card, on today only.
+              timerTop={date === today ? <TimerControls timer={todayTimer} /> : null}
+              timerFoot={date === today ? <TimerStartLine timer={todayTimer} online={online} /> : null}
+            />
+          }
           calendarTop={
             feature("calendar") && calendarFirst && clients.data ? (
               <CalendarSuggestions date={date} entries={dayEntries} clients={clients.data} />

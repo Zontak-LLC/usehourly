@@ -1,0 +1,7 @@
+﻿User,Email,Client,Project,Task,Description,Billable,Start date,Start time,End date,End time,Duration,Tags,Amount (USD)
+Ana Ruiz,ana@example.com,Northwind,Brand refresh,,"Logo sketches, round 2",Yes,2026-09-14,09:00:00,2026-09-14,11:15:30,02:15:30,design,
+Ana Ruiz,ana@example.com,Northwind,Brand refresh,,"Colour palette
+and type pairing",Yes,2026-09-15,13:00:00,2026-09-15,14:00:00,01:00:00,design,
+Ana Ruiz,ana@example.com,Northwind,Admin,,Invoices and email,No,2026-09-15,16:00:00,2026-09-15,16:45:00,00:45:00,,
+Ana Ruiz,ana@example.com,,,,Reading,No,2026-09-16,08:00:00,2026-09-16,08:20:00,00:20:00,,
+Ana Ruiz,ana@example.com,Northwind,Brand refresh,,Timer left running,Yes,2026-09-16,10:00:00,,,,design,

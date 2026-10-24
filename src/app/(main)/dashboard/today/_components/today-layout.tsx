@@ -3,9 +3,8 @@
 import type { ReactNode } from "react";
 
 /**
- * How Today is arranged: the week as one row of day buttons across the top, then one column: the timer strip, the add
- * form, the calendar, the day's entries. (2026-10-23: the big watch on the left was removed; most people log after the
- * fact, and the timer is now a slim strip, so the form and the timesheet take the full width.)
+ * How Today is arranged: the day card across the top, then one column: (on another day) a running timer's bar, the
+ * Log time card (which holds today's timer since issue 218), the calendar, the day's entries.
  */
 export function TodayLayout({
   pills,

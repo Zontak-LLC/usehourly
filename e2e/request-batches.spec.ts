@@ -14,6 +14,10 @@ const PAGES: [label: string, heading: RegExp, url: string][] = [
 ];
 
 test("each busy page loads all its data in a single request", async ({ page }) => {
+  // The pre-cache of other pages (warm-pages.tsx) fires 3 s after load and could land in the watch window: Save-Data turns it off.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true });
+  });
   await startFreshAccount(page);
   for (const [label, heading, url] of PAGES) {
     const calls: string[] = [];

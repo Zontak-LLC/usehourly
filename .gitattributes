@@ -1,0 +1,2 @@
+# Import fixtures are byte-exact copies of real exports (a BOM, Windows line ends): never convert them.
+src/__tests__/fixtures/*.csv -text

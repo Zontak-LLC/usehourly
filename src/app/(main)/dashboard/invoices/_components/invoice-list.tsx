@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 
-import { CircleDollarSign, Download, Mail, Pencil, Search, Trash2 } from "lucide-react";
+import { BellRing, CircleDollarSign, Download, Mail, Pencil, Search, Trash2 } from "lucide-react";
 
 import { ClientInitial } from "@/components/client-initial";
 import { IconAction } from "@/components/icon-action";
@@ -14,6 +14,7 @@ import { SendInvoicePanel } from "@/components/send-invoice-panel";
 import { Button } from "@/components/ui/button";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
+import { daysBetween, daysLate } from "@/lib/invoice-mail";
 import { formatMoney } from "@/lib/money";
 import { paginate } from "@/lib/paginate";
 import { PALETTE } from "@/lib/palette";
@@ -39,22 +40,19 @@ export type InvoiceActionHandlers = {
 };
 
 type Tab = "all" | "waiting" | "overdue" | "paid";
-type Panel = "paid" | "send" | "delete" | null;
+type Panel = "paid" | "send" | "reminder" | "delete" | null;
 
 const short = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 const monthName = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
-const DAY_MS = 86_400_000;
-
-function daysBetween(from: string, to: string) {
-  return Math.round((fromISODate(to).getTime() - fromISODate(from).getTime()) / DAY_MS);
-}
-
-function stateOf(i: InvoiceRow, today: string | null): { tab: Exclude<Tab, "all">; words: string; colour: string } {
+function stateOf(
+  i: InvoiceRow,
+  today: string | null,
+): { tab: Exclude<Tab, "all">; words: string; colour: string; late?: number } {
   if (i.paid_date)
     return { tab: "paid", words: `Paid ${short.format(fromISODate(i.paid_date))}`, colour: PALETTE.money.paid };
-  if (today && i.due_date && i.due_date < today) {
-    const late = daysBetween(i.due_date, today);
-    return { tab: "overdue", words: `${count(late, "day")} late`, colour: PALETTE.money.late };
+  const late = today ? daysLate(i, today) : null;
+  if (late !== null) {
+    return { tab: "overdue", words: `${count(late, "day")} late`, colour: PALETTE.money.late, late };
   }
   if (today && i.due_date) {
     const left = daysBetween(today, i.due_date);
@@ -272,15 +270,28 @@ function InvoiceSlip({
               <CircleDollarSign className="size-4" /> Mark paid
             </Button>
           )}
-          <IconAction
-            label={`Send ${i.number}`}
-            tip="Send"
-            inline
-            expanded={panel === "send"}
-            onClick={() => toggle("send")}
-          >
-            <Mail />
-          </IconAction>
+          {/* Overdue: the envelope's place goes to the reminder (issue 100); sending the invoice again is in the ··· menu. */}
+          {state.late ? (
+            <IconAction
+              label={`Write a reminder for ${i.number}`}
+              tip="Write a reminder"
+              inline
+              expanded={panel === "reminder"}
+              onClick={() => toggle("reminder")}
+            >
+              <BellRing />
+            </IconAction>
+          ) : (
+            <IconAction
+              label={`Send ${i.number}`}
+              tip="Send"
+              inline
+              expanded={panel === "send"}
+              onClick={() => toggle("send")}
+            >
+              <Mail />
+            </IconAction>
+          )}
           <IconAction
             label={busy ? `Making the PDF of ${i.number}` : `Download ${i.number} as a PDF`}
             tip="Download PDF"
@@ -293,6 +304,9 @@ function InvoiceSlip({
             label={`More actions for ${i.number}`}
             items={[
               ...(i.paid_date ? [{ label: "Edit payment", icon: <Pencil />, onSelect: () => setPanel("paid") }] : []),
+              ...(state.late
+                ? [{ label: "Send the invoice again", icon: <Mail />, onSelect: () => setPanel("send") }]
+                : []),
               { label: "Delete invoice", icon: <Trash2 />, onSelect: () => setPanel("delete"), destructive: true },
             ]}
           />
@@ -308,6 +322,9 @@ function InvoiceSlip({
         />
       )}
       {panel === "send" && <SendInvoicePanel invoice={i} onClose={() => setPanel(null)} />}
+      {panel === "reminder" && (
+        <SendInvoicePanel key="reminder" invoice={i} reminder={state.late} onClose={() => setPanel(null)} />
+      )}
       {panel === "delete" && <DeleteInvoiceConfirm invoice={i} onClose={() => setPanel(null)} />}
     </li>
   );
