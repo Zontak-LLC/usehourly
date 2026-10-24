@@ -103,8 +103,9 @@ export default defineConfig({
           timeout: 20_000,
         },
         {
-          // E2E_SERVE=1 is set only for `next start` (it gives the built app the local database); never while building.
-          command: DEV_SERVER ? `npx next dev -p ${PORT}` : `npx next build && E2E_SERVE=1 npx next start -p ${PORT}`,
+          // e2e/start-app.mjs builds (or reuses an unchanged build) while it applies the migrations, then runs `next start`
+          // with E2E_SERVE=1 (it gives the built app the local database; never set while building).
+          command: DEV_SERVER ? `npx next dev -p ${PORT}` : "node e2e/start-app.mjs",
           url: BASE,
           reuseExistingServer: true,
           timeout: 480_000,
