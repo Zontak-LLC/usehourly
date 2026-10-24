@@ -730,12 +730,13 @@ describe("entry search journey", () => {
     { id: "e2", user_id: "u1", project_id: "p1", date: "2026-10-19", minutes: 120, note: "Invoice maths for Acme" },
     { id: "e1", user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 30, note: "Invoice layout" },
   ];
-  const project = { id: "p1", name: "Website", client: { name: "Acme" } };
+  const project = { id: "p1", name: "Website", client_id: "c1" };
 
   it("finds entries by every typed word, newest first, with their project and client, for the caller only", async () => {
     const prisma = mockPrisma();
     prisma.timeEntry.findMany.mockResolvedValue(rows as never);
     prisma.project.findMany.mockResolvedValue([project] as never);
+    prisma.client.findMany.mockResolvedValue([{ id: "c1", name: "Acme" }] as never);
     const found = await asCaller(prisma, "u1").entry.search({ q: "  invoice  maths " });
     expect(found).toEqual([
       {

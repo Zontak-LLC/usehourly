@@ -118,12 +118,16 @@ export const entryRouter = router({
       take: ENTRY_SEARCH_LIMIT,
     });
     if (rows.length === 0) return [];
-    const projects = await ctx.prisma.project.findMany({
-      where: { user_id: ctx.userId, id: { in: [...new Set(rows.map((e) => e.project_id))] } },
-      omit: { logo: true },
-      include: { client: { omit: { logo: true } } },
-    });
-    const byId = new Map(projects.map((p) => [p.id, p]));
+    // Projects and client names read together (one round trip, as in `list`), not projects then their clients.
+    const [projects, clients] = await Promise.all([
+      ctx.prisma.project.findMany({
+        where: { user_id: ctx.userId, id: { in: [...new Set(rows.map((e) => e.project_id))] } },
+        select: { id: true, name: true, client_id: true },
+      }),
+      ctx.prisma.client.findMany({ where: { user_id: ctx.userId, archived: false }, select: { id: true, name: true } }),
+    ]);
+    const clientById: Record<string, { name: string }> = Object.fromEntries(clients.map((c) => [c.id, c]));
+    const byId = new Map(projects.map((p) => [p.id, { ...p, client: clientById[p.client_id] }]));
     return rows.flatMap((e) => {
       const project = byId.get(e.project_id);
       if (!project) return [];
