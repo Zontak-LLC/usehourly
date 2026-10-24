@@ -23,7 +23,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "trpc-mcp-server": ["./packages/trpc-mcp/src/index.ts"]
     }
   },
   "include": [
