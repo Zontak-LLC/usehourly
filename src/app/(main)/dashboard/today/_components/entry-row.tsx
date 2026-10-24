@@ -308,7 +308,6 @@ export function EntryRow({
               id={`${uid}-time`}
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              clearable
               onKeyDown={(e) => {
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);

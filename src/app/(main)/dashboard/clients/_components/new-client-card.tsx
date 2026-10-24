@@ -83,9 +83,7 @@ export function NewClientCard({
             required
             maxLength={80}
             autoFocus
-            clearable
-            wrapperClassName="flex-1"
-            className="h-11"
+            className="h-11 flex-1"
           />
           <Button type="submit" className="h-11" disabled={createClient.isPending}>
             Add client

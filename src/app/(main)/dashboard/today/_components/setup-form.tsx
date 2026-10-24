@@ -75,8 +75,7 @@ export function SetupForm({
           aria-label="Client name"
           placeholder="Client (e.g. Acme)"
           required
-          clearable
-          wrapperClassName="w-44"
+          className="w-44"
           autoFocus
         />
       )}
@@ -87,8 +86,7 @@ export function SetupForm({
         required
         autoFocus={bar}
         onKeyDown={escapeToCancel}
-        clearable
-        wrapperClassName={bar ? "max-sm:col-span-2 sm:min-w-0 sm:flex-1" : "w-44"}
+        className={bar ? "max-sm:col-span-2 sm:min-w-0 sm:flex-1" : "w-44"}
       />
       <Input
         name="rate"
@@ -100,8 +98,7 @@ export function SetupForm({
         onKeyDown={escapeToCancel}
         placeholder={`Rate ${currencySymbol(currency)}/h`}
         disabled={unbilled}
-        clearable
-        wrapperClassName={bar ? "shrink-0 max-sm:w-full sm:w-32" : "w-32 shrink-0"}
+        className={bar ? "shrink-0 max-sm:w-full sm:w-32" : "w-32 shrink-0"}
       />
       {bar && (
         <label className="flex min-h-10 items-center gap-1.5 text-sm max-sm:col-span-2">

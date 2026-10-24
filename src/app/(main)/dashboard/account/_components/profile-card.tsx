@@ -42,7 +42,7 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
     <SectionCard onSubmit={saveProfile} title="Name and email">
       <div className="grid gap-1.5">
         <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" defaultValue={me.name ?? ""} required clearable />
+        <Input id="name" name="name" defaultValue={me.name ?? ""} required />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="email">Email</Label>

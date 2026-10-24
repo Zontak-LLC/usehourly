@@ -48,7 +48,6 @@ export function NoteTextarea({ value, onChange, className, onPaste, polish, ...r
       <div className="relative">
         <Textarea
           {...rest}
-          clearable={!polisher.enabled}
           value={value}
           maxLength={NOTE_MAX}
           readOnly={polisher.busy || rest.readOnly}
