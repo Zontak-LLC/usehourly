@@ -3,6 +3,7 @@ import { accountRouter } from "./account";
 import { accountingRouter } from "./accounting";
 import { clientRouter } from "./client";
 import { entryRouter } from "./entry";
+import { expenseRouter } from "./expense";
 import { insightsRouter } from "./insights";
 import { invoiceRouter } from "./invoice";
 import { invoiceLinkRouter } from "./invoice-link";
@@ -22,6 +23,7 @@ export const appRouter = router({
   clients: clientRouter,
   project: projectRouter,
   entry: entryRouter,
+  expense: expenseRouter,
   invoice: invoiceRouter,
   report: reportRouter,
   timeImport: timeImportRouter,

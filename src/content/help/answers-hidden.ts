@@ -219,4 +219,16 @@ One email arrives each Friday from about 4 pm **your** time, with your week so f
     keywords: ["team", "employees", "studio", "share", "multi user"],
     answer: `In a first version, yes: you can invite someone to log time on the clients you choose. Invoices stay yours alone. See [Inviting someone](/help?a=teams).`,
   },
+  {
+    id: "expenses",
+    feature: "expenses",
+    question: "Can I record expenses and mileage?",
+    keywords: ["expenses", "mileage", "miles", "receipts", "costs", "spending", "deductions", "net income"],
+    answer: `Yes, on the **Year summary**. Open the **Expenses** section and press **Add expense**.
+
+- **Expense:** the date, the amount, a category (software, equipment, travel and so on), an optional client and a note.
+- **Mileage:** the distance in miles or km and a rate per mile or km. The rate starts at 0.70, the IRS rate for 2025: change it to the rate for your year or country. UseHourly works out the amount.
+
+The section adds the year up by category and by quarter, and shows **Net**: payments received minus your expenses. Net is an estimate to plan with, not tax advice. **Export Excel** adds an **Expenses** sheet. Receipts are not stored: keep them yourself, and use the note to say where.`,
+  },
 ];
