@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
-import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
+import { ListSearch } from "@/components/list-search";
 import { NoDollar } from "@/components/no-dollar-icon";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { usePageSize } from "@/components/use-page-size";
 import { DateBlock, ProjectGroups, WorkToolbar } from "@/components/work-filter";
 import { fromISODate } from "@/lib/dates";
@@ -30,6 +30,7 @@ export function WorkItems({
   nonBillable,
 }: {
   entries: SheetEntry[];
+  /** Opens a day: the date leaf at the left of each day becomes a button (Week picks the day, Month shows it in Day). */
   onOpenDay: (date: string) => void;
   period?: string;
   /** Edit an entry right where it sits in the list (no jump to the day editor). */
@@ -82,19 +83,15 @@ export function WorkItems({
         <h2 className="font-semibold text-base">
           All entries this {period} <span className="font-normal text-foreground/75 text-sm">({matches.length})</span>
         </h2>
-        <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1); // a new search always starts on its first page
-            }}
-            placeholder="Search note, project, client…"
-            aria-label="Search entries"
-            className="h-9 pl-8"
-          />
-        </div>
+        <ListSearch
+          label="Search entries"
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setPage(1); // a new search always starts on its first page
+          }}
+          className="w-full sm:w-64"
+        />
       </header>
 
       <WorkToolbar
@@ -121,7 +118,7 @@ export function WorkItems({
                 className="grid grid-cols-[3.75rem_minmax(0,1fr)] gap-3 sm:gap-4"
               >
                 {/* The day as a small calendar leaf at the left: the date is the label of the group, not another column. */}
-                <DateBlock date={g.date} />
+                <DateBlock date={g.date} onPick={onOpenDay} />
                 <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex items-center justify-between gap-2 px-1">
                     <h3 className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-medium text-sm">

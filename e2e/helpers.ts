@@ -434,11 +434,11 @@ export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("menuitem", { name: item }).click();
 }
 
-/** Week and Month show their full list of entries ("All entries this week/month") behind one button: make sure it is open
- * (Week starts open, Month starts folded). */
+/** Shows the period's full list of entries ("All entries this week/month"): always open under the day on Week; on
+ * Month it is the "Whole month" view of the switch beside the calendar. */
 export async function openAllEntries(page: Page) {
-  const fold = page.getByRole("button", { name: /^All entries this (week|month)/ });
-  await expect(fold).toHaveAttribute("aria-expanded", /true|false/);
-  if ((await fold.getAttribute("aria-expanded")) === "false") await fold.click();
+  if (page.url().includes("/dashboard/month")) {
+    await page.getByRole("button", { name: "Whole month", exact: true }).click();
+  }
   await expect(page.getByRole("region", { name: /^All entries this (week|month)$/ })).toBeVisible();
 }

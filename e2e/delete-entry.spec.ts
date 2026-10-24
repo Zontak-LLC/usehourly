@@ -62,13 +62,13 @@ test("the Week page's day buttons show the time of a day with time, and nothing 
   await expect(days).toHaveCount(7);
   const withTime = page.locator('nav[aria-label="This week"] button:not([aria-label*="nothing logged"])');
   await expect(withTime).toHaveCount(0); // a new account has no time anywhere
-  await expect(page.getByRole("button", { name: /All entries this week/ })).toHaveCount(0); // no empty list to open
+  await expect(page.getByRole("region", { name: "All entries this week" })).toHaveCount(0); // no empty list
   await page.getByLabel("Time to add").fill("1");
   await page.getByRole("button", { name: /Log time/ }).click();
   await expect(withTime).toHaveCount(1); // one day has time
   await expect(withTime).toHaveAccessibleName(/, 1:00$/);
   await expect(withTime).toHaveAttribute("aria-current", "date"); // it is the day being shown
-  await expect(page.getByRole("button", { name: /All entries this week · 1/ })).toBeVisible(); // the list appears with the first entry
+  await expect(page.getByRole("heading", { name: "All entries this week (1)" })).toBeVisible(); // the list appears with the first entry
 });
 
 test("the Week page keeps the day you picked in the address, so a refresh comes back to it", async ({ page }) => {

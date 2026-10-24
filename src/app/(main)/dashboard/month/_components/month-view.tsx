@@ -2,19 +2,23 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
-import { AllEntriesFold } from "@/components/all-entries-fold";
-import { DayEditorPanel, longDateLabel } from "@/components/day-editor";
+import { DayEditorPanel, periodSeed } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
+import { PeriodStepper } from "@/components/period-stepper";
 import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
+import { SegmentedSwitch } from "@/components/segmented-switch";
+import { SIDE_CARD, SideColumn, SideScroll } from "@/components/side-column";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
-import { addDays, addMonths, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
+import { addDays, addMonths, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
+import { defaultMonthDay, type MonthMode, readMonthAddress } from "@/lib/month-address";
 import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 
@@ -27,35 +31,54 @@ import { useDaySelection } from "./use-day-selection";
 import { useEntryDrag } from "./use-entry-drag";
 
 const monthTitle = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+const longDayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
-function monthEnd(first: string): string {
-  const d = fromISODate(first);
-  return toISODate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+const MODES = [
+  ["day", "Day"],
+  ["month", "Whole month"],
+] as const;
+
+/**
+ * Changes the address in place. `push` for what a person opens (a day, a view), so Back returns to it; `replace` for
+ * stepping with ‹ › (a dozen steps are not a dozen Backs). Next follows both, so the page re-reads the address.
+ */
+function writeAddress(changes: Record<string, string | null>, how: "push" | "replace") {
+  const url = new URL(window.location.href);
+  for (const [k, v] of Object.entries(changes)) {
+    if (v) url.searchParams.set(k, v);
+    else url.searchParams.delete(k);
+  }
+  if (url.href === window.location.href) return;
+  if (how === "push") window.history.pushState(null, "", url);
+  else window.history.replaceState(null, "", url);
 }
 
-export function MonthView({ initialMonth, initialProject }: { initialMonth?: string; initialProject?: string }) {
+/**
+ * Month: the calendar on the left (sticky from 768px), and on the right one day (‹ › to step, its entries, the Log time
+ * form behind one button) or the whole month's list. The address holds the month, the day and the view, so a reload
+ * or Back keeps them. On a phone the calendar comes first and the day under it.
+ */
+export function MonthView({ initialProject }: { initialProject?: string }) {
+  const params = useSearchParams();
   const [today, setToday] = useState<string | null>(null);
-  const [first, setFirst] = useState<string | null>(null);
   const [projectId, setProjectId] = useProjectFilter(initialProject);
-  const [editDate, setEditDate] = useState<string | null>(null);
-  const dayCard = useRef<HTMLElement>(null);
-  // The card opens below the calendar; bring it into view when a day is picked.
+  const dayRef = useRef<HTMLDivElement>(null);
+  // Bumped when a day is picked, so the right side is brought into view (on a phone it sits under the calendar).
+  const [picks, setPicks] = useState(0);
   useEffect(() => {
-    if (editDate) dayCard.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [editDate]);
-  // Quick-add mode: clicking day cells selects them instead of opening the day editor.
+    if (picks) dayRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [picks]);
+  // Quick-add mode: clicking day cells selects them instead of opening the day.
   const [selectMode, setSelectMode] = useState(false);
+  useEffect(() => setToday(toISODate(new Date())), []);
+  const address = today ? readMonthAddress(params, today) : null;
+  const first = address?.first ?? null;
   const selection = useDaySelection(first, setSelectMode);
   const { setPicked } = selection;
-  // Dragging an entry of the open day onto another day of the calendar moves it there.
+  // Dragging an entry of the day onto another day of the calendar moves it there.
   const drag = useEntryDrag();
-  useEffect(() => {
-    const t = toISODate(new Date());
-    setToday(t);
-    setFirst(`${(initialMonth ?? t).slice(0, 7)}-01`);
-  }, [initialMonth]);
 
-  const last = first ? monthEnd(first) : "";
+  const last = first ? monthBounds(first).to : "";
   useProjectLogos(); // the project logos start with the first batch, not after the entries arrive
   const entries = trpc.entry.list.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
   const nonBillableDays = trpc.entry.nonBillableDays.useQuery({ from: first ?? "", to: last }, { enabled: !!first });
@@ -65,10 +88,24 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
     [entries.data, projectId],
   );
   const sheet = useMemo(() => buildSheet(shown), [shown]);
+  const day =
+    address && first && today
+      ? (address.date ??
+        defaultMonthDay(
+          first,
+          last,
+          today,
+          shown.map((e) => e.date),
+        ))
+      : "";
+  // The day panel and its form ask for these; started here with the first batch (same keys), so the page stays ONE
+  // request. The day's own entries come from the month's (`seed`).
+  trpc.entry.running.useQuery();
+  trpc.project.budgets.useQuery(day ? monthBounds(day) : { from: "", to: "" }, { enabled: !!day });
 
-  if (!first) return <Skeleton className="h-96 w-full" />;
+  if (!address || !first || !today) return <Skeleton className="h-96 w-full" />;
+  const mode: MonthMode = address.mode;
 
-  // Calendar weeks (Mon-first) covering the month, padded with neighbouring days.
   const gridStart = startOfWeek(first);
   const gridEnd = addDays(startOfWeek(last), 6);
   const gridDays = dateRange(gridStart, gridEnd, addDays);
@@ -77,17 +114,36 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
   const inMonth = (d: string) => d >= first && d <= last;
   const shownPicked = selection.resolve(weeks, inMonth);
 
+  const pickDay = (d: string) => {
+    writeAddress({ month: d.slice(0, 7), date: d, view: null }, "push");
+    setPicks((n) => n + 1);
+  };
+  // ‹ › on the day: the day before or after; past the month's edge that month opens.
+  const stepDay = (delta: number) => {
+    const d = addDays(day, delta);
+    writeAddress({ month: d.slice(0, 7), date: d }, "replace");
+  };
+  const goMonth = (f: string) => writeAddress({ month: f.slice(0, 7), date: null }, "replace");
+  // The day stays in the address when switching to the whole month, so Day comes back to it.
+  const setMode = (m: MonthMode) => writeAddress({ date: day, view: m === "month" ? "month" : null }, "push");
+  const thisMonth = `${today.slice(0, 7)}-01`;
+
   return (
     <PageShell
       nav="month"
-      // Swipe left for the next month, right for the previous one (the arrows in the toolbar do the same).
-      onSwipe={feature("swipe") ? (direction) => setFirst(addMonths(first, direction === "left" ? 1 : -1)) : undefined}
+      onSwipe={
+        feature("swipe")
+          ? (direction) =>
+              mode === "day"
+                ? stepDay(direction === "left" ? 1 : -1)
+                : goMonth(addMonths(first, direction === "left" ? 1 : -1))
+          : undefined
+      }
       inlineDescription
       // The month's total is the page's key figure: shown on a phone too.
       descriptionOnPhone
       title={monthTitle.format(fromISODate(first))}
       description={
-        // The month's total is the number people came for: a figure, not small print.
         <>
           <span className="font-display font-extrabold text-foreground text-xl tabular-nums">
             {formatDuration(sheet.total)}
@@ -99,7 +155,6 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
       <MonthToolbar
         first={first}
         last={last}
-        today={today}
         monthDays={monthDays}
         shown={entries.data ? shown : undefined}
         selectMode={selectMode}
@@ -109,18 +164,17 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
           setPicked(new Set());
         }}
         onProjectId={setProjectId}
-        onFirst={setFirst}
       />
 
       {entries.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
           Couldn't load this month: {entries.error.message}
         </p>
-      ) : entries.isLoading ? (
+      ) : entries.isLoading || nonBillableDays.isLoading ? (
+        // Both, so the day panel is seeded from the start (its own query would be a second request).
         <Skeleton className="h-96 w-full" />
       ) : (
         <>
-          {/* The calendar is the page: it gets the full width. The dial and the lists sit under it. */}
           {selectMode && feature("multiDay") && (
             <QuickCreate
               dates={[...shownPicked].sort()}
@@ -137,57 +191,80 @@ export function MonthView({ initialMonth, initialProject }: { initialMonth?: str
             />
           )}
 
-          <MonthCalendar
-            weeks={weeks}
-            today={today}
-            dayTotals={sheet.dayTotals}
-            rows={sheet.rows}
-            inMonth={inMonth}
-            openDay={editDate}
-            selectMode={selectMode && feature("multiDay")}
-            rangeSelect={feature("multiDay")}
-            selection={selection}
-            shownPicked={shownPicked}
-            nonBillable={nonBillable}
-            drag={drag}
-            onOpenDay={setEditDate}
-          />
+          <div className="grid items-start gap-4 md:grid-cols-[20rem_minmax(0,1fr)] lg:grid-cols-[24rem_minmax(0,1fr)]">
+            {/* The calendar stays in view (sticky) while the right side scrolls; on a phone it simply comes first. */}
+            <SideColumn inFlow>
+              <section aria-label="Calendar" className={SIDE_CARD}>
+                <SideScroll>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <PeriodStepper
+                        className="flex-1"
+                        label={monthTitle.format(fromISODate(first))}
+                        prev="Previous month"
+                        next="Next month"
+                        onPrev={() => goMonth(addMonths(first, -1))}
+                        onNext={() => goMonth(addMonths(first, 1))}
+                      />
+                      {/* Only when looking at another month. */}
+                      {first !== thisMonth && (
+                        <Button variant="outline" className="h-10" onClick={() => goMonth(thisMonth)}>
+                          This month
+                        </Button>
+                      )}
+                    </div>
+                    <MonthCalendar
+                      weeks={weeks}
+                      today={today}
+                      dayTotals={sheet.dayTotals}
+                      rows={sheet.rows}
+                      inMonth={inMonth}
+                      openDay={day}
+                      selectMode={selectMode && feature("multiDay")}
+                      rangeSelect={feature("multiDay")}
+                      selection={selection}
+                      shownPicked={shownPicked}
+                      nonBillable={nonBillable}
+                      drag={drag}
+                      onOpenDay={pickDay}
+                    />
+                    <MonthFacts dayTotals={sheet.dayTotals} />
+                  </div>
+                </SideScroll>
+              </section>
+            </SideColumn>
 
-          {/* A picked day opens here, under the calendar, as one card (not a pop-up), and closes again. */}
-          {editDate && (
-            <section ref={dayCard} aria-label={longDateLabel(editDate)} className="scroll-mt-28">
-              <DayEditorPanel
-                key={editDate}
-                date={editDate}
-                inPage
-                title={longDateLabel(editDate)}
-                onClose={() => setEditDate(null)}
-                entryGrip={(entry) => <EntryGrip entry={entry} drag={drag} />}
-              />
-              <Link
-                href={`/dashboard/today?date=${editDate}`}
-                className="mt-2 inline-block text-muted-foreground text-xs underline"
-              >
-                Open this day's full page
-              </Link>
-            </section>
-          )}
-
-          <MonthFacts dayTotals={sheet.dayTotals} />
-          <div className="flex min-w-0 flex-col gap-4">
-            {feature("merge") && <MergeDaysPanel entries={shown} />}
-
-            {/* Keyed by month + project so a new view starts on page 1 with a clear search. */}
-            <AllEntriesFold period="month" count={shown.length}>
-              <WorkItems
-                key={`${first}-${projectId}`}
-                entries={shown}
-                onOpenDay={setEditDate}
-                period="month"
-                editInPlace
-                nonBillable={nonBillable}
-              />
-            </AllEntriesFold>
+            <div ref={dayRef} className="flex min-w-0 scroll-mt-28 flex-col gap-4">
+              <SegmentedSwitch label="Show" options={MODES} value={mode} onChange={setMode} className="sm:self-start" />
+              {mode === "day" ? (
+                <section aria-label={longDayLabel.format(fromISODate(day))}>
+                  <DayEditorPanel
+                    key={day}
+                    date={day}
+                    projectFilter={projectId}
+                    onStep={stepDay}
+                    addBehindButton
+                    entryGrip={(entry) => <EntryGrip entry={entry} drag={drag} />}
+                    seed={periodSeed(entries, nonBillableDays)}
+                  />
+                </section>
+              ) : shown.length === 0 ? (
+                <p className="rounded-3xl border bg-card p-6 text-center text-muted-foreground text-sm">
+                  No entries this month.
+                </p>
+              ) : (
+                // Keyed by month + project so a new view starts on page 1 with a clear search.
+                <WorkItems
+                  key={`${first}-${projectId}`}
+                  entries={shown}
+                  onOpenDay={pickDay}
+                  period="month"
+                  editInPlace
+                  nonBillable={nonBillable}
+                />
+              )}
+              {feature("merge") && <MergeDaysPanel entries={shown} />}
+            </div>
           </div>
         </>
       )}

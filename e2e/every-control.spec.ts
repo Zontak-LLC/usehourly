@@ -53,7 +53,11 @@ async function describe(page: Page, index: number) {
         .slice(0, 60),
       disabled: (el as HTMLButtonElement).disabled === true || el.getAttribute("aria-disabled") === "true",
       inShadow: el.getRootNode() instanceof ShadowRoot, // Next's development badge
-      selected: el.getAttribute("aria-selected") === "true" || el.getAttribute("aria-checked") === "true",
+      // A pressed segment (Month: Day, By day) or the picked calendar day is already what a click would pick.
+      selected:
+        el.getAttribute("aria-selected") === "true" ||
+        el.getAttribute("aria-checked") === "true" ||
+        el.getAttribute("aria-pressed") === "true",
     }));
 }
 

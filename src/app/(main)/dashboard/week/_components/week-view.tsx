@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { AllEntriesFold } from "@/components/all-entries-fold";
-import { DayEditorPanel } from "@/components/day-editor";
+import { DayEditorPanel, periodSeed } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
@@ -46,7 +45,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   // The day panel below asks for these only once it is on screen, which would be a second round trip. Started here with
   // the first batch (same keys, so nothing is fetched twice). The picked day's own entries are not asked for at all: the
-  // panel is handed them from the week's (see weekSeed).
+  // panel is handed them from the week's (see `seed`).
   const day = start && today ? chooseDay(start, picked, today) : "";
   trpc.entry.running.useQuery();
   trpc.project.budgets.useQuery(day ? monthBounds(day) : { from: "", to: "" }, { enabled: !!day });
@@ -152,30 +151,19 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
                   key={selected}
                   date={selected}
                   projectFilter={projectId}
-                  inPage
-                  weekSeed={
-                    entries.data && nonBillableDays.data
-                      ? {
-                          entries: entries.data,
-                          days: nonBillableDays.data,
-                          updatedAt: entries.dataUpdatedAt,
-                          daysUpdatedAt: nonBillableDays.dataUpdatedAt,
-                        }
-                      : undefined
-                  }
+                  seed={periodSeed(entries, nonBillableDays)}
                 />
               </section>
               {feature("merge") && <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />}
-              <AllEntriesFold period="week" count={shown.length} defaultOpen>
-                <WorkItems
-                  key={`${start}-${projectId}`}
-                  entries={shown}
-                  onOpenDay={openDay}
-                  period="week"
-                  editInPlace
-                  nonBillable={nonBillable}
-                />
-              </AllEntriesFold>
+              {/* The week's full list, always open under the day (it renders nothing for an empty week). */}
+              <WorkItems
+                key={`${start}-${projectId}`}
+                entries={shown}
+                onOpenDay={openDay}
+                period="week"
+                editInPlace
+                nonBillable={nonBillable}
+              />
             </div>
           </div>
         </div>

@@ -3,10 +3,9 @@ import type { Page } from "@playwright/test";
 import { auditPage, expect, signUpByApi, test } from "./helpers";
 
 /**
- * The side column experiment (components/side-column.tsx): on a wide screen Week's "This week" card is min(its own
- * content, the main column): it stops level with a shorter main column and its rows scroll (never under 24rem), and keeps
- * its own height beside a taller one. On a phone the columns stack and the
- * card keeps its own height.
+ * The side column (components/side-column.tsx): on a wide screen Week's "This week" card is min(its own content, the
+ * main column, the window): beside a taller main column it keeps its own height; in a short window it stops under the
+ * top bar and its rows scroll. On a phone the columns stack and the card keeps its own height.
  */
 const FLOOR = 24 * 16;
 // One page of the By project list (pages of 10 since 2026-10-24); the pages have their own test below.
@@ -87,11 +86,10 @@ test("on a wide screen the This week card is min(its content, the main column) a
   // A tall window, so the card's own content fits under the window cap and the "keeps its own height" case shows.
   await page.setViewportSize({ width: 1280, height: 1100 });
   const card = await seed(page);
-  const fold = page.getByRole("button", { name: /All entries this week/ });
-  await expect(fold).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("region", { name: "All entries this week" })).toBeVisible(); // always open, no fold
 
-  // List open (an empty day, the week's list under it): the main column is taller than the card's content, so the card
-  // keeps its own height: its last row sits at its foot (no empty block), well above the main column's foot.
+  // An empty day with the week's list under it: the main column is taller than the card's content, so the card keeps
+  // its own height: its last row sits at its foot (no empty block), well above the main column's foot.
   let m = await measure(page);
   expect(m.mainHeight).toBeGreaterThan(m.natural + 50);
   expectMinRule(m);
@@ -116,16 +114,13 @@ test("on a wide screen the This week card is min(its content, the main column) a
   }).toPass();
   await page.evaluate(() => window.scrollTo(0, 0));
 
-  // Folded: the main column is now shorter than the card's content, so the card stops level with it (never under the
-  // floor) and its rows scroll.
-  await fold.click();
-  await expect(fold).toHaveAttribute("aria-expanded", "false");
+  // A short window: the card is never taller than the window under the top bar, so it stops there and its rows scroll.
+  await page.setViewportSize({ width: 1280, height: 640 });
   await expect(async () => {
     m = await measure(page);
-    expect(m.natural).toBeGreaterThan(Math.max(m.mainHeight, FLOOR));
+    expect(m.natural).toBeGreaterThan(m.windowCap);
     expectMinRule(m);
-    expect(m.cardHeight).toBeGreaterThanOrEqual(FLOOR - 2);
-    if (m.mainHeight > FLOOR) expect(Math.abs(m.cardBottom - m.mainBottom)).toBeLessThanOrEqual(2);
+    expect(Math.abs(m.cardHeight - m.windowCap)).toBeLessThanOrEqual(2);
     expect(m.scrollHeight).toBeGreaterThan(m.clientHeight);
   }).toPass();
 

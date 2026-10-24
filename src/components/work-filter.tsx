@@ -2,6 +2,7 @@
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
+import { SegmentedSwitch } from "@/components/segmented-switch";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import type { SheetEntry } from "@/lib/timesheet";
@@ -65,26 +66,15 @@ export function WorkModeSwitch({
   onMode: (mode: "day" | "project") => void;
 }) {
   return (
-    <fieldset aria-label="Group the list" className="m-0 flex gap-1 rounded-full border-0 bg-muted p-1">
-      {(
-        [
-          ["day", "By day"],
-          ["project", "By project"],
-        ] as const
-      ).map(([id, label]) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={mode === id}
-          onClick={() => onMode(id)}
-          className={`min-h-9 rounded-full px-4 font-semibold text-sm transition-colors ${
-            mode === id ? "bg-foreground text-background" : "text-foreground/75 hover:text-foreground"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </fieldset>
+    <SegmentedSwitch
+      label="Group the list"
+      options={[
+        ["day", "By day"],
+        ["project", "By project"],
+      ]}
+      value={mode}
+      onChange={onMode}
+    />
   );
 }
 
@@ -158,19 +148,40 @@ export function WorkToolbar({
 
 const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 const monthFmt = new Intl.DateTimeFormat(undefined, { month: "short" });
+const longDayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
-/** A small calendar leaf: weekday, a big day number, month. It stays in view while the day's rows scroll past. */
-export function DateBlock({ date }: { date: string }) {
+/**
+ * A small calendar leaf: weekday, a big day number, month. It stays in view while the day's rows scroll past. With
+ * `onPick` it is a button that opens that day.
+ */
+export function DateBlock({ date, onPick }: { date: string; onPick?: (date: string) => void }) {
   const d = fromISODate(date);
-  return (
-    <div aria-hidden className="self-start">
-      <div className="sticky top-32 flex flex-col items-center rounded-2xl bg-muted py-2 text-center ring-1 ring-foreground/10">
-        <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-widest">
-          {weekdayFmt.format(d)}
-        </span>
-        <span className="font-display font-extrabold text-2xl tabular-nums leading-none">{d.getDate()}</span>
-        <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-widest">{monthFmt.format(d)}</span>
+  const leaf =
+    "sticky top-32 flex w-full flex-col items-center rounded-2xl bg-muted py-2 text-center ring-1 ring-foreground/10";
+  const face = (
+    <>
+      <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-widest">{weekdayFmt.format(d)}</span>
+      <span className="font-display font-extrabold text-2xl tabular-nums leading-none">{d.getDate()}</span>
+      <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-widest">{monthFmt.format(d)}</span>
+    </>
+  );
+  if (!onPick) {
+    return (
+      <div aria-hidden className="self-start">
+        <div className={leaf}>{face}</div>
       </div>
+    );
+  }
+  return (
+    <div className="self-start">
+      <button
+        type="button"
+        onClick={() => onPick(date)}
+        aria-label={`Open ${longDayFmt.format(d)}`}
+        className={`${leaf} cursor-pointer transition-colors hover:bg-foreground/10 focus-visible:outline-2 focus-visible:outline-ring`}
+      >
+        {face}
+      </button>
     </div>
   );
 }
