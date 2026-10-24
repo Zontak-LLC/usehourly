@@ -1,9 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <title>UseHourly</title>
-  <style>.t{fill:#2563c9}.i{fill:none;stroke:#fff;stroke-linecap:round}.d{fill:#fff}@media (prefers-color-scheme:dark){.t{fill:#6ea8ff}.i{stroke:#0b1220}.d{fill:#0b1220}}</style>
-  <rect class="t" width="64" height="64" rx="14"/>
-  <circle class="i" cx="32" cy="32" r="19" stroke-width="3.5"/>
-  <line class="i" x1="32" y1="32" x2="24.2" y2="27.5" stroke-width="4"/>
-  <line class="i" x1="32" y1="32" x2="43.3" y2="25.5" stroke-width="3"/>
-  <circle class="d" cx="32" cy="32" r="2.6"/>
+  <style>.t{fill:#2563c9;stroke:#2563c9}.i{fill:none;stroke:#fff;stroke-linecap:round}@media (prefers-color-scheme:dark){.t{fill:#6ea8ff;stroke:#6ea8ff}.i{stroke:#0b1220}}</style>
+  <path class="t" d="M50,5 L89,27.5 V72.5 L50,95 L11,72.5 V27.5 Z" stroke-width="6" stroke-linejoin="round"/>
+  <circle class="i" cx="50" cy="50" r="25" stroke-width="7"/>
+  <path class="i" d="M50,50 L39,42 M50,50 L63,36" stroke-width="7"/>
 </svg>

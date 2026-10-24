@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
 import { ClientCurrency } from "@/components/currency-provider";
+import { useSaveNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
@@ -86,6 +87,11 @@ export function QuickAdd({
   const [projectId, setProjectId] = useState("");
   const [duration, setDuration] = useState("");
   const [note, setNote] = useState("");
+  // Log first, note later (2026-10-24): right after a time is logged with no description, the description box belongs
+  // to THAT entry for a moment ("Add a note to the 1:30 you just logged"); Enter or leaving the box saves it there.
+  const [followUp, setFollowUp] = useState<FollowUp | null>(null);
+  const saveNote = useSaveNote();
+  const followUpDone = useRef<string | null>(null);
   // Tapping the same chip again adds its time again (2 hours, again = 4 hours); typing or another chip starts over.
   const [chipRun, setChipRun] = useState<{ minutes: number; taps: number } | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
@@ -136,6 +142,7 @@ export function QuickAdd({
   }, []);
 
   const parsed = parseDuration(duration);
+  const pickedName = projects.find((p) => p.id === projectId)?.name ?? "";
   const invalid = duration.trim() !== "" && parsed === null;
 
   function remember(id: string) {
@@ -151,6 +158,7 @@ export function QuickAdd({
     e?.preventDefault();
     if (!projectId) return toast.error("Pick a project first.");
     if (parsed === null) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    setFollowUp(null);
     // One id for this entry, kept if the send has to be retried, so the server saves it once however many times it arrives.
     const clientId = crypto.randomUUID();
     const finish = () => {
@@ -172,6 +180,10 @@ export function QuickAdd({
         : null;
     const undo = row ? await optimistic.add(row) : null;
     const typed = { duration, note };
+    // Logged with no description: the box offers to add one to this entry once the server has it (it has an id then).
+    const noteLater: FollowUp | null = note.trim()
+      ? null
+      : { id: clientId, minutes: parsed, project: pickedName, client: owner?.name ?? "" };
     spin(logIconRef.current);
     if (row) {
       finish();
@@ -182,6 +194,7 @@ export function QuickAdd({
       countLogged();
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       if (!row) finish();
+      if (noteLater) setFollowUp(noteLater);
     } catch (err) {
       undo?.();
       setLogged(null); // it was not logged after all
@@ -193,6 +206,17 @@ export function QuickAdd({
       }
       toastError(err, "Couldn't save that entry.");
     }
+  }
+
+  /** Saves what the follow-up box holds onto the entry just logged (never a new entry); the box goes back to normal. */
+  function saveFollowUp() {
+    // Enter moves the focus to the time field, and the blur that causes runs before the box re-renders: save once.
+    if (!followUp || followUpDone.current === followUp.id) return;
+    followUpDone.current = followUp.id;
+    const text = note.trim();
+    setFollowUp(null);
+    setNote("");
+    if (text) void saveNote(followUp.id, text);
   }
 
   /** One more entry saved from this browser: the help line under the time shows only for the first few. */
@@ -219,15 +243,36 @@ export function QuickAdd({
   }
 
   // Tell the page's timer what it would start for, and clear the description once a timer has started with it.
-  const pickedName = projects.find((p) => p.id === projectId)?.name ?? "";
+  // The follow-up note belongs to the entry already logged, never to a timer started next.
+  const timerNote = followUp ? "" : note;
   useEffect(() => {
-    onTimerContext?.({ projectId, projectName: pickedName, note });
-  }, [onTimerContext, projectId, pickedName, note]);
+    onTimerContext?.({ projectId, projectName: pickedName, note: timerNote });
+  }, [onTimerContext, projectId, pickedName, timerNote]);
+  // Another day or another project: the box is the next entry's again.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the day or the project changes
+  useEffect(() => setFollowUp(null), [date, projectId]);
   useEffect(() => {
-    const clear = () => setNote("");
+    const clear = () => {
+      setNote("");
+      setFollowUp(null);
+    };
     window.addEventListener(TIMER_STARTED_EVENT, clear);
     return () => window.removeEventListener(TIMER_STARTED_EVENT, clear);
   }, []);
+
+  /** Keys in the follow-up box: Enter saves the note onto the entry just logged, Escape lets it go. */
+  function followUpKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      saveFollowUp();
+      durationRef.current?.focus();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setFollowUp(null);
+      setNote("");
+    }
+  }
 
   const polishOwner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
   const polishContext = {
@@ -264,6 +309,7 @@ export function QuickAdd({
             value={duration}
             onChange={(e) => {
               setDuration(e.target.value);
+              if (!note.trim()) setFollowUp(null); // the next time is on its way: the box is for it now
               setLogged(null);
               setChipRun(null);
               fieldRoll.stop();
@@ -305,6 +351,7 @@ export function QuickAdd({
                   const from = again ? c.minutes * chipRun.taps : 0;
                   const to = c.minutes * taps;
                   setChipRun({ minutes: c.minutes, taps });
+                  if (!note.trim()) setFollowUp(null);
                   setLogged(null);
                   setDuration(chipText(to));
                   fieldRoll.roll(from, to);
@@ -351,28 +398,28 @@ export function QuickAdd({
           )}
         </div>
 
-        <div className="sm:col-span-2">
-          <NoteTextarea
-            value={note}
-            onChange={setNote}
-            polish={feature("aiPolish") ? polishContext : undefined}
-            onKeyDown={(e) => {
-              // Enter saves when a time is typed, otherwise goes back to the time field.
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                if (parsed !== null) void submit();
-                else durationRef.current?.focus();
-              }
-            }}
-            placeholder="What did you work on? (optional)"
-            aria-label="Description"
-            rows={2}
-            className="min-h-[4rem] resize-none py-2.5 text-base"
-          />
-        </div>
-        {/* At the foot, so picking a project with a budget never moves the controls above it. */}
+        <NoteBox
+          note={note}
+          onChange={setNote}
+          followUp={followUp}
+          polish={feature("aiPolish") ? polishContext : undefined}
+          onKeyDown={(e) => {
+            if (followUp) return followUpKey(e);
+            // Enter saves when a time is typed, otherwise goes back to the time field.
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              if (parsed !== null) void submit();
+              else durationRef.current?.focus();
+            }
+          }}
+          onBlur={() => {
+            if (followUp && note.trim()) saveFollowUp();
+          }}
+        />
+        {/* At the foot, so picking a project with a budget never moves the controls above it. `order-last` because the
+            Log time button is moved to the end on a phone (`order-last` too): the bar then follows it, by source order. */}
         {budget && feature("budgets") && (
-          <div className="sm:col-span-2">
+          <div className="order-last sm:col-span-2">
             <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
               <BudgetBar status={budget} />
             </ClientCurrency>
@@ -394,6 +441,65 @@ export function QuickAdd({
       </div>
       {body}
     </section>
+  );
+}
+
+/** The entry the description box belongs to right after a log with no description. */
+type FollowUp = { id: string; minutes: number; project: string; client: string };
+
+/** "Add a note to the 1:30 you just logged (Website · Acme)": the follow-up box's label and accessible name. */
+function followUpLabel(f: FollowUp): string {
+  const where = [f.project, f.client].filter(Boolean).join(" · ");
+  return `Add a note to the ${formatDuration(f.minutes)} you just logged${where ? ` (${where})` : ""}`;
+}
+
+/**
+ * The description box. Normally the new entry's description (optional); right after a log with no description it is
+ * the note box of THAT entry, named by the label above it (its accessible name), with a hint under it.
+ */
+function NoteBox({
+  note,
+  onChange,
+  followUp,
+  polish,
+  onKeyDown,
+  onBlur,
+}: {
+  note: string;
+  onChange: (v: string) => void;
+  followUp: FollowUp | null;
+  polish?: { project: string; client: string };
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onBlur: () => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1.5 sm:col-span-2">
+      {followUp && (
+        <label htmlFor={id} className="font-medium text-amber text-sm">
+          {followUpLabel(followUp)}
+        </label>
+      )}
+      <NoteTextarea
+        id={id}
+        value={note}
+        onChange={onChange}
+        polish={followUp ? undefined : polish}
+        onKeyDown={onKeyDown}
+        onBlur={onBlur}
+        placeholder={
+          followUp ? "Type a note, then press Enter" : "What did you work on? (optional, you can add it later)"
+        }
+        aria-label={followUp ? undefined : "Description"}
+        rows={2}
+        className={`min-h-[4rem] resize-none py-2.5 text-base ${followUp ? "border-amber" : ""}`}
+      />
+      {followUp && (
+        <p className="text-muted-foreground text-xs">
+          Enter saves it to that entry. Log the next time and this box goes back to normal.
+        </p>
+      )}
+    </div>
   );
 }
 

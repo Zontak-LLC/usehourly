@@ -27,6 +27,18 @@ Time is always logged on a project, and each project belongs to one client.`,
 A plain number up to **12** means hours (\`4\` is four hours). A bigger plain number means minutes (\`45\` is forty-five minutes). The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
   },
   {
+    id: "add-note",
+    question: "Do I have to write a description? How do I add one later?",
+    keywords: ["description", "note", "notes", "later", "add note", "what did you work on", "optional", "invoice text"],
+    answer: `No. The description is optional: type the time and press **Enter**, and the time is logged. You can add the note later in three ways:
+
+- **Right after you log:** the description box then says **Add a note to the 1:30 you just logged**. Type the note and press **Enter**: it goes on that entry. **Escape** lets it go. Type the next time and the box is for the next entry again.
+- **In any list of entries** (Today, Week, Month): an entry with no note shows **+ Add note**. Press it, type, then press **Enter**. **Escape** cancels.
+- **At the end of the day:** the day card on Today says how many entries have no note yet. **Add notes** opens the first one; **Enter** saves it and opens the next. **Not now** hides the line for that day on this device.
+
+Clients see the descriptions on your invoices, so a short note helps them. If you type the description before you press Log time, it is saved with the entry.`,
+  },
+  {
     id: "timer",
     question: "How does the timer work?",
     keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard", "undo"],

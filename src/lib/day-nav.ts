@@ -55,14 +55,16 @@ export function nudgeDay(missed: readonly string[], today: string, notNow: Reado
 
 /** Where "Not now" is remembered: dates only, in this browser. */
 export const NOT_NOW_KEY = "hourly:missedNotNow";
+/** The same "Not now", for the day card's "entries have no note yet" line: its own list of dates, same rules. */
+export const NOTE_NOT_NOW_KEY = "hourly:noteNotNow";
 const MAX_NOT_NOW = 30;
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
-/** The dates "Not now" was pressed for (empty when none or storage is unreadable). */
-export function loadNotNow(storage: StorageLike | null): Set<string> {
+/** The dates "Not now" was pressed for (empty when none or storage is unreadable). `key` picks which line's list. */
+export function loadNotNow(storage: StorageLike | null, key = NOT_NOW_KEY): Set<string> {
   try {
-    const raw: unknown = JSON.parse(storage?.getItem(NOT_NOW_KEY) ?? "[]");
+    const raw: unknown = JSON.parse(storage?.getItem(key) ?? "[]");
     return new Set(Array.isArray(raw) ? raw.filter((d): d is string => typeof d === "string" && DATE_RE.test(d)) : []);
   } catch {
     return new Set();
@@ -70,10 +72,10 @@ export function loadNotNow(storage: StorageLike | null): Set<string> {
 }
 
 /** Remembers "Not now" for a date (the newest few are kept). */
-export function saveNotNow(storage: StorageLike | null, date: string): Set<string> {
-  const next = new Set([...loadNotNow(storage), date]);
+export function saveNotNow(storage: StorageLike | null, date: string, key = NOT_NOW_KEY): Set<string> {
+  const next = new Set([...loadNotNow(storage, key), date]);
   try {
-    storage?.setItem(NOT_NOW_KEY, JSON.stringify([...next].sort().slice(-MAX_NOT_NOW)));
+    storage?.setItem(key, JSON.stringify([...next].sort().slice(-MAX_NOT_NOW)));
   } catch {
     // storage blocked: the line comes back on the next visit, nothing worse
   }
