@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/check-rules.mjs 2>&1 | tail -15; exit 0"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node packages/quality-gates/bin/quality-gates.mjs rules 2>&1 | tail -15; exit 0"
           }
         ]
       }

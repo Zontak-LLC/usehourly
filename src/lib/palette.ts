@@ -1,6 +1,6 @@
 /**
  * THE colours of the app that mean something. Read the legend in docs/ui-spec.md ("Colour legend") before adding one:
- * a new hard-coded colour anywhere else fails `npm run check:rules` (scripts/check-colours.mjs).
+ * a new hard-coded colour anywhere else fails `npm run check:rules` (the colour ratchet in packages/quality-gates, configured in quality-gates.config.mjs).
  */
 export const PALETTE = {
   /** The one accent (the hour hand, a soft periwinkle since v4): the main button, today, the open tab, focus. */

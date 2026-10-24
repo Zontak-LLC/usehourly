@@ -1,0 +1,22 @@
+{
+  "name": "quality-gates",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The checks a linter cannot express, one gate command, and the hooks that run it before a commit, a push, in CI and when an AI assistant ends a turn. Not published yet.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.mjs",
+  "bin": {
+    "quality-gates": "bin/quality-gates.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs",
+    "./vitest": "./src/vitest.mjs",
+    "./biome.json": "./biome.preset.json",
+    "./tsconfig.strict.json": "./tsconfig.strict.json",
+    "./jscpd.json": "./jscpd.json"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
