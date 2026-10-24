@@ -5,6 +5,7 @@ import { supportNoticeInput } from "@/lib/support-notice";
 import { usageDay } from "@/lib/usage";
 
 import { isAdminAccount } from "../admin-access";
+import { accountActivity } from "../insights-activity";
 import { readSupportNoticeSetting, writeSupportNotice } from "../support-notice";
 import { protectedProcedure, router } from "../trpc";
 
@@ -32,23 +33,17 @@ export const insightsRouter = router({
   overview: protectedProcedure.query(async ({ ctx }) => {
     if (!(await isAdminAccount(ctx.prisma, ctx.userId))) throw new TRPCError({ code: "NOT_FOUND" });
     const now = new Date();
-    const since = (days: number) => new Date(now.getTime() - days * DAY);
-    const sinceDay = usageDay(since(30));
-    const [users, demoCount, entryStats, active7, active30, entries30, invoiceUsers, usage] = await Promise.all([
+    const sinceDay = usageDay(new Date(now.getTime() - 30 * DAY));
+    const [users, demoCount, activity, invoiceUsers, usage] = await Promise.all([
       ctx.prisma.authUser.findMany({
         where: { is_demo: false },
         select: { id: true, created_at: true },
+        orderBy: { id: "asc" },
         take: MAX_ACCOUNTS,
       }),
       ctx.prisma.authUser.count({ where: { is_demo: true } }),
-      ctx.prisma.timeEntry.groupBy({ by: ["user_id"], _count: { _all: true }, _min: { created_at: true } }),
-      ctx.prisma.timeEntry.groupBy({ by: ["user_id"], where: { updated_at: { gte: since(7) } } }),
-      ctx.prisma.timeEntry.groupBy({ by: ["user_id"], where: { updated_at: { gte: since(30) } } }),
-      ctx.prisma.timeEntry.groupBy({
-        by: ["user_id"],
-        where: { created_at: { gte: since(30) } },
-        _count: { _all: true },
-      }),
+      // Per account, one short seek each (server/insights-activity.ts), never a scan of every entry.
+      accountActivity(ctx.prisma, now, MAX_ACCOUNTS),
       ctx.prisma.invoice.groupBy({ by: ["user_id"] }),
       ctx.prisma.usageDaily.findMany({ where: { day: { gte: sinceDay } } }),
     ]);
@@ -56,10 +51,7 @@ export const insightsRouter = router({
       now,
       users,
       demoCount,
-      entryStats: entryStats.map((s) => ({ user_id: s.user_id, count: s._count._all, first: s._min.created_at })),
-      active7: active7.map((r) => r.user_id),
-      active30: active30.map((r) => r.user_id),
-      entries30: entries30.map((r) => ({ user_id: r.user_id, count: r._count._all })),
+      ...activity,
       invoiceUserIds: invoiceUsers.map((r) => r.user_id),
       usage,
     });
