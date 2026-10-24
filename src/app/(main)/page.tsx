@@ -133,7 +133,7 @@ export default function LandingPage() {
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/auth/v2/register"
-                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-amber-fill px-6 font-semibold text-white text-base shadow-[0_10px_30px_-14px_var(--amber)] transition-all hover:-translate-y-0.5 hover:brightness-110 dark:text-[var(--background)]"
+                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-amber-fill px-6 font-semibold text-white text-base shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-all hover:-translate-y-0.5 hover:brightness-110 dark:text-[var(--background)]"
                 >
                   Create a free account
                 </Link>
@@ -269,16 +269,12 @@ export default function LandingPage() {
             <div className="mt-10 flex flex-col items-center gap-3">
               <Link
                 href="/auth/v2/register"
-                className="group/cta relative inline-flex h-16 items-center gap-4 overflow-hidden rounded-full bg-amber py-2 pr-3 pl-8 font-bold font-display text-white text-xl shadow-[0_0_0_6px_color-mix(in_oklab,var(--amber)_14%,transparent)] transition-all duration-300 hover:shadow-[0_0_0_10px_color-mix(in_oklab,var(--amber)_18%,transparent)] dark:text-background motion-safe:active:scale-[0.98] motion-safe:hover:-translate-y-1"
+                className="group/cta relative inline-flex h-16 items-center gap-4 rounded-full bg-amber-fill py-2 pr-3 pl-8 font-bold font-display text-white text-xl shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-transform duration-300 hover:brightness-110 motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98] dark:text-background"
               >
                 Create a free account
                 <span className="grid size-12 place-items-center rounded-full bg-white/20 text-white transition-transform dark:bg-background/25 dark:text-background duration-300 group-hover/cta:translate-x-1 group-hover/cta:rotate-[-12deg]">
                   <ArrowRight className="size-6" aria-hidden />
                 </span>
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 transition-all duration-700 group-hover/cta:left-full group-hover/cta:opacity-100"
-                />
               </Link>
               <TryDemoButton className="inline-flex items-center rounded-full border border-foreground/20 bg-card/60 px-5 py-2 font-semibold text-foreground text-sm transition-colors hover:bg-card">
                 or try the demo first, no sign-up

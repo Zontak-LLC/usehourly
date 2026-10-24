@@ -23,7 +23,7 @@ function Columns({ items }: { items: { key: string; label: string; value: number
         >
           <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{i.value || ""}</span>
           <span
-            className={`w-full rounded-t-md ${n === items.length - 1 ? "bg-amber" : "bg-foreground/20"}`}
+            className={`w-full rounded-t-md ${n === items.length - 1 ? "bg-amber-fill" : "bg-foreground/20"}`}
             style={{ height: `${Math.max(i.value > 0 ? 3 : 0, (i.value / max) * 100)}%` }}
           />
           <span className="max-w-full truncate font-mono text-[9px] text-muted-foreground">{i.label.slice(-5)}</span>
@@ -40,7 +40,7 @@ function BarRow({ label, value, max, suffix }: { label: string; value: number; m
     <div className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-3 text-sm">
       <span className="truncate text-muted-foreground">{label}</span>
       <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-amber" style={{ width: `${width}%` }} />
+        <div className="h-full rounded-full bg-amber-fill" style={{ width: `${width}%` }} />
       </div>
       <span className="min-w-8 text-right tabular-nums">
         {value}

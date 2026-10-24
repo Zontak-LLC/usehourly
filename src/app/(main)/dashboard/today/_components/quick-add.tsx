@@ -425,13 +425,12 @@ function LogTimeButton({
       // it is a pale amber (still the main button, only waiting: drawing audit 2026-10-23), and it comes alive when there
       // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
-      style={logged ? { backgroundColor: "var(--amber-fill)", color: "#12151b" } : undefined} // colour-ok: the same dark ink as the button's own text
-      className="group relative order-last flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-[#12151b] text-lg shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      style={logged ? { backgroundColor: "var(--amber-fill)" } : undefined}
+      className="group relative order-last flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white dark:text-[var(--background)] shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}
-        style={logged ? { backgroundColor: "#12151b", color: "var(--amber)" } : undefined} // colour-ok: the button's dark ink
-        className="grid size-7 place-items-center rounded-full bg-[#12151b] text-amber transition-transform group-hover:-rotate-12 group-disabled:bg-amber/45 group-disabled:text-[#12151b] sm:size-6"
+        className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 dark:bg-background/25 dark:text-background sm:size-6"
       >
         {logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />

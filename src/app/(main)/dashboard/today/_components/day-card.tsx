@@ -55,7 +55,7 @@ function Neighbour({
         <span
           className={
             isToday
-              ? "inline-flex size-6 items-center justify-center rounded-full bg-amber font-semibold text-neutral-950 text-sm"
+              ? "inline-flex size-6 items-center justify-center rounded-full bg-amber-fill font-semibold text-sm text-white dark:text-[var(--background)]"
               : "inline-flex h-6 items-center font-medium text-foreground/75 text-sm"
           }
         >

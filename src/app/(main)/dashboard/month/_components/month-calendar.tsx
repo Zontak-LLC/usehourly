@@ -106,7 +106,7 @@ function DayCell({
         <span
           className={
             state.isToday
-              ? "inline-flex size-6 items-center justify-center rounded-full bg-amber font-semibold text-neutral-950"
+              ? "inline-flex size-6 items-center justify-center rounded-full bg-amber-fill font-semibold text-white dark:text-[var(--background)]"
               : `inline-flex h-6 items-center ${state.isWeekend || !state.inMonth ? "text-muted-foreground" : "text-foreground/75"}`
           }
         >
