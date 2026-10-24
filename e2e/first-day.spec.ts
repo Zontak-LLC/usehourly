@@ -160,7 +160,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("confirm the email address (from the email the app sent)", async () => {
-    await page.goto("/dashboard/account");
+    await page.goto("/dashboard/account#account");
     await expect(page.getByRole("heading", { name: "Account", level: 1 })).toBeVisible();
     await audit("account");
     await shot("account");
@@ -366,7 +366,7 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
   });
 
   await test.step("delete the account; the details no longer work", async () => {
-    await page.goto("/dashboard/account#data");
+    await page.goto("/dashboard/account#account");
     await page.getByRole("button", { name: /Delete my account/ }).click();
     await page.getByLabel(/Type your password/).fill(user.password);
     // Slide to delete (issue 210): the slider wakes up once the password is typed; End completes it.

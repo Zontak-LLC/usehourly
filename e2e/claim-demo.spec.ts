@@ -4,7 +4,7 @@ import { startDemo } from "./helpers";
 
 test("on a sample account the sign-up card is one line and a button until you want it", async ({ page }) => {
   await startDemo(page);
-  await page.goto("/dashboard/account");
+  await page.goto("/dashboard/account#account");
 
   const card = page.locator("#claim");
   await expect(card).toContainText("Keep your work: create a free account");

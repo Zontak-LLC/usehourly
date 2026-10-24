@@ -1,10 +1,9 @@
 "use client";
 
-import type { MouseEvent } from "react";
-
 import { Search } from "lucide-react";
 
 import { ClientInitial } from "@/components/client-initial";
+import { SplitRow } from "@/components/split-view";
 import { Input } from "@/components/ui/input";
 import { clientPath } from "@/lib/client-list";
 
@@ -103,31 +102,20 @@ function Group({
 
 function Row({ item, selected, onOpen }: { item: ListItem; selected: boolean; onOpen: (id: string) => void }) {
   const { client: c } = item;
-  function click(e: MouseEvent<HTMLAnchorElement>) {
-    // A new tab or window (Ctrl, Cmd, Shift, middle click) is the browser's job.
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    e.preventDefault();
-    onOpen(c.id);
-  }
   return (
-    <a
+    <SplitRow
       href={clientPath(c.id)}
-      onClick={click}
-      aria-current={selected ? "page" : undefined}
-      className={`grid min-h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-2 py-2 text-left ${
-        selected ? "bg-card shadow-sm ring-1 ring-foreground/15" : "hover:bg-card/70"
-      }`}
-    >
-      <ClientInitial name={c.name} colour={c.color} quiet={item.quiet} />
-      <span className="min-w-0">
-        <span className={`block truncate text-sm ${item.quiet ? "font-medium text-foreground/80" : "font-semibold"}`}>
-          {c.name}
-        </span>
-        <span className="block truncate text-foreground/70 text-xs">{item.line}</span>
-      </span>
-      {item.amount && (
-        <span className="font-mono font-semibold text-[13px] tabular-nums tracking-tight">{item.amount}</span>
-      )}
-    </a>
+      selected={selected}
+      onOpen={() => onOpen(c.id)}
+      leading={<ClientInitial name={c.name} colour={c.color} quiet={item.quiet} />}
+      title={c.name}
+      line={item.line}
+      quiet={item.quiet}
+      trailing={
+        item.amount && (
+          <span className="font-mono font-semibold text-[13px] tabular-nums tracking-tight">{item.amount}</span>
+        )
+      }
+    />
   );
 }

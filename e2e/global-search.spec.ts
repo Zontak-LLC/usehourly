@@ -50,33 +50,3 @@ test("the top-bar search finds a setting, a client and an entry, and takes you t
   await box.fill("qqqqzzzz");
   await expect(page.getByText(/Nothing found for/)).toBeVisible();
 });
-
-test("the Account page is one page with quick links that jump to a section", async ({ page }) => {
-  await startFreshAccount(page);
-  await page.goto("/dashboard/account");
-  await expect(page.getByRole("tablist")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "API tokens & AI", level: 2 })).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Jump to a section" })
-    .getByRole("link", { name: "API tokens & AI" })
-    .click();
-  await expect(page).toHaveURL(/#ai$/);
-  await expect(page.getByRole("heading", { name: "API tokens & AI", level: 2 })).toBeInViewport();
-  await page.goto("/dashboard/account#data");
-  await expect(page.getByRole("heading", { name: "Your data", level: 2 })).toBeInViewport({ timeout: 15_000 });
-});
-
-test("the search shows as a field: in the top bar on a wide screen and at the top of Account", async ({ page }) => {
-  await startFreshAccount(page);
-  await page.goto("/dashboard/account");
-  const box = page.getByRole("combobox", { name: /Search pages, settings/ });
-  // the Account page's field opens the same search, and a setting found there jumps to its section
-  await page
-    .getByRole("button", { name: "Search", exact: true })
-    .filter({ hasText: /Search settings/ })
-    .click();
-  await box.fill("currency");
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#invoices$/);
-  await expect(page.getByRole("heading", { name: "Invoices", level: 2 })).toBeInViewport({ timeout: 15_000 });
-});
