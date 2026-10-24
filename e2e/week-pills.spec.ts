@@ -9,7 +9,7 @@ test("on a phone the week's project rows are plain rows: name and client on the 
   await startDemo(page);
   await page.goto("/dashboard/week");
 
-  const rows = page.getByRole("region", { name: "This week" }).getByRole("button");
+  const rows = page.getByRole("region", { name: "This week", exact: true }).getByRole("button");
   await expect(rows.first()).toBeVisible();
   const count = await rows.count();
   expect(count).toBeGreaterThan(0);

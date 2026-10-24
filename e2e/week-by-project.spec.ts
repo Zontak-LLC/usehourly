@@ -26,7 +26,7 @@ test("a picked project keeps the whole By project list, and Show all goes back",
   }
 
   await page.goto("/dashboard/week");
-  const card = page.getByRole("region", { name: "This week" });
+  const card = page.getByRole("region", { name: "This week", exact: true });
   await expect(card.getByRole("button", { name: /Design/ })).toBeVisible();
   await expect(card.getByRole("button", { name: /General/ })).toBeVisible();
   await expect(card.getByRole("button", { name: "Show all" })).toHaveCount(0);

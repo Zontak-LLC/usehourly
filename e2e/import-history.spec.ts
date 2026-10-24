@@ -37,9 +37,9 @@ test("a freelancer moves their Harvest history over and finds it on Week", async
     await expect(done).toContainText("Added 2 clients and 3 projects.");
     await done.getByRole("link", { name: "See the week of Sep 18, 2026" }).click();
     await expect(page).toHaveURL(/dashboard\/week\?date=2026-09-18/);
-    await expect(page.getByRole("region", { name: "This week" })).toContainText("8:47");
-    await expect(page.getByText("Accessibility audit, part 1")).toBeVisible();
-    await expect(page.getByText("Quick call")).toBeVisible();
+    await expect(page.getByRole("region", { name: "This week", exact: true })).toContainText("8:47");
+    await expect(page.getByText("Accessibility audit, part 1").first()).toBeVisible(); // in the day and in the open week list
+    await expect(page.getByText("Quick call").first()).toBeVisible();
   });
 
   await test.step("the same file again: everything is already here, nothing to import", async () => {
