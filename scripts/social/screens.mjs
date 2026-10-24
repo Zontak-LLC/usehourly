@@ -8,6 +8,7 @@
 
 import { chromium } from "@playwright/test";
 
+import { fillToday } from "./fill-today.mjs";
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -21,7 +22,7 @@ const d = new Date();
 d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - 5);
 const thu = ymd(d);
 const SCREENS = [
-  ["1-today", `/dashboard/today?date=${thu}`],
+  ["1-today", "/dashboard/today"], // today, filled by fillToday (issue 252)
   ["2-week", `/dashboard/week?date=${thu}`],
   ["3-month", "/dashboard/month"],
   ["4-invoices", "/dashboard/invoices"],
@@ -46,6 +47,7 @@ async function demo(context) {
     .first()
     .click();
   await page.waitForURL(/dashboard/);
+  await fillToday(page, BASE);
   return page;
 }
 

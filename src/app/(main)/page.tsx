@@ -61,7 +61,7 @@ export default function LandingPage() {
       </div>
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-5 sm:px-6">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5">
         <Link href="/" className="flex items-center gap-2 font-semibold text-base sm:text-lg">
           <LogoMark className="size-7 sm:size-8" aria-hidden />
           {APP_CONFIG.name}
@@ -90,7 +90,7 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="mx-auto max-w-6xl px-6 pt-8 pb-16 md:pt-14">
+        <section className="mx-auto max-w-6xl px-6 pt-8 md:pt-14">
           <div className="flex flex-col items-center gap-12">
             <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
               <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 font-medium text-sm">
@@ -171,7 +171,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="see-it" className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+        <section id="see-it" className="mx-auto max-w-6xl px-6 pt-20 md:pt-28">
           <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
             See it working.
           </h2>
@@ -183,7 +183,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="mx-auto max-w-6xl px-6 pb-16 md:pb-24">
+        <section id="features" className="mx-auto max-w-6xl px-6 pt-20 md:pt-28">
           <h2 className="text-center font-display font-extrabold text-3xl tracking-tight md:text-5xl">
             Everything a freelancer needs.
           </h2>
@@ -193,7 +193,7 @@ export default function LandingPage() {
           <LandingFeatures />
         </section>
 
-        <section aria-labelledby="promises-heading" className="relative mx-auto max-w-6xl px-6 pt-16 pb-8 md:pt-24">
+        <section aria-labelledby="promises-heading" className="relative mx-auto max-w-6xl px-6 pt-20 md:pt-28">
           <Reveal>
             <p className="text-center font-mono text-muted-foreground text-xs uppercase tracking-[0.3em]">
               The small print, said out loud
@@ -216,7 +216,7 @@ export default function LandingPage() {
                     href={donateUrl() ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-amber px-4 py-2 font-semibold text-[#12151b] text-sm transition-transform hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-full bg-amber px-4 py-2 font-semibold text-sm text-white dark:text-background transition-transform hover:-translate-y-0.5"
                   >
                     <Heart className="size-4" aria-hidden /> Support on {DONATE_PLATFORM}
                   </a>
@@ -265,22 +265,22 @@ export default function LandingPage() {
         </section>
         <Supporters />
 
-        <section aria-labelledby="start-heading" className="mx-auto max-w-6xl px-6 pt-8 pb-20 md:pb-28">
-          <Reveal className="relative isolate overflow-hidden rounded-[2.5rem] bg-[#12151b] px-6 py-16 text-center text-white shadow-[0_30px_80px_-30px_rgb(18_21_27/0.6)] md:py-24 dark:bg-card dark:ring-1 dark:ring-foreground/10">
+        <section aria-labelledby="start-heading" className="mx-auto max-w-6xl px-6 pt-20 pb-20 md:pt-28 md:pb-28">
+          <Reveal className="relative isolate overflow-hidden rounded-[2.5rem] bg-amber-soft px-6 py-16 text-center text-foreground ring-1 ring-amber/15 md:py-24 dark:bg-card dark:ring-foreground/10">
             <p className="font-mono text-xs uppercase tracking-[0.3em] opacity-70">Ready when you are</p>
             <h2 id="start-heading" className="mt-3 font-display font-extrabold text-5xl tracking-tight md:text-7xl">
               Start tracking today.
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-balance text-lg text-white/75 dark:text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-md text-balance text-lg text-muted-foreground">
               It takes a minute to set up, and seconds a day after that.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3">
               <Link
                 href="/auth/v2/register"
-                className="group/cta relative inline-flex h-16 items-center gap-4 overflow-hidden rounded-full bg-amber py-2 pr-3 pl-8 font-bold font-display text-[#12151b] text-xl shadow-[0_0_0_6px_rgb(255_255_255/0.08)] transition-all duration-300 hover:shadow-[0_0_0_10px_rgb(255_255_255/0.12)] motion-safe:active:scale-[0.98] motion-safe:hover:-translate-y-1"
+                className="group/cta relative inline-flex h-16 items-center gap-4 overflow-hidden rounded-full bg-amber py-2 pr-3 pl-8 font-bold font-display text-white text-xl shadow-[0_0_0_6px_color-mix(in_oklab,var(--amber)_14%,transparent)] transition-all duration-300 hover:shadow-[0_0_0_10px_color-mix(in_oklab,var(--amber)_18%,transparent)] dark:text-background motion-safe:active:scale-[0.98] motion-safe:hover:-translate-y-1"
               >
                 Create a free account
-                <span className="grid size-12 place-items-center rounded-full bg-[#12151b] text-amber transition-transform duration-300 group-hover/cta:translate-x-1 group-hover/cta:rotate-[-12deg]">
+                <span className="grid size-12 place-items-center rounded-full bg-white/20 text-white transition-transform dark:bg-background/25 dark:text-background duration-300 group-hover/cta:translate-x-1 group-hover/cta:rotate-[-12deg]">
                   <ArrowRight className="size-6" aria-hidden />
                 </span>
                 <span
@@ -288,7 +288,7 @@ export default function LandingPage() {
                   className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 transition-all duration-700 group-hover/cta:left-full group-hover/cta:opacity-100"
                 />
               </Link>
-              <TryDemoButton className="inline-flex items-center rounded-full border border-white/25 px-5 py-2 font-semibold text-sm text-white transition-colors hover:bg-white/10 dark:border-foreground/20 dark:text-foreground dark:hover:bg-muted">
+              <TryDemoButton className="inline-flex items-center rounded-full border border-foreground/20 bg-card/60 px-5 py-2 font-semibold text-foreground text-sm transition-colors hover:bg-card">
                 or try the demo first, no sign-up
               </TryDemoButton>
             </div>

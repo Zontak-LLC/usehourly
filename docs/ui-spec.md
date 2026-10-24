@@ -147,6 +147,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - Both light and dark are designed, not inverted; images and logos have a transparent or neutral background.
 
 ### Motion
+- **The home page lines up (issue 252):** every framed block (header, feature tiles, the "Free. Open. Honest." cards, the closing panel, footer) shares ONE left and right edge (`max-w-6xl px-6`); the media (the terminal and the screens deck) share one narrower centred width (`max-w-4xl`). Sections have one rhythm: space above each (`pt-20 md:pt-28`), none below. The deck reads top to bottom: tabs, caption, window, then the arrows beside the dots. No dark slab on a light page: the closing panel is `bg-amber-soft` in light and the card colour in dark **[checked: `e2e/landing-layout.spec.ts`]**.
 - Motion explains a change (a form opening, a day sliding) and is **under 200 ms**, ease-out; nothing loops or moves for decoration except the landing tour, which stops on hover, focus, hidden tabs and Pause. Respect `prefers-reduced-motion` **[checked on the tour]**.
 
 ### Accessibility
