@@ -31,6 +31,9 @@ export function MobileNav() {
             <Link
               key={item.id}
               href={item.url}
+              // Fetched ahead of time and kept for a few minutes, so a tab opens at once (and a cold Worker wakes up
+              // before the click instead of after it).
+              prefetch
               aria-current={active ? "page" : undefined}
               className={`${tab} ${
                 active

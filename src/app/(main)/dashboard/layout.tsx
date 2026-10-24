@@ -14,11 +14,13 @@ import { LocalFirst } from "@/components/local-first";
 import { LogoMark } from "@/components/logo";
 import { OfflineGuard } from "@/components/offline-guard";
 import { OfflineSync } from "@/components/offline-sync";
+import { RouteProgress } from "@/components/route-progress";
 import { SupportNotice } from "@/components/support-notice";
 import { SwipeNav } from "@/components/swipe-nav";
 import { ThemeSync } from "@/components/theme-sync";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UsageBeacon } from "@/components/usage-beacon";
+import { WarmPages } from "@/components/warm-pages";
 import { isAdminUser } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { donateUrl } from "@/lib/donate";
@@ -103,6 +105,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               )}
             >
               <UsageBeacon />
+              <RouteProgress />
+              <WarmPages />
               <TimerBadge />
               {feature("swipe") && <SwipeNav />}
               <ThemeSync saved={savedTheme} enabled={session?.user?.demo !== true} />

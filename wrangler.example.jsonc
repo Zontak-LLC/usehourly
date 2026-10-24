@@ -22,7 +22,7 @@
     "NEXT_PUBLIC_APP_URL": "https://app.example.com"
   },
   // Runs the Friday reminder emails (custom-worker.ts); it does nothing until email is set up.
-  "triggers": { "crons": ["0 * * * *"] },
+  "triggers": { "crons": ["0 * * * *", "*/5 * * * *"] },
   // Keep the Worker's logs so they can be searched later, not just watched live (see docs/operations.md).
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "workers_dev": false
