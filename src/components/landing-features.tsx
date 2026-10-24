@@ -5,7 +5,7 @@ import { HardDrive, type LucideIcon, ShieldCheck, SunMoon, WifiOff } from "lucid
 import { ClientsArt, InvoiceArt, MonthArt, QuickEntryArt, WeekArt, YearArt } from "@/components/landing-feature-art";
 import { Reveal } from "@/components/reveal";
 
-type Tile = { title: string; body: string; art: ReactNode; wide?: boolean; full?: boolean };
+type Tile = { title: string; body: string; art: ReactNode };
 
 /** What the first release does, each with a small picture of itself (hidden features are not advertised). */
 const TILES: Tile[] = [
@@ -13,13 +13,11 @@ const TILES: Tile[] = [
     title: "Quick entry, no stopwatch needed",
     body: "Type 1h30 and press Enter, or tap 2h twice for four hours. A timer is there if you like one.",
     art: <QuickEntryArt />,
-    wide: true,
   },
   {
     title: "Invoices from your hours",
     body: "A clean PDF or a private link your client opens. See what is paid, what is waiting and what is late.",
     art: <InvoiceArt />,
-    wide: true,
   },
   {
     title: "Your week, gaps and all",
@@ -40,7 +38,6 @@ const TILES: Tile[] = [
     title: "Tax time without the scramble",
     body: "A year summary by quarter, month and client, ready for your accountant, and an Excel export.",
     art: <YearArt />,
-    full: true,
   },
 ];
 
@@ -62,14 +59,14 @@ const EXTRAS: { Icon: LucideIcon; title: string; body: string }[] = [
 /** What the app does today: a bento of picture tiles, then a slim row of the quieter promises. */
 export function LandingFeatures() {
   return (
-    <div className="mx-auto mt-10 max-w-5xl">
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        {TILES.map(({ title, body, art, wide, full }, n) => (
+    <div className="mt-10">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {TILES.map(({ title, body, art }, n) => (
           <Reveal
             as="li"
             delay={(n % 3) * 90}
             key={title}
-            className={`group flex flex-col gap-4 rounded-3xl bg-card p-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-transform duration-300 hover:-translate-y-1 ${full ? "sm:col-span-2 lg:col-span-6" : wide ? "lg:col-span-3" : "lg:col-span-2"}`}
+            className="group flex flex-col gap-4 rounded-3xl bg-card p-4 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10 transition-transform duration-300 hover:-translate-y-1"
           >
             {art}
             <div className="px-1 pb-1">
