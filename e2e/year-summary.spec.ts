@@ -6,14 +6,14 @@ test("the year summary hides empty months until asked, writes empties as dashes,
   page,
 }, info) => {
   await startDemo(page);
-  await page.goto("/dashboard/report");
+  await page.goto("/dashboard/report#months");
 
   const months = page.getByRole("region", { name: "By month" });
   await expect(months).toBeVisible();
   const visibleRows = () =>
     info.project.name === "phone" ? months.locator("ul.sm\\:hidden > li") : months.locator("tbody tr");
 
-  // The sample data only has recent months: the rest are folded away behind a button.
+  // The sample data only has recent months: the rest are hidden behind a button.
   const folded = await visibleRows().count();
   expect(folded).toBeLessThan(12);
   const showAll = months.getByRole("button", { name: /^Show all 12 months/ });
@@ -24,37 +24,18 @@ test("the year summary hides empty months until asked, writes empties as dashes,
   await expect(visibleRows()).toHaveCount(folded);
 
   // an empty figure is a dash everywhere, never "0.00 h" in one table and "–" in another
+  await page.goto("/dashboard/report#quarters");
   const quarters = page.getByRole("region", { name: "By quarter" });
+  await expect(quarters).toBeVisible();
   await expect(quarters).not.toContainText("0.00 h");
   await expect(quarters).not.toContainText("$0.00");
 
   if (info.project.name === "phone") {
+    await page.goto("/dashboard/report#months");
     // two lines per row on a phone: the month and what it earned, the rest in one muted line (no "Hours / Billable" label lists)
     await expect(months.getByText("Billable", { exact: true }).locator("visible=true")).toHaveCount(0);
     await expect(months.locator("ul.sm\\:hidden > li").first().locator("p").nth(1)).toContainText("worked");
   }
-});
-
-test("year summary sections fold behind a chevron, show a summary while folded, and remember the choice", async ({
-  page,
-}) => {
-  await startDemo(page);
-  await page.goto("/dashboard/report");
-  const quarters = page.getByRole("button", { name: /^By quarter/ });
-  // the table is drawn twice (wide and phone); only the visible copy counts
-  const q4 = () => page.getByText("Q4 · Oct–Dec").locator("visible=true");
-  await expect(quarters).toHaveAttribute("aria-expanded", "true"); // open on first visit
-  await expect(q4()).toHaveCount(1);
-
-  await quarters.click();
-  await expect(quarters).toHaveAttribute("aria-expanded", "false");
-  await expect(quarters).toContainText("earned"); // a folded section still says its total
-  await expect(q4()).toHaveCount(0);
-
-  await page.reload(); // remembered on this device
-  await expect(page.getByRole("button", { name: /^By quarter/ })).toHaveAttribute("aria-expanded", "false");
-  await page.getByRole("button", { name: /^By quarter/ }).click();
-  await expect(q4()).toHaveCount(1);
 });
 
 test("?year= opens that year (the emailed summary's button), and a year in the future falls back to this one", async ({

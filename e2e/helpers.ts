@@ -409,17 +409,36 @@ export async function gotoClient(page: Page, name: string) {
   await expect(page.getByRole("region", { name, exact: true }).getByRole("heading", { level: 2 })).toHaveText(name);
 }
 
+/** The rows of the Invoices list (the split view's left side, 2026-10-24); each row is a link to its invoice. */
+export const invoiceRows = (page: Page) =>
+  page.getByRole("region", { name: "Your invoices" }).getByTestId("invoice-row");
+
+/**
+ * Opens one invoice from the Invoices list (the page must be open): a row, or the nth row (default the first). On a
+ * phone that is the invoice's own screen. Returns its number and its region (header, actions, panels, preview).
+ */
+export async function openInvoice(page: Page, which: Locator | number = 0) {
+  const row = typeof which === "number" ? invoiceRows(page).nth(which) : which;
+  const number = (await row.getAttribute("data-number")) ?? "";
+  expect(number).toMatch(/^INV-/);
+  await row.getByRole("link").click();
+  await expect(page).toHaveURL(/\/dashboard\/invoices\/[^/]+$/);
+  const detail = page.getByRole("region", { name: `Invoice ${number}`, exact: true });
+  await expect(detail.getByRole("heading", { level: 2, name: number, exact: true })).toBeVisible();
+  return { number, detail };
+}
+
 /** Opens a ··· menu by its button's name (for example "More actions for Acme Studio") and picks one item. */
 export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("button", { name: button, exact: true }).click();
   await page.getByRole("menuitem", { name: item }).click();
 }
 
-/** Week and Month show their full list of entries ("All entries this week/month") behind one button: make sure it is open
- * (Week starts open, Month starts folded). */
+/** Shows the period's full list of entries ("All entries this week/month"): always open under the day on Week; on
+ * Month it is the "Whole month" view of the switch beside the calendar. */
 export async function openAllEntries(page: Page) {
-  const fold = page.getByRole("button", { name: /^All entries this (week|month)/ });
-  await expect(fold).toHaveAttribute("aria-expanded", /true|false/);
-  if ((await fold.getAttribute("aria-expanded")) === "false") await fold.click();
+  if (page.url().includes("/dashboard/month")) {
+    await page.getByRole("button", { name: "Whole month", exact: true }).click();
+  }
   await expect(page.getByRole("region", { name: /^All entries this (week|month)$/ })).toBeVisible();
 }

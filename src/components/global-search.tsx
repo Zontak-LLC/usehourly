@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { pushLocationHash } from "@/components/use-location-hash";
 import { useToggleTheme } from "@/components/use-toggle-theme";
 import { formatDuration } from "@/lib/duration";
 import {
@@ -111,11 +112,14 @@ export function GlobalSearch({ demo = false }: { demo?: boolean }) {
       return;
     }
     const [path, hash] = result.href.split("#");
-    router.push(result.href);
-    // Going to a part of the page we are already on does not start a navigation, so scroll there ourselves.
+    // Going to a part of the page we are already on is no navigation: change the #part ourselves (Account opens that
+    // section) and scroll there once it is drawn.
     if (hash && window.location.pathname === path) {
+      pushLocationHash(hash);
       setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      return;
     }
+    router.push(result.href);
   }
 
   function onKeyDown(e: React.KeyboardEvent) {

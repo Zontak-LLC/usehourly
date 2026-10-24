@@ -1,14 +1,10 @@
 {
+  "extends": "./packages/quality-gates/tsconfig.strict.json",
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowUnreachableCode": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -24,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "trpc-mcp-server": ["./packages/trpc-mcp/src/index.ts"]
+      "trpc-mcp-server": ["./packages/trpc-mcp/src/index.ts"],
+      "quality-gates": ["./packages/quality-gates/src/index.mjs"]
     }
   },
   "include": [

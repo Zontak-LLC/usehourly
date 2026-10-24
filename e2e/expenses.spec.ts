@@ -6,7 +6,7 @@ test.skip(!FEATURES.expenses, "Expenses are hidden in this release (src/lib/feat
 /** Issue #100, first slice: expenses and mileage recorded on the Year summary, added up and exported with it. */
 test("a freelancer records an expense and a trip, and the Year summary adds them up", async ({ page, audit }) => {
   await startFreshAccount(page, "Northwind");
-  await page.goto("/dashboard/report");
+  await page.goto("/dashboard/report#expenses");
   const section = page.getByRole("region", { name: "Expenses" });
   await expect(section).toBeVisible();
 

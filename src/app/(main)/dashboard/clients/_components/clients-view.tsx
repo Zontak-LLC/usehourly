@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { Archive, ChevronLeft, Plus } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAccountCurrency } from "@/components/currency-provider";
@@ -13,6 +13,7 @@ import { MoreMenu } from "@/components/more-menu";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
+import { SplitView } from "@/components/split-view";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUnbilled } from "@/components/use-unbilled";
@@ -220,12 +221,11 @@ export function ClientsView() {
       )}
 
       {all.length > 0 && (
-        <div
-          data-headerless="the split view: the client list and the chosen client's profile, each with its own header"
-          data-view={routeId ? "profile" : "list"}
-          className="group/split grid overflow-clip rounded-xl border bg-card md:grid-cols-[17rem_minmax(0,1fr)]"
-        >
-          <div className="min-w-0 bg-muted/40 group-data-[view=profile]/split:max-md:hidden md:border-r">
+        <SplitView
+          view={routeId ? "detail" : "list"}
+          headerless="the split view: the client list and the chosen client's profile, each with its own header"
+          back={{ href: "/dashboard/clients", label: "All clients", onBack: () => openClient(null) }}
+          list={
             <ClientListPane
               toBill={groups.toBill.map((c) => item(c))}
               billed={groups.billed.map(({ client, quiet }) => item(client, quiet))}
@@ -235,50 +235,38 @@ export function ClientsView() {
               showSearch={all.length >= SEARCH_FROM}
               onOpen={openClient}
             />
-          </div>
-          <div className="flex min-w-0 flex-col group-data-[view=list]/split:max-md:hidden">
-            {/* On a phone the profile is its own screen: the way back to the list is at its top. */}
-            <Link
-              href="/dashboard/clients"
-              onClick={(e) => {
-                e.preventDefault();
-                openClient(null);
-              }}
-              className="flex min-h-11 items-center gap-1 px-3 pt-2 text-foreground/80 text-sm md:hidden"
-            >
-              <ChevronLeft className="size-4" aria-hidden /> All clients
-            </Link>
-            {selected ? (
-              <ClientProfile
-                key={selected.id}
-                client={selected}
-                allClients={clients.data}
-                logos={logos}
-                totals={totals.data}
-                budgets={budgets.data}
-                editing={editing}
-                unbilled={unbilledOf(selected.id)}
-                invoices={invoices.data ?? []}
-                month={month}
-                today={today}
-                onArchiveClient={() => void archive({ kind: "client", id: selected.id, name: selected.name })}
-                onArchiveProject={(p) => void archive({ kind: "project", ...p })}
-              />
-            ) : routeId ? (
-              <div className="p-4">
-                <Notice>
-                  This client is not on your list. It may be archived (see{" "}
-                  <Link href="/dashboard/clients/archived" className="underline underline-offset-4">
-                    Archived clients and projects
-                  </Link>
-                  ) or removed.
-                </Notice>
-              </div>
-            ) : (
-              <Skeleton className="m-4 h-64" />
-            )}
-          </div>
-        </div>
+          }
+        >
+          {selected ? (
+            <ClientProfile
+              key={selected.id}
+              client={selected}
+              allClients={clients.data}
+              logos={logos}
+              totals={totals.data}
+              budgets={budgets.data}
+              editing={editing}
+              unbilled={unbilledOf(selected.id)}
+              invoices={invoices.data ?? []}
+              month={month}
+              today={today}
+              onArchiveClient={() => void archive({ kind: "client", id: selected.id, name: selected.name })}
+              onArchiveProject={(p) => void archive({ kind: "project", ...p })}
+            />
+          ) : routeId ? (
+            <div className="p-4">
+              <Notice>
+                This client is not on your list. It may be archived (see{" "}
+                <Link href="/dashboard/clients/archived" className="underline underline-offset-4">
+                  Archived clients and projects
+                </Link>
+                ) or removed.
+              </Notice>
+            </div>
+          ) : (
+            <Skeleton className="m-4 h-64" />
+          )}
+        </SplitView>
       )}
     </PageShell>
   );

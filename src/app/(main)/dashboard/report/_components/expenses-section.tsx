@@ -15,7 +15,7 @@ import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers/_app";
 
 import { ExpenseForm } from "./expense-form";
-import { Section, SummaryRow, Table } from "./report-table";
+import { SummaryRow, Table } from "./report-table";
 
 export type ExpenseList = inferRouterOutputs<AppRouter>["expense"]["list"];
 
@@ -31,6 +31,12 @@ function defaultDate(year: number) {
   const now = new Date();
   if (now.getFullYear() !== year) return `${year}-12-31`;
   return `${year}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+/** The year's expenses in the currency shown, and their sums (the section and its row in the list both use it). */
+export function expensesIn(rows: ExpenseList, currency: string, year: number) {
+  const shown = rows.filter((r) => r.currency === currency);
+  return { shown, summary: summarizeExpenses(shown, year) };
 }
 
 /**
@@ -58,8 +64,7 @@ export function ExpensesSection({
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
 
-  const shown = rows.filter((r) => r.currency === currency);
-  const summary = summarizeExpenses(shown, year);
+  const { shown, summary } = expensesIn(rows, currency, year);
   const refresh = () => utils.expense.list.invalidate(yearRange(year));
 
   async function add(draft: ExpenseDraft) {
@@ -94,13 +99,7 @@ export function ExpensesSection({
   }
 
   return (
-    <Section
-      title="Expenses"
-      foldId="expenses"
-      defaultOpen
-      summary={summary.count ? `${summary.count} · ${money(summary.totalCents)}` : "None yet"}
-      note="What you spent for your work, and trips at a rate per mile."
-    >
+    <>
       <dl>
         <SummaryRow label="Spent" value={money(summary.totalCents)} />
         {summary.mileage.trips > 0 && (
@@ -199,6 +198,6 @@ export function ExpensesSection({
           </ul>
         </>
       )}
-    </Section>
+    </>
   );
 }

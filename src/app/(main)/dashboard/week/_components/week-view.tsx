@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { AllEntriesFold } from "@/components/all-entries-fold";
-import { DayEditorPanel } from "@/components/day-editor";
+import { DayEditorPanel, periodSeed } from "@/components/day-editor";
 import { MergeDaysPanel } from "@/components/merge-days-panel";
 import { PageShell } from "@/components/page-shell";
 import { useProjectFilter } from "@/components/project-filter";
 import { useProjectLogos } from "@/components/project-logo";
+import { SideColumn } from "@/components/side-column";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WeekPills } from "@/components/week-pills";
 import { WorkItems } from "@/components/work-items";
@@ -45,7 +45,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
   // The day panel below asks for these only once it is on screen, which would be a second round trip. Started here with
   // the first batch (same keys, so nothing is fetched twice). The picked day's own entries are not asked for at all: the
-  // panel is handed them from the week's (see weekSeed).
+  // panel is handed them from the week's (see `seed`).
   const day = start && today ? chooseDay(start, picked, today) : "";
   trpc.entry.running.useQuery();
   trpc.project.budgets.useQuery(day ? monthBounds(day) : { from: "", to: "" }, { enabled: !!day });
@@ -124,8 +124,8 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
-        // Same pattern as Today: the days as one row, then the week's hours and its projects on the left (they stay in
-        // view), and the picked day on the right. The full list of the week's entries is folded away (search lives there).
+        // Same pattern as Today: the days as one row, then the week's hours and its projects on the left (a SideColumn: as
+        // tall as the right column, its rows scroll), and the picked day on the right, then the week's full list.
         <div className="flex min-w-0 flex-col gap-4">
           <WeekPills
             entries={shown}
@@ -137,44 +137,33 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
             allEntries={entries.data}
           />
           <div className="grid items-start gap-4 md:grid-cols-[15rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)]">
-            <div className="flex flex-col gap-4 md:sticky md:top-24">
+            <SideColumn>
               <WeekTotalCard
                 sheet={sheet}
                 weekMinutes={(entries.data ?? []).reduce((a, e) => a + e.minutes, 0)}
                 projectId={projectId}
                 onProjectId={setProjectId}
               />
-            </div>
+            </SideColumn>
             <div className="flex min-w-0 flex-col gap-4">
               <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
                 <DayEditorPanel
                   key={selected}
                   date={selected}
                   projectFilter={projectId}
-                  inPage
-                  weekSeed={
-                    entries.data && nonBillableDays.data
-                      ? {
-                          entries: entries.data,
-                          days: nonBillableDays.data,
-                          updatedAt: entries.dataUpdatedAt,
-                          daysUpdatedAt: nonBillableDays.dataUpdatedAt,
-                        }
-                      : undefined
-                  }
+                  seed={periodSeed(entries, nonBillableDays)}
                 />
               </section>
               {feature("merge") && <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />}
-              <AllEntriesFold period="week" count={shown.length} defaultOpen>
-                <WorkItems
-                  key={`${start}-${projectId}`}
-                  entries={shown}
-                  onOpenDay={openDay}
-                  period="week"
-                  editInPlace
-                  nonBillable={nonBillable}
-                />
-              </AllEntriesFold>
+              {/* The week's full list, always open under the day (it renders nothing for an empty week). */}
+              <WorkItems
+                key={`${start}-${projectId}`}
+                entries={shown}
+                onOpenDay={openDay}
+                period="week"
+                editInPlace
+                nonBillable={nonBillable}
+              />
             </div>
           </div>
         </div>

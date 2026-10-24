@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { anonymous, expect, menuAction, sql, startDemo, startFreshAccount, test } from "./helpers";
+import { anonymous, expect, menuAction, openInvoice, sql, startDemo, startFreshAccount, test } from "./helpers";
 
 /*
  * Issue 227: the freelancer sends an invoice from their OWN mail app. The Send panel writes the email (To from the
@@ -28,8 +28,7 @@ async function invoiceForAcme(page: Page) {
   await page.goto("/dashboard/invoices/new");
   await page.getByRole("button", { name: /Create invoice/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
-  const first = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
-  const number = (await first.getByRole("link", { name: /: open the invoice$/ }).innerText()).trim();
+  const { number } = await openInvoice(page, 0); // the only invoice
   return { user, number };
 }
 
@@ -42,7 +41,7 @@ test("Send writes the invoice email for my own mail app, with a private link tha
   const { number } = await invoiceForAcme(page);
 
   await test.step("the panel writes the email, ready to edit", async () => {
-    await page.goto("/dashboard/invoices");
+    await page.reload(); // the invoice's own address: the same invoice opens again
     await page.getByRole("button", { name: `Send ${number}` }).click();
     const panel = page.getByRole("region", { name: `Send invoice ${number}` });
     await expect(panel.getByLabel("To")).toHaveValue("accounts@client.example");
@@ -106,10 +105,9 @@ test("Send writes the invoice email for my own mail app, with a private link tha
 test("a demo account cannot share links: the email says the PDF is attached instead", async ({ page }) => {
   await startDemo(page);
   await page.goto("/dashboard/invoices");
-  await page
-    .getByRole("button", { name: /^Send INV-/ })
-    .first()
-    .click();
+  await page.getByRole("tab", { name: /^Paid/ }).click(); // a paid invoice has Send (a late one has Write a reminder)
+  const { detail } = await openInvoice(page, 0);
+  await detail.getByRole("button", { name: /^Send INV-/ }).click();
   const panel = page.getByRole("region", { name: /^Send invoice INV-/ });
   await expect(panel.getByText(/The email has no link, so attach the PDF yourself/)).toBeVisible();
   await expect(panel.getByLabel("Message")).toHaveValue(/The invoice is attached as a PDF\./);

@@ -1,11 +1,8 @@
 "use client";
 
-import type { MouseEvent } from "react";
-
-import { Search } from "lucide-react";
-
 import { ClientInitial } from "@/components/client-initial";
-import { Input } from "@/components/ui/input";
+import { ListSearch } from "@/components/list-search";
+import { SplitGroup, SplitRow } from "@/components/split-view";
 import { clientPath } from "@/lib/client-list";
 
 import type { ClientRow } from "./client-types";
@@ -45,20 +42,7 @@ export function ClientListPane({
   return (
     <div className="flex flex-col gap-1 p-2">
       {showSearch && (
-        <search aria-label="Find clients and projects" className="relative mb-1 block">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search clients and projects…"
-            aria-label="Search clients and projects"
-            className="h-11 pl-9 text-base"
-          />
-        </search>
+        <ListSearch label="Search clients and projects" value={search} onChange={onSearch} className="mb-1" />
       )}
       {nothing && search && (
         <p className="px-2 py-4 text-center text-muted-foreground text-sm">No client or project matches that.</p>
@@ -81,53 +65,33 @@ function Group({
   onOpen: (id: string) => void;
 }) {
   if (items.length === 0) return null;
-  const id = `clients-group-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <>
-      <p
-        id={id}
-        className="px-2 pt-2 pb-1 font-mono font-semibold text-[10.5px] text-foreground/70 uppercase tracking-wider"
-      >
-        {title} · {items.length}
-      </p>
-      <ul aria-labelledby={id} className="flex flex-col gap-0.5" data-testid={`${id}`}>
-        {items.map((item) => (
-          <li key={item.client.id}>
-            <Row item={item} selected={item.client.id === selectedId} onOpen={onOpen} />
-          </li>
-        ))}
-      </ul>
-    </>
+    <SplitGroup id={`clients-group-${title.replace(/\s+/g, "-").toLowerCase()}`} title={`${title} · ${items.length}`}>
+      {items.map((item) => (
+        <li key={item.client.id}>
+          <Row item={item} selected={item.client.id === selectedId} onOpen={onOpen} />
+        </li>
+      ))}
+    </SplitGroup>
   );
 }
 
 function Row({ item, selected, onOpen }: { item: ListItem; selected: boolean; onOpen: (id: string) => void }) {
   const { client: c } = item;
-  function click(e: MouseEvent<HTMLAnchorElement>) {
-    // A new tab or window (Ctrl, Cmd, Shift, middle click) is the browser's job.
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    e.preventDefault();
-    onOpen(c.id);
-  }
   return (
-    <a
+    <SplitRow
       href={clientPath(c.id)}
-      onClick={click}
-      aria-current={selected ? "page" : undefined}
-      className={`grid min-h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-2 py-2 text-left ${
-        selected ? "bg-card shadow-sm ring-1 ring-foreground/15" : "hover:bg-card/70"
-      }`}
-    >
-      <ClientInitial name={c.name} colour={c.color} quiet={item.quiet} />
-      <span className="min-w-0">
-        <span className={`block truncate text-sm ${item.quiet ? "font-medium text-foreground/80" : "font-semibold"}`}>
-          {c.name}
-        </span>
-        <span className="block truncate text-foreground/70 text-xs">{item.line}</span>
-      </span>
-      {item.amount && (
-        <span className="font-mono font-semibold text-[13px] tabular-nums tracking-tight">{item.amount}</span>
-      )}
-    </a>
+      selected={selected}
+      onOpen={() => onOpen(c.id)}
+      leading={<ClientInitial name={c.name} colour={c.color} quiet={item.quiet} />}
+      title={c.name}
+      line={item.line}
+      quiet={item.quiet}
+      trailing={
+        item.amount && (
+          <span className="font-mono font-semibold text-[13px] tabular-nums tracking-tight">{item.amount}</span>
+        )
+      }
+    />
   );
 }

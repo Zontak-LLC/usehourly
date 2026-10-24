@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-
 import { AiPolishCard } from "@/components/ai-polish-card";
 import { ApiTokensCard } from "@/components/api-tokens-card";
 import { ClaimDemoCard } from "@/components/claim-demo-card";
@@ -9,14 +7,15 @@ import { DeleteAccountCard } from "@/components/delete-account-card";
 import { SearchField } from "@/components/global-search";
 import { PageShell } from "@/components/page-shell";
 import { SectionCard } from "@/components/section-card";
-import { SupportHourly } from "@/components/support-hourly";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocationHash } from "@/components/use-location-hash";
+import { ACCOUNT_SECTION_LABELS, type AccountSectionId, accountSectionFromHash } from "@/lib/account-sections";
 import { feature } from "@/lib/features";
 import { trpc } from "@/lib/trpc";
 
 import { AccountChecklist } from "./account-checklist";
-import { AccountJump } from "./account-jump";
-import { SECTIONS, Section } from "./account-section";
+import { Section } from "./account-section";
+import { AccountSectionList } from "./account-section-list";
 import { BusinessDetailsCard } from "./business-details-card";
 import { ConnectAssistant } from "./connect-assistant";
 import { CurrencyCard } from "./currency-card";
@@ -26,31 +25,20 @@ import { ProfileCard } from "./profile-card";
 import { ChangePasswordCard, PasswordNote, SignOutCard } from "./security-cards";
 import { TaxCard } from "./tax-card";
 
-type SectionId = (typeof SECTIONS)[number]["id"];
+const TITLES = ACCOUNT_SECTION_LABELS;
 
-/** Sections that need the full width on a wide screen. */
-const WIDE: Record<SectionId, boolean> = { account: false, invoices: true, data: false, ai: true };
-
+/**
+ * Account as a split view like Clients (issue 283): the sections on the left, each with one status line, and the chosen
+ * section's panels on the right. The open section is the address's #part (`#data`), so a link, a search result or a
+ * reload opens it; with none a wide screen opens Your account and a phone shows the list.
+ */
 export function AccountView() {
+  // Every query the list needs starts in this render, so they go out with the account as ONE batched request.
   const me = trpc.account.me.useQuery();
   const emailEnabled = trpc.account.emailEnabled.useQuery();
-  const loaded = Boolean(me.data);
-
-  // A link such as /dashboard/account#data (or a quick link) scrolls to its section once the page has drawn it.
-  useEffect(() => {
-    if (!loaded) return;
-    const go = () => {
-      const id = window.location.hash.replace(/^#/, "");
-      if (id) document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    go();
-    window.addEventListener("hashchange", go);
-    return () => window.removeEventListener("hashchange", go);
-  }, [loaded]);
-  const jump = (id: SectionId) => {
-    window.history.replaceState(null, "", `#${id}`);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const clients = trpc.clients.list.useQuery();
+  const tokens = trpc.account.listApiTokens.useQuery();
+  const open = accountSectionFromHash(useLocationHash());
 
   if (me.isLoading) return <Skeleton className="mx-auto h-64 w-full max-w-xl" />;
   if (me.error || !me.data) {
@@ -58,9 +46,9 @@ export function AccountView() {
   }
   const account = me.data;
 
-  const blocks: Record<SectionId, React.ReactNode> = {
+  const blocks: Record<AccountSectionId, React.ReactNode> = {
     account: (
-      <Section id="account" title="Profile" description="Your name, your email, and how you sign in.">
+      <Section id="account" title={TITLES.account} description="Your name, your email, and how you sign in.">
         {account.is_demo ? (
           <>
             <ClaimDemoCard />
@@ -83,7 +71,7 @@ export function AccountView() {
       </Section>
     ),
     invoices: (
-      <Section id="invoices" title="Invoices" description="The details printed on every invoice you send.">
+      <Section id="invoices" title={TITLES.invoices} description="The details printed on every invoice you send.">
         <BusinessDetailsCard me={account} />
         <CurrencyCard me={account} />
         {feature("invoiceTax") && <TaxCard me={account} />}
@@ -92,7 +80,7 @@ export function AccountView() {
     data: (
       <Section
         id="data"
-        title="Your data"
+        title={TITLES.data}
         description={
           feature("importTime") || feature("localFirst")
             ? "Export it, import it, or keep a copy."
@@ -105,7 +93,7 @@ export function AccountView() {
     ai: (
       <Section
         id="ai"
-        title="API tokens & AI"
+        title={TITLES.ai}
         description="API tokens for apps and scripts, and connecting an assistant such as Claude or ChatGPT."
       >
         {account.is_demo ? (
@@ -127,18 +115,9 @@ export function AccountView() {
   return (
     <PageShell nav="account" title="Account" description="Your details, invoices, data and connections.">
       <SearchField placeholder="Search settings: password, currency, export, delete…" className="w-full max-w-xl" />
-      <AccountJump onJump={jump} />
-
-      {/* On a wide screen related sections sit side by side (profile next to your data); the two with wide forms
-          (invoices, with its preview, and the assistants) take the whole row. */}
-      <div className="grid items-start gap-x-8 gap-y-10 xl:grid-cols-2 xl:items-stretch">
-        {SECTIONS.map((s) => (
-          <div key={s.id} className={`flex min-w-0 flex-col gap-10 ${WIDE[s.id] ? "xl:col-span-2" : ""}`}>
-            {blocks[s.id]}
-          </div>
-        ))}
-      </div>
-      <SupportHourly variant="line" />
+      <AccountSectionList open={open} me={account} clients={clients.data} tokens={tokens.data}>
+        {blocks[open ?? "account"]}
+      </AccountSectionList>
     </PageShell>
   );
 }

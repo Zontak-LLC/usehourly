@@ -18,6 +18,14 @@ describe("paginating a list of invoices", () => {
     expect(paginate(items, 1, PAGE_SIZE_DESKTOP)).toMatchObject({ pages: 1, from: 1, to: 8 });
   });
 
+  it("shows everything on one page when there is no page limit (a phone scrolls Week's whole By project list)", () => {
+    const rows = Array.from({ length: 18 }, (_, i) => i);
+    const all = paginate(rows, 1, Number.POSITIVE_INFINITY);
+    expect(all.items).toHaveLength(18);
+    expect([all.page, all.pages, all.from, all.to, all.total]).toEqual([1, 1, 1, 18, 18]);
+    expect(paginate([], 1, Number.POSITIVE_INFINITY)).toMatchObject({ items: [], pages: 1, from: 0, to: 0 });
+  });
+
   it("moves a page number that no longer exists inside the range (a filter shrank the list)", () => {
     expect(paginate(items, 9, 3).page).toBe(3);
     expect(paginate(items, 0, 3).page).toBe(1);

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { DataPanelHead } from "@/components/data-panel-head";
 import { Notice } from "@/components/notice";
+import { segmentClass } from "@/components/segmented-switch";
 import { Button } from "@/components/ui/button";
 import { shortDay } from "@/lib/client-list";
 import { formatDuration } from "@/lib/duration";
@@ -156,11 +157,7 @@ function SourceChoice({
           {SOURCES.map((s) => (
             <label
               key={s.id}
-              className={`inline-flex min-h-11 cursor-pointer items-center rounded-full px-4 font-medium text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-foreground/40 sm:min-h-9 ${
-                source === s.id
-                  ? "bg-card text-foreground shadow-sm ring-1 ring-foreground/10 dark:bg-foreground/15"
-                  : "text-foreground/75 hover:text-foreground"
-              }`}
+              className={`${segmentClass(source === s.id)} cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-foreground/40`}
             >
               <input
                 type="radio"

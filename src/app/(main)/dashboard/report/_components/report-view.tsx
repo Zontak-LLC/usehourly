@@ -10,14 +10,16 @@ import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocationHash } from "@/components/use-location-hash";
 import { downloadAnnualXlsx } from "@/lib/export-annual-xlsx";
 import { feature } from "@/lib/features";
 import { isCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { yearSectionFromHash } from "@/lib/year-sections";
 
-import { ExpensesSection, yearRange } from "./expenses-section";
-import { ReportBody } from "./report-body";
+import { ExpensesSection, expensesIn, yearRange } from "./expenses-section";
+import { YearSplit } from "./report-body";
 
 export function ReportView() {
   // "This year" comes from the browser clock (the Worker runs in UTC).
@@ -31,17 +33,20 @@ export function ReportView() {
     setToday(y);
   }, []);
 
-  const me = trpc.account.me.useQuery();
+  // Every query starts once the year is known, in the same render, so they go out as ONE batched request.
+  const ready = year !== null;
+  const me = trpc.account.me.useQuery(undefined, { enabled: ready });
   // Which currency's figures to show (only matters when clients are billed in more than one).
   const [picked, setPicked] = useState<string | null>(null);
   const report = trpc.report.annual.useQuery(
     { year: year ?? 2000, currency: isCurrency(picked) ? picked : undefined },
-    { enabled: year !== null },
+    { enabled: ready },
   );
   // Expenses (switched off in this release) are asked for in the same render as the report, so the page stays one request.
   const withExpenses = feature("expenses");
-  const expenses = trpc.expense.list.useQuery(yearRange(year ?? 2000), { enabled: withExpenses && year !== null });
-  const clients = trpc.clients.list.useQuery(undefined, { enabled: withExpenses });
+  const expenses = trpc.expense.list.useQuery(yearRange(year ?? 2000), { enabled: withExpenses && ready });
+  const clients = trpc.clients.list.useQuery(undefined, { enabled: withExpenses && ready });
+  const open = yearSectionFromHash(useLocationHash(), withExpenses);
   const [exporting, setExporting] = useState(false);
   const emailIt = trpc.report.email.useMutation();
 
@@ -60,7 +65,7 @@ export function ReportView() {
           ein: me.data?.ein ?? null,
           currency: data.currency,
         },
-        withExpenses ? (expenses.data ?? []).filter((e) => e.currency === data.currency) : undefined,
+        withExpenses ? expensesIn(expenses.data ?? [], data.currency, data.year).shown : undefined,
       );
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
@@ -160,7 +165,7 @@ export function ReportView() {
         <Skeleton className="h-96 w-full" />
       ) : (
         <ClientCurrency currency={data.currency}>
-          {data.totals.entryCount === 0 && data.invoices.count === 0 ? (
+          {data.totals.entryCount === 0 && data.invoices.count === 0 && !withExpenses ? (
             <EmptyState className="py-14">No time logged or invoices issued in {year}.</EmptyState>
           ) : (
             <>
@@ -170,17 +175,28 @@ export function ReportView() {
                   figures: pick one above. Amounts in different currencies are never added together.
                 </p>
               )}
-              <ReportBody data={data} year={year} />
+              <YearSplit
+                data={data}
+                year={year}
+                open={open}
+                expenses={
+                  withExpenses && expenses.data
+                    ? {
+                        facts: expensesIn(expenses.data, data.currency, year).summary,
+                        node: (
+                          <ExpensesSection
+                            year={year}
+                            currency={data.currency}
+                            receivedCents={data.received.totalCents}
+                            rows={expenses.data}
+                            clients={clients.data ?? []}
+                          />
+                        ),
+                      }
+                    : undefined
+                }
+              />
             </>
-          )}
-          {withExpenses && expenses.data && (
-            <ExpensesSection
-              year={year}
-              currency={data.currency}
-              receivedCents={data.received.totalCents}
-              rows={expenses.data}
-              clients={clients.data ?? []}
-            />
           )}
         </ClientCurrency>
       )}

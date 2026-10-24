@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { logWarn } from "@/lib/log";
 import { getPrisma } from "@/lib/prisma";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { isUsagePage, usageDay } from "@/lib/usage";
@@ -30,10 +31,16 @@ export async function POST(req: Request) {
   if (!limit.allowed) return new Response(null, { status: 204 });
 
   const day = usageDay();
-  await prisma.usageDaily.upsert({
-    where: { day_page: { day, page } },
-    create: { day, page, count: 1 },
-    update: { count: { increment: 1 } },
-  });
+  try {
+    await prisma.usageDaily.upsert({
+      where: { day_page: { day, page } },
+      create: { day, page, count: 1 },
+      update: { count: { increment: 1 } },
+    });
+  } catch (err) {
+    // Two first views of a page on a new day race to create its row: one loses on the unique key. A count is best
+    // effort, so the view is dropped rather than answered with an error.
+    logWarn("usage_count_failed", { page, message: err instanceof Error ? err.message : String(err) });
+  }
   return new Response(null, { status: 204 });
 }
