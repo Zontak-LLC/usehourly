@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+import { Pagination } from "@/components/pagination";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { SIDE_CARD, SideScroll } from "@/components/side-column";
 import { formatDuration } from "@/lib/duration";
 import { ROW_FIGURE } from "@/lib/figures";
+import { PAGE_SIZE_DESKTOP, paginate } from "@/lib/paginate";
 import type { buildSheet } from "@/lib/timesheet";
 
 export const longDayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
@@ -28,6 +32,13 @@ export function WeekTotalCard({
   onProjectId: (id: string) => void;
 }) {
   const longest = Math.max(1, ...sheet.rows.map((x) => x.total));
+  // Pages of 10 (the owner, 2026-10-24), like "All entries". A picked project's page opens with it.
+  const [pageNo, setPageNo] = useState(1);
+  useEffect(() => {
+    const at = sheet.rows.findIndex((r) => r.projectId === projectId);
+    if (at >= 0) setPageNo(Math.floor(at / PAGE_SIZE_DESKTOP) + 1);
+  }, [projectId, sheet.rows]);
+  const view = paginate(sheet.rows, pageNo, PAGE_SIZE_DESKTOP);
   return (
     <section
       aria-label="This week"
@@ -58,7 +69,7 @@ export function WeekTotalCard({
       ) : (
         <SideScroll>
           <ul className="divide-y border-t">
-            {sheet.rows.map((r) => {
+            {view.items.map((r) => {
               const on = projectId === r.projectId;
               return (
                 <li key={r.projectId}>
@@ -92,6 +103,11 @@ export function WeekTotalCard({
             })}
           </ul>
         </SideScroll>
+      )}
+      {view.pages > 1 && (
+        <div className="border-t px-4 py-2">
+          <Pagination page={view} noun="projects" onPage={setPageNo} compact />
+        </div>
       )}
     </section>
   );

@@ -9,7 +9,8 @@ import { auditPage, expect, signUpByApi, test } from "./helpers";
  * card keeps its own height.
  */
 const FLOOR = 24 * 16;
-const PROJECTS = 12;
+// One page of the By project list (pages of 10 since 2026-10-24); the pages have their own test below.
+const PROJECTS = 10;
 
 async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
   const res = await page.request.post(`/api/trpc/${path}`, { data });
@@ -30,20 +31,20 @@ async function thisWeek(page: Page) {
   });
 }
 
-/** Twelve projects with time on Monday; the page then opens Tuesday, an empty day, so the main column is short. */
-async function seed(page: Page) {
+/** Ten projects with time on Monday (`count` to change it); the page then opens Tuesday, an empty day, so the main column is short. */
+async function seed(page: Page, count = PROJECTS) {
   await signUpByApi(page);
   await page.goto("/dashboard/today");
   const { monday, tuesday } = await thisWeek(page);
   const client = await call<{ id: string }>(page, "clients.create", { name: "Side Co" });
-  for (let i = 1; i <= PROJECTS; i++) {
+  for (let i = 1; i <= count; i++) {
     const name = `Project ${String(i).padStart(2, "0")}`;
     const project = await call<{ id: string }>(page, "project.create", { clientId: client.id, name, hourlyRate: 5000 });
     await call(page, "entry.create", { projectId: project.id, date: monday, minutes: 15 * i, note: "" });
   }
   await page.goto(`/dashboard/week?date=${tuesday}`);
-  const card = page.getByRole("region", { name: "This week" });
-  await expect(card.getByRole("button", { name: /Project 12/ })).toBeAttached();
+  const card = page.getByRole("region", { name: "This week", exact: true });
+  await expect(card.getByRole("button", { name: /Project/ }).first()).toBeAttached();
   return card;
 }
 
@@ -142,8 +143,8 @@ test("on a wide screen the This week card is min(its content, the main column) a
   expect((await lastRow()).headerTop).toBeCloseTo(before.headerTop, 0); // the header did not move
 
   // The rows are buttons, so the keyboard reaches them inside the scroll box.
-  await card.getByRole("button", { name: /Project 12/ }).focus();
-  await expect(card.getByRole("button", { name: /Project 12/ })).toBeFocused();
+  await card.getByRole("button", { name: /Project 10/ }).focus();
+  await expect(card.getByRole("button", { name: /Project 10/ })).toBeFocused();
 
   await auditPage(page, "week-side-column", isPhone);
 });
@@ -157,4 +158,23 @@ test("on a phone the This week card keeps its own height", async ({ page, isPhon
   // Every project row is in the card's own height (twenty rows of at least 56px).
   expect(m.cardHeight).toBeGreaterThan(PROJECTS * 56);
   await auditPage(page, "week-side-column", isPhone);
+});
+
+test("By project shows 10 projects a page, and a picked project's page opens with it", async ({ page }) => {
+  const card = await seed(page, 12);
+  const rows = card.getByRole("listitem");
+  const pages = card.getByRole("navigation", { name: "projects pages" });
+  await expect(rows).toHaveCount(10);
+  await expect(pages).toContainText("1–10 of 12");
+  await pages.getByRole("button", { name: "Next page" }).click();
+  await expect(rows).toHaveCount(2);
+  await expect(pages).toContainText("11–12 of 12");
+  // Pick one of the two on page 2, go back to page 1, then reload: the address keeps the project and its page opens.
+  const name = (await rows.first().getByRole("button").innerText()).split("\n")[0];
+  await rows.first().getByRole("button").click();
+  await expect(page).toHaveURL(/project=/);
+  await pages.getByRole("button", { name: "Previous page" }).click();
+  await page.reload();
+  await expect(card.getByRole("button", { name: new RegExp(name) })).toHaveAttribute("aria-pressed", "true");
+  await expect(pages).toContainText("11–12 of 12");
 });
