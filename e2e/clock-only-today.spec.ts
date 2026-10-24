@@ -35,8 +35,8 @@ test("Today's timer is a quiet line in the Log time card on today only, and Week
     await page.getByRole("button", { name: /^Log time/ }).click();
     await expect(page.getByRole("navigation", { name: "Days" })).toContainText("1:00 this day");
     await page.goto("/dashboard/week");
-    await expect(page.getByRole("region", { name: "This week" })).toContainText("1:00 this week");
-    await expect(page.getByRole("region", { name: "This week" })).not.toContainText("40:00");
+    await expect(page.getByRole("region", { name: "This week", exact: true })).toContainText("1:00 this week");
+    await expect(page.getByRole("region", { name: "This week", exact: true })).not.toContainText("40:00");
     await expect(page.getByRole("progressbar", { name: /Hours this week/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Timer" })).toHaveCount(0);
   });

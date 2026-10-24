@@ -5,11 +5,22 @@ import { type ReactNode, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 /**
- * The period's full list of entries, folded behind one row (Week and Month). The page already shows the time by day, so
- * the long list is there when you need to search or edit any day, not in the way when you don't.
+ * The period's full list of entries behind one row (Week and Month). Month starts folded: a month holds a long list and
+ * the calendar already shows the time by day. Week starts open (the owner, 2026-10-24): a week is short, and folded it
+ * left the right column ending early beside a long "By project" list. The row still folds it for this visit.
  */
-export function AllEntriesFold({ period, count, children }: { period: string; count: number; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+export function AllEntriesFold({
+  period,
+  count,
+  defaultOpen = false,
+  children,
+}: {
+  period: string;
+  count: number;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   // With nothing to list the button would open nothing (the list renders nothing for no entries), so it is not shown.
   if (count === 0) return null;
   return (

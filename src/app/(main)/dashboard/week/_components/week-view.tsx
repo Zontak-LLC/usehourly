@@ -59,7 +59,9 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     () => (entries.data ?? []).filter((e) => !projectId || e.project_id === projectId),
     [entries.data, projectId],
   );
-  const sheet = useMemo(() => buildSheet(shown), [shown]);
+  // The whole week, NOT the filtered rows: with a project picked, "By project" keeps every project (the others dimmed),
+  // so the way back is the same list (press the picked one again, or another). It used to shrink to one row.
+  const sheet = useMemo(() => buildSheet(entries.data ?? []), [entries.data]);
 
   if (!start) return <Skeleton className="h-64 w-full" />;
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -163,7 +165,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
                 />
               </section>
               {feature("merge") && <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />}
-              <AllEntriesFold period="week" count={shown.length}>
+              <AllEntriesFold period="week" count={shown.length} defaultOpen>
                 <WorkItems
                   key={`${start}-${projectId}`}
                   entries={shown}
