@@ -14,7 +14,8 @@ import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { addDays, toISODate } from "@/lib/dates";
+import { useUnbilled } from "@/components/use-unbilled";
+import { addDays, isRealDate, MAX_QUERY_DAYS, spanDays, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { buildInvoice } from "@/lib/invoice";
@@ -59,6 +60,12 @@ function defaultClientId(clients: { id: string }[], unbilled: Unbilled[], wanted
     }
   }
   return best;
+}
+
+/** `?from=&to=` as a period an invoice may cover (real dates, in order, at most a year), else null. */
+function periodFromParams(from: string | null, to: string | null): { from: string; to: string } | null {
+  if (!from || !to || !isRealDate(from) || !isRealDate(to) || from > to) return null;
+  return spanDays(from, to) <= MAX_QUERY_DAYS ? { from, to } : null;
 }
 
 /** Time in the period already on an invoice: left out unless the person asks for it, and said so plainly. */
@@ -113,7 +120,10 @@ function useClientEntries(o: {
 
 export function NewInvoiceView() {
   const router = useRouter();
-  const wantedClient = useSearchParams().get("client");
+  const params = useSearchParams();
+  const wantedClient = params.get("client");
+  // A period asked for in the address (the "invoice due" prompt, issue 100): used as given when it is a real one.
+  const [wantedRange] = useState(() => periodFromParams(params.get("from"), params.get("to")));
   const utils = trpc.useUtils();
   const me = trpc.account.me.useQuery();
   const clients = trpc.clients.list.useQuery();
@@ -133,15 +143,15 @@ export function NewInvoiceView() {
   // The account's tax is added unless the person leaves it off this one invoice (a reverse-charge client, say).
   const [addTax, setAddTax] = useState(true);
   // The period follows the chosen client's unbilled time until the person sets the dates themselves.
-  const [rangeTouched, setRangeTouched] = useState(false);
-  const unbilled = trpc.invoice.unbilled.useQuery();
+  const [rangeTouched, setRangeTouched] = useState(wantedRange !== null);
+  const unbilled = useUnbilled();
 
   useEffect(() => {
     const t = toISODate(new Date());
     setToday(t);
-    setFrom(`${t.slice(0, 7)}-01`);
-    setTo(t);
-  }, []);
+    setFrom(wantedRange?.from ?? `${t.slice(0, 7)}-01`);
+    setTo(wantedRange?.to ?? t);
+  }, [wantedRange]);
 
   const year = today ? Number(today.slice(0, 4)) : 0;
   const next = trpc.invoice.nextNumber.useQuery({ year }, { enabled: year > 0 });

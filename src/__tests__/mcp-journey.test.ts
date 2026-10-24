@@ -903,6 +903,8 @@ describe("an assistant tracks a day of work", () => {
       legal_name: "Acme Holdings, Inc.",
       address: "500 Market St",
       logo: null,
+      invoice_every: "month",
+      invoice_anchor: null,
     } as never);
     const clients = await s.call("list_clients");
     expect(clients.data?.clients).toHaveLength(2);
@@ -914,6 +916,7 @@ describe("an assistant tracks a day of work", () => {
       legal_name: "Acme Holdings, Inc.",
       address: "500 Market St",
       has_logo: false,
+      invoice_schedule: { every: "month", anchor: null },
     });
 
     // Hours per project: 90 minutes this month, 4 hours in all.

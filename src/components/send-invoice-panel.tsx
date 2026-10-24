@@ -12,7 +12,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { invoiceDraft, MAILTO_SAFE_LENGTH, mailtoHref, pdfFileName } from "@/lib/invoice-draft";
+import { invoiceDraft, MAILTO_SAFE_LENGTH, mailtoHref, pdfFileName, reminderDraft } from "@/lib/invoice-draft";
 import { DEFAULT_LINK_EXPIRY_DAYS, type LinkStatus } from "@/lib/invoice-link";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -66,11 +66,14 @@ async function copyText(text: string, what: string) {
  */
 function MailAppSection({
   invoice,
+  reminder,
   linkOff,
   onLink,
   onRewrite,
 }: {
   invoice: PanelInvoice;
+  /** Days late: write a reminder for an overdue invoice instead of the invoice email. */
+  reminder?: number;
   /** The link in this email was turned off below. */
   linkOff: boolean;
   onLink: (id: string) => void;
@@ -123,7 +126,7 @@ function MailAppSection({
   // Write the draft once everything it needs is here; after that the words are the person's own.
   useEffect(() => {
     if (!snapshot || !linkSettled || body !== null) return;
-    const draft = invoiceDraft({
+    const input = {
       number: invoice.number,
       sellerName: snapshot.seller.name,
       totalCents: invoice.total_cents,
@@ -134,10 +137,11 @@ function MailAppSection({
       dueDate: invoice.due_date,
       paidDate: invoice.paid_date,
       link,
-    });
+    };
+    const draft = reminder ? reminderDraft({ ...input, daysLate: reminder }) : invoiceDraft(input);
     setSubject(draft.subject);
     setBody(draft.body);
-  }, [snapshot, linkSettled, body, link, invoice]);
+  }, [snapshot, linkSettled, body, link, invoice, reminder]);
 
   useEffect(() => {
     // Without the client's address (or if it could not be read) the box starts empty: the person types one.
@@ -337,8 +341,17 @@ function LinkList({ invoiceId, onTurnedOff }: { invoiceId: string; onTurnedOff: 
  * button was removed (2026-10-23, issue 227); `invoiceMail.send` and the reminders stay on the server, unused by the screens.
  * The card owns whether it is open.
  */
-export function SendInvoicePanel({ invoice, onClose }: { invoice: PanelInvoice; onClose: () => void }) {
-  const title = `Send invoice ${invoice.number}`;
+export function SendInvoicePanel({
+  invoice,
+  onClose,
+  reminder,
+}: {
+  invoice: PanelInvoice;
+  onClose: () => void;
+  /** Days late: the same panel writes a polite reminder instead (issue 100). */
+  reminder?: number;
+}) {
+  const title = reminder ? `Write a reminder for ${invoice.number}` : `Send invoice ${invoice.number}`;
   // Which link the email holds, whether it was turned off, and a key that writes the email again from the start.
   const [linkId, setLinkId] = useState<string | null>(null);
   const [linkOff, setLinkOff] = useState(false);
@@ -349,7 +362,9 @@ export function SendInvoicePanel({ invoice, onClose }: { invoice: PanelInvoice; 
         <div className="min-w-0">
           <h3 className="font-semibold text-base">{title}</h3>
           <p className="text-foreground/75 text-sm">
-            Here is an email to your client, ready to edit. Send it from your own email app.
+            {reminder
+              ? "Here is a polite reminder to your client, ready to edit. Send it from your own email app."
+              : "Here is an email to your client, ready to edit. Send it from your own email app."}
           </p>
         </div>
         <Button
@@ -366,6 +381,7 @@ export function SendInvoicePanel({ invoice, onClose }: { invoice: PanelInvoice; 
       <MailAppSection
         key={draftKey}
         invoice={invoice}
+        reminder={reminder}
         linkOff={linkOff}
         onLink={setLinkId}
         onRewrite={() => {
