@@ -479,3 +479,28 @@ textarea,
     box-shadow: var(--shadow-sheet);
   }
 }
+
+/* The home page's own surfaces (2026-10-24, the owner: "a nice background, align everything"). Mixed only from the
+   theme's tokens, so light and dark both follow and no new colour enters the palette. The page is a clean near-white;
+   bands alternate with the app's own page colour so each section has a clear start and end; behind the hero sits a
+   faint timesheet grid that fades out, with one soft purple glow behind the headline. */
+.landing {
+  --landing-page: color-mix(in oklab, var(--card) 85%, var(--background));
+  --landing-band: var(--background);
+  --landing-grid: color-mix(in oklab, var(--foreground) 7%, transparent);
+  --landing-glow: color-mix(in oklab, var(--amber) 18%, transparent);
+}
+.dark .landing {
+  --landing-page: var(--background);
+  --landing-band: color-mix(in oklab, var(--card) 55%, var(--background));
+  --landing-grid: color-mix(in oklab, var(--foreground) 6%, transparent);
+  --landing-glow: color-mix(in oklab, var(--amber) 16%, transparent);
+}
+.landing-grid {
+  background-image:
+    linear-gradient(var(--landing-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--landing-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 25%, black 35%, transparent 100%);
+}
