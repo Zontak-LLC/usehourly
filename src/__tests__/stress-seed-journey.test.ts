@@ -262,8 +262,7 @@ describe("stress test: filling staging with a realistic mix of accounts and remo
     expect(refusal(staging("hourly-staging-db", "11111111-2222-4333-8444-555555555555"), prod)).toMatch(/production/);
     expect(refusal(staging("hourly-staging-db", "x"), prod)).toMatch(/no real database id/);
     expect(refusal(staging("hourly-staging-db", undefined, "hourly"), prod)).toMatch(/not the hourly-staging Worker/);
-    expect(refusal(prod.replace("[", `[ { "binding": "X", "database_name": "hourly-staging-db" },`), prod)).toMatch(
-      /exactly one/,
-    );
+    const two = `{ "name": "hourly-staging", "d1_databases": [ { "binding": "X", "database_name": "hourly-staging-db" }, { "binding": "DB", "database_name": "hourly-db" } ] }`;
+    expect(refusal(two, prod)).toMatch(/exactly one/);
   });
 });
