@@ -21,19 +21,23 @@ export function ListSearch({
   className?: string;
 }) {
   return (
-    <search aria-label={label} className={`relative block ${className}`}>
-      <Search
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
-      />
-      <Input
-        type="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={`${label}…`}
-        aria-label={label}
-        className="h-11 pl-9 text-base"
-      />
+    // The outer box takes the caller's spacing; the lens is placed against the field's own box (padding on the same
+    // element pushed it onto the field's edge and below its middle on Week).
+    <search aria-label={label} className={`block ${className}`}>
+      <div className="relative">
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          type="search"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={`${label}…`}
+          aria-label={label}
+          className="h-11 pl-9 text-base"
+        />
+      </div>
     </search>
   );
 }
