@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
 import { FoldedNote } from "@/components/folded-note";
+import { InlineNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { DATE_RE, fromISODate } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { QUIET_BELOW_MINUTES, ROW_FIGURE, ROW_FIGURE_QUIET } from "@/lib/figures";
+import { needsNote } from "@/lib/note-later";
 import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -163,6 +165,9 @@ export function EntryRow({
     <div className="pb-0.5 pl-1">
       {entry.note ? (
         <FoldedNote note={entry.note} />
+      ) : needsNote(entry) ? (
+        // Log first, note later (2026-10-24): an entry with no note offers one right here, no edit form.
+        <InlineNote entryId={entry.id} label={`${entry.project.name} ${formatDuration(entry.minutes)}`} />
       ) : (
         <p className="text-muted-foreground/70 text-sm italic">No description</p>
       )}
