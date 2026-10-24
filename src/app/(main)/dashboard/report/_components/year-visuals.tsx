@@ -3,28 +3,10 @@
 import { useState } from "react";
 
 import { useMoney } from "@/components/currency-provider";
-import { formatDuration } from "@/lib/duration";
+import { h as hours, MONTHS as MONTH_NAMES, yearFigures } from "@/lib/year-summary-rows";
 
 import type { AnnualReport } from "./report-body";
 import { SummaryRow } from "./report-table";
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-/** Hours on screen are h:mm, as everywhere else in the app (files keep decimals). */
-const hours = (m: number) => formatDuration(Math.round(m));
 
 /**
  * The year in money, led by what actually came in (issue 219, 2026-10-23): Received and Unpaid are the two figures, the
@@ -33,8 +15,7 @@ const hours = (m: number) => formatDuration(Math.round(m));
  */
 export function YearFigures({ data, year }: { data: AnnualReport; year: number }) {
   const money = useMoney();
-  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-  const t = data.totals;
+  const [received, unpaid, ...lines] = yearFigures(data, money);
   return (
     <section
       aria-label={`Money in ${year}`}
@@ -42,39 +23,20 @@ export function YearFigures({ data, year }: { data: AnnualReport; year: number }
     >
       <div className="grid gap-5 p-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
-          <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">Received</span>
-          <p className="font-display font-extrabold text-5xl tabular-nums leading-none">
-            {money(data.received.totalCents)}
-          </p>
-          <p className="text-foreground/75 text-sm">
-            {plural(data.received.count, "payment")}, by the date they were paid
-          </p>
+          <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">{received.label}</span>
+          <p className="font-display font-extrabold text-5xl tabular-nums leading-none">{received.value}</p>
+          <p className="text-foreground/75 text-sm">{received.hint}</p>
         </div>
         <div className="flex flex-col gap-1">
-          <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">Unpaid</span>
-          <p className="font-bold font-display text-3xl tabular-nums leading-none sm:mt-2">
-            {money(data.outstanding.totalCents)}
-          </p>
-          <p className="text-foreground/75 text-sm">{plural(data.outstanding.count, "invoice")} not paid at year end</p>
+          <span className="font-mono text-[11px] text-foreground/75 uppercase tracking-widest">{unpaid.label}</span>
+          <p className="font-bold font-display text-3xl tabular-nums leading-none sm:mt-2">{unpaid.value}</p>
+          <p className="text-foreground/75 text-sm">{unpaid.hint}</p>
         </div>
       </div>
       <dl className="grid border-t sm:grid-cols-2 sm:[&>*:nth-child(2)]:border-t-0 sm:[&>*:nth-child(odd)]:border-r">
-        <SummaryRow
-          label="Invoiced"
-          value={money(data.invoices.totalCents)}
-          hint={`${plural(data.invoices.count, "invoice")} issued`}
-        />
-        <SummaryRow label="Hours worked" value={hours(t.minutes)} hint={plural(t.workedDays, "day")} />
-        <SummaryRow
-          label="Billable hours"
-          value={hours(t.billableMinutes)}
-          hint={t.nonBillableMinutes ? `${hours(t.nonBillableMinutes)} non-billable` : "all of it"}
-        />
-        <SummaryRow
-          label="Earned"
-          value={money(t.earnedCents)}
-          hint="billable hours × today's rates: what the time is worth, not income"
-        />
+        {lines.map((f) => (
+          <SummaryRow key={f.label} label={f.label} value={f.value} hint={f.hint} />
+        ))}
       </dl>
     </section>
   );

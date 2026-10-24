@@ -56,3 +56,14 @@ test("year summary sections fold behind a chevron, show a summary while folded, 
   await page.getByRole("button", { name: /^By quarter/ }).click();
   await expect(q4()).toHaveCount(1);
 });
+
+test("?year= opens that year (the emailed summary's button), and a year in the future falls back to this one", async ({
+  page,
+}) => {
+  await startDemo(page);
+  const thisYear = new Date().getFullYear();
+  await page.goto(`/dashboard/report?year=${thisYear - 1}`);
+  await expect(page.getByRole("heading", { name: `Year summary · ${thisYear - 1}` })).toBeVisible();
+  await page.goto(`/dashboard/report?year=${thisYear + 5}`);
+  await expect(page.getByRole("heading", { name: `Year summary · ${thisYear}` })).toBeVisible();
+});

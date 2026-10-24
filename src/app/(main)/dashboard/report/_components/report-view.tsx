@@ -24,7 +24,9 @@ export function ReportView() {
   const [today, setToday] = useState<number | null>(null);
   useEffect(() => {
     const y = new Date().getFullYear();
-    setYear(y);
+    // `?year=2025` (the emailed summary's button) opens that year; anything else opens this year.
+    const asked = Number(new URLSearchParams(window.location.search).get("year"));
+    setYear(Number.isInteger(asked) && asked >= 2000 && asked <= y ? asked : y);
     setToday(y);
   }, []);
 
