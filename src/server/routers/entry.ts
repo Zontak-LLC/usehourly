@@ -124,7 +124,7 @@ export const entryRouter = router({
         where: { user_id: ctx.userId, id: { in: [...new Set(rows.map((e) => e.project_id))] } },
         select: { id: true, name: true, client_id: true },
       }),
-      ctx.prisma.client.findMany({ where: { user_id: ctx.userId, archived: false }, select: { id: true, name: true } }),
+      ctx.prisma.client.findMany({ where: { user_id: ctx.userId }, select: { id: true, name: true } }),
     ]);
     const clientById: Record<string, { name: string }> = Object.fromEntries(clients.map((c) => [c.id, c]));
     const byId = new Map(projects.map((p) => [p.id, { ...p, client: clientById[p.client_id] }]));
