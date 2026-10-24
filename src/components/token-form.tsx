@@ -78,7 +78,6 @@ export function TokenForm({
           id="token-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          clearable
           placeholder="Claude Code on my laptop"
           maxLength={60}
           required

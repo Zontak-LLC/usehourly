@@ -148,7 +148,7 @@ export function ProjectEditCard({
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto] sm:items-end">
             <div className="grid gap-1.5">
               <Label htmlFor={`pn-${p.id}`}>Project name</Label>
-              <Input id={`pn-${p.id}`} name="name" defaultValue={p.name} required autoFocus clearable />
+              <Input id={`pn-${p.id}`} name="name" defaultValue={p.name} required autoFocus />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor={`pc-${p.id}`}>Client</Label>
@@ -206,9 +206,7 @@ export function ProjectEditCard({
                 placeholder="0.00"
                 onChange={(e) => setRate(e.target.value)}
                 onFocus={(e) => e.currentTarget.select()}
-                clearable
-                wrapperClassName="w-32 shrink-0"
-                className="font-mono"
+                className="w-32 shrink-0 font-mono"
                 aria-label="Rate per hour"
               />
             </div>

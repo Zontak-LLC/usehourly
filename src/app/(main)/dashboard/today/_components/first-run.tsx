@@ -58,7 +58,6 @@ export function FirstRun() {
           id="first-run-client"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          clearable
           placeholder="A company or a person, like Acme"
           className="h-12 text-base"
           maxLength={80}

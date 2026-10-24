@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ClearFieldButton } from "@/components/ui/clear-field";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToggleTheme } from "@/components/use-toggle-theme";
 import { formatDuration } from "@/lib/duration";
@@ -184,16 +183,6 @@ export function GlobalSearch({ demo = false }: { demo?: boolean }) {
               placeholder="Search: password, Acme, invoice maths, INV-2026…"
               className="h-11 w-full rounded-lg border bg-background pr-10 pl-9 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-            {query && (
-              <ClearFieldButton
-                className="inset-y-0 my-auto"
-                onClear={() => {
-                  setQuery("");
-                  setActive(0);
-                  boxRef.current?.focus();
-                }}
-              />
-            )}
           </div>
           <div id={listId} role="listbox" aria-label="Results" className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
             {groups.length === 0 ? (

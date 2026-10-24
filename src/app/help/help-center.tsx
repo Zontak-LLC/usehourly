@@ -5,7 +5,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { cn } from "cn";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 import { GuideBody } from "@/components/guide/guide-body";
 import { searchGuide } from "@/lib/guide-search";
@@ -117,22 +117,7 @@ export function HelpCenter({ answers }: { answers: HelpItem[] }) {
             autoComplete="off"
             className="h-14 w-full rounded-2xl border border-input bg-card pr-12 pl-12 text-base shadow-[var(--shadow-sheet)] outline-none transition-[box-shadow,border-color] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/30 [&::-webkit-search-cancel-button]:hidden"
           />
-          {query ? (
-            <button
-              type="button"
-              aria-label="Clear search"
-              title="Clear search"
-              onClick={() => {
-                setQuery("");
-                box.current?.focus();
-              }}
-              className="absolute inset-y-0 right-2 my-auto grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <span className="grid size-5 place-items-center rounded-full bg-foreground/10">
-                <X className="size-3" strokeWidth={3} aria-hidden />
-              </span>
-            </button>
-          ) : (
+          {!query && (
             <kbd
               aria-hidden
               className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 rounded-md border bg-muted px-1.5 py-0.5 font-mono text-muted-foreground text-xs max-sm:hidden"

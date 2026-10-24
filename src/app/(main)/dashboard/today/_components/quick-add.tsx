@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Check, ClockPlus, Plus, X } from "lucide-react";
+import { Check, ClockPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -276,25 +276,6 @@ export function QuickAdd({
             >
               {chipText(fieldRoll.shown)}
             </span>
-          )}
-          {duration && (
-            <button
-              type="button"
-              aria-label="Clear time"
-              title="Clear time"
-              onClick={() => {
-                setDuration("");
-                setChipRun(null);
-                fieldRoll.stop();
-                dayRoll.stop();
-                durationRef.current?.focus();
-              }}
-              className="absolute inset-y-0 right-1.5 my-auto grid size-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <span className="grid size-5 place-items-center rounded-full bg-foreground/10">
-                <X className="size-3" strokeWidth={3} aria-hidden />
-              </span>
-            </button>
           )}
         </div>
 
