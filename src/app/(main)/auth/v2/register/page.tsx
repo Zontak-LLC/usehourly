@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import type { Metadata } from "next";
 
 import { SocialSignIn } from "@/components/social-sign-in";
@@ -11,29 +9,19 @@ export const metadata: Metadata = { title: "Create account · UseHourly" };
 
 export default function RegisterPage() {
   return (
-    <>
-      <div className="relative mx-auto flex w-full flex-col justify-center space-y-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)] sm:w-[420px] sm:p-8">
-        <div className="space-y-2 text-center">
-          <h1 className="font-bold font-display text-4xl">Create your account</h1>
-          <p className="text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
-        </div>
-        <SocialSignIn />
-        <RegisterForm />
-        <div className="text-center text-muted-foreground text-sm">
-          Just looking?
-          <TryDemoButton className="ml-1 inline-block py-2 text-foreground underline underline-offset-4">
-            Try the demo first
-          </TryDemoButton>
-        </div>
+    <div className="relative mx-auto flex w-full flex-col justify-center space-y-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-sheet)] sm:w-[420px] sm:p-8">
+      <div className="space-y-2 text-center">
+        <h1 className="font-bold font-display text-4xl">Create your account</h1>
+        <p className="text-muted-foreground text-sm">Free to use. No paywall, no ads.</p>
       </div>
-      <div className="absolute top-5 flex w-full justify-end px-10 text-muted-foreground text-sm">
-        <span>
-          Already have an account?{" "}
-          <Link prefetch={false} className="inline-block py-2 text-foreground" href="/auth/v2/login">
-            Log in
-          </Link>
-        </span>
+      <SocialSignIn />
+      <RegisterForm />
+      <div className="text-center text-muted-foreground text-sm">
+        Just looking?
+        <TryDemoButton className="ml-1 inline-block py-2 text-foreground underline underline-offset-4">
+          Try the demo first
+        </TryDemoButton>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
 import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ClearFieldButton } from "@/components/ui/clear-field";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToggleTheme } from "@/components/use-toggle-theme";
 import { formatDuration } from "@/lib/duration";
 import {
   allPages,
@@ -57,11 +59,13 @@ export function SearchField({ placeholder, className = "" }: { placeholder: stri
  * and invoices; choosing a result goes straight there (a setting scrolls to its section, an entry opens its day).
  * Opens from the icon or with Ctrl/Cmd+K (not "/": Today uses that for its project search).
  */
-export function GlobalSearch() {
+export function GlobalSearch({ demo = false }: { demo?: boolean }) {
   const router = useRouter();
+  const toggleTheme = useToggleTheme();
   const listId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const boxRef = useRef<HTMLInputElement>(null);
   const [active, setActive] = useState(0);
   const typed = query.trim();
   const settled = useDebounced(typed, 250);
@@ -90,19 +94,23 @@ export function GlobalSearch() {
   const groups = useMemo(() => {
     if (typed === "") return groupResults(allPages());
     const results: SearchResult[] = [
-      ...matchPagesAndSettings(typed),
+      ...matchPagesAndSettings(typed, { demo }),
       ...matchClientsAndProjects(typed, clients.data ?? []),
       ...(asking && settled === typed ? entryResults(entries.data ?? [], formatDuration) : []),
       ...(asking && settled === typed ? invoiceResults(invoices.data ?? []) : []),
     ];
     return groupResults(results);
-  }, [typed, settled, asking, clients.data, entries.data, invoices.data]);
+  }, [typed, settled, asking, demo, clients.data, entries.data, invoices.data]);
   const flat = groups.flatMap((g) => g.items);
   const waiting = asking && (settled !== typed || entries.isFetching || invoices.isFetching);
 
   function go(result: SearchResult) {
     setOpen(false);
     setQuery("");
+    if (result.action === "toggle-theme") {
+      toggleTheme();
+      return;
+    }
     const [path, hash] = result.href.split("#");
     router.push(result.href);
     // Going to a part of the page we are already on does not start a navigation, so scroll there ourselves.
@@ -134,11 +142,11 @@ export function GlobalSearch() {
         aria-label="Search"
         title="Search (Ctrl or Cmd + K)"
         onClick={() => setOpen(true)}
-        className="lg:hidden"
+        className="xl:hidden"
       >
         <Search />
       </Button>
-      <SearchField placeholder="Search everything…" className="hidden w-52 lg:flex" />
+      <SearchField placeholder="Search everything…" className="hidden w-52 xl:flex" />
       <Dialog
         open={open}
         onOpenChange={(o) => {
@@ -161,6 +169,7 @@ export function GlobalSearch() {
             <input
               // biome-ignore lint/a11y/noAutofocus: the box opens in order to be typed in
               autoFocus
+              ref={boxRef}
               role="combobox"
               aria-expanded
               aria-controls={listId}
@@ -173,8 +182,18 @@ export function GlobalSearch() {
               }}
               onKeyDown={onKeyDown}
               placeholder="Search: password, Acme, invoice maths, INV-2026…"
-              className="h-11 w-full rounded-lg border bg-background pr-3 pl-9 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-11 w-full rounded-lg border bg-background pr-10 pl-9 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            {query && (
+              <ClearFieldButton
+                className="inset-y-0 my-auto"
+                onClear={() => {
+                  setQuery("");
+                  setActive(0);
+                  boxRef.current?.focus();
+                }}
+              />
+            )}
           </div>
           <div id={listId} role="listbox" aria-label="Results" className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
             {groups.length === 0 ? (

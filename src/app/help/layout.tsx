@@ -8,15 +8,15 @@ import { LogoMark } from "@/components/logo";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 
-import { LayoutControls } from "../(main)/dashboard/_components/header/layout-controls";
+import { AppearanceControl } from "../(main)/dashboard/_components/header/appearance-control";
 import { MobileNav } from "../(main)/dashboard/_components/header/mobile-nav";
 import { SideNav } from "../(main)/dashboard/_components/header/side-nav";
 import { ThemeSwitcher } from "../(main)/dashboard/_components/header/theme-switcher";
 
 /**
  * The frame for the Help page: public (linked from anywhere, readable with no account) and kept by the service worker
- * once opened, so it holds NOTHING personal. A signed-in person gets the app's own navigation (the tab bar, the optional left menu, the
- * settings gear) built without a name or address. A visitor with no account is not shown the app's pages (they would
+ * once opened, so it holds NOTHING personal. A signed-in person gets the app's own navigation (the tab bar, the optional
+ * left menu, the light/dark switch) built without a name or address. A visitor with no account is not shown the app's pages (they would
  * only lead to sign-in): they get a plain header with the logo, Log in and Create account.
  */
 export default async function HelpLayout({ children }: { children: ReactNode }) {
@@ -39,7 +39,7 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
             </Link>
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
               {signedIn ? (
-                <LayoutControls />
+                <AppearanceControl />
               ) : (
                 <>
                   <Link
@@ -56,7 +56,6 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
                   </Link>
                 </>
               )}
-              {/* A signed-in person has the Light, Dark and System choice in the gear menu; a visitor has no gear. */}
               {!signedIn && <ThemeSwitcher />}
             </div>
           </div>

@@ -212,6 +212,20 @@ describe("safety of the import", () => {
     const rows = rowsOf(TOGGL); // 4 new entries
     await expect(as(db.prisma).timeImport.importRows({ rows })).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.prisma.timeEntry.createMany).not.toHaveBeenCalled();
+    // The limit is checked before anything is made, so a refused file leaves no empty clients or projects behind.
+    expect(db.prisma.client.create).not.toHaveBeenCalled();
+    expect(db.prisma.project.create).not.toHaveBeenCalled();
+    expect(db.clients).toHaveLength(0);
+    expect(db.projects).toHaveLength(0);
+  });
+
+  it("at the entry limit, a file that holds only time already there still goes through (nothing to add)", async () => {
+    const db = fakeDb();
+    const rows = rowsOf(TOGGL);
+    await as(db.prisma).timeImport.importRows({ rows });
+    db.prisma.timeEntry.count.mockResolvedValue(QUOTAS.entries as never);
+    const again = await as(db.prisma).timeImport.importRows({ rows });
+    expect(again).toMatchObject({ created: 0, duplicates: 4, clientsCreated: 0, projectsCreated: 0 });
   });
 
   it("is for signed-in accounts only", async () => {

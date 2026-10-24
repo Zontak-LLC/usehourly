@@ -21,10 +21,13 @@ export function NewClientCard({
   clientCount,
   open,
   onOpenChange,
+  onCreated,
 }: {
   clientCount: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The new client's id, so the page can open its profile. */
+  onCreated?: (id: string) => void;
 }) {
   const utils = trpc.useUtils();
   const createClient = trpc.clients.create.useMutation();
@@ -35,11 +38,12 @@ export function NewClientCard({
   async function addClient(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await createClient.mutateAsync({ name, color: PALETTE[clientCount % PALETTE.length] });
+      const created = await createClient.mutateAsync({ name, color: PALETTE[clientCount % PALETTE.length] });
       await utils.clients.list.invalidate();
+      onCreated?.(created.id);
       setName("");
       setOpen(false);
-      toast.success("Client added. Add its projects below.");
+      toast.success("Client added. Add its projects next.");
     } catch (err) {
       toastError(err, "Couldn't add that client.");
     }
@@ -78,7 +82,9 @@ export function NewClientCard({
             required
             maxLength={80}
             autoFocus
-            className="h-11 flex-1"
+            clearable
+            wrapperClassName="flex-1"
+            className="h-11"
           />
           <Button type="submit" className="h-11" disabled={createClient.isPending}>
             Add client

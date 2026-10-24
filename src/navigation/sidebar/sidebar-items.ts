@@ -32,6 +32,7 @@ const allNavLinks: NavLink[] = [
   {
     id: "report",
     title: "Year summary (taxes)",
+    short: "Year",
     url: "/dashboard/report",
     icon: BarChart3,
     secondary: true,

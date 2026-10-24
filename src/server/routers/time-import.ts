@@ -80,6 +80,43 @@ export const timeImportRouter = router({
       assertWithinQuota(clients.length, newClients.length, "clients", isDemoSession(ctx.session));
       assertWithinQuota(projects.length, newProjectCount, "projects", isDemoSession(ctx.session));
 
+      // Skip what is already there: a multiset, so two identical rows in the file are both kept. Worked out BEFORE
+      // anything is created, so a file that would pass the entry limit leaves no new clients or projects behind.
+      // A row for a project that does not exist yet can have no entry yet, so it is always new.
+      const existingProjectId = (r: { client: string; project: string }) => {
+        const c = clientByName.get(lower(r.client));
+        return c ? projectByKey.get(`${c.id}\u0000${lower(r.project)}`)?.id : undefined;
+      };
+      const dates = input.rows.map((r) => r.date).sort();
+      const [present, entryCount] = await Promise.all([
+        prisma.timeEntry.findMany({
+          where: { user_id: userId, date: { gte: dates[0], lte: dates[dates.length - 1] } },
+          select: { project_id: true, date: true, minutes: true, note: true },
+        }),
+        prisma.timeEntry.count({ where: { user_id: userId } }),
+      ]);
+      const have = new Map<string, number>();
+      const entryKey = (projectId: string, date: string, minutes: number, note: string) =>
+        `${projectId}\u0000${date}\u0000${minutes}\u0000${note}`;
+      for (const e of present) {
+        const k = entryKey(e.project_id, e.date, e.minutes, e.note);
+        have.set(k, (have.get(k) ?? 0) + 1);
+      }
+      const newRows: typeof input.rows = [];
+      let duplicates = 0;
+      for (const r of input.rows) {
+        const pid = existingProjectId(r);
+        const k = pid ? entryKey(pid, r.date, r.minutes, r.note) : "";
+        const n = pid ? (have.get(k) ?? 0) : 0;
+        if (n > 0) {
+          have.set(k, n - 1);
+          duplicates++;
+          continue;
+        }
+        newRows.push(r);
+      }
+      assertWithinQuota(entryCount, newRows.length, "entries", isDemoSession(ctx.session));
+
       const unarchiveClients = new Set<string>();
       const unarchiveProjects = new Set<string>();
       let clientsCreated = 0;
@@ -157,42 +194,12 @@ export const timeImportRouter = router({
         });
       }
 
-      // Skip what is already there: a multiset, so two identical rows in the file are both kept.
-      const dates = input.rows.map((r) => r.date).sort();
-      const present = await prisma.timeEntry.findMany({
-        where: { user_id: userId, date: { gte: dates[0], lte: dates[dates.length - 1] } },
-        select: { project_id: true, date: true, minutes: true, note: true },
-      });
-      const have = new Map<string, number>();
-      const entryKey = (projectId: string, date: string, minutes: number, note: string) =>
-        `${projectId}\u0000${date}\u0000${minutes}\u0000${note}`;
-      for (const e of present) {
-        const k = entryKey(e.project_id, e.date, e.minutes, e.note);
-        have.set(k, (have.get(k) ?? 0) + 1);
-      }
-
-      const toInsert: { user_id: string; project_id: string; date: string; minutes: number; note: string }[] = [];
-      let duplicates = 0;
-      for (const r of input.rows) {
+      const toInsert = newRows.map((r) => {
         const pid = projectIds.get(`${lower(r.client)}\u0000${lower(r.project)}`);
         if (!pid)
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Something went wrong. Please try again." });
-        const k = entryKey(pid, r.date, r.minutes, r.note);
-        const n = have.get(k) ?? 0;
-        if (n > 0) {
-          have.set(k, n - 1);
-          duplicates++;
-          continue;
-        }
-        toInsert.push({ user_id: userId, project_id: pid, date: r.date, minutes: r.minutes, note: r.note });
-      }
-
-      assertWithinQuota(
-        await prisma.timeEntry.count({ where: { user_id: userId } }),
-        toInsert.length,
-        "entries",
-        isDemoSession(ctx.session),
-      );
+        return { user_id: userId, project_id: pid, date: r.date, minutes: r.minutes, note: r.note };
+      });
       for (let i = 0; i < toInsert.length; i += INSERT_GROUP) {
         await prisma.timeEntry.createMany({ data: toInsert.slice(i, i + INSERT_GROUP) });
       }

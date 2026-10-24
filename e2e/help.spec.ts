@@ -110,10 +110,8 @@ test("the app links to Help from the account menu and the side menu, and no ? bu
     const tabs = page.getByRole("navigation", { name: "Main pages" });
     await expect(tabs.getByRole("link", { name: "Today" })).toHaveAttribute("href", "/dashboard/today");
     await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
-    await tabs.getByRole("button", { name: "More" }).click();
-    await expect(page.getByRole("menuitem", { name: "Log out" })).toHaveCount(0);
-    await page.getByRole("menuitem", { name: "Help" }).click();
-    await expect(page).toHaveURL(/\/help$/);
+    await expect(tabs.getByRole("button", { name: "More" })).toHaveCount(0); // every page is a tab now (issue 217)
+    await expect(page.getByRole("button", { name: /^Account menu for/ })).toHaveCount(0);
   });
 
   await test.step("the Export menu no longer sends people to read about it", async () => {

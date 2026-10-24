@@ -28,7 +28,7 @@ import { sessionStillValid } from "@/lib/session-version";
 import { readSavedTheme } from "@/lib/theme-sync";
 import { readSupportNotice } from "@/server/support-notice";
 
-import { LayoutControls } from "./_components/header/layout-controls";
+import { AppearanceControl } from "./_components/header/appearance-control";
 import { MobileNav } from "./_components/header/mobile-nav";
 import { SideNav } from "./_components/header/side-nav";
 import { UserMenu } from "./_components/header/user-menu";
@@ -112,18 +112,18 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                   <div className="flex min-w-0 items-center gap-1 lg:flex-1 lg:gap-2">
                     <Link
                       href="/dashboard/today"
-                      className="flex items-center gap-2 font-display font-extrabold text-lg lg:[html[data-nav-position=left]_&]:hidden"
+                      className="flex shrink-0 items-center gap-2 whitespace-nowrap font-display font-extrabold text-lg lg:[html[data-nav-position=left]_&]:hidden"
                     >
                       <LogoMark className="size-6 shrink-0" aria-hidden />
-                      {/* From 1024 to 1360px the centred tab pill would cover the word ("UseHourl"): the clock alone shows there. */}
-                      <span className="lg:max-[85rem]:sr-only">UseHourly</span>
+                      {/* From 1024 to 1280px the six tabs need the room: the clock alone shows there (the word was cut to "Usel"). */}
+                      <span className="lg:max-xl:sr-only">UseHourly</span>
                     </Link>
                   </div>
-                  <MobileNav isAdmin={isAdmin} />
-                  <div className="flex items-center justify-end gap-2 lg:flex-1">
-                    <GlobalSearch />
-                    <LayoutControls />
-                    <UserMenu user={user} />
+                  <MobileNav />
+                  <div className="flex shrink-0 items-center justify-end gap-2 lg:flex-1">
+                    <GlobalSearch demo={Boolean(dbUser?.is_demo)} />
+                    <AppearanceControl />
+                    <UserMenu user={user} isAdmin={isAdmin} />
                   </div>
                 </div>
               </header>

@@ -29,6 +29,43 @@ change goes wrong. Written for the next person on call, including future you.
 - Support was not contacted: the plan page answered the question. Larger allowances go through
   https://support.circleci.com/.
 
+## Read-only tokens for Claude (2026-10-23, issue #199)
+
+Claude reads CI results, logs and delivery status from the command line with **limited, revocable tokens** that the
+owner makes and keeps in shell environment variables. There is no shared "Claude" account. Production changes still
+need the owner's go every time.
+
+| Variable | Service | Scope | Make it at | Revoke it at |
+|---|---|---|---|---|
+| `CIRCLECI_TOKEN` | CircleCI | Project API token, **Read Only**, project `useHourly` | CircleCI > Projects > `useHourly` > Project Settings > API Permissions > Create Token | The same page, the token's X |
+| `CLOUDFLARE_READ_TOKEN` | Cloudflare | Account: Workers Scripts **Read**, D1 **Read**, Workers Tail **Read**, Account Analytics **Read**; only the Zontak LLC account | https://dash.cloudflare.com/profile/api-tokens > Create Token > Custom token | The same page, ··· > Delete |
+| `RESEND_READ_TOKEN` | Resend | Only if Resend offers a read-only key; its keys are "Full access" or "Sending access", so skip it until it does | https://resend.com/api-keys | The same page |
+| (none) | GitHub | The `gh` login already in use | | `gh auth logout` |
+
+Rules: the smallest scope that does the job; never paste a token into a chat, an issue or a file in this repository
+(they live in `~/.zshrc` or a password manager's shell integration); rotate a token whenever it may have been seen.
+The deploy token stays only in the CircleCI context `usehourly-production`.
+
+Note: `~/.circleci/cli.yml` holds a personal CircleCI token (the `circleci` CLI login). A personal token can do
+everything its owner can, so prefer the read-only project token above for reading results.
+
+**Reading a CircleCI run (checked 2026-10-23).** The project's slug is
+`circleci/UJ56CWJ43qJrrspUC34hLb/AKYfr2PaRyXAT1JcGqvZiY` (the GitHub App style; `gh/Zontak-LLC/usehourly` answers
+"Project not found"). Pipeline, workflow and job ids come from each answer in turn:
+
+```bash
+S=circleci/UJ56CWJ43qJrrspUC34hLb/AKYfr2PaRyXAT1JcGqvZiY
+H="Circle-Token: $CIRCLECI_TOKEN"
+curl -s -H "$H" "https://circleci.com/api/v2/project/$S/pipeline?branch=next"   # newest first: .items[].id
+curl -s -H "$H" "https://circleci.com/api/v2/pipeline/<pipeline-id>/workflow"    # .items[].id, status
+curl -s -H "$H" "https://circleci.com/api/v2/workflow/<workflow-id>/job"         # name, status, job_number
+curl -s -H "$H" "https://circleci.com/api/v2/project/$S/<job-number>/tests"      # failed tests and messages
+curl -s -H "$H" "https://circleci.com/api/v2/project/$S/<job-number>/artifacts"  # reports kept on failure
+```
+
+A project token only reads its own project; `/api/v2/me` needs a personal token, so check a new project token with
+the pipeline line instead.
+
 ## Is it healthy?
 
 - `GET https://usehourly.app/api/health` answers `{"ok":true}` with 200 when the database answers `SELECT 1`, and 503

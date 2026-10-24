@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -12,6 +12,7 @@ import { MoreMenu } from "@/components/more-menu";
 import { Pagination } from "@/components/pagination";
 import { SendInvoicePanel } from "@/components/send-invoice-panel";
 import { Button } from "@/components/ui/button";
+import { ClearFieldButton } from "@/components/ui/clear-field";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { formatMoney } from "@/lib/money";
@@ -83,6 +84,7 @@ export function InvoiceList({
 }) {
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [pageNo, setPageNo] = useState(1);
 
   const counts = useMemo(() => {
@@ -145,6 +147,7 @@ export function InvoiceList({
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-foreground/50"
           />
           <input
+            ref={searchRef}
             type="search"
             value={q}
             onChange={(e) => {
@@ -152,8 +155,18 @@ export function InvoiceList({
               setPageNo(1);
             }}
             placeholder="Number, client, work…"
-            className="h-10 w-full rounded-full border bg-card pr-3 pl-9 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm"
+            className="h-10 w-full rounded-full border bg-card pr-10 pl-9 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm [&::-webkit-search-cancel-button]:hidden"
           />
+          {q && (
+            <ClearFieldButton
+              className="inset-y-0 my-auto"
+              onClear={() => {
+                setQ("");
+                setPageNo(1);
+                searchRef.current?.focus();
+              }}
+            />
+          )}
         </label>
       </div>
 

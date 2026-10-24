@@ -12,7 +12,8 @@ import {
 } from "@/lib/oauth";
 import { safeNext } from "@/lib/safe-next";
 import { handleMcpHttp } from "@/server/mcp/http";
-import { checkAuthorizeRequest, decideAuthorization, exchangeCode, registerClient } from "@/server/oauth";
+import { checkAuthorizeRequest, decideAuthorization, exchangeCode, registerClient, revokeToken } from "@/server/oauth";
+import { readOAuthFields } from "@/server/oauth-http";
 
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
@@ -158,6 +159,9 @@ describe("how a client finds the OAuth endpoints", () => {
       registration_endpoint: `${APP}/api/oauth/register`,
       code_challenge_methods_supported: ["S256"],
       token_endpoint_auth_methods_supported: ["none"],
+      revocation_endpoint: `${APP}/api/oauth/revoke`,
+      revocation_endpoint_auth_methods_supported: ["none"],
+      authorization_response_iss_parameter_supported: true,
     });
   });
 
@@ -281,7 +285,20 @@ describe("the consent screen's checks", () => {
       APP,
     );
     expect(res.ok && new URL(res.redirectUrl).searchParams.get("error")).toBe("access_denied");
+    expect(res.ok && new URL(res.redirectUrl).searchParams.get("iss")).toBe(APP);
     expect(db.codes).toHaveLength(0);
+  });
+
+  it("names this server as the issuer (iss, RFC 9207) on every answer sent back to the app", async () => {
+    const db = fakeDb();
+    const id = await register(db);
+    const { url } = await approve(db, id);
+    expect(url.searchParams.get("iss")).toBe(APP);
+    expect(url.searchParams.get("code")).toBeTruthy();
+    const bad = await checkAuthorizeRequest(db.prisma, await authorizeParams(id, { response_type: "token" }), APP);
+    expect(bad.kind === "redirect" && new URL(bad.url).searchParams.get("iss")).toBe(APP);
+    // The issuer in the answer is the one the metadata announces, so a client can compare them.
+    expect(authorizationServerMetadata(APP).issuer).toBe(APP);
   });
 });
 
@@ -469,6 +486,97 @@ describe("what the token endpoint refuses", () => {
       error: "temporarily_unavailable",
       status: 429,
     });
+  });
+});
+
+describe("an app hands its token back (revocation, RFC 7009)", () => {
+  /** Connects an app and returns its token; also adds a personal token made on the Account page. */
+  async function connected() {
+    const db = fakeDb();
+    const id = await register(db);
+    const other = await register(db, "https://cursor.example/cb", "Cursor");
+    const res = await exchangeCode(db.prisma, tokenRequest(id, (await approve(db, id)).code), null);
+    const token = (res as { access_token: string }).access_token;
+    db.tokens.push({
+      id: "personal",
+      user_id: "u1",
+      name: "My laptop",
+      oauth_client_id: null,
+      token_hash: await hashApiToken("uh_personal-token-value-000000000000000000000"),
+      revoked_at: null,
+    });
+    const works = async (t: string) =>
+      (
+        await handleMcpHttp(
+          new Request(`${APP}/api/mcp`, {
+            method: "POST",
+            headers: { "content-type": "application/json", authorization: `Bearer ${t}` },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+          }),
+          db.prisma,
+          APP,
+        )
+      ).status === 200;
+    return { db, id, other, token, works };
+  }
+
+  it("the app that got the token can revoke it, and the token stops working at once", async () => {
+    const { db, id, token, works } = await connected();
+    expect(await works(token)).toBe(true);
+    const now = Math.floor(Date.now() / 1000);
+    expect(
+      await revokeToken(db.prisma, { token, client_id: id, token_type_hint: "access_token" }, "5.5.5.5", now),
+    ).toEqual({
+      ok: true,
+    });
+    expect(db.tokens[0].revoked_at).toBe(now);
+    expect(await works(token)).toBe(false);
+    // Revoking again, or an unknown token, is still a plain success (the answer never says whether a token exists).
+    expect(await revokeToken(db.prisma, { token, client_id: id }, null)).toEqual({ ok: true });
+    expect(await revokeToken(db.prisma, { token: "uh_nothing-like-this", client_id: id }, null)).toEqual({ ok: true });
+  });
+
+  it("another app, or a personal token, is never revoked through it", async () => {
+    const { db, other, token, works } = await connected();
+    expect(await revokeToken(db.prisma, { token, client_id: other }, null)).toEqual({ ok: true });
+    expect(await works(token)).toBe(true);
+    expect(
+      await revokeToken(db.prisma, { token: "uh_personal-token-value-000000000000000000000", client_id: other }, null),
+    ).toEqual({ ok: true });
+    expect(db.tokens.find((t) => t.id === "personal")?.revoked_at).toBeNull();
+    expect(db.tokens.every((t) => t.revoked_at === null)).toBe(true);
+  });
+
+  it("needs a token and the app's id, and limits requests per connection", async () => {
+    const { db, id, token } = await connected();
+    expect(await revokeToken(db.prisma, { client_id: id }, null)).toMatchObject({ error: "invalid_request" });
+    expect(await revokeToken(db.prisma, { token }, null)).toMatchObject({ error: "invalid_client", status: 401 });
+    expect(db.raw.apiToken.updateMany).toHaveBeenCalledTimes(1); // only the replace step of the connection
+    for (let i = 0; i < 60; i++) await revokeToken(db.prisma, { token: "uh_x", client_id: id }, "6.6.6.6");
+    expect(await revokeToken(db.prisma, { token, client_id: id }, "6.6.6.6")).toMatchObject({
+      error: "temporarily_unavailable",
+      status: 429,
+    });
+    expect(db.tokens[0].revoked_at).toBeNull();
+  });
+
+  it("reads the request form-encoded (as the spec says) or as JSON, and refuses junk", async () => {
+    const post = (body: string, type: string) =>
+      new Request(`${APP}/api/oauth/revoke`, { method: "POST", body, headers: { "content-type": type } });
+    const form = await readOAuthFields(post("token=uh_a&client_id=c1&extra=1", "application/x-www-form-urlencoded"), [
+      "token",
+      "client_id",
+    ]);
+    expect(form).toEqual({ fields: { token: "uh_a", client_id: "c1" } });
+    const json = await readOAuthFields(post(JSON.stringify({ token: "uh_b", client_id: 7 }), "application/json"), [
+      "token",
+      "client_id",
+    ]);
+    expect(json).toEqual({ fields: { token: "uh_b" } }); // a number is not a string field
+    const junk = await readOAuthFields(post("[1,2]", "application/json"), ["token"]);
+    expect("response" in junk && junk.response.status).toBe(400);
+    const big = await readOAuthFields(post("x".repeat(20_000), "text/plain"), ["token"]);
+    expect("response" in big && big.response.status).toBe(413);
   });
 });
 

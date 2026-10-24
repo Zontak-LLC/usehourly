@@ -15,10 +15,10 @@ test("the top right shows who is signed in, with a menu for Account and Log out,
   const user = await startFreshAccount(page);
   const trigger = page.getByRole("button", { name: /Account menu for/ });
 
-  await test.step("their initials show until they add a picture, and the name beside them on a wide screen", async () => {
+  await test.step("their initials show until they add a picture; the name is only in the menu (issue 217)", async () => {
     await expect(trigger).toBeVisible();
     await expect(trigger).toContainText(user.name.slice(0, 1).toUpperCase());
-    if (!phone) await expect(trigger).toContainText(user.name);
+    await expect(trigger).not.toContainText(user.name); // a long name used to push the top bar onto two rows
     await expect(trigger.locator("img")).toHaveCount(0);
   });
 

@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
@@ -97,6 +97,7 @@ export function EntryRow({
     await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
   };
   const isRunning = !!entry.started_at;
+  const canEdit = !isRunning && !unconfirmed;
   // A running entry shows the time so far (it grows with the timer), the same figure as the watch.
   const runningNow = useRunningMinutes(entry.started_at);
 
@@ -118,7 +119,13 @@ export function EntryRow({
     try {
       await update.mutateAsync({ id: entry.id, minutes, note, projectId, ...(moved ? { date } : {}) });
       await refresh();
-      if (moved) toast.success(`Moved to ${movedDate.format(fromISODate(date))}.`);
+      // A move by the Day field gets the same Undo as dragging on Month (issue 218): the entry leaves the page it was on.
+      if (moved) {
+        const from = entry.date;
+        toast.success(`Moved to ${movedDate.format(fromISODate(date))}.`, {
+          action: { label: "Undo", onClick: () => void moveBack(from, date) },
+        });
+      }
     } catch (err) {
       undo();
       setEditing(true);
@@ -126,20 +133,19 @@ export function EntryRow({
     }
   }
 
-  /** One-step reassign from the row's project label — no need to enter edit mode. */
-  async function moveTo(newProjectId: string) {
-    if (newProjectId === entry.project_id) return;
-    const name = clients.data?.flatMap((c) => c.projects).find((p) => p.id === newProjectId)?.name;
-    const project = projectWithClient(clients.data, newProjectId);
-    const undo = await optimistic.patch(entry.id, { project_id: newProjectId, ...(project ? { project } : {}) });
+  /** Undo of a move: the entry goes back to the day it came from (shown at once, confirmed by the server). */
+  async function moveBack(from: string, to: string) {
+    setDate(from); // the edit form's copy follows, so a later save does not move it again
+    const undo = await optimistic.patch(entry.id, { date: from });
     try {
-      await update.mutateAsync({ id: entry.id, projectId: newProjectId });
-      setProjectId(newProjectId); // keep the edit form's copy from reverting this on its next save
+      // The plain client, not the row's mutation hook: the row has usually left the page by the time Undo is pressed.
+      await utils.client.entry.update.mutate({ id: entry.id, date: from });
       await refresh();
-      toast.success(name ? `Moved to ${name}.` : "Entry moved.");
+      toast.success(`Moved back to ${movedDate.format(fromISODate(from))}.`);
     } catch (err) {
       undo();
-      toastError(err, "Couldn't move that entry.");
+      setDate(to);
+      toastError(err, "Couldn't move that entry back.");
     }
   }
 
@@ -177,7 +183,20 @@ export function EntryRow({
             : "flex items-start justify-between gap-2 py-2 pr-2 pl-3"
         }
       >
-        <div className="flex min-w-0 flex-1 items-start gap-2">
+        {/* A click on the row opens Edit (issue 218; it used to hide a project picker that moved the entry with no undo).
+            The keyboard way in is the Edit button beside it, so this is a mouse and finger shortcut only. */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut; the Edit button is the keyboard path */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: the Edit button beside it is the keyboard path */}
+        <div
+          data-testid="entry-open"
+          onClick={(e) => {
+            if (!canEdit || editing) return;
+            if ((e.target as HTMLElement).closest("button, a, input, textarea, select")) return;
+            if (window.getSelection()?.toString()) return; // selecting the text to copy it is not a click
+            setEditing(true);
+          }}
+          className={`flex min-w-0 flex-1 items-start gap-2 ${canEdit && !editing ? "cursor-pointer" : ""}`}
+        >
           <span className="mt-1.5 shrink-0">
             <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           </span>
@@ -189,26 +208,12 @@ export function EntryRow({
                   <span className="text-muted-foreground"> · {entry.project.client.name}</span>
                 </p>
               ) : (
-                // Native <select> laid invisibly over the label: click anywhere on the project to reassign it.
-                <div className="relative min-w-0 flex-1">
-                  <select
-                    value={entry.project_id}
-                    onChange={(e) => moveTo(e.target.value)}
-                    disabled={update.isPending || !clients.data || unconfirmed}
-                    aria-label="Move to another project"
-                    title="Move to another project"
-                    className="peer absolute inset-0 size-full cursor-pointer opacity-0"
-                  >
-                    {projectOptions ?? <option value={entry.project_id}>{entry.project.name}</option>}
-                  </select>
-                  <p className="-mx-1 flex max-w-full items-center gap-x-1 rounded px-1 py-0.5 text-sm transition-colors peer-hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50">
-                    {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
-                    <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
-                      <RowLabel entry={entry} lead={lead} />
-                    </span>
-                    <ChevronDown className="size-3.5 shrink-0 text-muted-foreground opacity-0 peer-hover:opacity-100 max-sm:hidden" />
-                  </p>
-                </div>
+                <p className="flex min-w-0 max-w-full items-center gap-x-1 py-0.5 text-sm">
+                  {/* One line on a wide screen; on a phone the client drops under the name so neither is cut short. */}
+                  <span className="min-w-0 max-sm:flex max-sm:flex-col sm:truncate">
+                    <RowLabel entry={entry} lead={lead} />
+                  </span>
+                </p>
               )}
               {entry.author_id && (
                 <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
@@ -241,7 +246,7 @@ export function EntryRow({
             aria-label="Edit"
             aria-expanded={editing}
             title={editing ? "Close the edit form" : "Edit"}
-            disabled={isRunning || unconfirmed}
+            disabled={!canEdit}
           >
             <Pencil />
           </Button>
@@ -303,6 +308,7 @@ export function EntryRow({
               id={`${uid}-time`}
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
+              clearable
               onKeyDown={(e) => {
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);

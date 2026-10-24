@@ -66,13 +66,19 @@ jobs:
             secret=$(openssl rand -hex 32)
             printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\nAUTH_GITHUB_ID=e2e\nAUTH_GITHUB_SECRET=e2e\nAUTH_GOOGLE_ID=e2e\nAUTH_GOOGLE_SECRET=e2e\n' "$secret" > .dev.vars
             cp .dev.vars .env.local
-      - run: npm run d1:migrate:local
+      # No separate migration step: the tests' own database folder is migrated by e2e/start-app.mjs while the app builds.
       - run:
           name: Browser tests (this container's share of the spec files)
           command: |
-            FILES=$(circleci tests glob "e2e/*.spec.ts" | grep -v every-control | circleci tests split --split-by=timings --timings-type=classname)
+            # Playwright's JUnit report names each file relative to e2e/ ("first-day.spec.ts"), so the split works on those
+            # names; with the "e2e/" prefix CircleCI found no timings and fell back to splitting by name.
+            FILES=$(cd e2e && circleci tests glob "*.spec.ts" | grep -v every-control | circleci tests split --split-by=timings --timings-type=classname | sed 's#^#e2e/#')
             echo "$FILES"
-            npx playwright test $FILES
+            # The "chip in" spec runs alone before the others (a Playwright project dependency), and a dependency runs even
+            # when its file is not in the list: so only the container that holds it runs it (it used to run in all four).
+            DEPS=""
+            if ! echo "$FILES" | grep -q "support-notice.spec.ts"; then DEPS="--no-deps"; fi
+            npx playwright test $DEPS $FILES
       - store_test_results:
           path: test-results
       - store_artifacts:

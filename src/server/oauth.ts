@@ -28,6 +28,7 @@ const oauthError = (error: string, error_description: string, status = 400): OAu
 
 const REGISTER_PER_IP = { limit: 20, windowSeconds: 60 * 60 };
 const TOKEN_PER_IP = { limit: 60, windowSeconds: 60 };
+const REVOKE_PER_IP = { limit: 60, windowSeconds: 60 };
 const APPROVE_PER_USER = { limit: 20, windowSeconds: 60 * 60 };
 
 // ------------------------------------------------------------------ registration
@@ -109,7 +110,7 @@ export async function checkAuthorizeRequest(
   }
   const fail = (error: string, description: string): AuthorizeCheck => ({
     kind: "redirect",
-    url: withParams(p.redirect_uri as string, { error, error_description: description, state: p.state }),
+    url: withParams(p.redirect_uri as string, { error, error_description: description, state: p.state, iss: appUrl }),
     host: redirectLabel(p.redirect_uri as string),
   });
   if (p.response_type !== "code") return fail("unsupported_response_type", "Only response_type=code is supported.");
@@ -149,6 +150,7 @@ export async function decideAuthorization(
         error: "access_denied",
         error_description: "The user said no.",
         state: check.state,
+        iss: appUrl,
       }),
     };
   }
@@ -174,7 +176,7 @@ export async function decideAuthorization(
       expires_at: nowSeconds + CODE_TTL_SECONDS,
     },
   });
-  return { ok: true, redirectUrl: withParams(check.redirectUri, { code, state: check.state }) };
+  return { ok: true, redirectUrl: withParams(check.redirectUri, { code, state: check.state, iss: appUrl }) };
 }
 
 // ------------------------------------------------------------------ the token endpoint
@@ -287,4 +289,42 @@ export async function exchangeCode(
   });
   await prisma.oauthCode.update({ where: { id: row.id }, data: { token_id: created.id } });
   return { access_token: token, token_type: "Bearer", expires_in: OAUTH_TOKEN_SECONDS, scope: row.access };
+}
+
+// ------------------------------------------------------------------ the revocation endpoint (RFC 7009)
+
+export type RevokeRequest = { token?: string; token_type_hint?: string; client_id?: string };
+
+/**
+ * An app says it no longer needs a token (the person disconnected it there). Only a token this app was given
+ * through OAuth is revoked: a personal token made on the Account page, or another app's token, is left alone.
+ * Like RFC 7009 asks, an unknown, already revoked or someone else's token still gets a plain 200, so the answer
+ * never tells a caller whether a token exists.
+ */
+export async function revokeToken(
+  prisma: PrismaClient,
+  req: RevokeRequest,
+  ip: string | null,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): Promise<{ ok: true } | OAuthError> {
+  if (ip) {
+    const hit = await hitRateLimit(
+      prisma,
+      `oauth-revoke:${ip}`,
+      REVOKE_PER_IP.limit,
+      REVOKE_PER_IP.windowSeconds,
+      nowSeconds,
+    );
+    if (!hit.allowed) return oauthError("temporarily_unavailable", "Too many requests. Slow down.", 429);
+  }
+  if (!req.token || req.token.length > 200) return oauthError("invalid_request", "token is required.");
+  if (!req.client_id || req.client_id.length > 100) {
+    return oauthError("invalid_client", "client_id is required.", 401);
+  }
+  // token_type_hint is only a hint (RFC 7009 2.1): there is one kind of token here, so it is ignored.
+  await prisma.apiToken.updateMany({
+    where: { token_hash: await hashApiToken(req.token), oauth_client_id: req.client_id, revoked_at: null },
+    data: { revoked_at: nowSeconds },
+  });
+  return { ok: true };
 }

@@ -43,7 +43,7 @@ function DayHours({ minutes, dayTotal, gap }: { minutes: number; dayTotal: numbe
 }
 
 /**
- * The week as one slim row of seven day buttons: the day, its date, the hours and a thin bar for how full it was. The
+ * The week as one slim row of seven day buttons: the day, its date and the hours (no bar: a bar against a goal nobody set looked like information, issue 218). The
  * day shown is pressed (an ink ring); today's date is a filled amber circle, as on Month; a past weekday with nothing logged shows
  * as a dashed gap ("No time"). The hours are the stronger figure, the date the quieter one (the same drawing as Month's cells).
  * Tapping a day opens it. Week's own control (Today walks one day at a time with its day stepper).
@@ -54,7 +54,6 @@ export function WeekPills({
   date,
   today,
   onPick,
-  goal = 480,
   nonBillable,
   allEntries,
 }: {
@@ -63,7 +62,6 @@ export function WeekPills({
   date: string;
   today: string | null;
   onPick: (d: string) => void;
-  goal?: number;
   /** Dates marked non-billable: a small mark, and they never count as a gap. */
   nonBillable?: ReadonlySet<string>;
   /** Every entry of the week when `entries` is filtered (by a project): a day is only a gap when it is really empty. */
@@ -110,16 +108,6 @@ export function WeekPills({
               {when.getDate()}
             </span>
             <DayHours minutes={minutes} dayTotal={sumDay(allEntries ?? entries, d)} gap={gap} />
-            {/* How full the day is: inset on a faint track, rounded at both ends (the same drawing as Month's cells). */}
-            <span
-              aria-hidden
-              className="absolute inset-x-2 bottom-1.5 h-1 overflow-hidden rounded-full bg-foreground/10"
-            >
-              <span
-                className="block h-full rounded-full bg-foreground/45 transition-[width] duration-700"
-                style={{ width: `${Math.min(100, (minutes / goal) * 100)}%` }}
-              />
-            </span>
           </button>
         );
       })}

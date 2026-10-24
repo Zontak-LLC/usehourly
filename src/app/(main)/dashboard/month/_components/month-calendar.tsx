@@ -3,19 +3,15 @@
 import { NoDollar } from "@/components/no-dollar-icon";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
-import { PALETTE } from "@/lib/palette";
 import type { SheetRow } from "@/lib/timesheet";
 
 import type { DaySelection } from "./use-day-selection";
 import type { EntryDrag } from "./use-entry-drag";
 
 const weekdayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-/** Project dots shown in a cell before "+N" takes over (a cell is small). */
-const MAX_DOTS = 3;
-
 type DayProject = { projectId: string; project: string; color: string; minutes: number };
 
-/** The projects worked on each day, biggest first: the cell's small dots. */
+/** The projects worked on each day, biggest first: named in the cell's label for a screen reader. */
 function projectsByDay(rows: SheetRow[]): Record<string, DayProject[]> {
   const out: Record<string, DayProject[]> = {};
   for (const r of rows) {
@@ -70,7 +66,6 @@ function cellLabel(d: string, mins: number, s: CellState, nonBillable: boolean, 
 function DayCell({
   d,
   mins,
-  max,
   projects,
   state,
   nonBillable,
@@ -82,7 +77,6 @@ function DayCell({
 }: {
   d: string;
   mins: number;
-  max: number;
   projects: DayProject[];
   state: CellState;
   nonBillable: boolean;
@@ -92,7 +86,6 @@ function DayCell({
   onPointerEnter: () => void;
   onClick: () => void;
 }) {
-  const extra = projects.length - MAX_DOTS;
   return (
     <button
       type="button"
@@ -136,29 +129,6 @@ function DayCell({
           <span className="mt-auto hidden text-right text-muted-foreground text-xs sm:block">No time</span>
         </>
       ) : null}
-
-      {projects.length > 0 && (
-        // Which projects: small dots in the client's colour (never a coloured bar). Hidden on a phone, where the cell is narrow.
-        <span aria-hidden className="hidden items-center justify-end gap-1 sm:flex">
-          {projects.slice(0, MAX_DOTS).map((p) => (
-            <span key={p.projectId} className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
-          ))}
-          {extra > 0 && <span className="text-[10px] text-muted-foreground leading-none">+{extra}</span>}
-        </span>
-      )}
-
-      {/* How full the day is, against the busiest day of the month: a soft grey line on a faint track, inset at the foot of the cell (the same drawing as Week's tiles). */}
-      {mins > 0 && (
-        <span
-          aria-hidden
-          className="absolute inset-x-1.5 bottom-1 h-1 overflow-hidden rounded-full bg-foreground/10 sm:inset-x-2 sm:bottom-1.5"
-        >
-          <span
-            className="block h-full rounded-full"
-            style={{ width: `${Math.max(6, (mins / max) * 100)}%`, backgroundColor: PALETTE.soft }}
-          />
-        </span>
-      )}
     </button>
   );
 }
@@ -201,7 +171,6 @@ export function MonthCalendar({
   onOpenDay: (d: string | null) => void;
 }) {
   const { picked, setPicked, drag: rect, setDrag: setRect, suppressClick } = selection;
-  const max = Math.max(1, ...Object.values(dayTotals));
   const byDay = projectsByDay(rows);
 
   const dropHandlers = (d: string): Partial<React.DOMAttributes<HTMLButtonElement>> => {
@@ -267,7 +236,6 @@ export function MonthCalendar({
                     key={d}
                     d={d}
                     mins={mins}
-                    max={max}
                     projects={here ? (byDay[d] ?? []) : []}
                     state={state}
                     nonBillable={nonBillable.has(d)}

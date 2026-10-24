@@ -8,7 +8,6 @@ import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingShowcase } from "@/components/landing-showcase";
-import { LandingStory } from "@/components/landing-story";
 import { LogoMark } from "@/components/logo";
 import { Reveal } from "@/components/reveal";
 import { Supporters } from "@/components/supporters";
@@ -27,7 +26,7 @@ const JSON_LD = {
   operatingSystem: "Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   featureList: [
-    "Quick daily time entry and a stopwatch that turns into an entry",
+    "Quick daily time entry, with a timer when you want one",
     "Weekly timesheet that shows the gaps, and a month calendar you can drag entries across",
     "Invoices as PDF or as a private link, with paid, waiting and late at a glance",
     "Each client's month in hours and money, and one tap to make the invoice",
@@ -56,9 +55,9 @@ export default function LandingPage() {
           Dark mode is the app's own ink, a shade darker down the page; the amber glow is off there because dimmed amber
           on ink reads brown. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem] overflow-hidden">
-        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#F5A524]/25 blur-3xl motion-safe:animate-[drift_14s_ease-in-out_infinite] dark:hidden" />
-        <div className="absolute -top-24 right-[6%] size-[30rem] rounded-full bg-[#8A6CFF]/25 blur-3xl motion-safe:animate-[drift_18s_ease-in-out_infinite_reverse]" />
-        <div className="absolute top-40 left-[42%] size-[24rem] rounded-full bg-[#3DDC97]/15 blur-3xl motion-safe:animate-[drift_22s_ease-in-out_infinite]" />
+        <div className="absolute -top-40 left-[8%] size-[34rem] rounded-full bg-[#6AA9D8]/25 blur-3xl dark:hidden" />
+        <div className="absolute -top-24 right-[6%] size-[30rem] rounded-full bg-[#8A6CFF]/20 blur-3xl" />
+        <div className="absolute top-40 left-[42%] size-[24rem] rounded-full bg-[#B38AE2]/15 blur-3xl" />
       </div>
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
@@ -110,7 +109,7 @@ export default function LandingPage() {
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/auth/v2/register"
-                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-b from-[#F5A524] to-[#e8820b] px-6 font-semibold text-[#12151b] text-base shadow-[0_10px_30px_-10px_#F5A524] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_#F5A524]"
+                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-amber-fill px-6 font-semibold text-white text-base shadow-[0_10px_30px_-14px_var(--amber)] transition-all hover:-translate-y-0.5 hover:brightness-110 dark:text-[var(--background)]"
                 >
                   Create a free account
                 </Link>
@@ -168,19 +167,6 @@ export default function LandingPage() {
                   Connect yours in a minute: the steps for each assistant
                 </Link>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t bg-gradient-to-b from-[#8A6CFF]/10 via-transparent to-[#3DDC97]/10 dark:border-white/5 dark:bg-none">
-          <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-            <Reveal>
-              <h2 className="max-w-2xl font-extrabold text-3xl tracking-tight md:text-5xl">
-                From hours to paid, without the busywork.
-              </h2>
-            </Reveal>
-            <div className="mt-10">
-              <LandingStory />
             </div>
           </div>
         </section>
