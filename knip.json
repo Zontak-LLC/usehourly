@@ -14,7 +14,9 @@
     "bridge/index.mjs",
     "open-next.config.ts",
     "custom-worker.ts",
-    "public/sw.js"
+    "public/sw.js",
+    "packages/quality-gates/bin/*.mjs",
+    "quality-gates.config.mjs"
   ],
   "ignore": ["src/components/ui/**"],
   "ignoreDependencies": ["postcss-load-config", "jscpd"]

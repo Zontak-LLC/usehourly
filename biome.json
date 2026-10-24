@@ -1,10 +1,6 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
+  "extends": ["./packages/quality-gates/biome.preset.json"],
   "assist": {
     "enabled": true,
     "actions": {
@@ -44,30 +40,8 @@
       "!worker-configuration.d.ts"
     ]
   },
-  "formatter": {
-    "enabled": true,
-    "formatWithErrors": false,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineEnding": "lf",
-    "lineWidth": 120,
-    "attributePosition": "auto",
-    "bracketSameLine": false,
-    "bracketSpacing": true,
-    "expand": "auto",
-    "useEditorconfig": true
-  },
   "linter": {
-    "enabled": true,
     "rules": {
-      "preset": "recommended",
-      "correctness": {
-        "noUndeclaredVariables": "error",
-        "noUnusedVariables": "error",
-        "noUnusedImports": "error",
-        "noUnusedFunctionParameters": "error",
-        "useExhaustiveDependencies": "error"
-      },
       "nursery": {
         "useSortedClasses": "on"
       },
@@ -75,41 +49,14 @@
         "noImgElement": "warn"
       },
       "style": {
-        "noCommonJs": "error",
-        "noHeadElement": "warn",
-        "noNamespace": "error",
-        "useAsConstAssertion": "error",
-        "useSelfClosingElements": "error",
-        "noParameterAssign": "error",
-        "noInferrableTypes": "error",
-        "noUselessElse": "error",
-        "noNonNullAssertion": "error",
-        "useConst": "error",
-        "useImportType": "error"
+        "noHeadElement": "warn"
       },
       "suspicious": {
         "noArrayIndexKey": "warn",
-        "noConstantBinaryExpressions": "error",
-        "noEmptyBlockStatements": "error",
-        "noUnknownAtRules": "off",
-        "noExplicitAny": "error",
-        "noConsole": {
-          "level": "error",
-          "options": {
-            "allow": ["error"]
-          }
-        },
-        "noTsIgnore": "error",
-        "noDebugger": "error"
+        "noUnknownAtRules": "off"
       },
       "complexity": {
-        "noImportantStyles": "off",
-        "noExcessiveCognitiveComplexity": {
-          "level": "error",
-          "options": {
-            "maxAllowedComplexity": 30
-          }
-        }
+        "noImportantStyles": "off"
       }
     },
     "domains": {
@@ -120,19 +67,6 @@
   "css": {
     "parser": {
       "tailwindDirectives": true
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "jsxQuoteStyle": "double",
-      "quoteProperties": "asNeeded",
-      "trailingCommas": "all",
-      "semicolons": "always",
-      "arrowParentheses": "always",
-      "bracketSameLine": false,
-      "quoteStyle": "double",
-      "attributePosition": "auto",
-      "bracketSpacing": true
     }
   },
   "html": {

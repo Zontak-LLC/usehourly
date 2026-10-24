@@ -28,7 +28,7 @@ describe("colour legend", () => {
   it("the guard's baseline names only files that still exist, and only counts that are positive", () => {
     const baseline = JSON.parse(readFileSync("scripts/colour-baseline.json", "utf8")) as Record<string, number>;
     for (const [file, n] of Object.entries(baseline)) {
-      expect(existsSync(file), `${file} was deleted: run node scripts/check-colours.mjs --write`).toBe(true);
+      expect(existsSync(file), `${file} was deleted: run npm run check:colours -- --write`).toBe(true);
       expect(n).toBeGreaterThan(0);
     }
   });
