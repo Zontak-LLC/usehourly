@@ -47,7 +47,7 @@ export function AccountSectionList({
       view={open ? "detail" : "list"}
       headerless="the split view: the Account sections and the chosen one, which has its own heading"
       back={{ href: "/dashboard/account", label: "Account", onBack: () => pushLocationHash(null) }}
-      detailClassName="p-3 sm:p-5"
+      detailClassName="px-1 py-3 sm:p-5"
       list={
         <nav aria-label="Account sections" className="flex flex-col gap-0.5 p-2">
           {ACCOUNT_SECTIONS.map((s) => (
