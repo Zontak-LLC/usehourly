@@ -15,25 +15,21 @@ import {
   loadCalendar,
   loadGoogle,
   loadLink,
+  loadRules,
   loadSkipped,
   type SavedCalendar,
   saveCalendar,
   saveGoogle,
   saveLink,
+  saveRules,
 } from "@/lib/calendar-store";
+import { addRule, type CalendarRule } from "@/lib/calendar-suggest";
 import { fetchGoogleEvents, GoogleCalendarError } from "@/lib/google-calendar";
 import { requestGoogleToken, revokeGoogleToken } from "@/lib/google-identity";
+import { safeStorage } from "@/lib/offline-cache";
 
 /** Files over this are refused before reading (a calendar of many years is a few MB). */
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
-
-const storage = () => {
-  try {
-    return typeof localStorage === "undefined" ? null : localStorage;
-  } catch {
-    return null;
-  }
-};
 
 /** The calendar this account imported (this browser only), the meetings skipped, and how to import, skip and remove. */
 export function useSavedCalendar() {
@@ -42,13 +38,15 @@ export function useSavedCalendar() {
   const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
   const [link, setLink] = useState<string | null>(null);
   const [google, setGoogle] = useState(false);
+  const [rules, setRules] = useState<readonly CalendarRule[]>([]);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
-    setCalendar(loadCalendar(storage(), userId));
-    setSkipped(loadSkipped(storage(), userId));
-    setLink(loadLink(storage(), userId));
-    setGoogle(loadGoogle(storage(), userId));
+    setCalendar(loadCalendar(safeStorage(), userId));
+    setSkipped(loadSkipped(safeStorage(), userId));
+    setLink(loadLink(safeStorage(), userId));
+    setGoogle(loadGoogle(safeStorage(), userId));
+    setRules(loadRules(safeStorage(), userId));
   }, [userId]);
   useEffect(() => {
     refresh();
@@ -70,10 +68,10 @@ export function useSavedCalendar() {
         selfEmails: selfEmail ? [selfEmail] : [],
       });
       cancelCalendarReads(); // a connected address still being read must not overwrite this file
-      const ok = saveCalendar(storage(), userId, { name: file.name, events, importedAt: Date.now() });
+      const ok = saveCalendar(safeStorage(), userId, { name: file.name, events, importedAt: Date.now() });
       if (!ok) throw new Error("Couldn't keep that calendar on this device. Try a shorter range.");
-      saveLink(storage(), userId, null); // a file replaces a connected address
-      saveGoogle(storage(), userId, false);
+      saveLink(safeStorage(), userId, null); // a file replaces a connected address
+      saveGoogle(safeStorage(), userId, false);
       window.dispatchEvent(new Event(CALENDAR_EVENT));
       return { count: events.length, truncated };
     } catch (err) {
@@ -112,11 +110,11 @@ export function useSavedCalendar() {
       });
       if (started !== calendarGeneration()) return null;
       const name = describeCalendarLink(checked.url);
-      if (!saveCalendar(storage(), userId, { name, events, importedAt: Date.now() })) {
+      if (!saveCalendar(safeStorage(), userId, { name, events, importedAt: Date.now() })) {
         throw new Error("Couldn't keep that calendar on this device.");
       }
-      saveLink(storage(), userId, checked.url);
-      saveGoogle(storage(), userId, false);
+      saveLink(safeStorage(), userId, checked.url);
+      saveGoogle(safeStorage(), userId, false);
       window.dispatchEvent(new Event(CALENDAR_EVENT));
       return { count: events.length, truncated };
     } finally {
@@ -142,11 +140,11 @@ export function useSavedCalendar() {
       }
       const { events, truncated } = await fetchGoogleEvents(token, keepWindow(new Date()));
       if (started !== calendarGeneration()) return null;
-      if (!saveCalendar(storage(), userId, { name: "Google Calendar", events, importedAt: Date.now() })) {
+      if (!saveCalendar(safeStorage(), userId, { name: "Google Calendar", events, importedAt: Date.now() })) {
         throw new Error("Couldn't keep that calendar on this device.");
       }
-      saveLink(storage(), userId, null); // Google replaces a connected address
-      saveGoogle(storage(), userId, true);
+      saveLink(safeStorage(), userId, null); // Google replaces a connected address
+      saveGoogle(safeStorage(), userId, true);
       window.dispatchEvent(new Event(CALENDAR_EVENT));
       return { count: events.length, truncated };
     } catch (err) {
@@ -162,17 +160,29 @@ export function useSavedCalendar() {
     google,
     connectGoogle,
     skipped,
+    rules,
+    /** "Always put '<word>' meetings on <project>" (issue 99). False when this browser would not keep it. */
+    addRule: (rule: CalendarRule) => {
+      if (!userId) return false;
+      const ok = saveRules(safeStorage(), userId, addRule(loadRules(safeStorage(), userId), rule));
+      window.dispatchEvent(new Event(CALENDAR_EVENT));
+      return ok;
+    },
+    forgetRules: () => {
+      if (userId) saveRules(safeStorage(), userId, []);
+      window.dispatchEvent(new Event(CALENDAR_EVENT));
+    },
     link,
     busy,
     importFile,
     readLink,
     skip: (id: string) => {
-      if (userId) addSkipped(storage(), userId, id);
+      if (userId) addSkipped(safeStorage(), userId, id);
       window.dispatchEvent(new Event(CALENDAR_EVENT));
     },
     remove: () => {
       revokeGoogleToken();
-      forgetCalendar(storage());
+      forgetCalendar(safeStorage());
       window.dispatchEvent(new Event(CALENDAR_EVENT));
     },
   };

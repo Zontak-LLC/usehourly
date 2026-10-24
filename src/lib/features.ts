@@ -9,7 +9,7 @@
  */
 export const FEATURES = {
   /** Calendar import on Today (file, private address, Google). */
-  calendar: false,
+  calendar: true,
   /** Inviting people to log time for you (/dashboard/team). */
   team: false,
   /** "Polish" descriptions with your own AI key. */

@@ -121,8 +121,10 @@ export function TodayView() {
               weekTotal={weekTotal}
               onPick={go}
               footer={
-                // The days with no time (the timer lives in the Log time card since issue 218).
-                missed.some((d) => d !== date) ? <MissedDays days={missed} date={date} onPick={go} /> : null
+                // The days with no time, the one place that tells about them (issue 99 nudge; the timer is in the Log time card).
+                today && missed.some((d) => d !== date) ? (
+                  <MissedDays days={missed} date={date} today={today} onPick={go} />
+                ) : null
               }
             />
           }

@@ -74,7 +74,8 @@ export default function PrivacyPage() {
           events straight from Google; the access Google gives lasts about an hour, is kept only in your browser's
           memory, and never reaches our servers. Only the title, start and end of recent meetings are kept, in your
           browser, until you log out or press Disconnect. You can also remove UseHourly's access any time at
-          myaccount.google.com/permissions.
+          myaccount.google.com/permissions. Meeting rules you make ("always put these meetings on this project") are
+          kept in your browser only, with the calendar, and removed the same way.
         </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>

@@ -3,7 +3,14 @@
 import { signOut } from "next-auth/react";
 
 import { AI_KEY_STORAGE } from "@/lib/ai-key";
-import { CALENDAR_KEY, CALENDAR_LINK_KEY, CALENDAR_SKIPPED_KEY, cancelCalendarReads } from "@/lib/calendar-store";
+import {
+  CALENDAR_GOOGLE_KEY,
+  CALENDAR_KEY,
+  CALENDAR_LINK_KEY,
+  CALENDAR_RULES_KEY,
+  CALENDAR_SKIPPED_KEY,
+  cancelCalendarReads,
+} from "@/lib/calendar-store";
 import { clearLocalCopy } from "@/lib/local-sync/active";
 import { clearOfflineData, stopSaving } from "@/lib/offline-cache";
 import { PENDING_KEY } from "@/lib/offline-queue";
@@ -28,6 +35,8 @@ export async function signOutOfDevice(options?: SignOutOptions, forgetEverything
     cancelCalendarReads(); // a read still in flight must not write the address back
     localStorage.removeItem(CALENDAR_SKIPPED_KEY);
     localStorage.removeItem(CALENDAR_LINK_KEY); // the private address is a secret
+    localStorage.removeItem(CALENDAR_GOOGLE_KEY);
+    localStorage.removeItem(CALENDAR_RULES_KEY); // the meeting rules name the person's clients
   } catch {
     // storage blocked
   }
