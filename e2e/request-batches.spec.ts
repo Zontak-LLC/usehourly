@@ -12,6 +12,7 @@ const PAGES: [label: string, heading: RegExp, url: string][] = [
   ["Clients", /^Clients$/, "/dashboard/clients"],
   ["Invoices", /^Invoices$/, "/dashboard/invoices"],
   ["Account", /^Account$/, "/dashboard/account"],
+  ["Year summary", /^Year summary · \d{4}$/, "/dashboard/report"],
 ];
 
 test("each busy page loads all its data in a single request", async ({ page }) => {

@@ -1,6 +1,7 @@
 import type { inferRouterOutputs } from "@trpc/server";
 
 import { SectionGroupProvider } from "@/components/section-card";
+import { SplitPane } from "@/components/split-view";
 import type { AccountSectionId } from "@/lib/account-sections";
 import type { AppRouter } from "@/server/routers/_app";
 
@@ -25,19 +26,13 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={`${id}-heading`}>
-      <div className="px-1 pb-4">
-        <h2 id={`${id}-heading`} className="font-bold text-xl leading-tight sm:text-2xl">
-          {title}
-        </h2>
-        <p className="mt-2 text-foreground/75">{description}</p>
-      </div>
+    <SplitPane id={id} title={title} description={description}>
       <SectionGroupProvider value>
         {/* The page is as wide as the others, but a text box stays a comfortable length: fields stop at 28rem. */}
         <div className="flex flex-col gap-4 [&_input:not([type=checkbox]):not([type=radio]):not([type=file])]:max-w-md [&_select]:max-w-md [&_textarea]:max-w-md">
           {children}
         </div>
       </SectionGroupProvider>
-    </section>
+    </SplitPane>
   );
 }
