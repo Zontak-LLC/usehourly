@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PREFERENCE_DEFAULTS, PREFERENCE_REGISTRY, parsePreference } from "@/lib/preferences/preferences-config";
 
 // The font list pulls in next/font, which only loads inside Next: the navigation settings do not depend on it.
-vi.mock("@/lib/fonts/registry", () => ({ fontKeys: ["geist"], fontOptions: [] }));
+vi.mock("@/lib/fonts/registry", () => ({ fontKeys: ["system"], fontOptions: [] }));
 
 describe("where the main navigation sits on a wide screen", () => {
   it("starts as a pill of tabs in the top bar (the 2026-10-22 look) until someone chooses the left menu", () => {
