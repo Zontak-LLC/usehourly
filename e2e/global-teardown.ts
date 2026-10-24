@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { runSql } from "./local-db";
 
 /**
  * Deletes every account the browser tests made (addresses starting "e2e-") and everything that hangs off them, so the
@@ -30,10 +30,7 @@ export default function globalTeardown() {
     "DELETE FROM auth_users WHERE email LIKE 'e2e-%@example.test';",
   ].join(" ");
   try {
-    const persist = process.env.E2E_PERSIST ? ["--persist-to", process.env.E2E_PERSIST] : [];
-    execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", ...persist, "--command", statements], {
-      stdio: "pipe",
-    });
+    runSql(statements);
   } catch (err) {
     console.error(
       "e2e cleanup failed (delete users with e-mail 'e2e-%@example.test' by hand):",

@@ -38,10 +38,11 @@ jobs:
           # loaded, and that button only renders when a provider is configured. Nothing here ever calls Google or GitHub.
           printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\nAUTH_GITHUB_ID=e2e\nAUTH_GITHUB_SECRET=e2e\nAUTH_GOOGLE_ID=e2e\nAUTH_GOOGLE_SECRET=e2e\n' "$secret" > .dev.vars
           cp .dev.vars .env.local
-      - run: npm run d1:migrate:local
+      # The tests' own database folder is migrated by e2e/start-app.mjs while the app builds (issue 197).
       - run: npm run e2e
         env:
           E2E_FULL_PHONE: "1"
+      # Reuses the build from the step above (nothing changed), so only the sweep itself takes time.
       - name: Click every control (nightly and on demand)
         if: github.event_name != 'pull_request'
         run: npm run e2e:sweep
