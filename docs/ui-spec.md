@@ -200,3 +200,7 @@ Plain, short, no jargon, no blame. Name things the way the menu does ("Clients",
 - `npm run ci` (includes `scripts/check-rules.mjs` for the code-level rules above) and `npm run e2e` (every page gets `auditPage`: labels, form method, no sideways scroll, one heading, accessibility, card nesting, one solid button) must pass.
 - After touching a colour or a shared component: run the contrast audit (both layouts).
 - A new page or component starts by copying the nearest existing one, and adds itself to this file if it is a new pattern.
+
+## Logo
+- **Current (2026-10-24, "Ten past ten"):** a thin clock (ring, hour and minute hand at ten past ten, centre dot) on a solid rounded tile in the accent: light `#2563c9` tile with white ink, dark `#6ea8ff` tile with `#0b1220` ink. `components/logo.tsx` uses the theme accent (`--amber`); static files (`icon.svg`, social pictures, `scripts/logo/render-icons.mjs`) carry the hex.
+- **Previous:** the same clock with no tile, drawn in the text colour (`currentColor`; white in dark mode); rasters were ink on a white tile. Rollback = revert the "logo-blue-tile" PR.

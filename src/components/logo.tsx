@@ -1,24 +1,20 @@
 import type { SVGProps } from "react";
 
 /**
- * The UseHourly mark: a thin clock face with an hour hand and a minute hand at ten past ten, drawn in the text colour
- * (no tile, so it stays in the background and follows light and dark mode). Keep the geometry in step with
- * src/app/icon.svg (scripts/logo/render-icons.mjs draws every raster icon from it).
+ * The UseHourly mark ("ten past ten", chosen 2026-10-24): a thin clock face on a solid rounded tile in the accent
+ * (ocean blue), white ink in light mode and dark ink in dark mode. The previous mark was the same clock with no tile,
+ * drawn in the text colour (see "Logo" in docs/ui-spec.md). Keep the geometry in step with src/app/icon.svg
+ * (scripts/logo/render-icons.mjs draws every raster icon from it).
  */
 export function LogoMark(props: SVGProps<SVGSVGElement>) {
+  const ink = "stroke-white dark:stroke-primary-foreground";
   return (
-    <svg
-      viewBox="0 0 64 64"
-      role="img"
-      aria-label="UseHourly"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      {...props}
-    >
-      <circle cx="32" cy="32" r="24" strokeWidth="5" />
-      <path d="M32 32L23 27M32 32L43 25" strokeWidth="6" />
-      <circle cx="32" cy="32" r="3" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 64 64" role="img" aria-label="UseHourly" fill="none" strokeLinecap="round" {...props}>
+      <rect width="64" height="64" rx="14" className="fill-[var(--amber)]" />
+      <circle cx="32" cy="32" r="19" strokeWidth="3.5" className={ink} />
+      <line x1="32" y1="32" x2="24.2" y2="27.5" strokeWidth="4" className={ink} />
+      <line x1="32" y1="32" x2="43.3" y2="25.5" strokeWidth="3" className={ink} />
+      <circle cx="32" cy="32" r="2.6" className="fill-white stroke-none dark:fill-primary-foreground" />
     </svg>
   );
 }
