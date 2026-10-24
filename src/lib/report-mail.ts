@@ -1,8 +1,24 @@
 import type { AnnualReport } from "./annual-report";
-import { formatDecimalHours } from "./duration";
-import { renderEmail } from "./email-template";
+import { type EmailBlock, type EmailTable, type EmailTableRow, renderEmail } from "./email-template";
 import type { MailMessage } from "./mailer";
 import { formatMoney } from "./money";
+import {
+  activeMonths,
+  EARNED_NOTE,
+  h,
+  INVOICE_HEAD,
+  invoiceRows,
+  monthRows,
+  PAYMENT_HEAD,
+  PAYMENT_NOTE,
+  PERIOD_HEAD,
+  paymentRows,
+  periodTotal,
+  projectTag,
+  QUARTER_NOTE,
+  quarterRows,
+  yearFigures,
+} from "./year-summary-rows";
 
 /**
  * Emailing the year summary (the Year summary page's "Email me this"). It only ever goes to the account's own confirmed
@@ -24,58 +40,109 @@ export function reportMailBlocker(owner: {
   return null;
 }
 
-const hours = (minutes: number) => `${formatDecimalHours(minutes)} h`;
-const MAX_CLIENTS = 15;
+/** Long lists show their first rows; the rest are on the page ("N more on the site"). */
+export const MAX_LIST_ROWS = 25;
 
-/** The summary as an email: the figures of the page for one year and one currency, in words and numbers only. */
+/** The page's link for that year, so "Open the Year summary" lands on the same year. */
+export const reportLink = (base: string, year: number) => `${base}/dashboard/report?year=${year}`;
+
+function clientRows(r: AnnualReport, money: (cents: number) => string): EmailTableRow[] {
+  return r.clients.flatMap((c): EmailTableRow[] => [
+    [c.client, "", h(c.minutes), c.earnedCents ? money(c.earnedCents) : "–"],
+    ...r.projects
+      .filter((p) => p.clientId === c.clientId)
+      .map(
+        (p): EmailTableRow => ({
+          cells: [
+            p.project,
+            projectTag(p, money),
+            h(p.minutes),
+            p.billable && p.earnedCents ? money(p.earnedCents) : "–",
+          ],
+          sub: true,
+        }),
+      ),
+  ]);
+}
+
+/** A list section: its table cut at MAX_LIST_ROWS, with how many more there are and where to see them. */
+function listBlocks(table: EmailTable, link: string): EmailBlock[] {
+  const more = table.rows.length - MAX_LIST_ROWS;
+  if (more <= 0) return [{ table }];
+  return [
+    { table: { ...table, rows: table.rows.slice(0, MAX_LIST_ROWS) } },
+    { small: `${more} more on the site.` },
+    { button: { label: "See them all on the Year summary", url: link } },
+  ];
+}
+
+/**
+ * The summary as an email that looks like the Year summary page (issue 174): the same figures at the top, then By
+ * quarter, By month (months with activity only), By client and project, and the invoices and payments, with the page's
+ * own words (`lib/year-summary-rows.ts`), for one year and one currency.
+ */
 export function annualReportMessage(
   to: string,
   d: { year: number; currency: string; report: AnnualReport; link: string },
 ): MailMessage {
   const r = d.report;
   const money = (cents: number) => formatMoney(cents, d.currency);
-  const clients = r.clients.slice(0, MAX_CLIENTS);
+  const months = activeMonths(r);
+  const blocks: EmailBlock[] = [
+    `Here is your UseHourly year summary for ${d.year}, in ${d.currency}. It is what the Year summary page showed when you sent it.`,
+    { figures: yearFigures(r, money) },
+    { heading: "By quarter" },
+    { small: QUARTER_NOTE },
+    { table: { head: ["Quarter", ...PERIOD_HEAD], rows: quarterRows(r, money), total: periodTotal(r, money) } },
+  ];
+  if (months.length > 0) {
+    blocks.push(
+      { heading: "By month" },
+      { small: "Only months with activity are shown." },
+      { table: { head: ["Month", ...PERIOD_HEAD], rows: monthRows(months, money), total: periodTotal(r, money) } },
+    );
+  }
+  if (r.clients.length > 0) {
+    blocks.push(
+      { heading: "By client and project" },
+      ...listBlocks({ head: ["Client", "Rate", "Hours", "Earned"], rows: clientRows(r, money), textCols: 2 }, d.link),
+    );
+  }
+  if (r.invoices.count > 0) {
+    blocks.push(
+      { heading: `Invoices issued in ${d.year}` },
+      ...listBlocks(
+        {
+          head: INVOICE_HEAD,
+          rows: invoiceRows(r, money),
+          total: ["Total", "", "", money(r.invoices.totalCents), ""],
+          textCols: 3,
+        },
+        d.link,
+      ),
+    );
+  }
+  if (r.received.count > 0) {
+    blocks.push(
+      { heading: `Payments received in ${d.year}` },
+      { small: PAYMENT_NOTE },
+      ...listBlocks(
+        {
+          head: PAYMENT_HEAD,
+          rows: paymentRows(r, money),
+          total: ["Total", "", "", money(r.received.totalCents)],
+          textCols: 3,
+        },
+        d.link,
+      ),
+    );
+  }
+  blocks.push({ small: EARNED_NOTE }, { button: { label: "Open the Year summary", url: d.link } });
+
   const mail = renderEmail({
     title: `Your ${d.year} year summary`,
     greeting: "Hi,",
-    blocks: [
-      `Here is your UseHourly year summary for ${d.year}, in ${d.currency}. It is what the Year summary page showed when you sent it.`,
-      { heading: "Hours" },
-      {
-        rows: [
-          ["Logged", hours(r.totals.minutes)],
-          ["Billable", hours(r.totals.billableMinutes)],
-          ["Not billable", hours(r.totals.nonBillableMinutes)],
-          ["Days worked", String(r.totals.workedDays)],
-        ],
-      },
-      { heading: "Money" },
-      {
-        rows: [
-          ["Earned (billable time at your rates)", money(r.totals.earnedCents)],
-          [`Invoiced (${r.invoices.count})`, money(r.invoices.totalCents)],
-          [`Received in ${d.year} (${r.received.count})`, money(r.received.totalCents)],
-          [`Outstanding at year end (${r.outstanding.count})`, money(r.outstanding.totalCents)],
-        ],
-      },
-      { heading: "By quarter" },
-      {
-        rows: r.quarters.map((q): [string, string] => [
-          `Q${q.quarter}`,
-          `${hours(q.minutes)} · ${money(q.earnedCents)} earned · ${money(q.receivedCents)} received`,
-        ]),
-      },
-      ...(clients.length > 0
-        ? [
-            { heading: "By client" },
-            {
-              rows: clients.map((c): [string, string] => [c.client, `${hours(c.minutes)} · ${money(c.earnedCents)}`]),
-            },
-          ]
-        : []),
-      "For the month by month detail and an Excel file, open the Year summary page and choose Export Excel.",
-      { button: { label: "Open the Year summary", url: d.link } },
-    ],
+    blocks,
     footnote: { text: "You are getting this because you chose “Email me this” on your UseHourly Year summary." },
   });
   return { to, subject: `Your ${d.year} year summary (${d.currency})`, ...mail };

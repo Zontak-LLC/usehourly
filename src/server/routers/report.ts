@@ -5,7 +5,7 @@ import { logError } from "@/lib/log";
 import { appUrl } from "@/lib/mailer";
 import { CURRENCY_CODES } from "@/lib/money";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
-import { annualReportMessage, REPORT_EMAILS_PER_DAY, reportMailBlocker } from "@/lib/report-mail";
+import { annualReportMessage, REPORT_EMAILS_PER_DAY, reportLink, reportMailBlocker } from "@/lib/report-mail";
 
 import { yearReport } from "../annual-report";
 import { protectedProcedure, router } from "../trpc";
@@ -53,7 +53,7 @@ export const reportRouter = router({
           year: input.year,
           currency: report.currency,
           report,
-          link: `${ctx.baseUrl ?? appUrl()}/dashboard/report`,
+          link: reportLink(ctx.baseUrl ?? appUrl(), input.year),
         }),
       );
     } catch (err) {

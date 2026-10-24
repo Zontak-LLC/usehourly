@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { buildAnnualReport } from "@/lib/annual-report";
 import type { MailMessage } from "@/lib/mailer";
-import { REPORT_EMAILS_PER_DAY } from "@/lib/report-mail";
+import { annualReportMessage, MAX_LIST_ROWS, REPORT_EMAILS_PER_DAY } from "@/lib/report-mail";
+import { yearFigures } from "@/lib/year-summary-rows";
+import { yearReport } from "@/server/annual-report";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -107,9 +110,9 @@ describe("emailing the year summary to yourself", () => {
     expect(m.subject).toBe("Your 2026 year summary (USD)");
     expect(m.text).toContain("$100.00"); // Acme's one hour at $100: never mixed with the euro client
     expect(m.text).not.toContain("€");
-    expect(m.text).toContain("Hours");
+    expect(m.text).toContain("Hours worked");
     expect(m.text).toContain("Q1");
-    expect(m.text).toContain("https://app.test/dashboard/report");
+    expect(m.text).toContain("https://app.test/dashboard/report?year=2026"); // the button opens the same year
     expect(m.html).toBeTruthy();
   });
 
@@ -170,5 +173,60 @@ describe("emailing the year summary to yourself", () => {
     await expect(w.caller.report.email({ year: 2026, currency: "XYZ" as never })).rejects.toThrow();
     expect(w.mailer?.send).not.toHaveBeenCalled();
     expect(w.prisma.timeEntry.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("the email looks like the Year summary page (issue 174)", () => {
+  it("carries the page's own figures, in both parts, computed by the same yearReport", async () => {
+    const w = world();
+    await w.caller.report.email({ year: 2026 });
+    const m = w.sent[0];
+    const page = await yearReport(w.prisma as never, "u1", { year: 2026 });
+    const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+    for (const f of yearFigures(page, money)) {
+      expect(m.text).toContain(`  ${f.label.padEnd(15)} ${f.value}  (${f.hint})`);
+      expect(m.html).toContain(f.value);
+    }
+    expect(m.text).toMatch(/Hours worked\s+1:00\s+\(1 day\)/); // h:mm, as on the page
+    expect(m.text).toMatch(/Unpaid\s+\$100\.00\s+\(1 invoice not paid at year end\)/);
+    // By quarter as a table with the page's dash for empty figures and the total row
+    expect(m.text).toMatch(/Q1 · Jan–Mar\s+1:00\s+1:00\s+\$100\.00\s+–/);
+    expect(m.text).toMatch(/Q2 · Apr–Jun\s+–\s+–\s+–\s+–/);
+    expect(m.text).toMatch(/Total\s+1:00\s+1:00\s+\$100\.00\s+\$0\.00/);
+    // By month: only months with activity
+    expect(m.text).toContain("Only months with activity are shown.");
+    expect(m.text).toMatch(/March\s+1:00/);
+    expect(m.text).not.toMatch(/January|February|December/);
+    // client then its project with the rate; then the invoices
+    expect(m.text).toMatch(/Acme\s+1:00\s+\$100\.00\n {4}Site\s+\$100\.00\/h\s+1:00\s+\$100\.00/);
+    expect(m.text).toMatch(/I-1\s+Acme\s+Mar 31, 2026\s+\$100\.00\s+Unpaid/);
+    expect(m.html).toContain("Open the Year summary");
+    expect(m.html).toContain('href="https://app.test/dashboard/report?year=2026"');
+  });
+
+  it("cuts a long list at the first rows and says how many more are on the site", () => {
+    const invoices = Array.from({ length: MAX_LIST_ROWS + 7 }, (_, i) => ({
+      number: `INV-2026-${String(i + 1).padStart(3, "0")}`,
+      client_name: "Acme",
+      issue_date: "2026-05-01",
+      paid_date: null,
+      total_cents: 1000,
+      total_minutes: 60,
+    }));
+    const report = buildAnnualReport({ year: 2026, entries: [], projects: [], invoices });
+    const m = annualReportMessage("jo@example.com", {
+      year: 2026,
+      currency: "USD",
+      report,
+      link: "https://app.test/dashboard/report?year=2026",
+    });
+    expect(m.text).toContain(`INV-2026-${String(MAX_LIST_ROWS).padStart(3, "0")}`);
+    expect(m.text).not.toContain(`INV-2026-${String(MAX_LIST_ROWS + 1).padStart(3, "0")}`);
+    expect(m.text).toContain("7 more on the site.");
+    expect(m.html).toContain("See them all on the Year summary");
+    // the total still counts every invoice, as the page does
+    expect(m.text).toMatch(/Total\s+\$320\.00/);
+    // nothing happened in any month, so the month table is left out
+    expect(m.text).not.toContain("By month");
   });
 });

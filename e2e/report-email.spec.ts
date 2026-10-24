@@ -27,8 +27,8 @@ test("Email me this sends the year summary to your own confirmed address", async
     await expect(page.getByText(`Sent to ${user.email}.`)).toBeVisible();
     const mail = await mailTo(user.email, /year summary/);
     expect(mail.subject).toMatch(/^Your \d{4} year summary \(USD\)$/);
-    expect(mail.text).toContain("Logged");
-    expect(mail.text).toMatch(/Logged\s+2\.00 h/);
-    expect(mail.text).toContain("/dashboard/report");
+    expect(mail.text).toMatch(/Hours worked\s+2:00/);
+    expect(mail.text).toContain("By quarter");
+    expect(mail.text).toMatch(/\/dashboard\/report\?year=\d{4}/);
   });
 });
