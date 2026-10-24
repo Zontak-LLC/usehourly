@@ -5,6 +5,7 @@ import { DATE_RE } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { IMPORT_CHUNK } from "@/lib/import-csv";
 import { NOTE_MAX } from "@/lib/notes";
+import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
 import { assertWithinQuota } from "@/lib/quotas";
 
 import { protectedProcedure, router } from "../trpc";
@@ -131,7 +132,7 @@ export const timeImportRouter = router({
         const name = wantedClients.get(key) as string;
         try {
           const made = await prisma.client.create({
-            data: { user_id: userId, name },
+            data: { user_id: userId, name, color: DEFAULT_CLIENT_COLOR },
             select: { id: true, name: true },
           });
           clientsCreated++;

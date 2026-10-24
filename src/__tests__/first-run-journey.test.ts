@@ -53,7 +53,8 @@ describe("brand-new user: one question, then one tap logs time", () => {
     if (!names) throw new Error("expected names");
 
     const client = await c.clients.create({ name: names.client });
-    expect(prisma.client.create).toHaveBeenCalledWith({ data: { user_id: "u1", name: "Acme" } });
+    // No colour picked: the first client is ocean blue, never the old indigo (2026-10-24, no purple anywhere).
+    expect(prisma.client.create).toHaveBeenCalledWith({ data: { user_id: "u1", name: "Acme", color: "#2563c9" } });
 
     prisma.client.findFirst.mockResolvedValueOnce({ id: client.id, name: "Acme" } as never);
     prisma.project.findFirst.mockResolvedValueOnce(null as never);

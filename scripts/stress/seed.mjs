@@ -77,7 +77,7 @@ export function accountRows(n, { entries, today, passwordHash }) {
   const stamp = `${today} 09:00:00`;
   const users = [`(${q(id)},${q(`stress-${pad(n, 5)}`)},${q(emailFor(n))},${q(passwordHash)},${q(stamp)},${q(stamp)})`];
   const clients = CLIENTS.map(
-    (name, k) => `(${q(`stress-c-${pad(n, 5)}-${k}`)},${q(id)},${q(name)},${q("#6366f1")},${q(stamp)})`,
+    (name, k) => `(${q(`stress-c-${pad(n, 5)}-${k}`)},${q(id)},${q(name)},${q("#2563c9")},${q(stamp)})`,
   );
   const projectIds = PROJECTS.map((_, k) => `stress-p-${pad(n, 5)}-${k}`);
   const projects = PROJECTS.map(
