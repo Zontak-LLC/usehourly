@@ -92,7 +92,6 @@ export function WorkItems({
             }}
             placeholder="Search note, project, client…"
             aria-label="Search what you worked on"
-            clearable
             className="h-9 pl-8"
           />
         </div>

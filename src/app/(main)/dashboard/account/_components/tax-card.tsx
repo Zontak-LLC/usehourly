@@ -71,7 +71,6 @@ export function TaxCard({ me }: { me: AccountMe }) {
             id="tax-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            clearable
             placeholder="VAT"
             maxLength={MAX_TAX_NAME}
           />
@@ -119,7 +118,6 @@ export function TaxCard({ me }: { me: AccountMe }) {
             id="tax-number"
             value={number}
             onChange={(e) => setNumber(e.target.value)}
-            clearable
             placeholder="GB123456789"
             maxLength={MAX_TAX_NUMBER}
             className="font-mono"

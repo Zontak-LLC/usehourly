@@ -29,11 +29,11 @@ test("a visitor finds an answer by searching, opens it in place, and old guide l
     await expect(page.getByRole("heading", { name: "Common questions" })).toHaveCount(0);
   });
 
-  await test.step("nothing found says so, and the × clears the search", async () => {
+  await test.step("nothing found says so; emptying the box brings the common questions back (no × button)", async () => {
     await search.fill("zzzzqqq");
     await expect(page.getByRole("heading", { name: "No answer matches “zzzzqqq”" })).toBeVisible();
-    await page.getByRole("button", { name: "Clear search" }).click();
-    await expect(search).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Clear search" })).toHaveCount(0);
+    await search.fill("");
     await expect(page.getByRole("heading", { name: "Common questions" })).toBeVisible();
   });
 

@@ -63,7 +63,7 @@ export const PREFERENCE_REGISTRY = {
 
   font: definePreference({
     values: fontKeys,
-    defaultValue: "instrumentSans",
+    defaultValue: "system",
     persistence: "client-cookie",
     attribute: "data-font",
   }),

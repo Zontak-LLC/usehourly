@@ -27,6 +27,12 @@ const SCREENS: [name: string, url: string][] = [
 test("photograph the main screens", async ({ page }, info) => {
   mkdirSync("e2e/report/ui", { recursive: true });
   await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  await page.screenshot({
+    path: `e2e/report/ui/${label}-home-${info.project.name}.png`,
+    fullPage: true,
+    caret: "initial",
+  });
   await page
     .getByRole("button", { name: /try the demo/i })
     .first()

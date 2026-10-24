@@ -40,7 +40,6 @@ function SpendFields({ f, set, id }: FieldProps) {
           onChange={(e) => set({ amount: e.target.value })}
           inputMode="decimal"
           placeholder="0.00"
-          clearable
           className="font-mono"
         />
       </div>
@@ -200,7 +199,6 @@ export function ExpenseForm({
           value={f.note}
           onChange={(e) => set({ note: e.target.value })}
           maxLength={MAX_NOTE}
-          clearable
           placeholder={f.kind === "mileage" ? "Office to client site and back" : "Design app, yearly plan"}
         />
       </div>

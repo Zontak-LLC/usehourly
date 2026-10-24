@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>UseHourly</title>
-  <style>g{fill:none;stroke:#18181b;stroke-linecap:round}.d{fill:#18181b;stroke:none}@media (prefers-color-scheme:dark){g{stroke:#fafafa}.d{fill:#fafafa}}</style>
-  <g><circle cx="32" cy="32" r="24" stroke-width="5"/><path d="M32 32L23 27M32 32L43 25" stroke-width="6"/></g>
-  <circle class="d" cx="32" cy="32" r="3"/>
+  <style>.t{fill:#2563c9}.i{fill:none;stroke:#fff;stroke-linecap:round}.d{fill:#fff}@media (prefers-color-scheme:dark){.t{fill:#6ea8ff}.i{stroke:#0b1220}.d{fill:#0b1220}}</style>
+  <rect class="t" width="64" height="64" rx="14"/>
+  <circle class="i" cx="32" cy="32" r="19" stroke-width="3.5"/>
+  <line class="i" x1="32" y1="32" x2="24.2" y2="27.5" stroke-width="4"/>
+  <line class="i" x1="32" y1="32" x2="43.3" y2="25.5" stroke-width="3"/>
+  <circle class="d" cx="32" cy="32" r="2.6"/>
 </svg>

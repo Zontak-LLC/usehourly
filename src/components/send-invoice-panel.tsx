@@ -230,7 +230,6 @@ function MailAppSection({
           type="email"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          clearable
           placeholder="client@example.com"
           autoComplete="off"
         />
@@ -246,11 +245,11 @@ function MailAppSection({
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`mail-subject-${id}`}>Subject</Label>
-        <Input id={`mail-subject-${id}`} value={subject} onChange={(e) => setSubject(e.target.value)} clearable />
+        <Input id={`mail-subject-${id}`} value={subject} onChange={(e) => setSubject(e.target.value)} />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`mail-body-${id}`}>Message</Label>
-        <Textarea id={`mail-body-${id}`} value={body} onChange={(e) => setBody(e.target.value)} rows={9} clearable />
+        <Textarea id={`mail-body-${id}`} value={body} onChange={(e) => setBody(e.target.value)} rows={9} />
       </div>
       {tooLong && (
         <p className="text-muted-foreground text-xs">
