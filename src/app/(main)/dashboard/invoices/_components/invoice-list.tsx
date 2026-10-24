@@ -131,7 +131,9 @@ export function InvoiceList({
                 setPageNo(1);
               }}
               className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 font-medium text-sm transition-colors ${
-                tab === t.id ? "bg-foreground text-background" : "text-foreground/75 hover:text-foreground"
+                tab === t.id
+                  ? "bg-card text-foreground shadow-sm ring-1 ring-foreground/10 dark:bg-foreground/15"
+                  : "text-foreground/75 hover:text-foreground"
               }`}
             >
               {t.label}
