@@ -67,13 +67,16 @@ async function measure(page: Page) {
       scrollHeight: list.scrollHeight,
       clientHeight: list.clientHeight,
       overflow: getComputedStyle(list).overflowY,
+      windowCap: window.innerHeight - 7 * 16,
     };
   });
 }
 
 /** The rule in every state: the card is min(its own content, the main column, never under the floor when capped). */
 function expectMinRule(m: Awaited<ReturnType<typeof measure>>) {
-  expect(Math.abs(m.cardHeight - Math.min(m.natural, Math.max(m.mainHeight, FLOOR)))).toBeLessThanOrEqual(2);
+  // Also never taller than the window under the top bar (100dvh - 7rem).
+  const cap = Math.min(Math.max(m.mainHeight, FLOOR), m.windowCap);
+  expect(Math.abs(m.cardHeight - Math.min(m.natural, cap))).toBeLessThanOrEqual(2);
 }
 
 test("on a wide screen the This week card is min(its content, the main column) and its rows scroll", async ({
@@ -81,6 +84,8 @@ test("on a wide screen the This week card is min(its content, the main column) a
   isPhone,
 }) => {
   test.skip(isPhone, "the phone has its own test below");
+  // A tall window, so the card's own content fits under the window cap and the "keeps its own height" case shows.
+  await page.setViewportSize({ width: 1280, height: 1100 });
   const card = await seed(page);
   const fold = page.getByRole("button", { name: /All entries this week/ });
   await expect(fold).toHaveAttribute("aria-expanded", "true");
@@ -160,7 +165,8 @@ test("on a phone the This week card keeps its own height", async ({ page, isPhon
   await auditPage(page, "week-side-column", isPhone);
 });
 
-test("By project shows 10 projects a page, and a picked project's page opens with it", async ({ page }) => {
+test("By project shows 10 projects a page, and a picked project's page opens with it", async ({ page, isPhone }) => {
+  test.skip(isPhone, "a phone scrolls the whole list (its own test below)");
   const card = await seed(page, 12);
   const rows = card.getByRole("listitem");
   const pages = card.getByRole("navigation", { name: "projects pages" });
@@ -177,4 +183,32 @@ test("By project shows 10 projects a page, and a picked project's page opens wit
   await page.reload();
   await expect(card.getByRole("button", { name: new RegExp(name) })).toHaveAttribute("aria-pressed", "true");
   await expect(pages).toContainText("11–12 of 12");
+});
+
+test("By project is A to Z with a search box, and a phone lists every project with no pages", async ({
+  page,
+  isPhone,
+}) => {
+  const card = await seed(page, 12);
+  const names = async () =>
+    (await card.getByRole("listitem").allInnerTexts()).map((t) => t.split(/\s·\s|\n/)[0].trim());
+  // A to Z (the seed logs more time on later projects, so the old order was by time, not name).
+  const listed = await names();
+  expect(listed).toEqual([...listed].sort((a, b) => a.localeCompare(b)));
+  // The client shows beside each name.
+  await expect(card.getByRole("listitem").first()).toContainText("Side Co");
+  // On a phone: every project, no pages control.
+  if (isPhone) {
+    await expect(card.getByRole("listitem")).toHaveCount(12);
+    await expect(card.getByRole("navigation", { name: "projects pages" })).toHaveCount(0);
+  }
+  // The search (from 9 projects) narrows the list; a project on page 2 is found from page 1.
+  const search = card.getByRole("searchbox", { name: "Search projects" });
+  await search.fill("project 12");
+  await expect(card.getByRole("listitem")).toHaveCount(1);
+  await expect(card.getByRole("listitem")).toContainText("Project 12");
+  await search.fill("nothing like this");
+  await expect(card.getByText("No project matches that.")).toBeVisible();
+  await search.fill("");
+  await expect(card.getByRole("listitem")).toHaveCount(isPhone ? 12 : 10);
 });

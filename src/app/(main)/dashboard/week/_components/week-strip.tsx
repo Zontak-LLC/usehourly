@@ -2,17 +2,28 @@
 
 import { useEffect, useState } from "react";
 
+import { ListSearch } from "@/components/list-search";
 import { Pagination } from "@/components/pagination";
 import { toggleProjectFilter } from "@/components/project-filter";
 import { SIDE_CARD, SideScroll } from "@/components/side-column";
+import { usePageSize } from "@/components/use-page-size";
 import { formatDuration } from "@/lib/duration";
 import { ROW_FIGURE } from "@/lib/figures";
-import { PAGE_SIZE_DESKTOP, paginate } from "@/lib/paginate";
+import { matchesAll } from "@/lib/global-search";
+import { paginate } from "@/lib/paginate";
 import type { buildSheet } from "@/lib/timesheet";
 
 export const longDayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
 type Sheet = ReturnType<typeof buildSheet>;
+
+/** The search box shows once a week has more projects than this (the owner, 2026-10-24: finding one of 20 by scrolling). */
+export const PROJECT_SEARCH_FROM = 9;
+
+/** By project's order: by project name, then client (so the three "Maintenance" projects sit together, told apart by client). */
+export function byName(a: { project: string; client: string }, b: { project: string; client: string }) {
+  return a.project.localeCompare(b.project) || a.client.localeCompare(b.client);
+}
 
 /**
  * The week at a glance: the week's hours (2026-10-23, issue 218: no progress line against 40 hours, a goal nobody set), then
@@ -32,13 +43,18 @@ export function WeekTotalCard({
   onProjectId: (id: string) => void;
 }) {
   const longest = Math.max(1, ...sheet.rows.map((x) => x.total));
-  // Pages of 10 (the owner, 2026-10-24), like "All entries". A picked project's page opens with it.
+  // A-Z, searchable from 9 projects, pages of 10 on a wide screen and one scrolling list on a phone (the owner,
+  // 2026-10-24). A picked project's page opens with it.
+  const [q, setQ] = useState("");
+  const sorted = [...sheet.rows].sort(byName);
+  const shown = q.trim() ? sorted.filter((r) => matchesAll(q, `${r.project} ${r.client}`)) : sorted;
+  const size = usePageSize(Number.POSITIVE_INFINITY); // a phone scrolls the whole list
   const [pageNo, setPageNo] = useState(1);
   useEffect(() => {
-    const at = sheet.rows.findIndex((r) => r.projectId === projectId);
-    if (at >= 0) setPageNo(Math.floor(at / PAGE_SIZE_DESKTOP) + 1);
-  }, [projectId, sheet.rows]);
-  const view = paginate(sheet.rows, pageNo, PAGE_SIZE_DESKTOP);
+    const at = [...sheet.rows].sort(byName).findIndex((r) => r.projectId === projectId);
+    if (at >= 0) setPageNo(Math.floor(at / size) + 1);
+  }, [projectId, sheet.rows, size]);
+  const view = paginate(shown, pageNo, size);
   return (
     <section
       aria-label="This week"
@@ -64,6 +80,20 @@ export function WeekTotalCard({
           </button>
         )}
       </div>
+      {sheet.rows.length >= PROJECT_SEARCH_FROM && (
+        <ListSearch
+          label="Search projects"
+          value={q}
+          onChange={(v) => {
+            setQ(v);
+            setPageNo(1);
+          }}
+          className="px-3 pb-2"
+        />
+      )}
+      {sheet.rows.length > 0 && shown.length === 0 && (
+        <p className="px-4 pb-4 text-muted-foreground text-sm">No project matches that.</p>
+      )}
       {sheet.rows.length === 0 ? (
         <p className="px-4 pb-4 text-muted-foreground text-sm">No entries this week yet.</p>
       ) : (
@@ -84,7 +114,10 @@ export function WeekTotalCard({
                   >
                     <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{r.project}</span>
+                      <span className="block truncate">
+                        <span className="font-medium">{r.project}</span>
+                        <span className="text-muted-foreground"> · {r.client}</span>
+                      </span>
                       <span aria-hidden className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
                         <span
                           className="block h-full rounded-full"
@@ -94,7 +127,6 @@ export function WeekTotalCard({
                           }}
                         />
                       </span>
-                      <span className="sr-only">{r.client}</span>
                     </span>
                     <span className={`shrink-0 ${ROW_FIGURE}`}>{formatDuration(r.total)}</span>
                   </button>
