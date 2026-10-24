@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileSpreadsheet, Send, Share2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Caret } from "@/components/caret";
@@ -14,9 +14,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { downloadCsv } from "@/lib/accounting-export";
+import { csvFilename, entriesCsv } from "@/lib/export-all";
 import { downloadTimesheetXlsx } from "@/lib/export-xlsx";
 import { feature } from "@/lib/features";
-import type { SheetEntry } from "@/lib/timesheet";
+import { exportableEntries, type SheetEntry } from "@/lib/timesheet";
 
 export type SharePanelKind = "range" | "share";
 
@@ -68,10 +70,11 @@ export function ShareExportMenu({
   // Sign-off links are hidden in this release; the menu is then only about exporting, and says so.
   const signOff = feature("signOff");
 
-  async function download() {
+  async function download(format: "xlsx" | "csv") {
     if (!entries) return;
     try {
-      await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
+      if (format === "csv") downloadCsv(csvFilename(filename), entriesCsv(exportableEntries(entries), accountCurrency));
+      else await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     }
@@ -94,8 +97,11 @@ export function ShareExportMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-64">
-        <DropdownMenuItem disabled={!entries} onSelect={() => void download()}>
+        <DropdownMenuItem disabled={!entries} onSelect={() => void download("xlsx")}>
           <Download /> Download this {period} as Excel
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!entries} onSelect={() => void download("csv")}>
+          <FileText /> Download this {period} as CSV
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onPanel("range")}>
           <FileSpreadsheet /> Export a date range…

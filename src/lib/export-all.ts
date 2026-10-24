@@ -2,7 +2,7 @@ import { addDays } from "@/lib/dates";
 import { buildTimesheetWorkbook } from "@/lib/export-xlsx";
 import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 import type { SheetEntry } from "@/lib/timesheet";
-import { dateRange } from "@/lib/timesheet";
+import { dateRange, exportableEntries } from "@/lib/timesheet";
 
 /**
  * "Export everything": all of a user's time, all clients, all time, as one zip.
@@ -49,6 +49,11 @@ export function csvField(value: string | number | null | undefined): string {
 export function toCsv(rows: (string | number | null | undefined)[][]): string {
   // The BOM makes Excel read the file as UTF-8, so names like "Café" survive.
   return `﻿${rows.map((r) => r.map(csvField).join(",")).join("\r\n")}\r\n`;
+}
+
+/** The CSV twin of an Excel download's name: `usehourly-2026-10.xlsx` → `usehourly-2026-10.csv`. */
+export function csvFilename(filename: string): string {
+  return filename.replace(/\.xlsx$/, ".csv");
 }
 
 /** A safe, readable file name from a client's name; unique within `taken`. */
@@ -150,7 +155,7 @@ export async function planExport(opts: {
   accountCurrency?: string;
 }): Promise<ExportPlan> {
   // Entries on days marked non-billable are left out of every file, and the README says how many.
-  const entries = opts.entries.filter((e) => e.minutes > 0 && !e.non_billable);
+  const entries = exportableEntries(opts.entries);
   const leftOut = opts.entries.filter((e) => e.minutes > 0 && e.non_billable).length;
   const files: ExportFile[] = [];
 

@@ -18,6 +18,14 @@ export type SheetEntry = {
   };
 };
 
+/**
+ * The entries an export file writes: zero-minute entries (a timer that just started) and entries on days marked
+ * non-billable are left out, so nothing in the file can be mistaken for billable time. Excel, CSV and the zip share it.
+ */
+export function exportableEntries<T extends Pick<SheetEntry, "minutes" | "non_billable">>(entries: T[]): T[] {
+  return entries.filter((e) => e.minutes > 0 && !e.non_billable);
+}
+
 export type Cell = { minutes: number; count: number; running: boolean };
 
 export type SheetRow = {
