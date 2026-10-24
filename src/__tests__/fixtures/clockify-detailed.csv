@@ -1,0 +1,6 @@
+"Project","Client","Description","Task","User","Group","Email","Tags","Billable","Start Date","Start Time","End Date","End Time","Duration (h)","Duration (decimal)","Billable Rate (USD)","Billable Amount (USD)"
+"Mobile app","Blue Fin","Login screen, error states","Design","Ana Ruiz","","ana@example.com","ui","Yes","03/04/2026","09:00:00 AM","03/04/2026","10:30:20 AM","01:30:20","1.51","85.00","128.18"
+"Mobile app","Blue Fin","Push notifications
+(Android first)","Build","Ana Ruiz","","ana@example.com","","Yes","03/05/2026","01:00:00 PM","03/05/2026","03:45:00 PM","02:45:00","2.75","85.00","233.75"
+"Internal","Blue Fin","Team retro","","Ana Ruiz","","ana@example.com","","No","04/03/2026","04:00:00 PM","04/03/2026","04:30:00 PM","00:30:00","0.50","0.00","0.00"
+"","","Reading about ""offline first""","","Ana Ruiz","","ana@example.com","","No","04/03/2026","05:00:00 PM","04/03/2026","05:20:00 PM","00:20:00","0.33","",""

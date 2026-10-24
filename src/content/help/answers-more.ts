@@ -23,6 +23,21 @@ export const MORE_ANSWERS: Answer[] = [
 The files have the hours as numbers with live totals, and a sheet with every entry. To take everything at once, see [Getting your data out](/help?a=data).`,
   },
   {
+    id: "importing",
+    feature: "importTime",
+    question: "How do I move my history over from Toggl, Clockify or Harvest?",
+    keywords: ["toggl", "clockify", "harvest", "csv", "import", "migrate", "move", "switch", "history"],
+    answer: `Open **Account**, **Your data**, and find **Move here in two minutes**. Choose where your time is now (**Toggl Track**, **Clockify**, **Harvest** or **Other CSV**): the page shows the two or three steps to export the file from that app. Then press **Choose the CSV file**.
+
+You see a **preview** before anything is saved: how many entries, the dates they cover, how many clients and projects are new, and how many entries are already here. If dates like 03/04 could be read two ways, you are asked which one you mean. Press **Import** to add them.
+
+- Clients and projects that do not exist yet are created for you. A new project takes the **hourly rate** and the **billable** setting from the file when it has them; a project you already have is never changed.
+- Harvest gives hours as decimals (1.33): they become whole minutes (1:20).
+- Importing the **same file twice never doubles anything**: an entry already there (same project, date, time and description) is skipped.
+
+The file is read in your browser; only the entries go to UseHourly.`,
+  },
+  {
     id: "offline",
     oldSlugs: ["offline-safe"],
     question: "What works offline, with no connection?",

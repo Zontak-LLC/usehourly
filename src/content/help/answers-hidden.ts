@@ -129,17 +129,6 @@ Before a QuickBooks import:
 > These files follow the apps' published import formats, but have not yet been checked against every account setup. If an import complains, send us the message (see [Where do I report a problem?](/help?a=problem)).`,
   },
   {
-    id: "importing",
-    feature: "importTime",
-    question: "How do I import my history from Toggl, Clockify or a CSV?",
-    keywords: ["toggl", "clockify", "csv", "import", "migrate", "history"],
-    answer: `Go to **Account, Your data, Import from Toggl or Clockify** and choose the CSV file you exported from the other tool (the page says how to export it).
-
-You see a **preview** before anything is saved. If dates like 03/04 could be read two ways, you are asked which one you mean. Clients and projects that do not exist yet are created for you.
-
-Importing the **same file twice never doubles anything**: an entry already there (same project, date, time and description) is skipped.`,
-  },
-  {
     id: "teams",
     feature: "team",
     question: "How do I invite someone to log time on my clients?",
