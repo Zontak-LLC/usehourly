@@ -96,6 +96,7 @@ Events you may see (all `level: "error"`), and what they mean:
 | `weekly_reminder_failed`, `invoice_reminder_failed` | One reminder in the hourly cron failed; it is retried the next hour where that is safe | Look for a pattern (one bad address vs all) |
 | `housekeeping_sweep_failed` | The hourly clean-up of spent rate limits, email links and OAuth codes failed | Harmless for a while; fix before tables grow |
 | `invoice_logo_cleanup_failed` | A leftover logo row after deleting an invoice | Harmless |
+| `usage_count_failed` (warn) | One page view was not counted (two first views of a day raced, or the database was busy) | Harmless; a steady stream means the usage table needs a look |
 | `mcp_internal_error`, `mcp_tool_error`, `mcp_last_used_update_failed` | A failure inside the MCP endpoint | Same as tRPC; the caller got a plain "try again" |
 | `social_sign_in_failed`, `demo_sign_in_failed` | A GitHub/Google or sample-account sign-in failed | Check the provider's status and the secrets |
 | `prisma_warmup_failed` | The early connection attempt failed; it reconnects on the first query | Only matters if it repeats |

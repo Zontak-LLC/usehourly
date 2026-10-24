@@ -10,9 +10,12 @@ import { trpc } from "@/lib/trpc";
 export function DeleteInvoiceConfirm({
   invoice,
   onClose,
+  onDeleted = onClose,
 }: {
   invoice: { id: string; number: string } | null;
   onClose: () => void;
+  /** After the invoice is gone (the page leaves its address); closing by default. */
+  onDeleted?: () => void;
 }) {
   const utils = trpc.useUtils();
   const del = trpc.invoice.delete.useMutation();
@@ -22,11 +25,12 @@ export function DeleteInvoiceConfirm({
       await del.mutateAsync({ id });
       await Promise.all([
         utils.invoice.list.invalidate(),
+        utils.invoice.latest.invalidate(),
         utils.invoice.unbilled.invalidate(),
         utils.entry.list.invalidate(),
       ]);
       toast.success(`Invoice ${number} deleted.`);
-      onClose();
+      onDeleted();
     } catch (err) {
       toastError(err, "Couldn't delete that invoice.");
     }

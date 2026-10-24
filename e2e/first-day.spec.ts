@@ -1,5 +1,17 @@
 import { FEATURES } from "../src/lib/features";
-import { anonymous, clearMail, expect, gotoClient, linkIn, mailTo, newUser, seen, test, today } from "./helpers";
+import {
+  anonymous,
+  clearMail,
+  expect,
+  gotoClient,
+  linkIn,
+  mailTo,
+  newUser,
+  openInvoice,
+  seen,
+  test,
+  today,
+} from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -225,16 +237,16 @@ test("a new freelancer's first day", async ({ page, browser, shot, audit, a11y, 
 
   await test.step("mark it paid", async () => {
     await page.goto("/dashboard/invoices");
-    await page.getByRole("button", { name: "Mark paid" }).click(); // the button on the invoice
+    const { detail: invoice } = await openInvoice(page, 0);
+    await invoice.getByRole("button", { name: "Mark paid" }).click(); // the button on the invoice
     await page.getByLabel("Date the money arrived").fill(today());
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByLabel("Date the money arrived")).toBeHidden(); // the panel closes once saved
-    const invoice = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
-    await expect(invoice).toContainText(/Paid \w{3} \d+/); // the state in words: "Paid Oct 23"
+    await expect(invoice.getByTestId("invoice-state")).toHaveText(/Paid \w{3} \d+/); // in words: "Paid Oct 23"
     await expect(invoice.getByRole("button", { name: "Mark paid" })).toHaveCount(0);
     await shot("invoice-paid");
-    // An invoice offers at most four buttons beside its number (Mark paid until paid, share, PDF, ···).
-    const controls = await invoice.getByRole("button").filter({ hasNotText: /^INV-/ }).count();
+    // An invoice offers at most four buttons (Mark paid until paid, Send, PDF, ···).
+    const controls = await invoice.getByTestId("invoice-actions").getByRole("button").count();
     expect.soft(controls, "controls on an invoice").toBeLessThanOrEqual(4);
     await audit("invoices with one invoice");
     await a11y("invoices");

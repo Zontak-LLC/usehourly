@@ -1,5 +1,5 @@
 import { FEATURES } from "../src/lib/features";
-import { expect, gotoClient, startFreshAccount, test } from "./helpers";
+import { expect, gotoClient, openInvoice, startFreshAccount, test } from "./helpers";
 
 test.skip(!FEATURES.invoiceTax, "Tax on invoices is hidden in this release (src/lib/features.ts)");
 
@@ -57,12 +57,9 @@ test("a freelancer who charges VAT sets it once, and invoices add it on top and 
     await page.getByRole("button", { name: "Create invoice" }).click();
     await expect(page).toHaveURL(/\/dashboard\/invoices$/);
     await expect(page.getByText("$240.00").first()).toBeVisible();
-    await page
-      .getByRole("link", { name: /: open the invoice$/ })
-      .first()
-      .click();
-    await expect(page.getByText("VAT number GB123456789")).toBeVisible();
-    await expect(page.getByRole("row", { name: /VAT \(20%\)/ })).toContainText("$40.00");
-    await expect(page.getByRole("row", { name: /^Total/ })).toContainText("$240.00");
+    const { detail } = await openInvoice(page, 0);
+    await expect(detail.getByText("VAT number GB123456789")).toBeVisible();
+    await expect(detail.getByRole("row", { name: /VAT \(20%\)/ })).toContainText("$40.00");
+    await expect(detail.getByRole("row", { name: /^Total/ })).toContainText("$240.00");
   });
 });

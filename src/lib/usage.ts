@@ -1,4 +1,5 @@
 import { clientIdFromPath } from "@/lib/client-list";
+import { invoiceIdFromPath } from "@/lib/invoice-list";
 
 /**
  * Which in-app pages are counted. The list is closed on purpose: the counter table can only ever hold
@@ -43,6 +44,8 @@ export function usagePageForPath(pathname: string): UsagePage | null {
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   // A client's profile (/dashboard/clients/<id>, issue 238) counts as Clients; the archived page is not counted.
   if (clientIdFromPath(clean)) return "clients";
+  // So does one invoice (/dashboard/invoices/<id>, the split view) as Invoices; the builder stays its own page.
+  if (invoiceIdFromPath(clean)) return "invoices";
   return BY_PATH[clean] ?? null;
 }
 

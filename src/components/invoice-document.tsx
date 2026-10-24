@@ -27,13 +27,17 @@ export function InvoiceDocument({
   s,
   paidDate,
   inApp = false,
+  preview = false,
 }: {
   s: InvoiceSnapshot;
   paidDate: string | null;
   /** Shown inside the app (the page has its own title): the invoice's title is a second-level heading. */
   inApp?: boolean;
+  /** A preview under the invoice's own header (Invoices, 2026-10-24): headings one level down, no Download / Print. */
+  preview?: boolean;
 }) {
-  const Title = inApp ? "h2" : "h1";
+  const Title = preview ? "h3" : inApp ? "h2" : "h1";
+  const Sub = preview ? "h4" : "h2";
   const today = new Date().toISOString().slice(0, 10);
   const overdue = !paidDate && s.dueDate !== null && s.dueDate < today;
   return (
@@ -146,7 +150,7 @@ export function InvoiceDocument({
 
       {s.seller.paymentInstructions && !paidDate && (
         <section className="rounded-xl border bg-card p-4">
-          <h2 className="font-semibold text-base">How to pay</h2>
+          <Sub className="font-semibold text-base">How to pay</Sub>
           <p className="mt-1 whitespace-pre-wrap break-words text-sm">{s.seller.paymentInstructions}</p>
         </section>
       )}
@@ -167,7 +171,7 @@ export function InvoiceDocument({
         </details>
       )}
 
-      <InvoiceDocActions snapshot={s} />
+      {!preview && <InvoiceDocActions snapshot={s} />}
     </>
   );
 }

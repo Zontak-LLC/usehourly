@@ -17,6 +17,7 @@ export function SplitView({
   back,
   headerless,
   detailClassName = "",
+  wideList = false,
   children,
 }: {
   view: "list" | "detail";
@@ -26,15 +27,22 @@ export function SplitView({
   /** Why the card has no header band of its own (the page check asks for a reason). */
   headerless: string;
   detailClassName?: string;
+  /** A 20rem list instead of 17rem, for rows that carry an amount and a state beside the name (Invoices). */
+  wideList?: boolean;
   children: ReactNode;
 }) {
   return (
     <div
       data-headerless={headerless}
       data-view={view}
-      className="group/split grid overflow-clip rounded-xl border bg-card md:grid-cols-[17rem_minmax(0,1fr)]"
+      className={`group/split grid overflow-clip rounded-xl border bg-card print:block print:border-0 ${
+        wideList ? "md:grid-cols-[20rem_minmax(0,1fr)]" : "md:grid-cols-[17rem_minmax(0,1fr)]"
+      }`}
     >
-      <div className="min-w-0 bg-muted/40 group-data-[view=detail]/split:max-md:hidden md:border-r">{list}</div>
+      {/* Printing shows the chosen item only. */}
+      <div className="min-w-0 bg-muted/40 group-data-[view=detail]/split:max-md:hidden md:border-r print:hidden">
+        {list}
+      </div>
       <div className={`flex min-w-0 flex-col group-data-[view=list]/split:max-md:hidden ${detailClassName}`}>
         <Link
           href={back.href}
@@ -42,7 +50,7 @@ export function SplitView({
             e.preventDefault();
             back.onBack();
           }}
-          className="flex min-h-11 items-center gap-1 px-3 pt-2 text-foreground/80 text-sm md:hidden"
+          className="flex min-h-11 items-center gap-1 px-3 pt-2 text-foreground/80 text-sm md:hidden print:hidden"
         >
           <ChevronLeft className="size-4" aria-hidden /> {back.label}
         </Link>
@@ -104,5 +112,36 @@ export function SplitRow({
       </span>
       {trailing}
     </a>
+  );
+}
+
+/**
+ * A titled group of rows in a split view's list ("To bill · 3" on Clients, "October 2026 · 4" on Invoices): a small
+ * caps label and the list it names. `aside` sits at the label's right end (a month's total).
+ */
+export function SplitGroup({
+  id,
+  title,
+  aside,
+  children,
+}: {
+  id: string;
+  title: string;
+  aside?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <p
+        id={id}
+        className="flex items-baseline justify-between gap-2 px-2 pt-2 pb-1 font-mono font-semibold text-[10.5px] text-foreground/70 uppercase tracking-wider"
+      >
+        <span>{title}</span>
+        {aside && <span className="font-medium tabular-nums">{aside}</span>}
+      </p>
+      <ul aria-labelledby={id} className="flex flex-col gap-0.5" data-testid={id}>
+        {children}
+      </ul>
+    </>
   );
 }

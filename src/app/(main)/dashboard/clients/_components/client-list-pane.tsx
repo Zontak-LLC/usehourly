@@ -2,7 +2,7 @@
 
 import { ClientInitial } from "@/components/client-initial";
 import { ListSearch } from "@/components/list-search";
-import { SplitRow } from "@/components/split-view";
+import { SplitGroup, SplitRow } from "@/components/split-view";
 import { clientPath } from "@/lib/client-list";
 
 import type { ClientRow } from "./client-types";
@@ -65,23 +65,14 @@ function Group({
   onOpen: (id: string) => void;
 }) {
   if (items.length === 0) return null;
-  const id = `clients-group-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <>
-      <p
-        id={id}
-        className="px-2 pt-2 pb-1 font-mono font-semibold text-[10.5px] text-foreground/70 uppercase tracking-wider"
-      >
-        {title} · {items.length}
-      </p>
-      <ul aria-labelledby={id} className="flex flex-col gap-0.5" data-testid={`${id}`}>
-        {items.map((item) => (
-          <li key={item.client.id}>
-            <Row item={item} selected={item.client.id === selectedId} onOpen={onOpen} />
-          </li>
-        ))}
-      </ul>
-    </>
+    <SplitGroup id={`clients-group-${title.replace(/\s+/g, "-").toLowerCase()}`} title={`${title} · ${items.length}`}>
+      {items.map((item) => (
+        <li key={item.client.id}>
+          <Row item={item} selected={item.client.id === selectedId} onOpen={onOpen} />
+        </li>
+      ))}
+    </SplitGroup>
   );
 }
 
