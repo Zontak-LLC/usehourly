@@ -761,6 +761,25 @@ describe("entry search journey", () => {
     );
   });
 
+  it("still finds entries of an archived client, with its name (no 500 on a missing client)", async () => {
+    const prisma = mockPrisma();
+    const clients = [{ id: "c1", name: "Acme", archived: true }];
+    prisma.timeEntry.findMany.mockResolvedValue(rows as never);
+    prisma.project.findMany.mockResolvedValue([project] as never);
+    // applies the filter it is given, so an `archived: false` read really drops the archived client
+    prisma.client.findMany.mockImplementation((({ where }: { where: { archived?: boolean } }) =>
+      Promise.resolve(clients.filter((c) => where.archived === undefined || c.archived === where.archived))) as never);
+    const found = await asCaller(prisma, "u1").entry.search({ q: "invoice" });
+    expect(found).toEqual([
+      expect.objectContaining({ id: "e2", project: "Website", client: "Acme" }),
+      expect.objectContaining({ id: "e1", project: "Website", client: "Acme" }),
+    ]);
+    // the account filter stays; no archived filter
+    expect(prisma.client.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { user_id: "u1" }, select: { id: true, name: true } }),
+    );
+  });
+
   it("returns nothing without asking for projects when no entry matches", async () => {
     const prisma = mockPrisma();
     expect(await asCaller(prisma, "u1").entry.search({ q: "zzzz" })).toEqual([]);
