@@ -166,6 +166,9 @@ model TimeEntry {
   // account. Prisma cannot express a partial index, so it lives only in the SQL.
   // Migration 0038 adds another, time_entries_unbilled_idx: stopped, unbilled entries only, covering the
   // "not invoiced yet" sum (invoice.unbilled) so it never reads the account's whole history.
+  // Insights asks per account for its first entry, recent entries and recent changes (server/insights-activity.ts):
+  @@index([user_id, created_at], map: "time_entries_user_created_idx")
+  @@index([user_id, updated_at], map: "time_entries_user_updated_idx")
   @@map("time_entries")
 }
 
@@ -247,6 +250,8 @@ model Invoice {
   @@unique([user_id, number])
   @@index([user_id, issue_date])
   @@index([user_id, paid_date])
+  // Migration 0040 adds invoices_overdue_idx, a partial index (unpaid, reminders on) covering the hourly
+  // overdue-reminder query; Prisma cannot express a partial index, so it lives only in the SQL.
   @@map("invoices")
 }
 
