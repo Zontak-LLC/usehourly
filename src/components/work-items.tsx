@@ -19,7 +19,7 @@ import { groupByDay, groupByProject, orderByProject, paginate, searchWorkItems }
 const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
 /**
- * What you worked on in a period: searchable, grouped by day (with the day's total), 3 entries per page on a phone and 10 on a wide screen. Click a row to edit that day.
+ * All entries of a period: searchable, grouped by day (with the day's total), 3 entries per page on a phone and 10 on a wide screen. Click a row to edit that day.
  * `period` words the empty state ("month", "week").
  */
 export function WorkItems({
@@ -75,12 +75,12 @@ export function WorkItems({
 
   return (
     <section
-      aria-label="What you worked on"
+      aria-label={`All entries this ${period}`}
       className="overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
     >
       <header className="flex flex-wrap items-center justify-between gap-2 bg-band-2 px-3 py-3 sm:px-4">
         <h2 className="font-semibold text-base">
-          What you worked on <span className="font-normal text-foreground/75 text-sm">({matches.length})</span>
+          All entries this {period} <span className="font-normal text-foreground/75 text-sm">({matches.length})</span>
         </h2>
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -91,7 +91,7 @@ export function WorkItems({
               setPage(1); // a new search always starts on its first page
             }}
             placeholder="Search note, project, client…"
-            aria-label="Search what you worked on"
+            aria-label="Search entries"
             className="h-9 pl-8"
           />
         </div>
@@ -109,7 +109,7 @@ export function WorkItems({
       <div className="flex flex-col gap-4 p-3 sm:p-4">
         {view.total === 0 ? (
           <p className="py-6 text-center text-muted-foreground text-sm">
-            {query.trim() ? "Nothing matches that search." : `Nothing logged this ${period}.`}
+            {query.trim() ? "Nothing matches that search." : `No entries this ${period}.`}
           </p>
         ) : (
           <div className="flex flex-col gap-3">

@@ -282,6 +282,16 @@ export function MonthCalendar({
                   {weekTotal ? formatDuration(weekTotal) : ""}
                 </span>
               </div>
+              {/* On a phone there is no room for a "Week" column, so the week's total is a small line under its row. */}
+              {weekTotal > 0 && (
+                <div className="col-span-7 flex justify-end gap-1 border-b px-2 py-1 text-[11px] text-foreground/70 sm:hidden">
+                  <span className="sr-only">Week of {weekOf.format(fromISODate(w[0]))}: </span>
+                  <span aria-hidden>Week</span>
+                  <span className="font-mono font-semibold text-foreground/85 tabular-nums">
+                    {formatDuration(weekTotal)}
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}

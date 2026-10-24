@@ -415,10 +415,10 @@ export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("menuitem", { name: item }).click();
 }
 
-/** Week and Month fold their full list of entries ("What you worked on") behind one button: open it. */
+/** Week and Month fold their full list of entries ("All entries this week/month") behind one button: open it. */
 export async function openAllEntries(page: Page) {
   const fold = page.getByRole("button", { name: /^All entries this (week|month)/ });
   await expect(fold).toHaveAttribute("aria-expanded", "false");
   await fold.click();
-  await expect(page.getByRole("region", { name: "What you worked on" })).toBeVisible();
+  await expect(page.getByRole("region", { name: /^All entries this (week|month)$/ })).toBeVisible();
 }

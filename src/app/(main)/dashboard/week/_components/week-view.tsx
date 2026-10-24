@@ -117,7 +117,7 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
 
       {entries.error ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
-          Couldn't load the timesheet: {entries.error.message}
+          Couldn't load entries: {entries.error.message}
         </p>
       ) : entries.isLoading ? (
         <Skeleton className="h-48 w-full" />

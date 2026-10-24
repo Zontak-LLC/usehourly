@@ -13,7 +13,8 @@ export function MonthFacts({ dayTotals }: { dayTotals: Record<string, number> })
   const total = worked.reduce((a, [, m]) => a + m, 0);
   const [busyDate, busyMinutes] = worked.reduce((best, cur) => (cur[1] > best[1] ? cur : best));
   return (
-    <p className="text-foreground/75 text-sm">
+    // On a phone the cards run almost edge to edge, so the line takes the cards' inner edge (issue 218).
+    <p className="px-3 text-foreground/75 text-sm sm:px-0">
       <strong className="text-foreground">{worked.length}</strong> day{worked.length === 1 ? "" : "s"} worked · busiest{" "}
       <strong className="text-foreground">{dayFmt.format(fromISODate(busyDate))}</strong> ({formatDuration(busyMinutes)}
       ) · average <strong className="text-foreground">{formatDuration(Math.round(total / worked.length))}</strong> on a

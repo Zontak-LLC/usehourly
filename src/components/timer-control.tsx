@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ChevronDown, Play, Square } from "lucide-react";
+import { Play, Square } from "lucide-react";
 import { toast } from "sonner";
 
 import { TimeTicket } from "@/components/time-ticket";
@@ -113,8 +113,6 @@ export function useTodayTimer({
   const { stopTimer, stopping } = useStopTimer();
   const [now, setNow] = useState(() => Date.now());
   const [stopped, setStopped] = useState<Stopped | null>(null);
-  // A project picked on the watch itself; it only holds while the form keeps the project it had then.
-  const [chosen, setChosen] = useState<{ formId: string; id: string } | null>(null);
   const [shiftedId, setShiftedId] = useState<string | null>(null);
   const lockedUntil = useRef(0);
   const nudges = useRef<Promise<unknown>>(Promise.resolve());
@@ -129,7 +127,8 @@ export function useTodayTimer({
   const projects: TimerProject[] = (clients.data ?? []).flatMap((c) =>
     c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name, color: c.color })),
   );
-  const timerProjectId = chosen && chosen.formId === projectId ? chosen.id : projectId;
+  // One project picker on Today (issue 218): the timer always starts on the project picked in the Log time form.
+  const timerProjectId = projectId;
   const timerProject = projects.find((p) => p.id === timerProjectId) ?? null;
 
   useEffect(() => {
@@ -174,7 +173,6 @@ export function useTodayTimer({
     playClick("start");
     try {
       await start.mutateAsync({ projectId: timerProjectId, date, note });
-      setChosen(null);
       await refresh();
       window.dispatchEvent(new Event(TIMER_STARTED_EVENT));
     } catch (err) {
@@ -268,9 +266,7 @@ export function useTodayTimer({
     runMinutes: Math.floor(runSeconds / 60),
     text,
     projectName: timerProject?.name ?? projectName,
-    projects,
     timerProject,
-    chooseProject: (id: string) => setChosen({ formId: projectId, id }),
     note: runningNote,
     earlyChoices,
     onStart,
@@ -294,51 +290,23 @@ const SMALL_TEXT = "text-muted-foreground text-xs";
 const BUTTON =
   "inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 font-semibold text-sm transition-colors disabled:opacity-50";
 
-/**
- * Which project the timer starts on (or runs on), with the client's colour. Idle, with two projects or more, it is a
- * plain select of the account's projects; picking one there does not change the Log time form.
- */
+/** The project the running timer is on, with the client's colour (the Log time form picks it: one picker on Today). */
 function ProjectChip({ timer }: { timer: TodayTimer }) {
   const running = timer.entry;
-  const shown = running
-    ? { name: running.project.name, clientName: running.project.client.name, color: running.project.client.color }
-    : timer.timerProject;
-  if (!shown) return null;
-  const face = (
-    <>
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: shown.color }} />
-      <span className="min-w-0 truncate">
-        {shown.name}
-        <span className="text-muted-foreground max-sm:hidden"> · {shown.clientName}</span>
-      </span>
-    </>
-  );
-  const chip = "relative inline-flex min-h-9 min-w-0 max-w-full items-center gap-2 text-sm";
-  if (running || timer.projects.length < 2) {
-    return (
-      <p className={chip}>
-        <span className="sr-only">Timer project: </span>
-        {face}
-      </p>
-    );
-  }
+  if (!running) return null;
   return (
-    <label className={`${chip} cursor-pointer rounded-full px-2 hover:bg-muted`}>
-      {face}
-      <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-      <select
-        aria-label="Timer project"
-        value={timer.timerProject?.id ?? ""}
-        onChange={(e) => timer.chooseProject(e.target.value)}
-        className="absolute inset-0 cursor-pointer opacity-0"
-      >
-        {timer.projects.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name} · {p.clientName}
-          </option>
-        ))}
-      </select>
-    </label>
+    <p className="relative inline-flex min-h-9 min-w-0 max-w-full items-center gap-2 text-sm">
+      <span className="sr-only">Timer project: </span>
+      <span
+        aria-hidden
+        className="size-2.5 shrink-0 rounded-full"
+        style={{ background: running.project.client.color }}
+      />
+      <span className="min-w-0 truncate">
+        {running.project.name}
+        <span className="text-muted-foreground max-sm:hidden"> · {running.project.client.name}</span>
+      </span>
+    </p>
   );
 }
 
@@ -448,32 +416,22 @@ function StillWorking({ timer }: { timer: TodayTimer }) {
   );
 }
 
+/** True while the timer has something to show at the top of the Log time card (running, or just stopped). */
+function timerIsActive(timer: TodayTimer): boolean {
+  return !!timer.stopped || !!timer.entry;
+}
+
 /**
- * Today's timer as one slim strip above the add form (2026-10-23: it replaced the big watch; most people log after the
- * fact, so the timer is there for those who want it without taking a column of the page). One thing at a time:
- * idle = Start timer and the project it starts on; running = a red dot, the elapsed h:mm:ss, the project and Stop timer,
- * then a description box, "Started earlier?" for a moment and "Still working?" after 4 hours; stopped = "Saved 0:42"
- * (the entry it already is, - / + 5 min, Undo · Resume timer · Done), which stays until one is picked (issue 218).
+ * Today's timer while it runs or just after a stop, at the TOP of the Log time card (issue 218: one project picker on
+ * Today, so the whole timer lives in the form that picks the project). Running = a red dot, the elapsed h:mm:ss, the
+ * project and Stop timer, then a description box, "Started earlier?" for a moment and "Still working?" after 4 hours;
+ * stopped = "Saved 0:42" (the entry it already is, - / + 5 min, Undo · Resume timer · Done), which stays until one is
+ * picked. Idle, it shows nothing: the start is `TimerStartLine` at the foot of the card.
  */
-export function TimerControls({
-  timer,
-  online,
-  bare = false,
-}: {
-  timer: TodayTimer;
-  online: boolean;
-  /** Inside another card (Today's day card footer): no frame of its own. */
-  bare?: boolean;
-}) {
+export function TimerControls({ timer }: { timer: TodayTimer }) {
+  if (!timerIsActive(timer)) return null;
   return (
-    <section
-      aria-label="Timer"
-      className={
-        bare
-          ? "flex min-w-0 flex-1 basis-72 flex-col gap-3"
-          : "flex flex-col gap-3 rounded-2xl bg-card px-4 py-3 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
-      }
-    >
+    <section aria-label="Timer" className="flex flex-col gap-3 rounded-xl p-3 ring-1 ring-foreground/10">
       {timer.stopped ? (
         <TimeTicket timer={timer} />
       ) : timer.entry ? (
@@ -509,27 +467,42 @@ export function TimerControls({
           <StartedEarlier timer={timer} />
           <StillWorking timer={timer} />
         </>
-      ) : (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <button
-            type="button"
-            title={
-              online
-                ? `Start timer${timer.projectName ? ` for ${timer.projectName}` : ""}`
-                : "A timer needs a connection"
-            }
-            onClick={timer.onStart}
-            disabled={timer.busy || !online}
-            // Secondary to Log time: a quiet ghost button, not an outlined one that looks like the main action.
-            className={`${BUTTON} text-foreground/80 hover:bg-muted hover:text-foreground`}
-          >
-            <Play className="size-3.5" fill="currentColor" aria-hidden />
-            Start timer
-          </button>
-          <div className="min-w-0 flex-1 basis-40">
-            <ProjectChip timer={timer} />
-          </div>
-        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * Idle, today only: one quiet line at the foot of the Log time card, "or ▶ Start timer on Client / Project". The project
+ * is the one picked in the form above (there is no second picker). Log time stays the one solid button.
+ */
+export function TimerStartLine({ timer, online }: { timer: TodayTimer; online: boolean }) {
+  if (timerIsActive(timer)) return null;
+  const p = timer.timerProject;
+  return (
+    <section aria-label="Timer" className="flex min-w-0 items-center gap-1 text-sm">
+      <span className="text-muted-foreground">or</span>
+      <button
+        type="button"
+        title={online ? `Start timer${p ? ` on ${p.name}` : ""}` : "A timer needs a connection"}
+        onClick={timer.onStart}
+        disabled={timer.busy || !online || !p}
+        // Secondary to Log time: a quiet ghost button, not an outlined one that looks like the main action.
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2 font-semibold text-foreground/85 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+      >
+        <Play className="size-3.5" fill="currentColor" aria-hidden />
+        Start timer
+      </button>
+      {p && (
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="text-muted-foreground">on</span>
+          <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
+          <span className="min-w-0 truncate">
+            {/* On a phone the client gives way, so the project's own name always fits. */}
+            <span className="max-sm:hidden">{p.clientName} / </span>
+            {p.name}
+          </span>
+        </span>
       )}
     </section>
   );

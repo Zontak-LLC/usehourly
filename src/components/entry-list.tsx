@@ -9,8 +9,8 @@ const longDay = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "lo
 type Entry = Parameters<typeof EntryRow>[0]["entry"];
 
 /**
- * The entries of one day: the day's timesheet as ONE headed card. The header names the day ("Today's timesheet",
- * "Timesheet for Monday, October 12"), the number of entries and the total; each entry is a row inside it.
+ * The entries of one day: the day's entries as ONE headed card. The header names the day ("Today's entries",
+ * "Entries for Monday, October 12"), the number of entries and the total; each entry is a row inside it.
  */
 export function EntryList({
   entries,
@@ -25,7 +25,7 @@ export function EntryList({
   today?: string | null;
   showTotal?: boolean;
 }) {
-  const title = date === today ? "Today's timesheet" : `Timesheet for ${longDay.format(fromISODate(date))}`;
+  const title = date === today ? "Today's entries" : `Entries for ${longDay.format(fromISODate(date))}`;
   // A running timer counts in the total as it runs, so this agrees with the watch and the header.
   const running = useRunningMinutes(entries.find((e) => e.started_at)?.started_at ?? null);
   const total = entries.reduce((a, e) => a + e.minutes, 0) + running;

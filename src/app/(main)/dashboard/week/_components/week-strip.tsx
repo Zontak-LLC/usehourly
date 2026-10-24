@@ -40,7 +40,7 @@ export function WeekTotalCard({
         By project · {formatDuration(sheet.total)}
       </h2>
       {sheet.rows.length === 0 ? (
-        <p className="px-4 pb-4 text-muted-foreground text-sm">Nothing logged this week yet.</p>
+        <p className="px-4 pb-4 text-muted-foreground text-sm">No entries this week yet.</p>
       ) : (
         <ul className="divide-y border-t">
           {sheet.rows.map((r) => {

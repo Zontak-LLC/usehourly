@@ -2,9 +2,9 @@ import { expect, menuAction, openAllEntries, startFreshAccount, test } from "./h
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
- * day's list is headed as the day's timesheet.
+ * day's list is headed as the day's entries.
  */
-test("buttons that open a form close it on the second click; the day's list is headed as its timesheet", async ({
+test("buttons that open a form close it on the second click; the day's list is headed as its entries", async ({
   page,
 }) => {
   await startFreshAccount(page, "Acme Studio");
@@ -13,9 +13,9 @@ test("buttons that open a form close it on the second click; the day's list is h
   await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("toggle me")).toBeVisible();
 
-  await test.step("Today's list says it is the day's timesheet, with the entry count and the total", async () => {
-    const list = page.getByRole("region", { name: "Today's timesheet" });
-    await expect(list.getByRole("heading", { name: /Today's timesheet \(1 entry\)/ })).toBeVisible();
+  await test.step("Today's list says it is the day's entries, with the entry count and the total", async () => {
+    const list = page.getByRole("region", { name: "Today's entries" });
+    await expect(list.getByRole("heading", { name: /Today's entries \(1 entry\)/ })).toBeVisible();
     await expect(list).toContainText("Total 1:30");
   });
 
@@ -33,7 +33,7 @@ test("buttons that open a form close it on the second click; the day's list is h
   await test.step("on Week the day's Edit day button opens every entry's form and Done editing closes them", async () => {
     await page.goto("/dashboard/week");
     await openAllEntries(page); // the full list is folded behind one button
-    const list = page.getByRole("region", { name: "What you worked on" });
+    const list = page.getByRole("region", { name: /^All entries this (week|month)$/ });
     const open = list.getByRole("button", { name: /^Edit .*\d/ });
     await expect(open).toHaveAttribute("aria-expanded", "false");
     await open.click();

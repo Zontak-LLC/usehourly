@@ -30,7 +30,7 @@ A plain number up to **12** means hours (\`4\` is four hours). A bigger plain nu
     id: "timer",
     question: "How does the timer work?",
     keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard", "undo"],
-    answer: `Press **Start timer** on Today. The timer runs on the project shown beside it, and the time counts up in the strip and in your totals.
+    answer: `Pick the project in the **Log time** card on Today, then press **Start timer** at the foot of the card. The timer runs on that project. While it runs, it shows at the top of the same card, and the time counts up there and in your totals.
 
 - **Stop timer** saves the time at once and says so ("Saved 0:42"). Use − or + 5 min to correct it, **Undo** to throw it away, **Resume timer** to carry on, or **Done**.
 - Forgot to start it? Just after you start, **Started earlier?** moves the start back by 15 min, 30 min or 1 hour. After 4 hours, **Still working?** lets you stop it at the time you really stopped.
