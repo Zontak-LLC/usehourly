@@ -16,7 +16,8 @@ export type Page<T> = {
 
 /** Cuts `items` into pages of `size`. A page number outside the range is moved inside it (a filter shrank the list). */
 export function paginate<T>(items: readonly T[], page: number, size: number): Page<T> {
-  const per = Math.max(1, Math.floor(size));
+  // Infinity (or anything past the list) means one page with everything: 0 × Infinity would be NaN below.
+  const per = Number.isFinite(size) ? Math.max(1, Math.floor(size)) : Math.max(1, items.length);
   const pages = Math.max(1, Math.ceil(items.length / per));
   const current = Math.min(Math.max(1, Math.floor(page) || 1), pages);
   const start = (current - 1) * per;

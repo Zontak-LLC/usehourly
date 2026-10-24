@@ -1,10 +1,8 @@
 "use client";
 
-import { Search } from "lucide-react";
-
 import { ClientInitial } from "@/components/client-initial";
+import { ListSearch } from "@/components/list-search";
 import { SplitRow } from "@/components/split-view";
-import { Input } from "@/components/ui/input";
 import { clientPath } from "@/lib/client-list";
 
 import type { ClientRow } from "./client-types";
@@ -44,20 +42,7 @@ export function ClientListPane({
   return (
     <div className="flex flex-col gap-1 p-2">
       {showSearch && (
-        <search aria-label="Find clients and projects" className="relative mb-1 block">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search clients and projects…"
-            aria-label="Search clients and projects"
-            className="h-11 pl-9 text-base"
-          />
-        </search>
+        <ListSearch label="Search clients and projects" value={search} onChange={onSearch} className="mb-1" />
       )}
       {nothing && search && (
         <p className="px-2 py-4 text-center text-muted-foreground text-sm">No client or project matches that.</p>
