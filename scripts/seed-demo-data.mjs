@@ -120,7 +120,7 @@ const NOTES = {
 const MAYA = [
   {
     client: "Northwind Studio",
-    color: "#6366f1",
+    color: "#2563c9",
     email: "accounts@northwind.example",
     legal: "Northwind Studio LLC",
     addr: "410 Harbor St\nSuite 12\nBoston, MA 02110",
@@ -178,7 +178,7 @@ const MAYA = [
   },
   {
     client: "Kite and Co",
-    color: "#8b5cf6",
+    color: "#0d9488",
     email: "team@kite.example",
     legal: "Kite & Co Ltd",
     addr: "5 Kite Lane\nBrooklyn, NY 11201",
@@ -245,7 +245,7 @@ const TOM = [
   },
   {
     client: "Studio Nine",
-    color: "#8b5cf6",
+    color: "#0d9488",
     email: "hi@studionine.example",
     legal: "Studio Nine Ltd",
     addr: "9 Nine St\nMiami, FL 33101",
@@ -413,7 +413,7 @@ if (LIGHT > 0) {
     if (R() < 0.38) {
       const cid = randomUUID();
       push(
-        `INSERT INTO clients (id,user_id,name,color,created_at) VALUES (${q(cid)},${q(id)},${q(`${pick(["Acme", "Bright", "Orbit", "Pine", "Nova"])} ${pick(["Studio", "Labs", "Co", "Group"])}`)},${q(pick(["#6366f1", "#10b981", "#f59e0b", "#ef4444"]))},${q(stamp(age))});`,
+        `INSERT INTO clients (id,user_id,name,color,created_at) VALUES (${q(cid)},${q(id)},${q(`${pick(["Acme", "Bright", "Orbit", "Pine", "Nova"])} ${pick(["Studio", "Labs", "Co", "Group"])}`)},${q(pick(["#2563c9", "#10b981", "#f59e0b", "#ef4444"]))},${q(stamp(age))});`,
       );
       const pid = randomUUID();
       push(

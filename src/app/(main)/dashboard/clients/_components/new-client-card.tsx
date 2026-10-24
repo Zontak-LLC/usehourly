@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-const PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6", "#ec4899", "#84cc16"];
+// No purple (2026-10-24): ocean blue first, then green, amber, red, cyan, slate, pink, lime.
+const PALETTE = ["#2563c9", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#64748b", "#ec4899", "#84cc16"];
 
 /**
  * "New client". The way in is the + in the page header; it opens this form as a card at the TOP of the list, and Cancel

@@ -25,7 +25,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 | **Amber** `PALETTE.accent` | the one solid button (Log time, New client...), today (week bar, Month day, Today pill), the open Account tab, the latest month on the Year chart, focus | "act here" or "now" |
 | **Brand blend** (amber, coral, pink, violet) `PALETTE.brandBlend` | the goal meters, the time field's halo after a quick-time chip (30 min amber, 1 hour coral, 2 hours violet), Week's "This week" line, Today's timesheet line, the Month "This month" bar, the home page | time and progress |
 | **Teal** `PALETTE.money.paid` | Invoices: paid ring, bar, Paid pill | money received |
-| **Violet** `PALETTE.money.waiting` | Invoices: waiting part of the bar, Unpaid pill | money expected |
+| **Ocean blue** `PALETTE.money.waiting` (violet until 2026-10-24; no purple anywhere now) | Invoices: waiting part of the bar, Unpaid pill | money expected |
 | **Coral** `PALETTE.money.late` | Invoices: late, the overdue row stripe | money overdue |
 | **Soft grey** `PALETTE.soft` | every other bar and line (week bars, Month day lines, By project bars, Year bars) | "has time", nothing more |
 | **Project colour** (the user's own) | a small dot beside a project or client name, never a bar | which project |
