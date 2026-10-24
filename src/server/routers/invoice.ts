@@ -9,6 +9,7 @@ import { logError } from "@/lib/log";
 import { effectiveCurrency, formatMoney } from "@/lib/money";
 import { assertWithinQuota } from "@/lib/quotas";
 import { isRounding, type Rounding } from "@/lib/rounding";
+import { invoiceTax, taxNumberLabel } from "@/lib/tax";
 import { nextInvoiceNumber } from "@/lib/unbilled";
 
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
@@ -186,6 +187,8 @@ export const invoiceRouter = router({
           compactNotes: z.boolean().default(false),
           /** Bill time that is already on another invoice too (off by default: the same hours are never billed twice). */
           includeInvoiced: z.boolean().default(false),
+          /** Add the account's tax (Account > Invoices) on top of the lines; ignored when the account has none. */
+          addTax: z.boolean().default(false),
         })
         .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
         .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
@@ -244,6 +247,11 @@ export const invoiceRouter = router({
         });
       }
 
+      // The rate comes from the account, never from the caller: the browser only says whether to add it.
+      const tax = input.addTax ? invoiceTax(totals.totalCents, { name: user.tax_name, rate: user.tax_rate }) : null;
+      const totalCents = totals.totalCents + (tax?.cents ?? 0);
+      const taxNumber = user.tax_number ? { label: taxNumberLabel(user.tax_name), value: user.tax_number } : null;
+
       const sellerLogoHash = await storeInvoiceLogo(ctx.prisma, ctx.userId, user.logo);
       const clientLogoHash = await storeInvoiceLogo(ctx.prisma, ctx.userId, client.logo);
       const snapshot: InvoiceSnapshot = {
@@ -257,6 +265,7 @@ export const invoiceRouter = router({
           logo: null, // stored once in invoice_logos and referenced by hash (see below)
           logoHash: sellerLogoHash,
           paymentInstructions: user.payment_instructions,
+          ...(taxNumber ? { taxNumber } : {}),
         },
         client: {
           name: client.name,
@@ -276,7 +285,8 @@ export const invoiceRouter = router({
         lines: totals.lines,
         detail: totals.detail,
         totalMinutes: totals.totalMinutes,
-        totalCents: totals.totalCents,
+        totalCents,
+        ...(tax ? { subtotalCents: totals.totalCents, tax } : {}),
         ...(isRounding(rounding) ? { rounding, loggedMinutes: totals.loggedMinutes } : {}),
       };
 
@@ -300,7 +310,7 @@ export const invoiceRouter = router({
           period_from: input.from,
           period_to: input.to,
           total_minutes: totals.totalMinutes,
-          total_cents: totals.totalCents,
+          total_cents: totalCents,
           currency,
           notes: input.notes,
           snapshot: snapshotText,

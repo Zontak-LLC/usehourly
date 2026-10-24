@@ -8,6 +8,7 @@ import { formatDecimalHours } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import type { buildInvoice } from "@/lib/invoice";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
+import { formatTaxRate, type InvoiceTax, type TaxSetting, taxLabel, taxRowLabel } from "@/lib/tax";
 
 export type InvoiceTotals = ReturnType<typeof buildInvoice>;
 
@@ -17,16 +18,19 @@ export function InvoicePreviewCard({
   error,
   totals,
   clientName,
+  tax = null,
 }: {
   validRange: boolean;
   loading: boolean;
   error: string | null;
   totals: InvoiceTotals;
   clientName: string | undefined;
+  /** The tax the invoice will add on top of the lines (the same rule the server applies), or null. */
+  tax?: InvoiceTax | null;
 }) {
   const money = useMoney();
   // The exact total at once: a money figure that rolls passes through wrong amounts (drawing audit, 2026-10-23).
-  const total = totals.totalCents;
+  const total = totals.totalCents + (tax?.cents ?? 0);
   return (
     // A sheet of paper: it settles onto the page; its total is shown exact at once.
     <div className="overflow-hidden rounded-md border bg-card shadow-[var(--shadow-sheet)] motion-safe:animate-[settle_.7s_cubic-bezier(.2,.8,.2,1)]">
@@ -55,6 +59,20 @@ export function InvoicePreviewCard({
                 <td className="px-4 py-2 text-right font-medium font-mono tabular-nums">{money(l.amountCents)}</td>
               </tr>
             ))}
+            {tax && (
+              <>
+                <tr className="border-b">
+                  <td className="px-4 py-2">Subtotal</td>
+                  <td />
+                  <td className="px-4 py-2 text-right font-mono tabular-nums">{money(totals.totalCents)}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="px-4 py-2">{taxRowLabel(tax)}</td>
+                  <td />
+                  <td className="px-4 py-2 text-right font-mono tabular-nums">{money(tax.cents)}</td>
+                </tr>
+              </>
+            )}
             <tr className="bg-muted/40 font-semibold">
               <td className="px-4 py-3">Total</td>
               <td className="px-4 py-3 text-right font-mono tabular-nums">
@@ -128,5 +146,23 @@ export function InvoiceNotices({
         </p>
       )}
     </>
+  );
+}
+
+/** Add the account's tax to this invoice, or leave it off this once (a client who accounts for the tax itself). */
+export function TaxChoice({
+  tax,
+  add,
+  onAdd,
+}: {
+  tax: Pick<TaxSetting, "name"> & { rate: number };
+  add: boolean;
+  onAdd: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex min-h-9 items-center gap-2 text-sm">
+      <input type="checkbox" checked={add} onChange={(e) => onAdd(e.target.checked)} className="size-4" />
+      Add {taxLabel(tax.name)} ({formatTaxRate(tax.rate)})
+    </label>
   );
 }

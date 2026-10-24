@@ -24,6 +24,11 @@ export const FEATURES = {
   budgets: false,
   /** A client billed in its own currency (the account's one currency stays). */
   clientCurrency: false,
+  /**
+   * Tax on invoices (issue #71 step 4, 2026-10-23): a Tax card on Account > Invoices (name, rate, tax number) and an
+   * "Add VAT (20%)" choice in the invoice builder. Built and tested; off until the owner chooses to show it.
+   */
+  invoiceTax: false,
   /** Per-client billing rounding. */
   rounding: false,
   /**
