@@ -13,6 +13,7 @@ import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageSize } from "@/components/use-page-size";
+import { useUnbilled } from "@/components/use-unbilled";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import { totalsByCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
@@ -22,6 +23,7 @@ import { useToday } from "@/lib/use-today";
 import { InvoiceHero } from "./invoice-hero";
 import { InvoiceList } from "./invoice-list";
 import { InvoiceTotals } from "./invoice-totals";
+import { InvoicesDue } from "./invoices-due";
 
 export function InvoicesView() {
   const utils = trpc.useUtils();
@@ -31,6 +33,8 @@ export function InvoicesView() {
   const clients = trpc.clients.list.useQuery();
   // The tabs and the search in the list work on what is loaded (the account's most recent invoices).
   const invoices = trpc.invoice.list.useQuery();
+  // Started in the same render, so it joins the page's one request: what is due under each client's schedule.
+  const unbilled = useUnbilled();
   const markPaid = trpc.invoice.markPaid.useMutation();
   const pageSize = usePageSize();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -78,6 +82,7 @@ export function InvoicesView() {
         </Button>
       }
     >
+      <InvoicesDue unbilled={unbilled.data} clients={clients.data} today={today} />
       {invoices.data?.length === 0 ? (
         <EmptyState className="flex flex-col items-center gap-2 py-14">
           <FileText className="size-8 text-muted-foreground" />

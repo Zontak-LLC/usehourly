@@ -11,7 +11,15 @@ export type Unbilled = {
   /** The oldest and newest day with unbilled time. */
   from: string;
   to: string;
+  /**
+   * The client is on an invoice schedule (lib/invoice-schedule.ts) and the latest period that is over has time not
+   * billed yet, with no invoice covering it: "October invoice for Acme is due". Only when the screen sent its today.
+   */
+  due?: DueInvoice | null;
 };
+
+/** An invoice that is due under the client's schedule: the period, and the unbilled time and money in it. */
+export type DueInvoice = { from: string; to: string; minutes: number; cents: number };
 
 /** The next free number for a year: one more than the highest used (a count would clash after a delete). */
 export function nextInvoiceNumber(year: number, used: string[]): string {

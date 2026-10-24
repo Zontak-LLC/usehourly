@@ -288,7 +288,7 @@
     {
       "name": "get_client",
       "title": "Get client billing details",
-      "description": "One client's billing details: full legal name and address as printed on invoices.",
+      "description": "One client's billing details: full legal name and address as printed on invoices, and how often the client is invoiced (invoice_schedule: null = whenever the freelancer chooses).",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -321,9 +321,33 @@
           },
           "has_logo": {
             "type": "boolean"
+          },
+          "invoice_schedule": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "every": {
+                    "type": "string",
+                    "enum": ["month", "2weeks"],
+                    "description": "month = on the 1st for the month before; 2weeks = every 14 days"
+                  },
+                  "anchor": {
+                    "description": "The first day of the first two-week period (YYYY-MM-DD), or null",
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": ["every", "anchor"],
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How often this client is invoiced; null = whenever the freelancer chooses"
           }
         },
-        "required": ["id", "name", "legal_name", "address", "currency", "has_logo"],
+        "required": ["id", "name", "legal_name", "address", "currency", "has_logo", "invoice_schedule"],
         "additionalProperties": {}
       },
       "annotations": {

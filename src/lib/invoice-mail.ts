@@ -36,6 +36,15 @@ const dayNumber = (iso: string) => Math.floor(new Date(`${iso}T00:00:00Z`).getTi
 export const daysBetween = (earlier: string, later: string) => dayNumber(later) - dayNumber(earlier);
 
 /**
+ * How many days an invoice is past its due date on `today`, or null when it is not overdue (paid, no due date, or not
+ * due yet). The one "is it late" rule: the Overdue tab and the reminder draft both use it.
+ */
+export function daysLate(inv: { due_date: string | null; paid_date: string | null }, today: string): number | null {
+  if (inv.paid_date !== null || inv.due_date === null || inv.due_date >= today) return null;
+  return daysBetween(inv.due_date, today);
+}
+
+/**
  * Which reminder, if any, is due now: 0 for the first, 1 for the second. `sent` is how many have gone out.
  * Never for a paid invoice or one without a due date.
  */

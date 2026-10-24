@@ -16,7 +16,9 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { toISODate } from "@/lib/dates";
 import { feature } from "@/lib/features";
+import { type InvoiceEvery, isInvoiceEvery, scheduleHint, scheduleOf } from "@/lib/invoice-schedule";
 import { fileToLogo } from "@/lib/logo";
 import { CURRENCIES, type CurrencyCode, currencySymbol, isCurrency } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
@@ -74,6 +76,54 @@ function RoundingFields({ step, mode, min }: { step: number; mode: string; min: 
       </p>
     </fieldset>
   );
+}
+
+/**
+ * How often this client is invoiced (issue 100): when I choose, every month, or every 2 weeks from a start date. With a
+ * schedule, Invoices and the client's bill bar say when an invoice is due. Nothing is sent by UseHourly.
+ */
+function ScheduleField({ every, anchor }: { every: string | null; anchor: string | null }) {
+  const [today] = useState(() => toISODate(new Date()));
+  const [choice, setChoice] = useState<InvoiceEvery | "">(isInvoiceEvery(every) ? every : "");
+  const [start, setStart] = useState(anchor ?? today);
+  const schedule = choice ? scheduleOf({ invoice_every: choice, invoice_anchor: start }) : null;
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor="client-invoice-every">Invoice this client</Label>
+      <div className="flex flex-wrap gap-2">
+        <NativeSelect
+          id="client-invoice-every"
+          name="invoiceEvery"
+          value={choice}
+          onChange={(e) => setChoice(isInvoiceEvery(e.target.value) ? e.target.value : "")}
+          className="max-w-56"
+        >
+          <option value="">When I choose</option>
+          <option value="month">Every month</option>
+          <option value="2weeks">Every 2 weeks</option>
+        </NativeSelect>
+        {choice === "2weeks" && (
+          <Input
+            type="date"
+            name="invoiceAnchor"
+            aria-label="First day of the first two weeks"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            required
+            className="max-w-48"
+          />
+        )}
+      </div>
+      <p className="text-muted-foreground text-xs">{scheduleHint(schedule, today)}</p>
+    </div>
+  );
+}
+
+/** The schedule as the form sends it; a two-week schedule without a start date waits for one (the field is required). */
+function scheduleFrom(fd: FormData) {
+  const every = fd.get("invoiceEvery");
+  if (!isInvoiceEvery(every)) return { every: null, anchor: null };
+  return { every, anchor: every === "2weeks" ? String(fd.get("invoiceAnchor") ?? "") : null };
 }
 
 const currencyChoice = (value: FormDataEntryValue | null): CurrencyCode | null => (isCurrency(value) ? value : null);
@@ -152,6 +202,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         address: String(fd.get("address") ?? ""),
         // The "To" address when you send an invoice from your own mail app (issue 227).
         email: String(fd.get("email") ?? "").trim(),
+        schedule: scheduleFrom(fd),
         // A locked (or hidden) select sends nothing: leave the currency as it is.
         ...(fd.has("currency") ? { currency: currencyChoice(fd.get("currency")) } : {}),
         // Hidden rounding fields send nothing: the stored rule stays as it is.
@@ -170,6 +221,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
         utils.clients.list.invalidate(),
         utils.clients.get.invalidate({ id }),
         utils.clients.logos.invalidate(),
+        utils.invoice.unbilled.invalidate(), // the "invoice due" prompt follows the schedule
       ]);
       toast.success("Client updated.");
       onDone();
@@ -254,6 +306,7 @@ export function ClientDetailsForm({ id, onDone }: { id: string; onDone: () => vo
               autoComplete="off"
             />
           </div>
+          <ScheduleField every={c.invoice_every} anchor={c.invoice_anchor} />
           {withCurrency && <CurrencyField value={c.currency} locked={c.currency_locked} />}
           {withRounding && <RoundingFields step={c.round_step} mode={c.round_mode} min={c.round_min} />}
           <div className="grid gap-1.5">

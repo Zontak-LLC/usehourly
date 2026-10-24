@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { scheduleOf } from "@/lib/invoice-schedule";
 import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 
 import { defineTool, type McpTool } from "./core";
@@ -96,7 +97,8 @@ export const READ_TOOLS: McpTool[] = [
   defineTool({
     name: "get_client",
     title: "Get client billing details",
-    description: "One client's billing details: full legal name and address as printed on invoices.",
+    description:
+      "One client's billing details: full legal name and address as printed on invoices, and how often the client is invoiced (invoice_schedule: null = whenever the freelancer chooses).",
     access: "read",
     idempotent: true,
     input: z.object({ client: clientRef }),
@@ -110,6 +112,7 @@ export const READ_TOOLS: McpTool[] = [
         address: full.address,
         currency: effectiveCurrency(full.currency, me.currency),
         has_logo: Boolean(full.logo),
+        invoice_schedule: scheduleOf(full),
       };
     },
   }),

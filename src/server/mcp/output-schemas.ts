@@ -98,6 +98,12 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     address: z.string().nullable(),
     currency: z.string().describe("The currency this client's rates and invoices are in"),
     has_logo: z.boolean(),
+    invoice_schedule: obj({
+      every: z.enum(["month", "2weeks"]).describe("month = on the 1st for the month before; 2weeks = every 14 days"),
+      anchor: z.string().nullable().describe("The first day of the first two-week period (YYYY-MM-DD), or null"),
+    })
+      .nullable()
+      .describe("How often this client is invoiced; null = whenever the freelancer chooses"),
   }),
   get_timesheet: obj({
     from: z.string(),
