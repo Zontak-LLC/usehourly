@@ -18,8 +18,8 @@ test("the Log time form: layout, the Logged moment, the help line fading out, an
     await expect(time).toBeVisible();
     if (phone) expect(await top(log)).toBeGreaterThan(await top(description));
     else expect(Math.abs((await top(log)) - (await top(time)))).toBeLessThan(8);
-    await expect(page.getByText("on", { exact: true })).toBeVisible(); // "on" Acme · General
-    expect(await top(page.getByText("on", { exact: true }))).toBeGreaterThan(await top(time));
+    await expect(page.getByText("on", { exact: true }).first()).toBeVisible(); // "on" Acme · General
+    expect(await top(page.getByText("on", { exact: true }).first())).toBeGreaterThan(await top(time));
   });
 
   await test.step("after a save the button says what went in, and its name stays Log time", async () => {
