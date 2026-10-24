@@ -10,6 +10,8 @@ import { expect, signUpByApi, test } from "./helpers";
 
 /** Drags the slider's knob with the mouse to `fraction` of the track's width (0 to 1), then lets go. */
 async function drag(page: Page, slider: Locator, fraction: number) {
+  // Centred first: on a phone the floating tab bar covers the foot of the screen, where scrolling into view leaves it.
+  await slider.evaluate((el) => el.scrollIntoView({ block: "center" }));
   const knob = await slider.boundingBox();
   const track = await slider.locator("..").boundingBox();
   if (!knob || !track) throw new Error("the slider is not on screen");
