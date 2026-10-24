@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CLIENT, DEFAULT_PROJECT, MAX_IMPORT_ROWS, parseCsv, readTimeCsv } from "@/lib/import-csv";
 
+import { CLOCKIFY_FILE, HARVEST_FILE, TOGGL_FILE } from "./fixtures/import-files";
+
 const ok = (text: string, opts?: Parameters<typeof readTimeCsv>[1]) => {
   const r = readTimeCsv(text, opts);
   if (!r.ok) throw new Error(`expected a readable file, got: ${r.error}`);
@@ -201,6 +203,69 @@ describe("the CSV reader", () => {
       ["a", "b"],
       ["x, y", 'say "hi"'],
       ["line\nbreak", "z"],
+    ]);
+  });
+});
+
+describe("reading the real export files of the three apps", () => {
+  it("Harvest: recognised, decimal hours become whole minutes (to the nearest), the task stands in for empty notes", () => {
+    const p = ok(HARVEST_FILE);
+    expect(p.format).toBe("harvest");
+    expect(p.skipped).toEqual([]);
+    expect(p.rows.map((r) => [r.date, r.client, r.project, r.minutes, r.note, r.billable, r.rateCents])).toEqual([
+      ["2026-09-14", "Harbor & Co", "Website redesign", 150, "Homepage, hero and nav", true, 12000],
+      ["2026-09-15", "Harbor & Co", "Website redesign", 80, "Contact form\nand spam check", true, 12000], // 1.33 h = 79.8 min
+      ["2026-09-16", "Harbor & Co", "Website redesign", 45, "Meetings", true, 12000],
+      ["2026-09-17", "Harbor & Co", "Support", 60, 'Monthly report "September"', false, null], // a 0.0 rate on non-billable time says nothing
+      ["2026-09-18", "Pine Labs", "Audit", 186, "Accessibility audit, part 1", true, 9500], // "Hours", not "Hours Rounded" (3.25)
+      ["2026-09-18", "Pine Labs", "Audit", 6, "Quick call", true, 9500],
+    ]);
+    expect([p.from, p.to, p.totalMinutes, p.clients]).toEqual([
+      "2026-09-14",
+      "2026-09-18",
+      527,
+      ["Harbor & Co", "Pine Labs"],
+    ]);
+    expect(p.projects.map((x) => [x.project, x.entries, x.minutes])).toEqual([
+      ["Website redesign", 3, 275],
+      ["Audit", 2, 192],
+      ["Support", 1, 60],
+    ]);
+  });
+
+  it("Toggl Track: a BOM and Windows line ends are read, seconds round to the nearest minute, a running timer is left out", () => {
+    const p = ok(TOGGL_FILE);
+    expect(p.format).toBe("toggl");
+    expect(p.rows.map((r) => [r.client, r.project, r.date, r.minutes, r.note, r.billable])).toEqual([
+      ["Northwind", "Brand refresh", "2026-09-14", 136, "Logo sketches, round 2", true], // 02:15:30
+      ["Northwind", "Brand refresh", "2026-09-15", 60, "Colour palette\nand type pairing", true],
+      ["Northwind", "Admin", "2026-09-15", 45, "Invoices and email", false],
+      [DEFAULT_CLIENT, DEFAULT_PROJECT, "2026-09-16", 20, "Reading", false],
+    ]);
+    expect(p.skipped).toEqual([{ line: 6, reason: "No duration (a timer that was still running?)" }]);
+  });
+
+  it("Clockify: 03/04/2026 can be read two ways, so the person is asked; both answers read every row", () => {
+    const p = ok(CLOCKIFY_FILE);
+    expect(p.format).toBe("clockify");
+    expect([p.dateOrderAmbiguous, p.dateSample, p.dateOrder]).toEqual([true, "03/04/2026", "mdy"]);
+    expect(p.rows.map((r) => [r.date, r.minutes, r.rateCents])).toEqual([
+      ["2026-03-04", 90, 8500], // 01:30:20
+      ["2026-03-05", 165, 8500],
+      ["2026-04-03", 30, null],
+      ["2026-04-03", 20, null],
+    ]);
+    expect(p.rows.map((r) => r.note)).toEqual([
+      "Login screen, error states",
+      "Push notifications\n(Android first)",
+      "Team retro",
+      'Reading about "offline first"',
+    ]);
+    expect(ok(CLOCKIFY_FILE, { dateOrder: "dmy" }).rows.map((r) => r.date)).toEqual([
+      "2026-04-03",
+      "2026-05-03",
+      "2026-03-04",
+      "2026-03-04",
     ]);
   });
 });

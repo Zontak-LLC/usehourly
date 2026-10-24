@@ -5,6 +5,8 @@ import { QUOTAS } from "@/lib/quotas";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { CLOCKIFY_FILE, HARVEST_FILE, TOGGL_FILE } from "./fixtures/import-files";
+
 const createCaller = createCallerFactory(appRouter);
 
 type C = { id: string; user_id: string; name: string; archived: boolean };
@@ -110,7 +112,7 @@ describe("moving over from Toggl", () => {
   it("creates the clients and projects it needs, matches names in any capitalisation, and stores every entry", async () => {
     const db = fakeDb();
     const res = await as(db.prisma).timeImport.importRows({ rows: rowsOf(TOGGL) });
-    expect(res).toEqual({ created: 4, duplicates: 0, clientsCreated: 2, projectsCreated: 2 });
+    expect(res).toEqual({ created: 4, duplicates: 0, clientsCreated: 2, projectsCreated: 2, newest: "2026-10-02" });
     expect(db.clients.map((c) => c.name)).toEqual(["Acme", "Globex"]); // "acme" joined the existing "Acme"
     expect(db.projects.map((p) => [p.name, p.billable])).toEqual([
       ["Website", true],
@@ -130,7 +132,7 @@ describe("moving over from Toggl", () => {
     const c = as(db.prisma);
     await c.timeImport.importRows({ rows: rowsOf(TOGGL) });
     const again = await c.timeImport.importRows({ rows: rowsOf(TOGGL) });
-    expect(again).toEqual({ created: 0, duplicates: 4, clientsCreated: 0, projectsCreated: 0 });
+    expect(again).toEqual({ created: 0, duplicates: 4, clientsCreated: 0, projectsCreated: 0, newest: null });
     expect(db.entries).toHaveLength(4);
     expect(db.clients).toHaveLength(2);
   });
@@ -232,6 +234,143 @@ describe("safety of the import", () => {
     const db = fakeDb();
     const out = createCaller({ session: null, prisma: db.prisma as never });
     await expect(out.timeImport.importRows({ rows: rowsOf(TOGGL) })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(out.timeImport.check({ rows: rowsOf(TOGGL) })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(db.prisma.client.findMany).not.toHaveBeenCalled();
+  });
+});
+
+/** Nothing written: the preview's promise. */
+const expectNoWrites = (db: ReturnType<typeof fakeDb>) => {
+  expect(db.prisma.client.create).not.toHaveBeenCalled();
+  expect(db.prisma.project.create).not.toHaveBeenCalled();
+  expect(db.prisma.timeEntry.createMany).not.toHaveBeenCalled();
+  expect(db.prisma.client.updateMany).not.toHaveBeenCalled();
+  expect(db.prisma.project.updateMany).not.toHaveBeenCalled();
+};
+
+describe("moving over from Harvest: file, preview, import, import again", () => {
+  it("the preview counts what is new without writing, the import stores exactly that, and a second run adds nothing", async () => {
+    const db = fakeDb();
+    const c = as(db.prisma);
+    const rows = rowsOf(HARVEST_FILE);
+
+    const preview = await c.timeImport.check({ rows });
+    expect(preview).toEqual({
+      entries: 6,
+      duplicates: 0,
+      newClients: ["harbor & co", "pine labs"],
+      newProjects: ["harbor & co\u0000website redesign", "harbor & co\u0000support", "pine labs\u0000audit"],
+    });
+    expectNoWrites(db);
+
+    const res = await c.timeImport.importRows({ rows });
+    expect(res).toEqual({ created: 6, duplicates: 0, clientsCreated: 2, projectsCreated: 3, newest: "2026-09-18" });
+    expect(db.projects.map((p) => [p.name, p.hourly_rate, p.billable])).toEqual([
+      ["Website redesign", 12000, true],
+      ["Support", 0, false],
+      ["Audit", 9500, true],
+    ]);
+    const projectName = (id: string) => db.projects.find((p) => p.id === id)?.name;
+    expect(db.entries.map((e) => [projectName(e.project_id), e.date, e.minutes, e.note])).toEqual([
+      ["Website redesign", "2026-09-14", 150, "Homepage, hero and nav"],
+      ["Website redesign", "2026-09-15", 80, "Contact form\nand spam check"],
+      ["Website redesign", "2026-09-16", 45, "Meetings"],
+      ["Support", "2026-09-17", 60, 'Monthly report "September"'],
+      ["Audit", "2026-09-18", 186, "Accessibility audit, part 1"],
+      ["Audit", "2026-09-18", 6, "Quick call"],
+    ]);
+
+    expect(await c.timeImport.check({ rows })).toEqual({ entries: 0, duplicates: 6, newClients: [], newProjects: [] });
+    expect(await c.timeImport.importRows({ rows })).toEqual({
+      created: 0,
+      duplicates: 6,
+      clientsCreated: 0,
+      projectsCreated: 0,
+      newest: null,
+    });
+    expect(db.entries).toHaveLength(6);
+  });
+
+  it("never changes a project the account already has, and never matches another account's project", async () => {
+    const db = fakeDb({
+      clients: [
+        { id: "mine", user_id: "u1", name: "harbor & co", archived: false },
+        { id: "theirs", user_id: "u2", name: "Pine Labs", archived: false },
+      ],
+      projects: [
+        {
+          id: "pw",
+          user_id: "u1",
+          client_id: "mine",
+          name: "Website Redesign",
+          archived: false,
+          hourly_rate: 9000,
+          billable: true,
+        },
+        {
+          id: "pa",
+          user_id: "u2",
+          client_id: "theirs",
+          name: "Audit",
+          archived: false,
+          hourly_rate: 1,
+          billable: true,
+        },
+      ],
+    });
+    const c = as(db.prisma, "u1");
+    const rows = rowsOf(HARVEST_FILE);
+    expect(await c.timeImport.check({ rows })).toMatchObject({
+      newClients: ["pine labs"],
+      newProjects: ["harbor & co\u0000support", "pine labs\u0000audit"],
+    });
+    await c.timeImport.importRows({ rows });
+    expect(db.projects.find((p) => p.id === "pw")).toMatchObject({ hourly_rate: 9000, name: "Website Redesign" });
+    const audit = db.projects.filter((p) => p.name === "Audit");
+    expect(audit.map((p) => [p.user_id, p.hourly_rate])).toEqual([
+      ["u2", 1],
+      ["u1", 9500],
+    ]);
+    expect(db.entries.filter((e) => e.project_id === "pa")).toEqual([]);
+    expect(db.entries.filter((e) => e.project_id === "pw")).toHaveLength(3);
+    expect(db.entries.every((e) => e.user_id === "u1")).toBe(true);
+  });
+
+  it("the preview refuses a file that would pass the entry limit, before the import is pressed", async () => {
+    const db = fakeDb();
+    db.prisma.timeEntry.count.mockResolvedValue((QUOTAS.entries - 1) as never);
+    await expect(as(db.prisma).timeImport.check({ rows: rowsOf(HARVEST_FILE) })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expectNoWrites(db);
+  });
+});
+
+describe("moving over from Toggl Track and Clockify files", () => {
+  it("Toggl: non-billable projects are made non-billable, the running timer row is not sent", async () => {
+    const db = fakeDb();
+    const res = await as(db.prisma).timeImport.importRows({ rows: rowsOf(TOGGL_FILE) });
+    expect(res).toMatchObject({ created: 4, clientsCreated: 2, projectsCreated: 3, newest: "2026-09-16" });
+    expect(db.projects.map((p) => [p.name, p.billable, p.hourly_rate])).toEqual([
+      ["Brand refresh", true, 0],
+      ["Admin", false, 0],
+      ["General", false, 0],
+    ]);
+    expect(db.entries.map((e) => e.minutes)).toEqual([136, 60, 45, 20]);
+  });
+
+  it("Clockify: the answer to the date question decides the stored days; re-importing with the same answer adds nothing", async () => {
+    const db = fakeDb();
+    const c = as(db.prisma);
+    const dmy = readTimeCsv(CLOCKIFY_FILE, { dateOrder: "dmy" });
+    if (!dmy.ok) throw new Error(dmy.error);
+    await c.timeImport.importRows({ rows: dmy.preview.rows });
+    expect(db.entries.map((e) => e.date)).toEqual(["2026-04-03", "2026-05-03", "2026-03-04", "2026-03-04"]);
+    expect(db.projects.map((p) => [p.name, p.hourly_rate, p.billable])).toEqual([
+      ["Mobile app", 8500, true],
+      ["Internal", 0, false],
+      ["General", 0, false],
+    ]);
+    expect(await c.timeImport.check({ rows: dmy.preview.rows })).toMatchObject({ entries: 0, duplicates: 4 });
   });
 });

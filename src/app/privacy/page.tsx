@@ -46,6 +46,14 @@ export default function PrivacyPage() {
       <ul>
         <li>We use it only to run the app for you: to show your timesheets, reports, invoices and exports.</li>
         <li>We do not sell your data, we do not show ads, and we do not share your entries with anyone.</li>
+        {feature("importTime") && (
+          <li>
+            If you import a time export from Toggl Track, Clockify, Harvest or another tool, the file is read in your
+            browser. Only the entries in it (date, time, description, client and project names, and the billable flag
+            and hourly rate when the file has them) are sent to us and saved; the file itself is not kept. Names of
+            people and email addresses in the file are not sent.
+          </li>
+        )}
         <li>
           We count how many times each page of the app is opened, per day, to see which parts are used. The count holds
           no name, email address, account identifier or anything you type, and uses no cookies.
