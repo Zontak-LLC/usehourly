@@ -94,6 +94,6 @@ Your **client's** name, address and logo are on **Clients**: open **···** on 
     keywords: ["round up", "rounding", "increments", "15 minutes", "quarter hour", "minimum"],
     answer: feature("rounding")
       ? `Your own records are never rounded. Only a stopped timer is counted up to the next whole minute. For invoices you can choose rounding per client: see [Rounding time on invoices](/help?a=invoice-rounding).`
-      : `No. Invoices bill the exact minutes you logged. Only a stopped timer is counted up to the next whole minute, and you can still change the time before you add it.`,
+      : `No. Invoices bill the exact minutes you logged. Only a stopped timer is counted up to the next whole minute, and you can still correct it with − or + 5 min right after you stop.`,
   },
 ];

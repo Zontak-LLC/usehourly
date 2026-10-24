@@ -49,7 +49,7 @@ test("photograph the main screens", async ({ page }, info) => {
     });
     if (name === "week") {
       // Where the entry list sits on the page, so a before and an after can be cropped to the same region.
-      const box = await page.getByRole("region", { name: "What you worked on" }).boundingBox();
+      const box = await page.getByRole("region", { name: /^All entries this (week|month)$/ }).boundingBox();
       const scroll = await page.evaluate(() => window.scrollY);
       if (box)
         writeFileSync(

@@ -133,7 +133,7 @@ test("polish a description with your own AI key (Anthropic or OpenAI): save the 
     await expect(edit).toHaveAttribute("aria-expanded", "true");
     // one in the add form and one in the entry's own edit form
     await expect(
-      page.getByRole("region", { name: "Today's timesheet" }).getByRole("button", { name: /Polish/ }),
+      page.getByRole("region", { name: "Today's entries" }).getByRole("button", { name: /Polish/ }),
     ).toBeVisible();
   });
 

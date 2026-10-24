@@ -51,7 +51,7 @@ test("Today is simpler: three time chips, totals in one line, a calm disabled Ad
   }
 
   await test.step("not connected, the calendar card sits below the day's entries", async () => {
-    const entries = page.getByRole("region", { name: /^What you worked on|timesheet/i }).first();
+    const entries = page.getByRole("region", { name: /^All entries this|Today's entries/i }).first();
     const calendarY = (await card.boundingBox())?.y ?? 0;
     const addY = (await addCard.boundingBox())?.y ?? 0;
     expect(calendarY).toBeGreaterThan(addY + 200);

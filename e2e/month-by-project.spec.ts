@@ -2,14 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import { openAllEntries, startDemo } from "./helpers";
 
-test("What you worked on: the project filter narrows the list, and it can be read by day or by project", async ({
-  page,
-}) => {
+test("All entries: the project filter narrows the list, and it can be read by day or by project", async ({ page }) => {
   await startDemo(page);
   await page.goto("/dashboard/month");
   await openAllEntries(page); // folded behind "All entries this month"
 
-  const list = page.getByRole("region", { name: "What you worked on" });
+  const list = page.getByRole("region", { name: /^All entries this (week|month)$/ });
   await expect(list).toBeVisible();
   const heading = list.getByRole("heading", { level: 2 });
   const countOf = async () => Number(/\((\d+)\)/.exec((await heading.textContent()) ?? "")?.[1]);

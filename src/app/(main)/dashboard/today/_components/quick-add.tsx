@@ -60,6 +60,8 @@ export function QuickAdd({
   showDate = true,
   bare = false,
   onTimerContext,
+  timerTop,
+  timerFoot,
 }: {
   date: string;
   dayMinutes: number;
@@ -67,8 +69,12 @@ export function QuickAdd({
   showDate?: boolean;
   /** Without its own card and header: the Week page puts the form inside the day's card. */
   bare?: boolean;
-  /** Today's timer is the strip above this form: it starts for the project and description picked here. */
+  /** Today's timer lives in this card: it starts for the project and description picked here (the one picker). */
   onTimerContext?: (context: { projectId: string; projectName: string; note: string }) => void;
+  /** Today only (issue 218): the running timer or the saved ticket, shown at the top of this card. Others pass nothing. */
+  timerTop?: React.ReactNode;
+  /** Today only: the quiet "or Start timer on ..." line at the foot of this card. */
+  timerFoot?: React.ReactNode;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -89,6 +95,7 @@ export function QuickAdd({
   const fieldRoll = useRoll();
   const dayRoll = useRoll();
   const projectLabel = useId();
+  const headingId = useId();
   // After a save the button says what went in ("Logged 2:00") for a moment; typing a new time ends it at once.
   const [logged, setLogged] = useState<string | null>(null);
   const [loggedCount, setLoggedCount] = useState(HELP_UNTIL);
@@ -248,6 +255,7 @@ export function QuickAdd({
   // the description.
   const body = (
     <div className={bare ? "flex flex-col gap-3" : "flex flex-col gap-3 p-3 sm:p-4"}>
+      {timerTop}
       <form method="post" onSubmit={submit} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="relative sm:col-start-1 sm:row-start-1">
           <Input
@@ -371,20 +379,21 @@ export function QuickAdd({
           </div>
         )}
       </form>
+      {timerFoot}
     </div>
   );
   if (bare) return body;
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <section aria-labelledby={headingId} className="overflow-hidden rounded-xl border bg-card">
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
       <div className="border-b bg-band-2 px-3 py-3 sm:px-4">
-        <h2 className="font-semibold text-base">
+        <h2 id={headingId} className="font-semibold text-base">
           Log time
           {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
         </h2>
       </div>
       {body}
-    </div>
+    </section>
   );
 }
 
