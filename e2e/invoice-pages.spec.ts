@@ -1,9 +1,10 @@
-import { expect, sql, startDemo, test } from "./helpers";
+import { expect, invoiceRows, openInvoice, sql, startDemo, test } from "./helpers";
 
-/** The invoices sit in one card with a header; a phone shows 3 at a time, a wide screen 10, with Previous and Next. */
-test("invoices are in one headed card and paginated: 3 per page on a phone, 10 on a wide screen", async ({
-  page,
-}, info) => {
+const numbersOf = (rows: ReturnType<typeof invoiceRows>) =>
+  rows.evaluateAll((els) => els.map((r) => r.getAttribute("data-number")));
+
+/** The invoice list is paginated: a phone shows 3 at a time, a wide screen 10, with the arrow buttons. */
+test("the invoice list is paginated: 3 per page on a phone, 10 on a wide screen", async ({ page }, info) => {
   await startDemo(page);
   // This test's own account (not "the newest sample account", which another test running at the same time may have made).
   const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
@@ -25,96 +26,86 @@ test("invoices are in one headed card and paginated: 3 per page on a phone, 10 o
 
   const card = page.getByRole("region", { name: "Your invoices" });
   await expect(card).toBeVisible();
-  await expect(card.getByRole("heading", { name: "Your invoices" })).toBeVisible();
-  const numbers = () => card.getByText(/^INV-\d{4}-\d{3}$/);
+  const rows = invoiceRows(page);
+  const pager = card.getByRole("navigation", { name: "invoices pages" });
+  const per = info.project.name === "phone" ? 3 : 10;
 
-  if (info.project.name === "phone") {
-    const pager = card.getByRole("navigation", { name: "invoices pages" });
-    const total = Number((await pager.innerText()).match(/of (\d+) invoices/)?.[1]);
-    expect(total).toBe(11);
-    await expect(numbers()).toHaveCount(3);
-    await expect(pager).toContainText(`1 to 3 of ${total} invoices`);
-    await expect(pager.getByRole("button", { name: "Previous" })).toBeDisabled();
-    const firstPage = await numbers().allInnerTexts();
-    await pager.getByRole("button", { name: "Next" }).click();
-    await expect(pager).toContainText(`4 to ${Math.min(6, total)} of ${total} invoices`);
-    const secondPage = await numbers().allInnerTexts();
-    expect(secondPage.filter((n) => firstPage.includes(n))).toEqual([]);
-    await pager.getByRole("button", { name: "Previous" }).click();
-    expect(await numbers().allInnerTexts()).toEqual(firstPage);
-  } else {
-    // A wide screen shows ten at once, then the eleventh on page 2.
-    await expect(numbers()).toHaveCount(10);
-    const pager = card.getByRole("navigation", { name: "invoices pages" });
-    await expect(pager).toContainText("1 to 10 of 11 invoices");
-    await pager.getByRole("button", { name: "Next" }).click();
-    await expect(numbers()).toHaveCount(1);
-    await expect(pager).toContainText("11 to 11 of 11 invoices");
-    await expect(pager.getByRole("button", { name: "Next" })).toBeDisabled();
-  }
+  await expect(rows).toHaveCount(per);
+  await expect(pager).toContainText(`1–${per} of 11`);
+  await expect(pager.getByRole("button", { name: "Previous page" })).toBeDisabled();
+  const firstPage = await numbersOf(rows);
+  await pager.getByRole("button", { name: "Next page" }).click();
+  await expect(pager).toContainText(`${per + 1}–${Math.min(2 * per, 11)} of 11`);
+  const secondPage = await numbersOf(rows);
+  expect(secondPage.filter((n) => firstPage.includes(n))).toEqual([]);
+  await pager.getByRole("button", { name: "Previous page" }).click();
+  await expect.poll(() => numbersOf(rows)).toEqual(firstPage);
 });
 
-test("an invoice says its state in words, unpaid ones have Mark paid, and the tabs narrow the list", async ({
+test("each invoice says its state in words, unpaid ones have Mark paid, and the tabs narrow the list", async ({
   page,
 }) => {
   await startDemo(page);
   await page.goto("/dashboard/invoices");
 
-  const card = page.getByRole("region", { name: "Your invoices" });
-  const invoices = card.getByRole("listitem");
+  const invoices = invoiceRows(page);
+  const tabs = page.getByRole("tablist", { name: "Show invoices" });
   await expect(invoices.first()).toBeVisible();
   const all = await invoices.count();
   expect(all).toBeGreaterThanOrEqual(2); // the sample data has a paid and an unpaid invoice
   // the state is in words beside the amount: Paid Oct 20, Due in 5 days, 3 days late, Due today, Waiting
   for (const row of await invoices.all())
     await expect(row).toContainText(/Paid \w{3} \d+|Due in \d+ days?|\d+ days? late|Due today|Waiting/);
-  // the number is a button that downloads the PDF
-  await expect(invoices.first().getByRole("link", { name: /^INV-\d{4}-\d{3}: open the invoice$/ })).toBeVisible();
 
   await test.step("the tabs: All is chosen, Paid shows only paid ones, Waiting only unpaid ones", async () => {
-    const tabs = page.getByRole("tablist", { name: "Show invoices" });
     await expect(tabs.getByRole("tab", { name: /^All/ })).toHaveAttribute("aria-selected", "true");
     await tabs.getByRole("tab", { name: /^Paid/ }).click();
     await expect(tabs.getByRole("tab", { name: /^Paid/ })).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => invoices.count()).toBeLessThan(all);
-    for (const row of await invoices.all()) {
-      await expect(row).toContainText(/Paid \w{3} \d+/);
-      await expect(row.getByRole("button", { name: "Mark paid" })).toHaveCount(0);
-    }
+    for (const row of await invoices.all()) await expect(row).toHaveAttribute("data-state", "paid");
+    const paid = await openInvoice(page, 0);
+    await expect(paid.detail.getByRole("button", { name: "Mark paid" })).toHaveCount(0);
+    await page.goto("/dashboard/invoices");
     await tabs.getByRole("tab", { name: /^Waiting/ }).click();
     await expect.poll(() => invoices.count()).toBeGreaterThan(0);
-    for (const row of await invoices.all()) await expect(row.getByRole("button", { name: "Mark paid" })).toBeVisible();
-    await tabs.getByRole("tab", { name: /^All/ }).click();
-    await expect.poll(() => invoices.count()).toBe(all);
+    for (const row of await invoices.all()) await expect(row).not.toHaveAttribute("data-state", "paid");
   });
 
-  await test.step("Mark paid opens its panel under the invoice and closes on a second press", async () => {
-    const mark = card.getByRole("button", { name: "Mark paid" }).first();
+  await test.step("Mark paid opens its panel in the invoice and closes on a second press", async () => {
+    const { detail } = await openInvoice(page, 0);
+    const mark = detail.getByRole("button", { name: "Mark paid" });
     await expect(mark).toHaveAttribute("aria-expanded", "false");
     await mark.click();
     await expect(mark).toHaveAttribute("aria-expanded", "true");
+    await expect(detail.getByRole("region", { name: /^Mark as paid INV-/ })).toBeVisible();
     await mark.click();
     await expect(mark).toHaveAttribute("aria-expanded", "false");
   });
 
   // there are no folded filters any more: one search box
+  await page.goto("/dashboard/invoices");
   await expect(page.getByRole("button", { name: "Filters" })).toHaveCount(0);
-  await expect(
-    page.getByRole("searchbox", { name: "Search invoices" }).or(page.getByLabel("Search invoices")),
-  ).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Search invoices" })).toBeVisible();
 });
 
-test("an invoice's number opens the invoice's own page (issue 219); the download icon still downloads", async ({
+test("Open full size shows the invoice alone with Download PDF and Print; the download icon downloads too", async ({
   page,
 }) => {
   await startDemo(page);
   await page.goto("/dashboard/invoices");
-  const number = page.getByRole("link", { name: /^INV-\d{4}-\d{3}: open the invoice$/ }).first();
-  const name = ((await number.getAttribute("aria-label")) ?? "").split(":")[0];
-  await number.click();
-  await expect(page).toHaveURL(/\/dashboard\/invoices\/[^/]+$/);
-  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: `Invoice ${name}` })).toBeVisible();
+  const { number, detail } = await openInvoice(page, 0);
+  const [file] = await Promise.all([
+    page.waitForEvent("download"),
+    detail.getByRole("button", { name: `Download ${number} as a PDF` }).click(),
+  ]);
+  expect(file.suggestedFilename()).toBe(`${number}.pdf`);
+  // the preview is the client's view, smaller
+  await expect(detail.getByTestId("invoice-preview").getByRole("heading", { name: `Invoice ${number}` })).toBeVisible();
+  await detail.getByRole("link", { name: "Open full size" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/invoices\/[^/]+\?full=1$/);
+  await expect(page.getByRole("heading", { level: 1, name: number })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: `Invoice ${number}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Print" })).toBeVisible();
   const [pdf] = await Promise.all([
     page.waitForEvent("download"),
     page
@@ -122,15 +113,8 @@ test("an invoice's number opens the invoice's own page (issue 219); the download
       .first()
       .click(),
   ]);
-  expect(pdf.suggestedFilename()).toBe(`${name}.pdf`);
+  expect(pdf.suggestedFilename()).toBe(`${number}.pdf`);
   await page.getByRole("link", { name: "Back to invoices" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/invoices$/);
-  const [file] = await Promise.all([
-    page.waitForEvent("download"),
-    page
-      .getByRole("button", { name: /^Download INV-\d{4}-\d{3} as a PDF$/ })
-      .first()
-      .click(),
-  ]);
-  expect(file.suggestedFilename()).toMatch(/^INV-\d{4}-\d{3}\.pdf$/);
+  await expect(page).toHaveURL(/\/dashboard\/invoices\/[^/?]+$/);
+  await expect(page.getByRole("region", { name: `Invoice ${number}`, exact: true })).toBeVisible();
 });

@@ -3,71 +3,67 @@
 import { useState } from "react";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { FileText, Plus } from "lucide-react";
-import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
+import { SplitView } from "@/components/split-view";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageSize } from "@/components/use-page-size";
 import { useUnbilled } from "@/components/use-unbilled";
-import { downloadInvoicePdf } from "@/lib/invoice-pdf";
-import { totalsByCurrency } from "@/lib/money";
-import { toastError } from "@/lib/toast-error";
+import {
+  filterInvoices,
+  type InvoiceTab,
+  invoiceIdFromPath,
+  invoicePath,
+  moneyLines,
+  tabCounts,
+} from "@/lib/invoice-list";
+import { paginate } from "@/lib/paginate";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
-import { InvoiceHero } from "./invoice-hero";
-import { InvoiceList } from "./invoice-list";
-import { InvoiceTotals } from "./invoice-totals";
+import { InvoiceListPane } from "./invoice-list-pane";
+import { InvoicePane, useShownInvoice } from "./invoice-pane";
 import { InvoicesDue } from "./invoices-due";
 
+/**
+ * Invoices as a split view, like Clients (2026-10-24): the list on the left (money line, tabs, search, month groups),
+ * the chosen invoice on the right (its header, actions, the panel an action opens, and a copy of what the client sees).
+ * Each invoice has its own address (`/dashboard/invoices/<id>`); choosing one changes the address in place
+ * (history.pushState, which Next follows), so the tab, the search and the scroll stay. A wide screen with no invoice
+ * in the address shows the first one of the tab; a phone shows the list and the invoice as two screens.
+ */
 export function InvoicesView() {
-  const utils = trpc.useUtils();
+  const pathname = usePathname();
+  const routeId = invoiceIdFromPath(pathname);
   // "Today" is the browser's date (the Worker runs in UTC); used to say what is due and what is late.
   const today = useToday();
 
+  // Every query the page needs starts in this render, so they go out as ONE batched request.
   const clients = trpc.clients.list.useQuery();
-  // The tabs and the search in the list work on what is loaded (the account's most recent invoices).
   const invoices = trpc.invoice.list.useQuery();
-  // Started in the same render, so it joins the page's one request: what is due under each client's schedule.
   const unbilled = useUnbilled();
-  const markPaid = trpc.invoice.markPaid.useMutation();
   const pageSize = usePageSize();
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [tab, setTab] = useState<InvoiceTab>("all");
+  const [search, setSearch] = useState("");
+  const [pageNo, setPageNo] = useState(1);
 
-  async function download(id: string) {
-    setBusyId(id);
-    try {
-      const { snapshot } = await utils.invoice.get.fetch({ id });
-      await downloadInvoicePdf(snapshot);
-    } catch (err) {
-      toast.error(err instanceof Error ? `Couldn't create the PDF: ${err.message}` : "Couldn't create the PDF.");
-    } finally {
-      setBusyId(null);
-    }
+  const all = invoices.data ?? [];
+  const filtered = filterInvoices(all, tab, search, today);
+  const selectedId = routeId ?? filtered[0]?.id ?? null;
+  const shown = useShownInvoice(routeId, selectedId);
+
+  function openInvoice(id: string | null) {
+    const path = id ? invoicePath(id) : "/dashboard/invoices";
+    if (path !== pathname) window.history.pushState(null, "", path);
   }
-
-  async function setPaid(id: string, number: string, paidDate: string | null) {
-    try {
-      await markPaid.mutateAsync({ id, paidDate });
-      await Promise.all([utils.invoice.list.invalidate(), utils.report.annual.invalidate()]);
-      toast.success(paidDate ? `Invoice ${number} marked paid.` : `Invoice ${number} marked unpaid.`);
-    } catch (err) {
-      toastError(err, "Couldn't update that invoice.");
-    }
-  }
-
-  const groups = totalsByCurrency(invoices.data ?? []);
-  const handlers = {
-    busyId,
-    paidBusy: markPaid.isPending,
-    onSavePaid: (i: { id: string; number: string }, date: string | null) => setPaid(i.id, i.number, date),
-    onDownload: (i: { id: string }) => void download(i.id),
-  };
+  const colourOf = (id: string) => clients.data?.find((c) => c.id === id)?.color ?? undefined;
+  const empty = all.length === 0 && !routeId;
 
   return (
     <PageShell
@@ -82,43 +78,56 @@ export function InvoicesView() {
         </Button>
       }
     >
-      <InvoicesDue unbilled={unbilled.data} clients={clients.data} today={today} />
-      {invoices.data?.length === 0 ? (
+      <div className="print:hidden">
+        <InvoicesDue unbilled={unbilled.data} clients={clients.data} today={today} />
+      </div>
+      {invoices.error && <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>}
+      {invoices.isLoading && <Skeleton className="h-96 w-full" />}
+      {invoices.data && empty && (
         <EmptyState className="flex flex-col items-center gap-2 py-14">
           <FileText className="size-8 text-muted-foreground" />
           <p className="font-medium">No invoices yet.</p>
           <p className="text-muted-foreground text-sm">Create one from the time you've already logged.</p>
         </EmptyState>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {groups[0] && <InvoiceHero currency={groups[0].currency} total={groups[0].total} unpaid={groups[0].unpaid} />}
-          <section
-            id="invoice-list"
-            aria-label="Your invoices"
-            className="scroll-mt-20 overflow-hidden rounded-3xl border bg-card shadow-[var(--shadow-sheet)]"
-          >
-            <header className="flex flex-col gap-1 bg-band-2 px-3 py-3 sm:px-4">
-              <h2 className="font-semibold text-base">Your invoices</h2>
-              {/* With one currency the summary above already says it; with several, each currency gets its own line. */}
-              {groups.length > 1 && <InvoiceTotals groups={groups} filtering={false} />}
-            </header>
-            {invoices.error ? (
-              <div className="p-3 sm:p-4">
-                <Notice tone="danger">Couldn't load invoices: {invoices.error.message}</Notice>
-              </div>
-            ) : invoices.isLoading ? (
-              <Skeleton className="m-3 h-32 sm:m-4" />
-            ) : (
-              <InvoiceList
-                invoices={invoices.data ?? []}
-                today={today}
-                handlers={handlers}
-                pageSize={pageSize}
-                colourOf={(id) => clients.data?.find((c) => c.id === id)?.color ?? undefined}
-              />
-            )}
-          </section>
-        </div>
+      )}
+      {invoices.data && !empty && (
+        <SplitView
+          view={routeId ? "detail" : "list"}
+          wideList
+          headerless="the split view: the invoice list and the chosen invoice, each with its own header"
+          back={{ href: "/dashboard/invoices", label: "Invoices", onBack: () => openInvoice(null) }}
+          list={
+            <InvoiceListPane
+              page={paginate(filtered, pageNo, pageSize)}
+              money={moneyLines(all, today)}
+              counts={tabCounts(all, today)}
+              tab={tab}
+              onTab={(t) => {
+                setTab(t);
+                setPageNo(1);
+              }}
+              search={search}
+              onSearch={(q) => {
+                setSearch(q);
+                setPageNo(1);
+              }}
+              onPage={setPageNo}
+              selectedId={selectedId}
+              onOpen={openInvoice}
+              today={today}
+              colourOf={colourOf}
+            />
+          }
+        >
+          <InvoicePane
+            selectedId={selectedId}
+            row={all.find((i) => i.id === selectedId)}
+            shown={shown}
+            today={today}
+            colourOf={colourOf}
+            onOpen={openInvoice}
+          />
+        </SplitView>
       )}
     </PageShell>
   );

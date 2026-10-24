@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { gotoClient, startDemo } from "./helpers";
+import { gotoClient, openInvoice, startDemo } from "./helpers";
 
 /** Deleting an invoice asks inside its card; archiving a client or project is immediate with Undo (no pop-ups). */
 test("delete invoice confirms inside the card; archive is immediate with Undo", async ({ page }) => {
@@ -8,18 +8,8 @@ test("delete invoice confirms inside the card; archive is immediate with Undo", 
 
   await test.step("an invoice's delete question opens in its card and names the invoice", async () => {
     await page.goto("/dashboard/invoices");
-    const card = page.getByRole("region", { name: "Your invoices" }).getByRole("listitem").first();
-    const number = (
-      await card
-        .getByText(/^INV-\d{4}-\d{3}$/)
-        .first()
-        .innerText()
-    ).trim();
-    await card
-      .getByRole("button", { name: `More actions for ${number}` })
-      .locator("visible=true")
-      .first()
-      .click();
+    const { number, detail: card } = await openInvoice(page, 0);
+    await card.getByRole("button", { name: `More actions for ${number}` }).click();
     await page.getByRole("menuitem", { name: "Delete invoice" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     const ask = card.getByRole("region", { name: `Delete invoice ${number}?` });

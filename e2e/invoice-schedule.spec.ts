@@ -1,4 +1,4 @@
-import { expect, gotoClient, menuAction, sql, startFreshAccount, test } from "./helpers";
+import { expect, gotoClient, invoiceRows, menuAction, openInvoice, sql, startFreshAccount, test } from "./helpers";
 
 /*
  * Get paid without chasing (issue 100): Acme is invoiced every month, so once a month is over and its time is not billed,
@@ -63,7 +63,7 @@ test("a monthly client: the due prompt, the invoice from it, and a reminder once
     await expect(page.getByText("$250.00").first()).toBeVisible();
     await page.getByRole("button", { name: /Create invoice/ }).click();
     await expect(page).toHaveURL(/\/dashboard\/invoices$/);
-    await expect(page.getByRole("region", { name: "Your invoices" }).getByRole("listitem")).toHaveCount(1);
+    await expect(invoiceRows(page)).toHaveCount(1);
     await expect(page.getByTestId("invoice-due")).toHaveCount(0); // invoiced: the prompt is gone
   });
 
@@ -71,11 +71,13 @@ test("a monthly client: the due prompt, the invoice from it, and a reminder once
     sql(`UPDATE invoices SET due_date = date('now', 'localtime', '-9 days') WHERE user_id = ${owner}`);
     await page.reload();
     await page.getByRole("tab", { name: /Overdue/ }).click();
-    const reminder = page.getByRole("button", { name: /^Write a reminder for INV-/ });
+    const { detail } = await openInvoice(page, 0);
+    const reminder = detail.getByRole("button", { name: /^Write a reminder for INV-/ });
     await expect(reminder).toBeVisible();
-    await expect(page.getByRole("button", { name: /^Send INV-/ })).toHaveCount(0); // its place is the reminder's
+    await expect(detail.getByRole("button", { name: /^Send INV-/ })).toHaveCount(0); // its place is the reminder's
     await reminder.click();
-    const panel = page.getByRole("region", { name: /^Write a reminder for INV-/ });
+    // the reminder opens in the invoice's own pane, not under a list row
+    const panel = detail.getByRole("region", { name: /^Write a reminder for INV-/ });
     await expect(panel.getByLabel("Subject")).toHaveValue(/^Reminder: Invoice INV-\S+ .*is overdue$/);
     const message = panel.getByLabel("Message");
     await expect(message).toHaveValue(/for \$250\.00, .* 9 days ago, and I have not received the payment yet/);

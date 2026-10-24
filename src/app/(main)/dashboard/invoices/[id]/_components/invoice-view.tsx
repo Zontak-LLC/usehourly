@@ -6,11 +6,12 @@ import { InvoiceDocument } from "@/components/invoice-document";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { invoicePath } from "@/lib/invoice-list";
 import { trpc } from "@/lib/trpc";
 
 /**
- * One invoice, opened from its number on the Invoices list (issue 219, 2026-10-23): the same page the client sees through
- * a private link (the frozen copy, the paid stamp, Download PDF and Print), inside the app.
+ * One invoice full size ("Open full size" on Invoices, `?full=1`): the same page the client sees through a private
+ * link (the frozen copy, the paid stamp, Download PDF and Print), inside the app. Back goes to it in the split view.
  */
 export function InvoiceView({ id }: { id: string }) {
   const invoice = trpc.invoice.get.useQuery({ id });
@@ -19,7 +20,7 @@ export function InvoiceView({ id }: { id: string }) {
       nav="invoices"
       title={invoice.data ? invoice.data.snapshot.number : "Invoice"}
       description={
-        <Link href="/dashboard/invoices" className="py-1 font-medium text-foreground underline">
+        <Link href={invoicePath(id)} className="py-1 font-medium text-foreground underline">
           Back to invoices
         </Link>
       }

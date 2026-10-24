@@ -6,6 +6,7 @@
 import { fromISODate, spanDays } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { count } from "@/lib/plural";
+import { splitIdFromPath } from "@/lib/split-path";
 
 /**
  * Clients with time this month first, then the quiet ones (no time this month), each group alphabetical. Before the
@@ -123,12 +124,4 @@ export function billBarDetail(
 /** The address of one client's profile, and the client an address names (null for the list or the archived page). */
 export const clientPath = (id: string) => `/dashboard/clients/${encodeURIComponent(id)}`;
 
-export function clientIdFromPath(pathname: string): string | null {
-  const m = /^\/dashboard\/clients\/([^/]+)\/?$/.exec(pathname);
-  if (!m || m[1] === "archived") return null;
-  try {
-    return decodeURIComponent(m[1]);
-  } catch {
-    return null;
-  }
-}
+export const clientIdFromPath = (pathname: string) => splitIdFromPath(pathname, "/dashboard/clients", ["archived"]);
