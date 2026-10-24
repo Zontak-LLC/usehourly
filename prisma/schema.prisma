@@ -19,6 +19,11 @@ model AuthUser {
   address       String?   // multi-line
   logo          String?   // data URL (png/jpeg), resized client-side
   payment_instructions String? // free text printed on invoices (ACH, check...)
+  // Tax added to invoices (issue #71 step 4, lib/tax.ts): name ("VAT"), rate in basis points (2000 = 20%; null/0 = none)
+  // and the seller's tax number (VAT/GST registration), printed on invoices.
+  tax_name      String?
+  tax_rate      Int?
+  tax_number    String?
   token_version Int      @default(0) // bump to sign out every device (see lib/session-version.ts)
   email_verified_at DateTime? // set when the address was confirmed through an emailed link
   email_bounced_at DateTime? // set when the address bounced for good or reported spam; no more reminder mail

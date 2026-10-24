@@ -6,6 +6,19 @@ import type { Answer } from "./types";
  */
 export const HIDDEN_ANSWERS: Answer[] = [
   {
+    id: "invoice-tax",
+    feature: "invoiceTax",
+    question: "How do I add VAT, GST or sales tax to my invoices?",
+    keywords: ["vat", "gst", "hst", "sales tax", "tax rate", "tax number", "registration", "reverse charge"],
+    answer: `On **Account**, **Invoices**, fill in the **Tax** card: the name of the tax (VAT, GST, HST, Sales tax or your own word), the **rate** as a percentage (for example 20 or 7.5) and **your tax number**. Press **Save tax**.
+
+Each new invoice then shows a **Subtotal**, the tax row (for example "VAT (20%)") and the **Total** the client pays. The tax is worked out once on the subtotal and rounded to the cent.
+
+- To leave the tax off one invoice (a client who accounts for it themselves), untick **Add VAT (20%)** under the preview when you make it.
+- Your tax number prints on every new invoice when it is filled in, with or without the tax.
+- Invoices you already made never change. Leave the rate empty to add no tax.`,
+  },
+  {
     id: "budgets",
     feature: "budgets",
     question: "How do I set a budget for a project?",

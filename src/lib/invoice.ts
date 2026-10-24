@@ -1,5 +1,6 @@
 import { formatMoney } from "./money";
 import { billedMinutes, NO_ROUNDING, type Rounding } from "./rounding";
+import type { InvoiceTax } from "./tax";
 
 /** Pure invoice math, shared by the server (which snapshots) and the builder page (live preview). */
 
@@ -100,6 +101,8 @@ export type InvoiceSnapshot = {
     paymentInstructions?: string | null;
     /** sha-256 of the logo stored in invoice_logos (new invoices keep `logo` null and point here). */
     logoHash?: string | null;
+    /** The seller's tax registration ("VAT number", "GB123456789"); absent or null = none printed. */
+    taxNumber?: { label: string; value: string } | null;
   };
   // address/logo are absent on invoices issued before they existed.
   client: {
@@ -125,7 +128,12 @@ export type InvoiceSnapshot = {
   lines: InvoiceLine[];
   detail: InvoiceDetailRow[];
   totalMinutes: number;
+  /** What the client pays: the lines' sum, plus `tax` when one was added. */
   totalCents: number;
+  /** The lines' sum before tax; present only when a tax was added (older invoices and untaxed ones have none). */
+  subtotalCents?: number;
+  /** The tax added on the subtotal (issue #71 step 4); absent = none. */
+  tax?: InvoiceTax;
 };
 
 // Money formatting lives in lib/money.ts (one currency per account); re-exported so invoice code reads as before.
