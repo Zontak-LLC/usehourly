@@ -4,7 +4,10 @@ import type { MouseEvent, ReactNode } from "react";
 
 import Link from "next/link";
 
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, type LucideIcon } from "lucide-react";
+
+import { pushLocationHash } from "@/components/use-location-hash";
+import { ROW_FIGURE } from "@/lib/figures";
 
 /**
  * A list beside the chosen item, in ONE card (Clients, issue 238; Account, issue 283). From 768px the list sits on the
@@ -39,11 +42,13 @@ export function SplitView({
         wideList ? "md:grid-cols-[20rem_minmax(0,1fr)]" : "md:grid-cols-[17rem_minmax(0,1fr)]"
       }`}
     >
-      {/* Printing shows the chosen item only. */}
+      {/* Printing shows the chosen item only (also from a phone's list screen). */}
       <div className="min-w-0 bg-muted/40 group-data-[view=detail]/split:max-md:hidden md:border-r print:hidden">
         {list}
       </div>
-      <div className={`flex min-w-0 flex-col group-data-[view=list]/split:max-md:hidden ${detailClassName}`}>
+      <div
+        className={`flex min-w-0 flex-col group-data-[view=list]/split:max-md:hidden print:flex! ${detailClassName}`}
+      >
         <Link
           href={back.href}
           onClick={(e) => {
@@ -143,5 +148,113 @@ export function SplitGroup({
         {children}
       </ul>
     </>
+  );
+}
+
+/** The icon tile at the start of a section row (Account, the Year summary). */
+export function SplitTile({ icon: Icon, quiet = false }: { icon: LucideIcon; quiet?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`grid size-10 shrink-0 place-items-center rounded-xl bg-card ring-1 ring-foreground/10 ${quiet ? "opacity-60" : ""}`}
+    >
+      <Icon className="size-5" />
+    </span>
+  );
+}
+
+export type SplitSection<Id extends string> = {
+  id: Id;
+  label: string;
+  line: string;
+  icon: LucideIcon;
+  figure?: string;
+};
+
+/**
+ * A split view of a page's sections whose open one is the address's #part (Account, the Year summary): the sections as
+ * rows (a tile, the name, one status line, an optional figure), each a real link to its #address, and the open one on
+ * the right. With no #part a wide screen shows `fallback` and a phone shows the list. `after` adds rows to the list.
+ */
+export function SectionSplit<Id extends string>({
+  label,
+  sections,
+  open,
+  fallback,
+  back,
+  headerless,
+  detailClassName,
+  after,
+  children,
+}: {
+  /** The list's name for a screen reader ("Account sections"). */
+  label: string;
+  sections: readonly SplitSection<Id>[];
+  open: Id | null;
+  fallback: Id;
+  back: { href: string; label: string };
+  headerless: string;
+  detailClassName?: string;
+  after?: ReactNode;
+  children: ReactNode;
+}) {
+  const selected = open ?? fallback;
+  return (
+    <SplitView
+      view={open ? "detail" : "list"}
+      headerless={headerless}
+      back={{ ...back, onBack: () => pushLocationHash(null) }}
+      detailClassName={detailClassName}
+      wideList={sections.some((s) => s.figure)}
+      list={
+        // The list stays in view beside a long section: the page scrolls and the list rides along.
+        <nav aria-label={label} className="flex flex-col gap-0.5 p-2 md:sticky md:top-24">
+          {sections.map((s) => (
+            <SplitRow
+              key={s.id}
+              href={`#${s.id}`}
+              selected={s.id === selected}
+              onOpen={() => pushLocationHash(s.id)}
+              leading={<SplitTile icon={s.icon} />}
+              title={s.label}
+              line={s.line}
+              trailing={s.figure && <span className={ROW_FIGURE}>{s.figure}</span>}
+            />
+          ))}
+          {after}
+        </nav>
+      }
+    >
+      {children}
+    </SplitView>
+  );
+}
+
+/** One section on the right of a split view: its name (the same words as its row) as the heading, a line under it. */
+export function SplitPane({
+  id,
+  title,
+  description,
+  headClassName = "px-1 pb-4",
+  className,
+  children,
+}: {
+  id: string;
+  title: string;
+  description?: string;
+  headClassName?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby={`${id}-heading`} className={className}>
+      <div className={headClassName}>
+        <h2 id={`${id}-heading`} className="font-bold text-xl leading-tight sm:text-2xl">
+          {title}
+        </h2>
+        {description && <p className="mt-2 text-foreground/75">{description}</p>}
+      </div>
+      {children}
+    </section>
   );
 }

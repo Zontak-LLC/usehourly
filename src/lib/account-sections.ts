@@ -3,6 +3,7 @@
  * opens, and the one status line each shows in the list. Pure, so the page and the tests read the same rules.
  */
 import { count } from "@/lib/plural";
+import { sectionFromHash } from "@/lib/section-hash";
 
 export const ACCOUNT_SECTIONS = [
   { id: "account", label: "Your account" },
@@ -23,10 +24,8 @@ export const ACCOUNT_SECTION_LABELS = Object.fromEntries(ACCOUNT_SECTIONS.map((s
 const ALIASES: Record<string, AccountSectionId> = { claim: "account" };
 
 /** The section an address's #part opens, or null (no #part, or one we do not know: the list on a phone). */
-export function accountSectionFromHash(hash: string): AccountSectionId | null {
-  const id = hash.replace(/^#/, "");
-  return ACCOUNT_SECTIONS.find((s) => s.id === id)?.id ?? (Object.hasOwn(ALIASES, id) ? ALIASES[id] : null);
-}
+export const accountSectionFromHash = (hash: string): AccountSectionId | null =>
+  sectionFromHash(ACCOUNT_SECTIONS, hash, ALIASES);
 
 export type AccountFacts = {
   is_demo: boolean;
