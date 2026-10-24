@@ -22,7 +22,7 @@ function mockPrisma() {
       update: vi.fn(async ({ data }) => data),
       deleteMany: vi.fn(),
     },
-    client: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
+    client: { findFirst: vi.fn(), findMany: vi.fn(async () => []), create: vi.fn(), updateMany: vi.fn() },
     authUser: { findUnique: vi.fn(), create: vi.fn() },
   };
 }

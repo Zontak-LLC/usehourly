@@ -47,35 +47,48 @@ const withProject = {
   project: { omit: { logo: true }, include: { client: { omit: { logo: true } } } },
 } as const;
 
-const rangeSchema = z
-  .object({ from: dateSchema, to: dateSchema })
-  .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
-  .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
-    message: `Choose a range of up to a year (${MAX_QUERY_DAYS} days).`,
-  });
+/** A date range of at most a year, start before end. */
+const inRange = <T extends z.ZodType<{ from: string; to: string }>>(schema: T) =>
+  schema
+    .refine((v) => v.from <= v.to, { message: "The start date must be before the end date." })
+    .refine((v) => spanDays(v.from, v.to) <= MAX_QUERY_DAYS, {
+      message: `Choose a range of up to a year (${MAX_QUERY_DAYS} days).`,
+    });
+const rangeSchema = inRange(z.object({ from: dateSchema, to: dateSchema }));
+/** `clientId` keeps only that client's entries (the invoice builder asks for one client's year, not the account's). */
+const listSchema = inRange(
+  z.object({ from: dateSchema, to: dateSchema, clientId: z.string().min(1).max(64).optional() }),
+);
 
 export const entryRouter = router({
   /**
    * Entries in [from, to] inclusive, newest first. At most a year at a time (see `listAll` for everything). Each entry
    * carries `non_billable`: true when its day is marked non-billable (exports, reports and invoices skip those).
    */
-  list: protectedProcedure.input(rangeSchema).query(async ({ ctx, input }) => {
-    // Four independent reads started together (one round trip, not a chain): the entries, the non-billable days and
-    // the account's projects with their clients. Letting Prisma join them itself would run entries, then projects,
-    // then clients, one after another, and D1 charges a round trip for each. The projects are always the caller's own.
-    const [rows, days, projects] = await Promise.all([
+  list: protectedProcedure.input(listSchema).query(async ({ ctx, input }) => {
+    // Four independent reads started together (one round trip, not a chain): the entries, the non-billable days, the
+    // account's projects and its clients. Letting Prisma join them itself (`include`) would run entries, then projects,
+    // then clients, one after another, and D1 charges a round trip for each. Every read is filtered by the account.
+    const [rows, days, projects, clients] = await Promise.all([
       ctx.prisma.timeEntry.findMany({
-        where: { user_id: ctx.userId, date: { gte: input.from, lte: input.to } },
+        where: {
+          user_id: ctx.userId,
+          date: { gte: input.from, lte: input.to },
+          ...(input.clientId ? { project: { client_id: input.clientId, user_id: ctx.userId } } : {}),
+        },
         orderBy: [{ date: "desc" }, { created_at: "desc" }],
       }),
-      nonBillableDates(ctx.prisma, ctx.userId, input),
-      ctx.prisma.project.findMany({
-        where: { user_id: ctx.userId },
-        omit: { logo: true },
-        include: { client: { omit: { logo: true } } },
-      }),
+      nonBillableDates(ctx.prisma, ctx.userId, { from: input.from, to: input.to }),
+      ctx.prisma.project.findMany({ where: { user_id: ctx.userId }, omit: { logo: true } }),
+      ctx.prisma.client.findMany({ where: { user_id: ctx.userId }, omit: { logo: true } }),
     ]);
-    const byId = new Map(projects.map((p) => [p.id, p]));
+    const clientById = new Map(clients.map((c) => [c.id, c]));
+    const byId = new Map(
+      projects.flatMap((p) => {
+        const client = clientById.get(p.client_id);
+        return client ? [[p.id, { ...p, client }] as const] : [];
+      }),
+    );
     // `author` is the team member who typed the entry (null for the owner's own): looked up only when there is one.
     const authorIds = [...new Set(rows.flatMap((e) => (e.author_id ? [e.author_id] : [])))];
     const authors = authorIds.length

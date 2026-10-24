@@ -9,6 +9,13 @@
 //   example3@example.com   a team member of example1 (logs time on example1's clients)
 // All three use the password below. It is a local test value; this script only ever talks to the local database.
 // The light accounts (light00001@example.com ... light10000@example.com) give the Insights page something to show.
+//
+//   node scripts/seed-demo-data.mjs --heavy    ONLY heavy@example.com (same password): 15 clients (4 archived), 40
+//                                              projects (some archived), three years of weekday time up to today (about
+//                                              4,000 entries), about 100 invoices through the real invoice.create,
+//                                              non-billable days and budgets. For measuring pages with a long history.
+// SEED_BASE=http://127.0.0.1:3032 and SEED_PERSIST=.wrangler/state-perf point it at another local app and its own
+// database folder (a worktree's dev server started with E2E_PERSIST). Only localhost / 127.0.0.1 is accepted.
 
 import { chromium } from "@playwright/test";
 import bcrypt from "bcryptjs";
@@ -18,7 +25,9 @@ import { randomUUID } from "node:crypto";
 import { writeFileSync } from "node:fs";
 
 const PASSWORD = "Example-Pass-2026!";
-const BASE = "http://127.0.0.1:3028";
+const BASE = process.env.SEED_BASE ?? "http://127.0.0.1:3028";
+if (!["localhost", "127.0.0.1"].includes(new URL(BASE).hostname)) throw new Error(`Refusing ${BASE}: local app only.`);
+const PERSIST = process.env.SEED_PERSIST ? ["--persist-to", process.env.SEED_PERSIST] : [];
 const TODAY = "2026-10-22";
 const argv = process.argv.slice(2);
 const flag = (name, fallback) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : fallback);
@@ -26,7 +35,7 @@ const LIGHT = Number(flag("--light", "10000"));
 
 const sh = (sql) => {
   writeFileSync("/tmp/seed.sql", sql);
-  execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", "--file=/tmp/seed.sql"], {
+  execFileSync("npx", ["wrangler", "d1", "execute", "DB", "--local", "--file=/tmp/seed.sql", ...PERSIST], {
     stdio: "pipe",
     maxBuffer: 1 << 28,
   });
@@ -284,17 +293,19 @@ const TOM = [
 ];
 
 /** One row per entry for a freelancer, over the weekdays from `from` to TODAY. */
-function makeEntries(clients, from) {
+/** `to` (default TODAY), `perDay` entries a day and the `lengths` to pick from can be changed (the heavy account). */
+const LENGTHS = [30, 45, 60, 90, 120, 150, 180, 240];
+function makeEntries(clients, from, { to = TODAY, perDay = [1, 3], lengths = LENGTHS } = {}) {
   const rows = [];
   const weighted = clients.flatMap((c) => Array(c.w).fill(c));
-  for (let d = from; d <= TODAY; d = addDays(d, 1)) {
+  for (let d = from; d <= to; d = addDays(d, 1)) {
     if (!isWeekday(d) || R() < 0.1) continue;
-    const count = between(1, 3);
+    const count = between(...perDay);
     let left = between(5, 8) * 60;
     for (let i = 0; i < count && left > 0; i++) {
       const c = pick(weighted);
       const [project, rate, kind] = pick(c.projects);
-      const minutes = Math.min(left, pick([30, 45, 60, 90, 120, 150, 180, 240]));
+      const minutes = Math.min(left, pick(lengths));
       left -= minutes;
       rows.push({
         client: c.client,
@@ -349,6 +360,13 @@ const initials = (s) =>
     .slice(0, 2)
     .map((w) => w[0].toUpperCase())
     .join("");
+
+// ---------- --heavy: one account with three years of history, then stop ----------
+if (argv.includes("--heavy")) {
+  await seedHeavy();
+  await browser.close();
+  process.exit(0);
+}
 
 // ---------- the 10,000 light accounts, straight into the local database ----------
 if (LIGHT > 0) {
@@ -495,18 +513,20 @@ for (const p of people) {
   );
 }
 
+/** Signs in as exampleN@example.com, or as the address given. */
 async function login(n) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/auth/v2/login`);
-  await page.getByLabel("Email", { exact: true }).fill(`example${n}@example.com`);
+  await page.getByLabel("Email", { exact: true }).fill(typeof n === "string" ? n : `example${n}@example.com`);
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByLabel("Password", { exact: true }).press("Enter");
   await page.waitForURL(/dashboard/, { timeout: 30000 });
   return page;
 }
-const call = (page, path, input, mutation = true) =>
-  page.evaluate(
+// A function declaration (not a const) so the --heavy mode, which runs before this line, can use it.
+function call(page, path, input, mutation = true) {
+  return page.evaluate(
     async ([path, input, mutation]) => {
       const url = `/api/trpc/${path}?batch=1${mutation ? "" : `&input=${encodeURIComponent(JSON.stringify({ 0: input ?? null }))}`}`;
       const res = await fetch(url, {
@@ -521,13 +541,14 @@ const call = (page, path, input, mutation = true) =>
     },
     [path, input, mutation],
   );
-const attempt = async (label, fn) => {
+}
+async function attempt(label, fn) {
   try {
     return await fn();
   } catch (e) {
     console.log(`  skipped ${label}: ${String(e.message).slice(0, 110)}`);
   }
-};
+}
 
 async function fill(n, spec, from, opts) {
   const p = await login(n);
@@ -689,3 +710,89 @@ await browser.close();
 console.log(
   "Done. Sign in as example1@example.com, example2@example.com or example3@example.com (the password is at the top of this script).",
 );
+
+// ---------- --heavy: heavy@example.com, three years of history up to the real today ----------
+async function seedHeavy() {
+  const email = "heavy@example.com";
+  const today = ymd(new Date());
+  const start = addDays(today, -3 * 365);
+  sh(`DELETE FROM auth_users WHERE email = ${q(email)};
+INSERT INTO auth_users (id,name,email,password_hash,email_verified_at,business_name) VALUES (${q(randomUUID())},'Heavy Freelancer',${q(email)},${q(bcrypt.hashSync(PASSWORD, 10))},datetime('now'),'Heavy Studio');`);
+  // The two example freelancers' clients plus one, each of the first twelve with an extra project: 15 and 40.
+  const extra = ["Maintenance", "Discovery", "Workshops", "Analytics"];
+  const spec = [...MAYA, ...TOM, { client: "Orbit Robotics", w: 2, projects: [["Control panel", 14000, "dev"]] }].map(
+    (c, i) => ({
+      ...c,
+      projects: i < 12 ? [...c.projects, [extra[i % 4], c.internal ? 0 : 9000 + i * 500, "pm"]] : c.projects,
+      // the share of the three years the client was active; four clients ended early and are archived
+      from: c.internal ? 0 : R() * 0.6,
+      archived: ["Bluebird Cafe", "Kite and Co", "Oakline Legal", "Studio Nine"].includes(c.client),
+    }),
+  );
+  for (const c of spec) c.to = c.archived ? Math.min(0.95, c.from + 0.2 + R() * 0.3) : 1;
+  const rows = [];
+  for (let k = 0; k < 12; k++) {
+    const qFrom = addDays(start, Math.round((k * 3 * 365) / 12));
+    const qTo = k === 11 ? today : addDays(start, Math.round(((k + 1) * 3 * 365) / 12) - 1);
+    const active = spec.filter((c) => c.from <= (k + 1) / 12 && c.to >= k / 12);
+    rows.push(...makeEntries(active, qFrom, { to: qTo, perDay: [4, 7], lengths: [15, 30, 45, 60, 75, 90, 120] }));
+  }
+  const p = await login(email);
+  const slow = async (...a) => {
+    await new Promise((r) => setTimeout(r, 260)); // stays under the 240 changes a minute limit
+    return call(p, ...a);
+  };
+  console.log(`heavy: ${rows.length} entries`);
+  for (let i = 0; i < rows.length; i += 300) await slow("timeImport.importRows", { rows: rows.slice(i, i + 300) });
+  const list = await call(p, "clients.list", null, false);
+  const pid = (client, project) => list.find((c) => c.name === client)?.projects.find((x) => x.name === project)?.id;
+  for (const [client, project, amount, unit, period] of [
+    ["Northwind Studio", "Website redesign", 120 * 60, "hours", "total"],
+    ["Fable Labs", "Mobile app", 40 * 60, "hours", "month"],
+    ["Helios Energy", "Dashboard", 1_500_000, "dollars", "total"],
+    ["Meridian Health", "Patient portal", 30 * 60, "hours", "month"],
+  ]) {
+    const id = pid(client, project);
+    if (id) await slow("project.update", { id, budgetAmount: amount, budgetUnit: unit, budgetPeriod: period });
+  }
+  for (let i = 0; i < 24; i++)
+    await slow("entry.setNonBillable", { date: addDays(today, -between(5, 3 * 365)), nonBillable: true });
+  await heavyInvoices({ spec, rows, list, today, slow });
+  console.log("heavy: archiving");
+  for (const c of spec) {
+    const client = list.find((x) => x.name === c.client);
+    if (!client) continue;
+    if (c.archived) await slow("clients.archive", { id: client.id });
+    else if (R() < 0.4 && c.projects.length > 2)
+      await slow("project.archive", { id: pid(c.client, c.projects.at(-1)[0]) });
+  }
+  console.log(`Done. Sign in as ${email} (the password is at the top of this script).`);
+}
+
+/** About three invoices a month over three years, through the real invoice.create; most of them paid. */
+async function heavyInvoices({ spec, rows, list, today, slow }) {
+  console.log("heavy: invoices");
+  const seq = {};
+  for (let m = 35; m >= 1; m--) {
+    const d = parse(today);
+    d.setDate(1);
+    d.setMonth(d.getMonth() - m);
+    const from = ymd(d);
+    d.setMonth(d.getMonth() + 1);
+    const issue = ymd(d);
+    const to = addDays(issue, -1);
+    for (const c of spec.filter((x) => !x.internal && R() < 0.35)) {
+      const clientId = list.find((x) => x.name === c.client)?.id;
+      if (!clientId || !rows.some((r) => r.client === c.client && r.date >= from && r.date <= to)) continue;
+      const year = issue.slice(0, 4);
+      seq[year] = (seq[year] ?? 0) + 1;
+      const number = `INV-${year}-${String(seq[year]).padStart(3, "0")}`;
+      const inv = await attempt(`invoice ${number}`, () =>
+        slow("invoice.create", { clientId, from, to, number, issueDate: issue, dueDate: addDays(issue, 30) }),
+      );
+      const id = inv?.invoice?.id ?? inv?.id;
+      if (id && m > 1 && R() < 0.9)
+        await attempt("mark paid", () => slow("invoice.markPaid", { id, paidDate: addDays(issue, between(5, 40)) }));
+    }
+  }
+}

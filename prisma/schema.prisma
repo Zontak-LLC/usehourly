@@ -160,6 +160,8 @@ model TimeEntry {
   @@index([user_id, started_at])
   // Migration 0024 adds a partial unique index on (user_id) WHERE started_at IS NOT NULL: one running timer per
   // account. Prisma cannot express a partial index, so it lives only in the SQL.
+  // Migration 0038 adds another, time_entries_unbilled_idx: stopped, unbilled entries only, covering the
+  // "not invoiced yet" sum (invoice.unbilled) so it never reads the account's whole history.
   @@map("time_entries")
 }
 

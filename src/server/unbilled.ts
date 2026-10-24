@@ -35,7 +35,9 @@ export async function markInvoiced(
  * account's projects; the account filter on both is the isolation boundary.
  */
 export async function unbilledByClient(prisma: PrismaClient, userId: string): Promise<Unbilled[]> {
-  const [groups, projects] = await Promise.all([
+  // Three independent reads started together (one round trip); the grouped sum is served by the partial index on
+  // unbilled time (migration 0038), so it reads what is waiting to be billed, not the account's whole history.
+  const [groups, projects, offDays] = await Promise.all([
     prisma.timeEntry.groupBy({
       by: ["project_id"],
       where: { user_id: userId, invoice_id: null, started_at: null, minutes: { gt: 0 } },
@@ -47,9 +49,9 @@ export async function unbilledByClient(prisma: PrismaClient, userId: string): Pr
       where: { user_id: userId },
       select: { id: true, client_id: true, billable: true, hourly_rate: true },
     }),
+    // Time on days marked non-billable is never invoiced, so it is not waiting to be billed either.
+    nonBillableDates(prisma, userId),
   ]);
-  // Time on days marked non-billable is never invoiced, so it is not waiting to be billed either.
-  const offDays = await nonBillableDates(prisma, userId);
   const offMinutes = new Map<string, number>();
   const days = [...offDays];
   for (let i = 0; i < days.length; i += CHUNK) {

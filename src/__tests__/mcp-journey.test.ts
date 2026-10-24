@@ -612,10 +612,10 @@ describe("an assistant tracks a day of work", () => {
   });
 
   it("lists a week with totals per project and day, and can narrow to one project", async () => {
-    // entry.list reads the account's projects (with their clients) next to the entries and joins them itself
+    // entry.list reads the account's projects and clients next to the entries and joins them itself
     s.prisma.project.findMany.mockResolvedValue([
-      { id: "p1", name: "Website", client: { id: "c1", name: "Acme" } },
-      { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
+      { id: "p1", name: "Website", client_id: "c1", client: { id: "c1", name: "Acme" } },
+      { id: "p3", name: "Website", client_id: "c2", client: { id: "c2", name: "Globex" } },
     ]);
     s.prisma.timeEntry.findMany.mockResolvedValue([
       entryRow({ id: "a", date: "2026-10-09", minutes: 90 }),
@@ -1070,8 +1070,8 @@ describe("a batch cannot multiply what one token may do", () => {
 describe("timesheets", () => {
   const week = { from: "2026-10-05", to: "2026-10-11" }; // Monday to Sunday
   const projects = [
-    { id: "p1", name: "Website", client: { id: "c1", name: "Acme" } },
-    { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
+    { id: "p1", name: "Website", client_id: "c1", client: { id: "c1", name: "Acme" } },
+    { id: "p3", name: "Website", client_id: "c2", client: { id: "c2", name: "Globex" } },
   ];
   const entries = [
     entryRow({ id: "a", date: "2026-10-09", minutes: 90 }),
