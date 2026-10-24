@@ -173,7 +173,7 @@ export function DayCard({
         <Neighbour day={next} minutes={minutesOn(next)} isToday={next === today} direction="next" onPick={onPick} />
       </nav>
       {footer && (
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-foreground/10 border-t px-3 py-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-foreground/10 border-t px-3 py-2.5 empty:hidden">
           {footer}
         </div>
       )}

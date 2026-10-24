@@ -27,6 +27,7 @@ import { useToday } from "@/lib/use-today";
 import { DayCard } from "./day-card";
 import { FirstRun } from "./first-run";
 import { MissedDays } from "./missed-days";
+import { NoteReminder } from "./note-reminder";
 import { QuickAdd } from "./quick-add";
 import { TodayLayout } from "./today-layout";
 
@@ -121,10 +122,15 @@ export function TodayView() {
               weekTotal={weekTotal}
               onPick={go}
               footer={
-                // The days with no time, the one place that tells about them (issue 99 nudge; the timer is in the Log time card).
-                today && missed.some((d) => d !== date) ? (
-                  <MissedDays days={missed} date={date} today={today} onPick={go} />
-                ) : null
+                // The days with no time, the one place that tells about them (issue 99 nudge; the timer is in the Log time card),
+                // and the day's entries that still have no note (log first, note later).
+                // The footer hides itself when neither has anything to say (`empty:hidden` in DayCard).
+                <>
+                  <NoteReminder entries={dayEntries} date={date} today={today} />
+                  {today && missed.some((d) => d !== date) && (
+                    <MissedDays days={missed} date={date} today={today} onPick={go} />
+                  )}
+                </>
               }
             />
           }
