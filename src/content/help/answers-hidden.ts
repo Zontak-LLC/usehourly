@@ -25,10 +25,9 @@ Each new invoice then shows a **Subtotal**, the tax row (for example "VAT (20%)"
     keywords: ["limit", "cap", "retainer", "warning", "over budget", "80%"],
     answer: `Edit a project on the Clients page and fill in **Budget**: an amount, whether it is in **hours** or **money** (in your account's currency), and whether it **resets each month** or covers the **whole life** of the project. Clear the amount to remove it.
 
-A bar appears under the project and above the time box when you add time. It turns yellow at **80%** and red at **100%**, and the words say the same ("nearly used up", "over budget").
+A bar appears under the project on the Clients page and at the foot of the Log time form when you add time for it. It turns yellow at **80%** and red at **100%**, and the words say the same ("nearly used up", "over budget").
 
 - A money budget prices time at the project's hourly rate. A non-billable project uses none of a money budget.
-- Time on days you marked non-billable does not count.
 - It is a warning only: nothing stops you logging more.`,
   },
   {

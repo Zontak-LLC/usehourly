@@ -21,7 +21,7 @@ export const FEATURES = {
   /** Importing time from a CSV (Toggl Track, Clockify, Harvest or any): on since 2026-10-24 ("Move here in two minutes"). */
   importTime: true,
   /** Project budgets and the budget bar. */
-  budgets: false,
+  budgets: true,
   /** A client billed in its own currency (the account's one currency stays). */
   clientCurrency: false,
   /**
