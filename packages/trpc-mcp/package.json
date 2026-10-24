@@ -1,0 +1,12 @@
+{
+  "name": "trpc-mcp-server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Serve a tRPC app's procedures to AI assistants as a safe MCP server. Working name; not published yet.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  }
+}
