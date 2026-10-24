@@ -66,6 +66,7 @@ function world(initialDays: { user_id: string; date: string }[] = []) {
     client: {
       count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
+      findMany: vi.fn(async () => [withProject.client]),
     },
     project: { findMany: vi.fn(async () => [{ ...project, client: { id: "c1", name: "Acme" } }]) },
     invoice: {

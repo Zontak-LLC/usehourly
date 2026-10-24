@@ -16,7 +16,12 @@ function fakeEntries(rows: Row[]) {
     const start = args.cursor ? mine.findIndex((r) => r.id === args.cursor?.id) : 0;
     return mine.slice(Math.max(start, 0), Math.max(start, 0) + (args.take ?? mine.length));
   });
-  return { timeEntry: { findMany }, project: { findMany: vi.fn(async () => []) }, ...memoryNonBillableDays() };
+  return {
+    timeEntry: { findMany },
+    project: { findMany: vi.fn(async () => []) },
+    client: { findMany: vi.fn(async () => []) },
+    ...memoryNonBillableDays(),
+  };
 }
 const asUser = (prisma: object, id = "u1") =>
   createCaller({ session: { user: { id }, expires: "" }, prisma: prisma as never });

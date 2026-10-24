@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { addDays, MAX_QUERY_DAYS, toISODate } from "@/lib/dates";
+import { addDays, toISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { buildInvoice } from "@/lib/invoice";
@@ -23,7 +23,7 @@ import type { Rounding } from "@/lib/rounding";
 import { invoiceTax } from "@/lib/tax";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
-import type { Unbilled } from "@/lib/unbilled";
+import { invoicePeriodStart, type Unbilled } from "@/lib/unbilled";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
 import { InvoiceNotices, InvoicePreviewCard, TaxChoice } from "./invoice-preview";
@@ -89,6 +89,28 @@ function AlreadyInvoiced({
   );
 }
 
+/**
+ * The chosen client's entries for the period, asked for only once the period has settled. Before, the builder fetched
+ * every client's entries for this month and then again for up to a year (megabytes on a busy account). It still reads
+ * "loading" while the client or the period is being worked out, so the preview never flashes "no time".
+ */
+function useClientEntries(o: {
+  from: string;
+  to: string;
+  clientId: string;
+  validRange: boolean;
+  periodSettled: boolean;
+  unbilledPending: boolean;
+}) {
+  const entries = trpc.entry.list.useQuery(
+    { from: o.from, to: o.to, clientId: o.clientId },
+    { enabled: o.validRange && !!o.clientId && o.periodSettled },
+  );
+  const entriesLoading =
+    entries.isLoading || (o.validRange && !!o.clientId && !o.periodSettled) || (!o.clientId && o.unbilledPending);
+  return { entries, entriesLoading };
+}
+
 export function NewInvoiceView() {
   const router = useRouter();
   const wantedClient = useSearchParams().get("client");
@@ -129,7 +151,6 @@ export function NewInvoiceView() {
 
   const client = clients.data?.find((c) => c.id === clientId);
   const validRange = !!from && !!to && from <= to;
-  const entries = trpc.entry.list.useQuery({ from, to }, { enabled: validRange });
 
   // Open on the client with the most unbilled money (or the one asked for). Chosen once; the person's own choice is
   // never overwritten.
@@ -139,14 +160,20 @@ export function NewInvoiceView() {
   }, [clients.data, clientId, unbilled.data, wantedClient]);
   // The period starts at the client's oldest unbilled day ("since the last invoice") and ends today.
   const unbilledFrom = unbilled.data?.find((u) => u.clientId === clientId)?.from;
+  const defaultFrom = today ? invoicePeriodStart(today, unbilledFrom) : "";
   useEffect(() => {
     if (rangeTouched || !today) return;
-    // At most a year back (the longest period an invoice may cover).
-    const earliest = addDays(today, -(MAX_QUERY_DAYS - 1));
-    const start = unbilledFrom && unbilledFrom < today ? unbilledFrom : `${today.slice(0, 7)}-01`;
-    setFrom(start < earliest ? earliest : start);
+    setFrom(defaultFrom);
     setTo(today);
-  }, [unbilledFrom, rangeTouched, today]);
+  }, [defaultFrom, rangeTouched, today]);
+  const { entries, entriesLoading } = useClientEntries({
+    from,
+    to,
+    clientId,
+    validRange,
+    periodSettled: rangeTouched || (!unbilled.isPending && from === defaultFrom),
+    unbilledPending: unbilled.isPending,
+  });
 
   // Live preview uses the same math the server will snapshot.
   const rounding: Rounding = useMemo(
@@ -274,7 +301,7 @@ export function NewInvoiceView() {
               <ClientCurrency currency={client?.currency}>
                 <InvoicePreviewCard
                   validRange={validRange}
-                  loading={entries.isLoading}
+                  loading={entriesLoading}
                   error={entries.error?.message ?? null}
                   totals={totals}
                   clientName={client?.name}

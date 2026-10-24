@@ -1,5 +1,7 @@
 /** Billing rules shared by the server and the screens: time not invoiced yet, and the next invoice number. */
 
+import { addDays, MAX_QUERY_DAYS } from "./dates";
+
 export type Unbilled = {
   clientId: string;
   /** Billable minutes not on any invoice yet. */
@@ -21,4 +23,14 @@ export function nextInvoiceNumber(year: number, used: string[]): string {
     if (Number.isFinite(k) && k > highest) highest = k;
   }
   return `${prefix}${String(highest + 1).padStart(3, "0")}`;
+}
+
+/**
+ * Where a new invoice's period starts by default: the client's oldest unbilled day ("since the last invoice"), else the
+ * first of this month; never more than a year back (the longest period an invoice may cover).
+ */
+export function invoicePeriodStart(today: string, unbilledFrom: string | undefined): string {
+  const earliest = addDays(today, -(MAX_QUERY_DAYS - 1));
+  const start = unbilledFrom && unbilledFrom < today ? unbilledFrom : `${today.slice(0, 7)}-01`;
+  return start < earliest ? earliest : start;
 }
