@@ -416,9 +416,10 @@ export function QuickAdd({
             if (followUp && note.trim()) saveFollowUp();
           }}
         />
-        {/* At the foot, so picking a project with a budget never moves the controls above it. */}
+        {/* At the foot, so picking a project with a budget never moves the controls above it. `order-last` because the
+            Log time button is moved to the end on a phone (`order-last` too): the bar then follows it, by source order. */}
         {budget && feature("budgets") && (
-          <div className="sm:col-span-2">
+          <div className="order-last sm:col-span-2">
             <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
               <BudgetBar status={budget} />
             </ClientCurrency>
