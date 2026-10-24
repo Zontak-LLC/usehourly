@@ -22,7 +22,7 @@ export function SupportHourly({ variant = "card" }: { variant?: "band" | "card" 
 
   if (variant === "band") {
     return (
-      <section className="relative overflow-hidden border-t bg-gradient-to-b from-[#ff5d8f]/10 via-[#8A6CFF]/10 to-transparent">
+      <section className="relative overflow-hidden border-t bg-gradient-to-b from-[#ff5d8f]/10 via-amber/10 to-transparent">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-20 left-1/2 size-72 -translate-x-1/2 rounded-full bg-[#ff5d8f]/20 blur-3xl"

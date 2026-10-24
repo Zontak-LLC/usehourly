@@ -64,7 +64,7 @@
 /* Theme styles: one palette, light and dark (the colour presets were removed on 2026-10-22). */
 :root {
   /* Calm (v4, 2026-10-23): a cool mist page, white sheets, slate ink, and ONE soft periwinkle accent (the hour hand) that
-     does the pointing; progress lines run from sky to lavender. Green only for good news, red only for problems. The
+     does the pointing; progress lines run from sky to ocean blue. Green only for good news, red only for problems. The
      token is still called "amber" so every screen follows without renaming: it is the accent, whatever its hue. */
   --radius: 0.875rem;
   --background: #eef2f7;
@@ -82,8 +82,8 @@
   --accent: #e8edf4;
   --accent-foreground: #1c2434;
   --destructive: #d04a3a;
-  --amber: #5a63d8;
-  --amber-soft: #eceafc;
+  --amber: #2563c9;
+  --amber-soft: #e7effd;
   /* Big accent surfaces (the main button, the latest month bar) and small marks (today's date, a dot) share one hue. */
   --amber-fill: color-mix(in oklab, var(--amber) 92%, var(--background));
   /* Success is Bright Optimistic Green #50B83C. On white it is only 2.5:1, too pale for words, so it is used for icons,
@@ -93,10 +93,10 @@
   --success-soft: oklch(0.955 0.05 141);
   --border: #dbe2ec;
   --input: #d5dce7;
-  --ring: #5a63d8;
+  --ring: #2563c9;
   --chart-1: #1c2434;
   --chart-2: #6aa9d8;
-  --chart-3: #5a63d8;
+  --chart-3: #2563c9;
   --chart-4: #1fa971;
   --chart-5: #586377;
   --sidebar: #eef2f7;
@@ -106,7 +106,7 @@
   --sidebar-accent: #e8edf4;
   --sidebar-accent-foreground: #1c2434;
   --sidebar-border: #dbe2ec;
-  --sidebar-ring: #5a63d8;
+  --sidebar-ring: #2563c9;
   --shadow-sheet: 0 1px 0 rgb(28 36 52 / 0.03), 0 18px 40px -26px rgb(40 52 90 / 0.28);
 
   /* Header shades. A card's header is a light tint of its text colour over the card colour (2026-10-21: white headers
@@ -157,18 +157,18 @@
   --accent: #222b3d;
   --accent-foreground: #e6ebf3;
   --destructive: #ff7d6b;
-  --amber: #8e96ff;
-  --amber-soft: #262f45;
+  --amber: #6ea8ff;
+  --amber-soft: #1b2a44;
   --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
   --success-bright: #50b83c;
   --success: oklch(0.8 0.17 141);
   --success-soft: oklch(0.3 0.07 141);
   --border: #2a3447;
   --input: #313c52;
-  --ring: #8e96ff;
+  --ring: #6ea8ff;
   --chart-1: #e6ebf3;
   --chart-2: #7fb8e4;
-  --chart-3: #8e96ff;
+  --chart-3: #6ea8ff;
   --chart-4: #3ddc97;
   --chart-5: #9ba7ba;
   --sidebar: #161d2b;
@@ -178,7 +178,7 @@
   --sidebar-accent: #222b3d;
   --sidebar-accent-foreground: #e6ebf3;
   --sidebar-border: #2a3447;
-  --sidebar-ring: #8e96ff;
+  --sidebar-ring: #6ea8ff;
   --shadow-sheet: 0 18px 40px -24px rgb(0 0 0 / 0.6);
 }
 

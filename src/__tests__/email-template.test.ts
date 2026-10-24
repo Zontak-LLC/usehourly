@@ -167,7 +167,7 @@ describe("what the HTML is made of", () => {
     expect(html).toContain('name="color-scheme" content="light dark"');
     expect(html).toContain("max-width:560px");
     expect(html).toContain("prefers-color-scheme: dark");
-    expect(html).toContain("#5a63d8"); // the accent button (v4 periwinkle)
+    expect(html).toContain("#2563c9"); // the accent button (ocean blue, 2026-10-24)
   });
 
   it("loads nothing from anywhere else: no images, scripts, fonts or stylesheets", () => {

@@ -41,7 +41,7 @@ const C = {
   line: "#dbe2ec",
   ink: "#1c2434",
   muted: "#586377",
-  sun: "#5a63d8",
+  sun: "#2563c9",
   darkPage: "#131a26",
   darkCard: "#1a2232",
   darkLine: "#2a3447",
