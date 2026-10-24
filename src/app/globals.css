@@ -266,9 +266,6 @@
   }
 }
 
-@layer utilities {
-}
-
 /* Sideways overscroll is off (no accidental back-swipe); vertical stays normal so pulling down refreshes the page. */
 html {
   overscroll-behavior-x: none;
