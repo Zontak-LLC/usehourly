@@ -1,3 +1,5 @@
+import { formatCount } from "@/lib/money";
+
 /** Longest description of work a time entry can hold. */
 export const NOTE_MAX = 2000;
 
@@ -17,7 +19,7 @@ export const NOTE_COMPACT_CHARS = 100;
 /** Counter text ("1,640 / 2,000"), or null while the note is comfortably short. */
 export function noteCounter(length: number): string | null {
   if (length < NOTE_WARN_AT) return null;
-  return `${length.toLocaleString("en-US")} / ${NOTE_MAX.toLocaleString("en-US")}`;
+  return `${formatCount(length)} / ${formatCount(NOTE_MAX)}`;
 }
 
 /**

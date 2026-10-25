@@ -1,6 +1,4 @@
-import { expect, test } from "@playwright/test";
-
-import { startDemo } from "./helpers";
+import { expect, startDemo, test } from "./helpers";
 
 test("the year summary hides empty months until asked, writes empties as dashes, and is compact on a phone", async ({
   page,
@@ -47,4 +45,18 @@ test("?year= opens that year (the emailed summary's button), and a year in the f
   await expect(page.getByRole("heading", { name: `Year summary · ${thisYear - 1}` })).toBeVisible();
   await page.goto(`/dashboard/report?year=${thisYear + 5}`);
   await expect(page.getByRole("heading", { name: `Year summary · ${thisYear}` })).toBeVisible();
+});
+
+test("rendered in the browser only, the page keeps its tab title and passes the page checks", async ({
+  page,
+  audit,
+  a11y,
+}) => {
+  await startDemo(page);
+  await page.goto("/dashboard/report");
+  await expect(page.getByRole("heading", { level: 1, name: /^Year summary · \d{4}$/ })).toBeVisible();
+  await expect(page).toHaveTitle("Year summary · UseHourly");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await audit("year-summary");
+  await a11y("year-summary");
 });

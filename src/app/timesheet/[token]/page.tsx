@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { LogoMark } from "@/components/logo";
-import { fromISODate } from "@/lib/dates";
+import { formatDate, formatInstant } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { getPrisma } from "@/lib/prisma";
 import { parseSnapshot, type ShareSnapshot } from "@/lib/timesheet-share";
@@ -20,16 +20,6 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 export const dynamic = "force-dynamic";
-
-const dayLabel = (iso: string) =>
-  fromISODate(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-const fullDate = (seconds: number) =>
-  new Date(seconds * 1000).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
@@ -70,7 +60,7 @@ function Grid({ s }: { s: ShareSnapshot }) {
               <th className="px-3 py-2 font-medium">Project</th>
               {s.days.map((d) => (
                 <th key={d} className="px-3 py-2 text-right font-medium">
-                  {dayLabel(d)}
+                  {formatDate(d, "dayWithWeekday")}
                 </th>
               ))}
               <th className="px-3 py-2 text-right font-medium">Total</th>
@@ -141,7 +131,7 @@ function Grid({ s }: { s: ShareSnapshot }) {
           <tbody>
             {s.days.map((d, i) => (
               <tr key={d} className="border-b last:border-0">
-                <td className="px-3 py-2">{dayLabel(d)}</td>
+                <td className="px-3 py-2">{formatDate(d, "dayWithWeekday")}</td>
                 <td className="px-3 py-2 text-right">{formatDuration(s.dayTotals[i])}</td>
               </tr>
             ))}
@@ -179,7 +169,7 @@ export default async function SharedTimesheetPage({ params }: { params: Promise<
       {share.approved_at !== null ? (
         <section className="flex flex-col gap-1 rounded-xl border border-success/40 bg-success-soft p-4">
           <h2 className="font-semibold text-base text-success">
-            Approved by {share.approved_name} on {fullDate(share.approved_at)}
+            Approved by {share.approved_name} on {formatInstant(share.approved_at * 1000, "full", "UTC")}
           </h2>
           {share.approved_note && <p className="whitespace-pre-wrap break-words text-sm">{share.approved_note}</p>}
         </section>
@@ -188,7 +178,8 @@ export default async function SharedTimesheetPage({ params }: { params: Promise<
       )}
 
       <p className="text-muted-foreground text-xs print:hidden">
-        Shared with UseHourly. This page shows hours only, and works until {fullDate(share.expires_at)}.
+        Shared with UseHourly. This page shows hours only, and works until{" "}
+        {formatInstant(share.expires_at * 1000, "full", "UTC")}.
       </p>
     </Frame>
   );
