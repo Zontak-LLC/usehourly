@@ -71,6 +71,8 @@ the pipeline line instead.
 - `GET https://usehourly.app/api/health` answers `{"ok":true}` with 200 when the database answers `SELECT 1`, and 503
   when it does not. Point an uptime monitor at it (and at `https://usehourly.app/api/mcp`, which answers 405 to a GET:
   anything but a timeout means it is up). A monitor should alert a phone, not just an inbox.
+- A 200 also says how long the database took: `{"ok":true,"db":{"selectMs":4,"probeMs":6}}` (`SELECT 1`, then one
+  indexed read that touches no one's data). Night Watch's Database monitor compares them with their own 7-day normal.
 - After every deploy CircleCI's job finishes green only if the deploy command succeeded; it does not call the health
   endpoint. Check it yourself after a release: `curl -s -o /dev/null -w "%{http_code}\n" https://usehourly.app/api/health`.
 

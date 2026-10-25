@@ -68,7 +68,10 @@ test.describe("public pages", () => {
   test("the health check answers and a signed-out visitor is sent to log in", async ({ page, request }) => {
     const health = await request.get("/api/health");
     expect(health.status()).toBe(200);
-    expect(await health.json()).toEqual({ ok: true });
+    expect(await health.json()).toMatchObject({
+      ok: true,
+      db: { selectMs: expect.any(Number), probeMs: expect.any(Number) },
+    });
     await page.goto("/dashboard/today");
     await expect(page).toHaveURL(/\/auth\/v2\/login/);
   });
