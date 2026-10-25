@@ -20,6 +20,8 @@
 /backups/
 # stress-test SQL (scripts/stress/seed.mjs): holds a password hash and millions of rows
 /.stress/
+# Performance Check runs (npm run perf-check): timings and reports
+/.perf/
 
 # misc
 .DS_Store

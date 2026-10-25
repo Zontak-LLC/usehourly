@@ -4,23 +4,27 @@ import { appUrl, createMailer } from "@/lib/mailer";
 import { getPrisma } from "@/lib/prisma";
 import { enforceRequestLimits } from "@/lib/request-limits";
 import { sessionStillValid } from "@/lib/session-version";
+import { swarmPass } from "@/lib/swarm";
 import { callsInTrpcRequest } from "@/lib/trpc-limits";
 
 export async function createContext(req?: Request) {
   const [rawSession, prisma] = await Promise.all([auth(), getPrisma()]);
   // A token from before a password change (or for a deleted account) is no longer a session.
   let session = rawSession;
+  let email: string | null = null;
   if (rawSession?.user?.id) {
     const row = await prisma.authUser.findUnique({
       where: { id: rawSession.user.id },
-      select: { token_version: true },
+      select: { token_version: true, email: true },
     });
     if (!sessionStillValid(rawSession.user.tv, row?.token_version)) session = null;
+    else email = row?.email ?? null;
   }
   // The edge sets the real client address; clientIpFrom reads it safely.
   const ip = clientIpFrom(req?.headers);
-  // Throttle changes per account (or per connection before sign-in); see lib/request-limits.ts.
-  if (req) {
+  // Throttle changes per account (or per connection before sign-in); see lib/request-limits.ts. The swarm pass
+  // (staging only, test accounts only, lib/swarm.ts) skips it for the Performance Check.
+  if (req && !(session && (await swarmPass(req.headers, email)))) {
     await enforceRequestLimits(prisma, {
       method: req.method,
       userId: session?.user?.id,
