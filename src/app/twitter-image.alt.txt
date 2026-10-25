@@ -1,1 +1,0 @@
-UseHourly: a simple timesheet for freelancers. Log your day in seconds.
