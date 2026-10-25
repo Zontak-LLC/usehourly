@@ -24,6 +24,7 @@ import {
   MAX_IMPORT_BYTES,
   readTimeCsv,
 } from "@/lib/import-csv";
+import { formatCount } from "@/lib/money";
 import { word } from "@/lib/plural";
 import { trpc } from "@/lib/trpc";
 
@@ -79,8 +80,6 @@ const FORMAT_LABEL: Record<ImportFormat, string> = {
   harvest: "a Harvest export",
   generic: "a CSV file",
 };
-
-const num = (n: number) => n.toLocaleString("en-US");
 
 /** "03/04/2026" read both ways, for the one question we may have to ask. */
 function bothReadings(sample: string) {
@@ -200,7 +199,7 @@ function PreviewFigures({ p, checked }: { p: ImportPreview; checked: { result: C
       <ul className="grid gap-1" data-testid="import-preview">
         <li>
           <strong>
-            {num(p.rows.length)} {word(p.rows.length, "entry", "entries")}
+            {formatCount(p.rows.length)} {word(p.rows.length, "entry", "entries")}
           </strong>{" "}
           from {p.from && shortDay(p.from, null)} to {p.to && shortDay(p.to, null)} · {formatDuration(p.totalMinutes)} h
         </li>
@@ -213,7 +212,7 @@ function PreviewFigures({ p, checked }: { p: ImportPreview; checked: { result: C
             </li>
             {c.duplicates > 0 && (
               <li>
-                {num(c.duplicates)} already here, {word(c.duplicates, "it is", "they are")} skipped
+                {formatCount(c.duplicates)} already here, {word(c.duplicates, "it is", "they are")} skipped
               </li>
             )}
           </>
@@ -294,11 +293,11 @@ export function ImportTime() {
         setProgress({ done: Math.min(i + IMPORT_CHUNK, rows.length), total: rows.length });
       }
       const parts = [
-        `Imported ${num(totals.created)} ${word(totals.created, "entry", "entries")}.`,
+        `Imported ${formatCount(totals.created)} ${word(totals.created, "entry", "entries")}.`,
         totals.clientsCreated || totals.projectsCreated
           ? `Added ${totals.clientsCreated} ${word(totals.clientsCreated, "client")} and ${totals.projectsCreated} ${word(totals.projectsCreated, "project")}.`
           : "",
-        totals.duplicates ? `${num(totals.duplicates)} were already here and were skipped.` : "",
+        totals.duplicates ? `${formatCount(totals.duplicates)} were already here and were skipped.` : "",
       ].filter(Boolean);
       setOutcome({ text: parts.join(" "), newest });
       toast.success(parts[0]);
@@ -309,7 +308,7 @@ export function ImportTime() {
       toast.error(
         `${err instanceof Error ? err.message : "The import stopped."}${
           done
-            ? ` ${num(done)} rows were handled first. It is safe to try again: entries already here are skipped.`
+            ? ` ${formatCount(done)} rows were handled first. It is safe to try again: entries already here are skipped.`
             : ""
         }`,
       );
@@ -382,7 +381,7 @@ export function ImportTime() {
           <ul className="grid gap-0.5 text-foreground/75">
             {p.projects.slice(0, 6).map((x) => (
               <li key={`${x.client}/${x.project}`}>
-                {x.client} / {x.project}: {num(x.entries)} {word(x.entries, "entry", "entries")},{" "}
+                {x.client} / {x.project}: {formatCount(x.entries)} {word(x.entries, "entry", "entries")},{" "}
                 {formatDuration(x.minutes)} h
               </li>
             ))}
@@ -419,10 +418,10 @@ export function ImportTime() {
               disabled={progress !== null || !c || c.entries === 0}
             >
               {progress
-                ? `Importing ${num(progress.done)} of ${num(progress.total)}…`
+                ? `Importing ${formatCount(progress.done)} of ${formatCount(progress.total)}…`
                 : c && c.entries === 0
                   ? "Nothing new to import"
-                  : `Import ${num(c?.entries ?? p.rows.length)} ${word(c?.entries ?? p.rows.length, "entry", "entries")}`}
+                  : `Import ${formatCount(c?.entries ?? p.rows.length)} ${word(c?.entries ?? p.rows.length, "entry", "entries")}`}
             </Button>
             <Button variant="ghost" className="h-11" disabled={progress !== null} onClick={reset}>
               Cancel

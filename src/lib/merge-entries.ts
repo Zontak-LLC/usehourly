@@ -1,3 +1,4 @@
+import { formatCount } from "@/lib/money";
 import { NOTE_MAX } from "@/lib/notes";
 
 export type MergeInput = {
@@ -42,7 +43,7 @@ export function planMerge(entries: MergeInput[]): MergePlan | { error: string } 
   const note = parts.join("\n");
   if (note.length > NOTE_MAX) {
     return {
-      error: `The combined description would be ${note.length.toLocaleString("en-US")} characters; the limit is ${NOTE_MAX.toLocaleString("en-US")}. Shorten one of them first.`,
+      error: `The combined description would be ${formatCount(note.length)} characters; the limit is ${formatCount(NOTE_MAX)}. Shorten one of them first.`,
     };
   }
   return { keepId: first.id, deleteIds: rest.map((e) => e.id), minutes, note };
