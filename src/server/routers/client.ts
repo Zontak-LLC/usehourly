@@ -7,10 +7,10 @@ import { emailField } from "@/lib/email";
 import { invoiceScheduleSchema } from "@/lib/invoice-schedule";
 import { CURRENCY_CODES, effectiveCurrency } from "@/lib/money";
 import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
-import { assertWithinQuota } from "@/lib/quotas";
 import { roundingSchema } from "@/lib/rounding";
 
 import { logoSchema } from "../logo-schema";
+import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
 import { protectedProcedure, router } from "../trpc";
 
 const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
@@ -155,17 +155,23 @@ export const clientRouter = router({
   create: protectedProcedure
     .input(z.object({ name: z.string().trim().min(1).max(80), color: colorSchema.optional() }))
     .mutation(async ({ ctx, input }) => {
+      const taken = () =>
+        new TRPCError({ code: "CONFLICT", message: `You already have a client named "${input.name}".` });
       const dup = await ctx.prisma.client.findFirst({ where: { user_id: ctx.userId, name: input.name } });
-      if (dup) throw new TRPCError({ code: "CONFLICT", message: `You already have a client named "${input.name}".` });
-      assertWithinQuota(
-        await ctx.prisma.client.count({ where: { user_id: ctx.userId } }),
-        1,
-        "clients",
-        isDemoSession(ctx.session),
-      );
-      return ctx.prisma.client.create({
-        data: { user_id: ctx.userId, ...input, color: input.color ?? DEFAULT_CLIENT_COLOR },
-      });
+      if (dup) throw taken();
+      try {
+        // The limit check and the insert are one statement, so two creates at once cannot both pass the count.
+        const id = await insertWithinQuota(
+          ctx.prisma,
+          "clients",
+          { user_id: ctx.userId, name: input.name, color: input.color ?? DEFAULT_CLIENT_COLOR },
+          accountQuota("clients", "clients", ctx.userId, isDemoSession(ctx.session)),
+        );
+        return await ctx.prisma.client.findUniqueOrThrow({ where: { id } });
+      } catch (err) {
+        if (err instanceof QuotaInsertDuplicate) throw taken(); // the same name, sent twice at once
+        throw err;
+      }
     }),
 
   archive: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {

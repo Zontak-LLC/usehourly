@@ -4,6 +4,8 @@ import { DEFAULT_PROJECT_NAME, DURATION_CHIPS, firstRunNames } from "@/lib/quick
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
+
 const createCaller = createCallerFactory(appRouter);
 
 function mockPrisma() {
@@ -29,7 +31,7 @@ type P = ReturnType<typeof mockPrisma>;
 const asCaller = (prisma: P, userId: string | null) =>
   createCaller({
     session: userId ? { user: { id: userId }, expires: "" } : null,
-    prisma: prisma as never,
+    prisma: withGuardedInsert(prisma) as never,
   });
 
 describe("brand-new user: one question, then one tap logs time", () => {
@@ -54,24 +56,27 @@ describe("brand-new user: one question, then one tap logs time", () => {
 
     const client = await c.clients.create({ name: names.client });
     // No colour picked: the first client is ocean blue, never the old indigo (2026-10-24, no purple anywhere).
-    expect(prisma.client.create).toHaveBeenCalledWith({ data: { user_id: "u1", name: "Acme", color: "#2563c9" } });
+    const id = expect.any(String); // the guarded insert makes the id (server/quota-insert.ts)
+    expect(prisma.client.create).toHaveBeenCalledWith({ data: { id, user_id: "u1", name: "Acme", color: "#2563c9" } });
 
     prisma.client.findFirst.mockResolvedValueOnce({ id: client.id, name: "Acme" } as never);
     prisma.project.findFirst.mockResolvedValueOnce(null as never);
     await c.project.create({ clientId: client.id, name: names.project, hourlyRate: 0 });
     expect(prisma.project.create).toHaveBeenCalledWith({
-      data: { user_id: "u1", client_id: "c1", name: "General", hourly_rate: 0, billable: true },
+      data: { id, user_id: "u1", client_id: client.id, name: "General", hourly_rate: 0, billable: true },
     });
 
     prisma.project.findFirst.mockResolvedValue({ id: "p1" } as never);
     const chip = DURATION_CHIPS[1];
     const entry = await c.entry.create({ projectId: "p1", date: "2026-10-15", minutes: chip.minutes, note: "" });
     expect(prisma.timeEntry.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { user_id: "u1", project_id: "p1", date: "2026-10-15", minutes: 60, note: "" } }),
+      expect.objectContaining({
+        data: { id, user_id: "u1", project_id: "p1", date: "2026-10-15", minutes: 60, note: "" },
+      }),
     );
 
     await c.entry.delete({ id: entry.id });
-    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: "e1", user_id: "u1" } });
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: entry.id, user_id: "u1" } });
   });
 
   it("refuses the first-run steps when signed out and never touches the database", async () => {

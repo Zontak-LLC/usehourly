@@ -5,10 +5,10 @@ import { z } from "zod";
 import { type BudgetPeriod, type BudgetUnit, budgetStatus, usedAmount } from "@/lib/budget";
 import { DATE_RE, isRealDate } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
-import { assertWithinQuota } from "@/lib/quotas";
 
 import { projectLogoSchema } from "../logo-schema";
 import { nonBillableDates } from "../non-billable";
+import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
 import { protectedProcedure, router } from "../trpc";
 
 /**
@@ -48,24 +48,29 @@ export const projectRouter = router({
     .mutation(async ({ ctx, input }) => {
       const client = await ctx.prisma.client.findFirst({ where: { id: input.clientId, user_id: ctx.userId } });
       if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
+      const taken = () =>
+        new TRPCError({ code: "CONFLICT", message: `"${client.name}" already has a project "${input.name}".` });
       const dup = await ctx.prisma.project.findFirst({ where: { client_id: client.id, name: input.name } });
-      if (dup)
-        throw new TRPCError({ code: "CONFLICT", message: `"${client.name}" already has a project "${input.name}".` });
-      assertWithinQuota(
-        await ctx.prisma.project.count({ where: { user_id: ctx.userId } }),
-        1,
-        "projects",
-        isDemoSession(ctx.session),
-      );
-      return ctx.prisma.project.create({
-        data: {
-          user_id: ctx.userId,
-          client_id: client.id,
-          name: input.name,
-          hourly_rate: input.hourlyRate,
-          billable: input.billable,
-        },
-      });
+      if (dup) throw taken();
+      try {
+        // The limit check and the insert are one statement, so two creates at once cannot both pass the count.
+        const id = await insertWithinQuota(
+          ctx.prisma,
+          "projects",
+          {
+            user_id: ctx.userId,
+            client_id: client.id,
+            name: input.name,
+            hourly_rate: input.hourlyRate,
+            billable: input.billable,
+          },
+          accountQuota("projects", "projects", ctx.userId, isDemoSession(ctx.session)),
+        );
+        return await ctx.prisma.project.findUniqueOrThrow({ where: { id } });
+      } catch (err) {
+        if (err instanceof QuotaInsertDuplicate) throw taken(); // the same name, sent twice at once
+        throw err;
+      }
     }),
 
   archive: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {

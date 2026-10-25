@@ -8,13 +8,15 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 import { handleTrpc } from "@/server/trpc-handler";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
 describe("one account cannot fill the shared database", () => {
+  // The count and the insert are one guarded statement now; the helper reads it back onto the mocks' count and create.
   const asUser = (prisma: object) =>
-    createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
+    createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: withGuardedInsert(prisma) as never });
 
   it("refuses a new entry at the entry limit and writes nothing", async () => {
     const prisma = {

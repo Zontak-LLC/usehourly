@@ -16,6 +16,8 @@ import {
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
+
 const createCaller = createCallerFactory(appRouter);
 
 const A = "11111111-1111-4111-8111-111111111111";
@@ -54,7 +56,7 @@ function world() {
   const as = (id: string | null) =>
     createCaller({
       session: id ? ({ user: { id }, expires: "" } as never) : null,
-      prisma: prisma as never,
+      prisma: withGuardedInsert(prisma) as never,
     });
   return { prisma, as, rows };
 }
@@ -103,8 +105,9 @@ describe("saving an entry twice with the same id", () => {
   it("works as before without an id, and refuses a malformed id or a signed-out caller, writing nothing", async () => {
     const { prisma, as, rows } = world();
     const plain = await as("u1").entry.create({ projectId: "p1", date: "2026-10-20", minutes: 30, note: "" });
-    expect(plain.id).toMatch(/^auto-/);
-    expect(prisma.timeEntry.create.mock.calls[0][0].data).not.toHaveProperty("id");
+    // without an id the server makes one (the guarded insert writes it, server/quota-insert.ts)
+    expect(plain.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(prisma.timeEntry.create.mock.calls[0][0].data.id).not.toBe(A);
 
     for (const bad of ["not-a-uuid", "", "1234"]) {
       await expect(as("u1").entry.create({ ...input, clientId: bad })).rejects.toMatchObject({ code: "BAD_REQUEST" });

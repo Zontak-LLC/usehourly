@@ -4,6 +4,7 @@ import { authenticateMcp } from "@/server/mcp/auth";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
@@ -70,7 +71,10 @@ function fakeDb() {
     },
   };
   const as = (uid: string | null) =>
-    createCaller({ session: uid ? { user: { id: uid }, expires: "" } : null, prisma: prisma as never });
+    createCaller({
+      session: uid ? { user: { id: uid }, expires: "" } : null,
+      prisma: withGuardedInsert(prisma) as never,
+    });
   return { prisma, rows, as };
 }
 

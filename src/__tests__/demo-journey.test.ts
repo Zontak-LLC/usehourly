@@ -16,6 +16,7 @@ import { createDemoUser } from "@/server/demo";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
@@ -195,6 +196,7 @@ function world() {
       }),
     },
   };
+  withGuardedInsert(prisma); // creates count and insert in one statement; this reads it back onto count and create
   return { prisma, users, clients, projects, entries, invoices, limits };
 }
 

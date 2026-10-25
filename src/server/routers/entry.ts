@@ -12,6 +12,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 
 import { drillError, faultActive } from "../drill";
 import { nonBillableDates } from "../non-billable";
+import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
 import { protectedProcedure, router } from "../trpc";
 
 const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
@@ -41,6 +42,11 @@ async function assertEntryQuota(
     "entries",
     isDemoSession(ctx.session),
   );
+}
+
+/** The account's entries against its limit, for a one-statement guarded insert (server/quota-insert.ts). */
+function entryQuota(ctx: { userId: string; session: Session | null }) {
+  return accountQuota("time_entries", "entries", ctx.userId, isDemoSession(ctx.session));
 }
 
 // Logos are large; they travel separately (project.logos / clients.get), never with entries.
@@ -219,19 +225,21 @@ export const entryRouter = router({
       }
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
-      await assertEntryQuota(ctx, 1);
       try {
-        return await ctx.prisma.timeEntry.create({
-          data: {
-            ...(input.clientId ? { id: input.clientId } : {}),
+        const id = await insertWithinQuota(
+          ctx.prisma,
+          "time_entries",
+          {
+            id: input.clientId,
             user_id: ctx.userId,
             project_id: project.id,
             date: input.date,
             minutes,
             note: input.note,
           },
-          include: withProject,
-        });
+          entryQuota(ctx),
+        );
+        return await ctx.prisma.timeEntry.findUniqueOrThrow({ where: { id }, include: withProject });
       } catch (err) {
         // Two sends of the same entry at once: the other one won, so hand back what it saved.
         if (input.clientId) {
@@ -446,13 +454,18 @@ export const entryRouter = router({
         });
       }
       try {
-        return await ctx.prisma.timeEntry.create({
-          data: { user_id: ctx.userId, project_id: project.id, date: input.date, note: input.note, started_at: now },
-          include: withProject,
-        });
+        // The check above refuses early without stopping anything; this one-statement guard decides a race. Losing one
+        // at exactly the limit leaves the old timer stopped with its minutes saved, and shows the limit message.
+        const id = await insertWithinQuota(
+          ctx.prisma,
+          "time_entries",
+          { user_id: ctx.userId, project_id: project.id, date: input.date, note: input.note, started_at: now },
+          entryQuota(ctx),
+        );
+        return await ctx.prisma.timeEntry.findUniqueOrThrow({ where: { id }, include: withProject });
       } catch (e) {
         // A parallel "start" got there first: the database allows one running timer per account (migration 0024).
-        if ((e as { code?: string } | null)?.code === "P2002") {
+        if (e instanceof QuotaInsertDuplicate) {
           throw new TRPCError({ code: "CONFLICT", message: "A timer is already running. Stop it first." });
         }
         throw e;
