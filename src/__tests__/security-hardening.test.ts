@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { DUMMY_HASH, passwordMatches } from "@/lib/password";
-import { QUOTAS } from "@/lib/quotas";
+import { DEMO_QUOTAS, QUOTAS } from "@/lib/quotas";
 import { enforceRequestLimits, WRITES_PER_ANON_IP, WRITES_PER_USER } from "@/lib/request-limits";
 import { MAX_BATCH } from "@/lib/trpc-limits";
 import { appRouter } from "@/server/routers/_app";
@@ -27,9 +27,25 @@ describe("one account cannot fill the shared database", () => {
       asUser(prisma).entry.create({ projectId: "p1", date: "2026-10-09", minutes: 30 }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("limit of 50,000 entries"),
+      message: "You've reached the limit of 50,000 entries. Please write to the site owner if you need more.",
     });
     expect(prisma.timeEntry.count).toHaveBeenCalledWith({ where: { user_id: "u1" } });
+    expect(prisma.timeEntry.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a demo account's entry at the demo limit with the demo's own words", async () => {
+    const prisma = {
+      project: { findFirst: vi.fn(async () => ({ id: "p1" })) },
+      timeEntry: { count: vi.fn(async () => DEMO_QUOTAS.entries), create: vi.fn() },
+    };
+    const demo = createCaller({
+      session: { user: { id: "u1", demo: true }, expires: "" },
+      prisma: withGuardedInsert(prisma) as never,
+    });
+    await expect(demo.entry.create({ projectId: "p1", date: "2026-10-09", minutes: 30 })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "The demo is limited to 600 entries. Create a free account to add more.",
+    });
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();
   });
 
