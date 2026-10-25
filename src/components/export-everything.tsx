@@ -10,6 +10,7 @@ import { DocButton } from "@/components/doc-button";
 import { Button } from "@/components/ui/button";
 import { toISODate } from "@/lib/dates";
 import { downloadExportZip, planExport } from "@/lib/export-all";
+import { feature } from "@/lib/features";
 import { trpc } from "@/lib/trpc";
 
 /** Everything the signed-in user has logged, all clients and all time, as one zip. */
@@ -40,12 +41,32 @@ export function ExportEverything({
     return all;
   }
 
+  /** Every expense and trip, a page at a time like the entries. */
+  async function fetchAllExpenses() {
+    const all: Awaited<ReturnType<typeof utils.expense.listAll.fetch>>["items"] = [];
+    let cursor: string | null = null;
+    for (let page = 0; page < 200; page++) {
+      const res: Awaited<ReturnType<typeof utils.expense.listAll.fetch>> = await utils.expense.listAll.fetch({
+        cursor,
+      });
+      all.push(...res.items);
+      if (!res.nextCursor) break;
+      cursor = res.nextCursor;
+    }
+    return all;
+  }
+
   async function run() {
     setBusy(true);
     try {
-      const [entries, invoices] = await Promise.all([fetchAllEntries(), utils.invoice.list.fetch()]);
+      // Expenses are a hidden feature: with the switch off there is no request for them at all.
+      const [entries, invoices, expenses] = await Promise.all([
+        fetchAllEntries(),
+        utils.invoice.list.fetch(),
+        feature("expenses") ? fetchAllExpenses() : [],
+      ]);
       const today = toISODate(new Date());
-      const plan = await planExport({ entries, invoices, today, accountCurrency });
+      const plan = await planExport({ entries, invoices, expenses, today, accountCurrency });
       if (plan.entryCount === 0) {
         toast.info("You haven't logged any time yet, so there is nothing to export.");
         return;

@@ -1,4 +1,5 @@
 import { addDays } from "@/lib/dates";
+import { categoryLabel, rateInput } from "@/lib/expenses";
 import { buildTimesheetWorkbook } from "@/lib/export-xlsx";
 import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 import type { SheetEntry } from "@/lib/timesheet";
@@ -12,6 +13,7 @@ import { dateRange, exportableEntries } from "@/lib/timesheet";
  *     all-time.xlsx         every entry in one workbook (grid by week + entry list)
  *     all-entries.csv       every entry, one row each (opens anywhere, easy to import)
  *     invoices.csv          the invoice history (when there is any)
+ *     expenses.csv          every expense and mileage trip (when there is any)
  *     by-client/<Client>.xlsx   one workbook per client
  *
  * Everything is built in the browser from data the signed-in user already owns.
@@ -125,6 +127,45 @@ export function invoicesCsv(invoices: InvoiceRow[]): string {
   return toCsv(rows);
 }
 
+/** One expense or mileage trip, as `expense.listAll` returns it (units as stored, see lib/expenses.ts). */
+export type ExpenseCsvRow = {
+  date: string;
+  kind: string;
+  category: string;
+  amount_cents: number;
+  currency: string | null;
+  note: string | null;
+  distance: number | null;
+  distance_unit: string | null;
+  mileage_rate: number | null;
+  client: { name: string } | null;
+};
+
+export function expensesCsv(expenses: ExpenseCsvRow[]): string {
+  const rows: (string | number | null)[][] = [
+    ["Date", "Kind", "Category", "Amount", "Currency", "Distance", "Unit", "Rate (per unit)", "Client", "Note"],
+  ];
+  const sorted = [...expenses].sort(
+    (a, b) => a.date.localeCompare(b.date) || (a.client?.name ?? "").localeCompare(b.client?.name ?? ""),
+  );
+  for (const x of sorted) {
+    const trip = x.kind === "mileage";
+    rows.push([
+      x.date,
+      trip ? "Mileage" : "Expense",
+      categoryLabel(x.category),
+      x.amount_cents / 100,
+      currencyOrDefault(x.currency),
+      trip && x.distance !== null ? x.distance / 10 : null,
+      trip ? (x.distance_unit === "km" ? "km" : "mi") : null,
+      trip && x.mileage_rate !== null ? rateInput(x.mileage_rate) : null,
+      x.client?.name ?? null,
+      x.note,
+    ]);
+  }
+  return toCsv(rows);
+}
+
 /** All the days a workbook should cover for these entries (earliest to latest). */
 function span(entries: SheetEntry[]): string[] {
   const dates = entries.map((e) => e.date).sort();
@@ -150,6 +191,8 @@ export type ExportPlan = {
 export async function planExport(opts: {
   entries: SheetEntry[];
   invoices: InvoiceRow[];
+  /** Every expense and trip (only fetched when the `expenses` switch is on). */
+  expenses?: ExpenseCsvRow[];
   today: string;
   /** The account's currency, for clients that do not have one of their own. */
   accountCurrency?: string;
@@ -158,6 +201,7 @@ export async function planExport(opts: {
   const entries = exportableEntries(opts.entries);
   const leftOut = opts.entries.filter((e) => e.minutes > 0 && e.non_billable).length;
   const files: ExportFile[] = [];
+  const expenses = opts.expenses ?? [];
 
   const byClient = new Map<string, SheetEntry[]>();
   for (const e of entries) {
@@ -169,6 +213,7 @@ export async function planExport(opts: {
   files.push({ path: "all-time.xlsx", content: await workbookBytes(entries, opts.accountCurrency) });
   files.push({ path: "all-entries.csv", content: entriesCsv(entries, opts.accountCurrency) });
   if (opts.invoices.length) files.push({ path: "invoices.csv", content: invoicesCsv(opts.invoices) });
+  if (expenses.length) files.push({ path: "expenses.csv", content: expensesCsv(expenses) });
 
   const taken = new Set<string>();
   for (const client of clients) {
@@ -198,6 +243,7 @@ export async function planExport(opts: {
           `  invoices.csv       Your invoice history (${opts.invoices.length}${opts.invoices.length >= 200 ? ", the 200 most recent" : ""}).`,
         ]
       : []),
+    ...(expenses.length ? [`  expenses.csv       Your expenses and mileage trips (${expenses.length}).`] : []),
     ...(clients.length ? ["  by-client/         One workbook per client, with the same two sheets."] : []),
     "",
     "Hours are decimal (1.5 = one hour thirty). Amounts use each project's hourly rate, in the currency named on the row.",
