@@ -1,7 +1,7 @@
 import { fromISODate } from "@/lib/dates";
 import { WEEKLY_AFTER_WORKED_DAYS, weekStart } from "@/lib/export-range";
 import { effectiveCurrency } from "@/lib/money";
-import { buildSheet, type SheetEntry } from "@/lib/timesheet";
+import { buildSheet, exportableEntries, type SheetEntry } from "@/lib/timesheet";
 
 const dayHeader = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric" });
 // A range can cross months, where "Tue 3" is ambiguous (March 3rd or April 3rd), so it carries the month.
@@ -42,7 +42,7 @@ export async function buildTimesheetWorkbook(opts: {
   // grid and the entry list only show days that were actually worked. If nothing was logged at
   // all, keep the requested days so the empty grid still has columns.
   // Days marked non-billable are left out too, so nothing in the file can be mistaken for billable time.
-  const entries = opts.entries.filter((e) => e.minutes > 0 && !e.non_billable);
+  const entries = exportableEntries(opts.entries);
   const worked = new Set(entries.map((e) => e.date));
   const workedDays = opts.days.filter((d) => worked.has(d));
   const days = workedDays.length > 0 ? workedDays : opts.days;

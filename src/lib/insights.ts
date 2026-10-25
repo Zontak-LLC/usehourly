@@ -10,8 +10,8 @@ export type InsightsInput = {
   /** Real (non-sample) accounts only. */
   users: { id: string; created_at: Date }[];
   demoCount: number;
-  /** All time, per account: how many entries and when the first one was made. */
-  entryStats: { user_id: string; count: number; first: Date | null }[];
+  /** All time, the accounts with at least one entry and when the first one was made. */
+  entryStats: { user_id: string; first: Date }[];
   /** Accounts that created or changed an entry in the last 7 and 30 days. */
   active7: string[];
   active30: string[];
@@ -60,11 +60,11 @@ export function buildInsights(input: InsightsInput): Insights {
 
   // Activation: did people get as far as a first entry and a first invoice?
   const stats = new Map(input.entryStats.filter((s) => real.has(s.user_id)).map((s) => [s.user_id, s]));
-  const withEntry = users.filter((u) => (stats.get(u.id)?.count ?? 0) > 0).length;
+  const withEntry = users.filter((u) => stats.has(u.id)).length;
   const invoiced = new Set(input.invoiceUserIds.filter((id) => real.has(id)));
   const firstEntryWithinDay = users.filter((u) => {
     const first = stats.get(u.id)?.first;
-    return first != null && first.getTime() - u.created_at.getTime() <= DAY;
+    return first !== undefined && first.getTime() - u.created_at.getTime() <= DAY;
   }).length;
 
   const active7 = new Set(input.active7.filter((id) => real.has(id)));

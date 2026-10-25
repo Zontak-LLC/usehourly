@@ -100,6 +100,9 @@ Events you may see (all `level: "error"`), and what they mean:
 | `mcp_internal_error`, `mcp_tool_error`, `mcp_last_used_update_failed` | A failure inside the MCP endpoint | Same as tRPC; the caller got a plain "try again" |
 | `social_sign_in_failed`, `demo_sign_in_failed` | A GitHub/Google or sample-account sign-in failed | Check the provider's status and the secrets |
 | `prisma_warmup_failed` | The early connection attempt failed; it reconnects on the first query | Only matters if it repeats |
+| `drill_started`, `drill_stopped`, `drill_expired` (warn) | STAGING only: a planned test failure began, was stopped or ran out (`fault`, `expires`) | Nothing: errors between started and stopped/expired are the drill (see "Drills") |
+| `drill_refused` (warn) | STAGING only: a call to `/api/drill` with a wrong or missing token | One is a typo; many is someone guessing (20 per 15 minutes per connection) |
+| `drill_read_failed` | STAGING only: the drill setting could not be read; the path runs normally | Harmless |
 
 ## Shipping a change
 
@@ -117,6 +120,16 @@ browser-test run (`e2e.yml`).
 - Not yet: a Cloudflare Access lock in front of it (dashboard: Zero Trust, Access, Applications), and deploying it from CI.
 
 **Daily release** (when the owner says "daily release"): tickets merge into the `next` branch one after another (each cut from `next`, `npm run ci`, targeted e2e, cold review, approval of the before/after page). Deploy `next` to staging and look at it. On "ship": one pull request `next` to `main`, full CI and e2e green, record the rollback points first (`wrangler deployments list` for the current Worker version id, and for a migration the D1 Time Travel timestamp), merge, watch the CircleCI deploy, confirm `/api/health`, check the Worker logs for new errors for 15 minutes, and list what went out. If health fails or errors spike, roll back first (`wrangler rollback <version-id>`), investigate after. At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
+
+## Drills: break one thing on purpose, on staging (2026-10-24)
+
+To see Night Watch catch and triage a real failure, staging can break ONE path for a few minutes (`src/lib/drill.ts`, route `/api/drill`).
+- **Faults:** `health-503` (`/api/health` answers 503 and logs `health_check_failed`), `health-slow` (`/api/health` answers after 6 s; Night Watch calls over 5 s slow), `entry-list-500` (`entry.list` fails, so Today, Week and Month cannot load entries, and tRPC logs `trpc_internal_error` with `path: entry.list`). Nothing else is touched: no sign-in, money, email or data.
+- **Off by default and impossible on production:** the route answers 404 unless the build is the staging build (`NEXT_PUBLIC_APP_ENV=staging`, set only by `npm run staging:deploy`), the address is not usehourly.app, AND the Worker secret `DRILL_TOKEN` (32+ characters) is set. On production the faulted paths do no extra database read.
+- **Always ends:** 10 minutes by default, 15 at most; `stop` ends it at once. The drill is one row in `app_settings` (key `drill`) so every isolate sees it within 5 seconds.
+- **Run one:** `node scripts/drill.mjs status`, `node scripts/drill.mjs start health-503 5`, `node scripts/drill.mjs stop` (token from the Keychain item `usehourly-staging-drill-token`).
+- **Set up once (owner):** `openssl rand -hex 24 | pbcopy && ~/.claude/bin/secret-save usehourly-staging-drill-token`, then `~/.claude/bin/secret-get usehourly-staging-drill-token | npx wrangler secret put DRILL_TOKEN --config wrangler.staging.jsonc`. To switch drills off for good: `npx wrangler secret delete DRILL_TOKEN --config wrangler.staging.jsonc`.
+- Night Watch's UseHourly site watches production (`hourly`, usehourly.app); it needs staging targets (the Worker `hourly-staging` and https://staging.usehourly.app/api/health) to see a drill.
 
 ## After a deploy: the smoke test and automatic rollback (2026-10-22)
 - **What runs:** the CircleCI job `smoke` runs after `deploy` on `main`. It waits for `/api/health`, then runs `e2e/smoke/production.spec.ts` in a real browser (desktop and phone) against the live site: the public pages and the health check, then a throwaway **sample account** (the app deletes it within 24 hours): Today, add an entry, edit it, delete it (the question opens in its card), Week, Month (a day opens as a card), Invoices, Clients, Year summary. An uncaught error, a console error or an HTTP 5xx anywhere fails it. It touches nobody's data.

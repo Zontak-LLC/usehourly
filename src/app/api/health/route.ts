@@ -1,5 +1,7 @@
+import { HEALTH_SLOW_MS } from "@/lib/drill";
 import { logError } from "@/lib/log";
 import { getPrisma } from "@/lib/prisma";
+import { drillError, faultActive } from "@/server/drill";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +12,11 @@ export const dynamic = "force-dynamic";
 async function check() {
   let ok = false;
   try {
-    await (await getPrisma()).$queryRaw`SELECT 1`;
+    const prisma = await getPrisma();
+    // Staging drills only (lib/drill.ts); on production these return false without a database read.
+    if (await faultActive(prisma, "health-503")) throw drillError("database unavailable");
+    if (await faultActive(prisma, "health-slow")) await new Promise((r) => setTimeout(r, HEALTH_SLOW_MS));
+    await prisma.$queryRaw`SELECT 1`;
     ok = true;
   } catch (err) {
     logError("health_check_failed", err);

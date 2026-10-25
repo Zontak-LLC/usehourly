@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { adminEmails, isAdminUser } from "@/lib/admin";
 import { buildInsights, weekStart } from "@/lib/insights";
 import { isUsagePage, USAGE_PAGES, usageDay, usagePageForPath } from "@/lib/usage";
+import { dbStamp } from "@/server/insights-activity";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -124,7 +125,7 @@ describe("insights.overview", () => {
     { id: "u3", email: "u3@example.com", email_verified_at: null, is_demo: false, created_at: day(2) },
     { id: "demo", email: "x@demo.invalid", email_verified_at: null, is_demo: true, created_at: day(1) },
   ];
-  const calls = { groupBy: 0 };
+  const calls: { groupBy: number; args?: unknown[] } = { groupBy: 0 };
   const prisma = {
     authUser: {
       findUnique: vi.fn(
@@ -133,26 +134,26 @@ describe("insights.overview", () => {
       findMany: vi.fn(async () => accounts.filter((a) => !a.is_demo)),
       count: vi.fn(async () => accounts.filter((a) => a.is_demo).length),
     },
-    timeEntry: {
-      groupBy: vi.fn(async (args: { _min?: unknown; where?: { updated_at?: { gte: Date }; created_at?: unknown } }) => {
-        calls.groupBy++;
-        if (args._min)
-          return [
-            { user_id: "admin", _count: { _all: 40 }, _min: { created_at: day(95) } },
-            { user_id: "u2", _count: { _all: 6 }, _min: { created_at: new Date(day(40).getTime() + 3600_000) } },
-            { user_id: "demo", _count: { _all: 99 }, _min: { created_at: day(1) } },
-          ];
-        if (args.where?.created_at)
-          return [
-            { user_id: "admin", _count: { _all: 10 } },
-            { user_id: "demo", _count: { _all: 99 } },
-          ];
-        const gte = args.where?.updated_at?.gte as Date;
-        return NOW.getTime() - gte.getTime() < 8 * 86_400_000
-          ? [{ user_id: "admin" }, { user_id: "demo" }]
-          : [{ user_id: "admin" }, { user_id: "u2" }];
-      }),
-    },
+    // One query, per account (server/insights-activity.ts); its plan is checked on real SQLite in
+    // insights-query-plan-journey.test.ts. The sample account would never come back from it (is_demo = 0); it is
+    // here to prove the rules leave it out anyway.
+    $queryRawUnsafe: vi.fn(async (_sql: string, ...args: unknown[]) => {
+      calls.groupBy++;
+      calls.args = args;
+      return [
+        { user_id: "admin", first: day(95), created30: 10, active7: 1, active30: 1 },
+        { user_id: "demo", first: dbStamp(day(1)), created30: 99, active7: 1, active30: 1 },
+        {
+          user_id: "u2",
+          // SQLite's CURRENT_TIMESTAMP form (UTC, no zone): read as UTC, 21 hours after sign-up is within the first day (read as local time west of UTC it would not be)
+          first: new Date(day(40).getTime() + 21 * 3600_000).toISOString().slice(0, 19).replace("T", " "),
+          created30: BigInt(0),
+          active7: 0,
+          active30: 1,
+        },
+        { user_id: "u3", first: null, created30: 0, active7: 0, active30: 0 },
+      ];
+    }),
     invoice: { groupBy: vi.fn(async () => [{ user_id: "admin" }, { user_id: "demo" }]) },
     usageDaily: {
       findMany: vi.fn(async () => [
@@ -170,7 +171,7 @@ describe("insights.overview", () => {
     vi.setSystemTime(NOW);
     vi.stubEnv("ADMIN_EMAILS", "owner@example.com");
     calls.groupBy = 0;
-    prisma.timeEntry.groupBy.mockClear();
+    prisma.$queryRawUnsafe.mockClear();
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -189,6 +190,8 @@ describe("insights.overview", () => {
     expect(out.pages[0]).toMatchObject({ page: "today", views30: 50 });
     expect(out.daily).toHaveLength(14);
     expect(out.daily.at(-1)).toEqual({ day: usageDay(NOW), views: 30 });
+    // The windows are bound as values, in the stored timestamp form, never written into the SQL.
+    expect(calls.args).toEqual([dbStamp(day(30)), dbStamp(day(7)), dbStamp(day(30)), 20_000]);
   });
 
   it("is not found for everyone else, and reads no figures for them", async () => {
