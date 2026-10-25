@@ -11,19 +11,22 @@ import { useCurrentUserId } from "@/components/offline-guard";
 import { safe } from "@/components/support-notice";
 import { Button } from "@/components/ui/button";
 import { feature } from "@/lib/features";
-import { IMPORT_HINT_HREF, importHintKey, showImportHint } from "@/lib/import-hint";
+import { firstEntryLogged, IMPORT_HINT_HREF, importHintKey, showImportHint } from "@/lib/import-hint";
 import { trpc } from "@/lib/trpc";
 
 /**
  * "Coming from Toggl, Clockify or Harvest?" on Today, for accounts with no entries yet (issue 326). `hasEntries` is
  * `entry.hasAny`, started by `TodayView` with the first batch; `weekHasEntries` is the week Today already holds, so the
- * note goes at once after the first log. "Not now" is remembered in this browser per account.
+ * note goes at once after the first log. The note waits while that week is still loading (`weekLoaded`). "Not now" is
+ * remembered in this browser per account.
  */
 export function ImportHint({
   hasEntries,
+  weekLoaded,
   weekHasEntries,
 }: {
   hasEntries: boolean | undefined;
+  weekLoaded: boolean;
   weekHasEntries: boolean;
 }) {
   const userId = useCurrentUserId();
@@ -35,10 +38,10 @@ export function ImportHint({
   }, [key]);
   // The first entry was just logged: keep the cached answer true, so another week with no time doesn't bring it back.
   useEffect(() => {
-    if (weekHasEntries && hasEntries === false) utils.entry.hasAny.setData(undefined, true);
+    if (firstEntryLogged({ hasEntries, weekHasEntries })) utils.entry.hasAny.setData(undefined, true);
   }, [weekHasEntries, hasEntries, utils]);
 
-  if (!showImportHint({ importOn: feature("importTime"), hasEntries, weekHasEntries, dismissed })) {
+  if (!showImportHint({ importOn: feature("importTime"), hasEntries, weekLoaded, weekHasEntries, dismissed })) {
     return null;
   }
   return (

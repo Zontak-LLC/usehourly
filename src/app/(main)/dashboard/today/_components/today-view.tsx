@@ -110,8 +110,11 @@ export function TodayView() {
       // Swipe left for the next day, right for the previous one (the day buttons do the same).
       onSwipe={feature("swipe") ? (direction) => go(addDays(date, direction === "left" ? 1 : -1)) : undefined}
     >
-      {/* Unknown week counts as "has entries" until it loads, so the note never flashes. */}
-      <ImportHint hasEntries={hasAny.data} weekHasEntries={!week.data || week.data.length > 0 || !!running.data} />
+      <ImportHint
+        hasEntries={hasAny.data}
+        weekLoaded={!!week.data}
+        weekHasEntries={(week.data?.length ?? 0) > 0 || !!running.data}
+      />
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : !hasProjects ? (

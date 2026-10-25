@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { IMPORT_HINT_HREF, importHintKey, showImportHint } from "@/lib/import-hint";
+import { firstEntryLogged, IMPORT_HINT_HREF, importHintKey, showImportHint } from "@/lib/import-hint";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -22,7 +22,7 @@ function memoryEntries(rows: { id: string; user_id: string }[]) {
 const asCaller = (prisma: ReturnType<typeof memoryEntries>, userId: string | null) =>
   createCaller({ session: userId ? { user: { id: userId }, expires: "" } : null, prisma: prisma as never });
 
-const base = { importOn: true, hasEntries: false, weekHasEntries: false, dismissed: false };
+const base = { importOn: true, hasEntries: false, weekLoaded: true, weekHasEntries: false, dismissed: false };
 
 describe("Today's import hint (issue 326)", () => {
   it("shows for a new account with no entries while the import is on", () => {
@@ -45,8 +45,28 @@ describe("Today's import hint (issue 326)", () => {
     expect(showImportHint({ ...base, hasEntries: undefined })).toBe(false);
   });
 
+  it("stays hidden while the week Today holds is still loading", () => {
+    expect(showImportHint({ ...base, weekLoaded: false })).toBe(false);
+  });
+
   it("goes after Not now", () => {
     expect(showImportHint({ ...base, dismissed: true })).toBe(false);
+  });
+
+  it("marks the account as having entries only when real entries exist, never while the week is unknown", () => {
+    // A week still loading (or another week with no data yet) has no entries: hasAny must stay false.
+    expect(firstEntryLogged({ hasEntries: false, weekHasEntries: false })).toBe(false);
+    expect(firstEntryLogged({ hasEntries: false, weekHasEntries: true })).toBe(true);
+    // Already known (or not yet fetched): nothing to change.
+    expect(firstEntryLogged({ hasEntries: true, weekHasEntries: true })).toBe(false);
+    expect(firstEntryLogged({ hasEntries: undefined, weekHasEntries: true })).toBe(false);
+  });
+
+  it("comes back once a loading week turns out empty (the note is not lost for the session)", () => {
+    const loading = { ...base, weekLoaded: false, weekHasEntries: false };
+    expect(showImportHint(loading)).toBe(false);
+    expect(firstEntryLogged(loading)).toBe(false);
+    expect(showImportHint({ ...loading, weekLoaded: true })).toBe(true);
   });
 
   it("remembers Not now per account and links to Your data", () => {
