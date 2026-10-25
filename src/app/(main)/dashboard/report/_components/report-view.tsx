@@ -14,12 +14,14 @@ import { useLocationHash } from "@/components/use-location-hash";
 import { downloadAnnualXlsx } from "@/lib/export-annual-xlsx";
 import { feature } from "@/lib/features";
 import { isCurrency } from "@/lib/money";
+import { reportYear } from "@/lib/report-year";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { yearSectionFromHash } from "@/lib/year-sections";
 
 import { ExpensesSection, expensesIn, yearRange } from "./expenses-section";
 import { YearSplit } from "./report-body";
+import { ReportLoading } from "./report-client";
 
 export function ReportView() {
   // "This year" comes from the browser clock (the Worker runs in UTC).
@@ -27,9 +29,7 @@ export function ReportView() {
   const [today, setToday] = useState<number | null>(null);
   useEffect(() => {
     const y = new Date().getFullYear();
-    // `?year=2025` (the emailed summary's button) opens that year; anything else opens this year.
-    const asked = Number(new URLSearchParams(window.location.search).get("year"));
-    setYear(Number.isInteger(asked) && asked >= 2000 && asked <= y ? asked : y);
+    setYear(reportYear(window.location.search, y));
     setToday(y);
   }, []);
 
@@ -51,7 +51,7 @@ export function ReportView() {
   const emailIt = trpc.report.email.useMutation();
 
   const withEmail = feature("reportEmail");
-  if (year === null) return <Skeleton className="mx-auto h-96 w-full max-w-5xl" />;
+  if (year === null) return <ReportLoading />;
   const data = report.data;
 
   async function exportXlsx() {
