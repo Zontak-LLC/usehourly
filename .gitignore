@@ -22,6 +22,8 @@
 /.stress/
 # Performance Check runs (npm run perf-check): timings and reports
 /.perf/
+# one-off scratch helpers (never committed, never linted)
+/scripts/.tmp-*
 
 # misc
 .DS_Store
