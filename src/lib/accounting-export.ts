@@ -222,14 +222,44 @@ export const ACCOUNTING_KINDS: { kind: AccountingKind; label: string; hint: stri
   },
 ];
 
+/**
+ * The most data rows (one per invoice line, the header not counted) each app takes in one file, from the desk check on
+ * issue 72, not from the real apps. Payments received has no limit.
+ */
+export const XERO_MAX_LINES = 500;
+export const QUICKBOOKS_MAX_ROWS = 1000;
+
+type LimitedKind = Exclude<AccountingKind, "payments">;
+const LIMITS: Record<LimitedKind, { limit: number; app: string }> = {
+  xero: { limit: XERO_MAX_LINES, app: "Xero" },
+  quickbooks: { limit: QUICKBOOKS_MAX_ROWS, app: "QuickBooks Online" },
+};
+
+/** What the screen says when a range makes a file longer than the app takes. */
+export function tooLongMessage(kind: LimitedKind, lines: number): string {
+  const { limit, app } = LIMITS[kind];
+  const n = (v: number) => v.toLocaleString("en-US");
+  return `This range makes ${n(lines)} lines; ${app} takes up to ${n(limit)} per file. Pick a shorter date range.`;
+}
+
+export type AccountingCsvResult =
+  | { ok: true; csv: string }
+  | { ok: false; lines: number; limit: number; message: string };
+
+/** The file for `kind`, or why it is not made: the rows are counted first, so a file that is too long is never built. */
 export function buildAccountingCsv(
   kind: AccountingKind,
   invoices: AccountingInvoice[],
   options: Partial<AccountingOptions> = {},
-): string {
-  if (kind === "xero") return xeroInvoicesCsv(invoices, options);
-  if (kind === "quickbooks") return quickbooksInvoicesCsv(invoices, options);
-  return paymentsCsv(invoices, options);
+): AccountingCsvResult {
+  if (kind !== "payments") {
+    const lines = invoices.reduce((sum, i) => sum + i.lines.length, 0);
+    const { limit } = LIMITS[kind];
+    if (lines > limit) return { ok: false, lines, limit, message: tooLongMessage(kind, lines) };
+  }
+  if (kind === "xero") return { ok: true, csv: xeroInvoicesCsv(invoices, options) };
+  if (kind === "quickbooks") return { ok: true, csv: quickbooksInvoicesCsv(invoices, options) };
+  return { ok: true, csv: paymentsCsv(invoices, options) };
 }
 
 export function accountingFileName(kind: AccountingKind, from: string, to: string): string {

@@ -37,6 +37,8 @@ export function AccountingExport() {
   const [taxType, setTaxType] = useState(DEFAULT_ACCOUNTING_OPTIONS.taxType);
   const [itemName, setItemName] = useState(DEFAULT_ACCOUNTING_OPTIONS.itemName);
   const [busy, setBusy] = useState(false);
+  // Why the last Download made no file (too many lines for the app); cleared by a new choice or the next Download.
+  const [tooLong, setTooLong] = useState("");
   // Files carry plain numbers, so when invoices exist in several currencies one is chosen for the file.
   const currencies = trpc.accounting.currencies.useQuery().data ?? [];
   const [currency, setCurrency] = useState("");
@@ -52,6 +54,7 @@ export function AccountingExport() {
 
   async function run() {
     setBusy(true);
+    setTooLong("");
     try {
       const { from, to } = range();
       const { invoices, more } = await utils.accounting.invoices.fetch({ from, to, currency: chosenCurrency });
@@ -59,8 +62,12 @@ export function AccountingExport() {
         toast.info("No invoices were issued in that period, so there is nothing to export.");
         return;
       }
-      const csv = buildAccountingCsv(kind, invoices, { dateStyle, accountCode, taxType, itemName });
-      downloadCsv(accountingFileName(kind, from, to), csv);
+      const file = buildAccountingCsv(kind, invoices, { dateStyle, accountCode, taxType, itemName });
+      if (!file.ok) {
+        setTooLong(file.message);
+        return;
+      }
+      downloadCsv(accountingFileName(kind, from, to), file.csv);
       toast.success(`Downloaded ${invoices.length} ${invoices.length === 1 ? "invoice" : "invoices"}.`);
       if (more) toast.warning("Only the first 200 invoices are in this file. Choose a shorter period for the rest.");
     } catch (err) {
@@ -87,7 +94,14 @@ export function AccountingExport() {
             {select(
               "acct-format",
               "Send to",
-              <NativeSelect id="acct-format" value={kind} onChange={(e) => setKind(e.target.value as AccountingKind)}>
+              <NativeSelect
+                id="acct-format"
+                value={kind}
+                onChange={(e) => {
+                  setKind(e.target.value as AccountingKind);
+                  setTooLong("");
+                }}
+              >
                 {ACCOUNTING_KINDS.map((k) => (
                   <option key={k.kind} value={k.kind}>
                     {k.label}
@@ -98,7 +112,14 @@ export function AccountingExport() {
             {select(
               "acct-year",
               "Invoices issued in",
-              <NativeSelect id="acct-year" value={year} onChange={(e) => setYear(e.target.value)}>
+              <NativeSelect
+                id="acct-year"
+                value={year}
+                onChange={(e) => {
+                  setYear(e.target.value);
+                  setTooLong("");
+                }}
+              >
                 <option value="this">{thisYear}</option>
                 {years.slice(1).map((y) => (
                   <option key={y} value={y}>
@@ -112,7 +133,14 @@ export function AccountingExport() {
               select(
                 "acct-currency",
                 "Currency",
-                <NativeSelect id="acct-currency" value={chosenCurrency} onChange={(e) => setCurrency(e.target.value)}>
+                <NativeSelect
+                  id="acct-currency"
+                  value={chosenCurrency}
+                  onChange={(e) => {
+                    setCurrency(e.target.value);
+                    setTooLong("");
+                  }}
+                >
                   {currencies.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -167,7 +195,13 @@ export function AccountingExport() {
       </div>
       {/* The foot of the card: what happens next on the left, the one action on the right, on a tinted strip. */}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t bg-band-2 px-5 py-4 sm:px-6">
-        <p className="min-w-0 flex-1 basis-64 text-foreground/75 text-sm">{picked.hint}</p>
+        {tooLong ? (
+          <p role="alert" className="min-w-0 flex-1 basis-64 text-destructive text-sm">
+            {tooLong}
+          </p>
+        ) : (
+          <p className="min-w-0 flex-1 basis-64 text-foreground/75 text-sm">{picked.hint}</p>
+        )}
         <DocButton
           onClick={run}
           disabled={busy}
