@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
-import { ReportView } from "./_components/report-view";
+import { ReportClient } from "./_components/report-client";
 
 export const metadata: Metadata = { title: "Year summary · UseHourly" };
 
 export default function ReportPage() {
-  return <ReportView />;
+  return <ReportClient />;
 }
