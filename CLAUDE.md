@@ -14,6 +14,7 @@ npm run d1:migrate:local    # apply migrations/ to local D1 (do this first)
 npx vitest run              # scenario tests (src/__tests__)
 npx next build              # must pass before deploy
 npm run deploy              # opennextjs-cloudflare build + deploy
+npm run measure:bundle      # after `npx opennextjs-cloudflare build`: Worker bundle size + top 20 inputs -> docs/bundle-size.md
 npm run d1:migrate:remote
 ```
 Live at **https://usehourly.app** (Worker `hourly`, Cloudflare account Zontak LLC, custom domain attached in `wrangler.jsonc` `routes`); the `*.workers.dev` address is switched off (`workers_dev: false`) as of the 2026-10-17 security review, so the custom domain is the only public origin (the old `hourly.dzontak.workers.dev` stops answering after the next deploy). `wrangler.jsonc` pins `account_id` because the shared token sees more than one account. `NEXT_PUBLIC_APP_URL` is baked at build time, so `npm run deploy` sets it on the build command.
@@ -495,7 +496,7 @@ Why this exists: the day-card "Edit day" button shipped doing nothing, because a
 - **Custom date range export** ("March 3 to April 20"): the **Date range…** button on Week and Month (`src/components/range-export.tsx`) opens a popover with From/To, quick picks (this month, last month, this quarter, last 30 days, year to date, last year) and a project select; it fetches `entry.list({from,to})` and calls `downloadTimesheetXlsx({ range: true })`. The rules (max 366 days, presets, file name, plain-words messages) are pure functions in `src/lib/export-range.ts`. With `range: true` the grid headers carry the month ("Tue, Mar 3", so Mar 3 and Apr 3 are never confused) and a range with more than 62 worked days switches to one column per Monday-start week ("Week of Mar 2"). Without `range` the Week/Month export is unchanged.
 - **Export everything** (all clients, all time, one zip): `src/components/export-everything.tsx`, on the Account page ("Your data") and in the date-range popover. `src/lib/export-all.ts` `planExport` builds `README.txt`, `all-time.xlsx`, `all-entries.csv` (UTF-8 BOM, RFC 4180 quoting), `invoices.csv` (only when there are invoices; the 200 most recent, the router's cap) and `by-client/<Client>.xlsx`; JSZip is imported on demand. Zero-minute entries (a timer just started) are left out everywhere. Tests: `export-range.test.ts` (writes real xlsx and zip bytes and reads them back).
 - Excel export is client-side (`src/lib/export-xlsx.ts`, exceljs imported on demand): sheet "Timesheet" = decimal-hour grid with live SUM formulas; sheet "Entries" = per-entry rows with rate/amount. `buildTimesheetWorkbook` is tested by round-tripping the real bytes.
-- exceljs still lands in the Worker bundle (~0.25 MB gzip of ~5.4 MB; paid-plan limit is 10 MB). Slim later if the Worker nears the limit.
+- exceljs still lands in the Worker bundle (paid-plan limit is 10 MB). The measured size and what fills it are in `docs/bundle-size.md` (`npm run measure:bundle`, `scripts/bundle-size.mjs`; test `bundle-size-journey.test.ts`); slimming is issue 280.
 - Local D1 state can get wiped by `npm run deploy`; re-run `npm run d1:migrate:local` and re-register a dev user if login says Configuration error.
 
 ## Logos
