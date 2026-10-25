@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { useMoney } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/dates";
 import { categoryLabel, describeTrip, type ExpenseDraft, NET_NOTE, netCents, summarizeExpenses } from "@/lib/expenses";
 import { ROW_FIGURE } from "@/lib/figures";
 import { yearRange } from "@/lib/report-year";
@@ -19,10 +20,6 @@ import { ExpenseForm } from "./expense-form";
 import { SummaryRow, Table } from "./report-table";
 
 export type ExpenseList = inferRouterOutputs<AppRouter>["expense"]["list"];
-
-/** "Oct 9, 2026", the way dates read on screen. */
-const dayLabel = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 /** The default date for a new expense: today in this year, else the last day of the year shown. */
 function defaultDate(year: number) {
@@ -169,7 +166,7 @@ export function ExpensesSection({
                       </p>
                       <p className="text-muted-foreground text-sm">
                         {[
-                          dayLabel(r.date),
+                          formatDate(r.date, "day"),
                           r.kind === "mileage" && r.distance && r.mileage_rate
                             ? describeTrip(r.distance, r.distance_unit ?? "mi", r.mileage_rate)
                             : null,
@@ -185,7 +182,7 @@ export function ExpensesSection({
                       size="sm"
                       className="h-9"
                       onClick={() => setEditing(r.id)}
-                      aria-label={`Edit expense of ${dayLabel(r.date)}`}
+                      aria-label={`Edit expense of ${formatDate(r.date, "day")}`}
                     >
                       Edit
                     </Button>
