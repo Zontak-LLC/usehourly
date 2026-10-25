@@ -131,7 +131,7 @@ To see Night Watch catch and triage a real failure, staging can break ONE path f
 - **Always ends:** 10 minutes by default, 15 at most; `stop` ends it at once. The drill is one row in `app_settings` (key `drill`) so every isolate sees it within 5 seconds.
 - **Run one:** `node scripts/drill.mjs status`, `node scripts/drill.mjs start health-503 5`, `node scripts/drill.mjs stop` (token from the Keychain item `usehourly-staging-drill-token`).
 - **Set up once (owner):** `openssl rand -hex 24 | pbcopy && ~/.claude/bin/secret-save usehourly-staging-drill-token`, then `~/.claude/bin/secret-get usehourly-staging-drill-token | npx wrangler secret put DRILL_TOKEN --config wrangler.staging.jsonc`. To switch drills off for good: `npx wrangler secret delete DRILL_TOKEN --config wrangler.staging.jsonc`.
-- Night Watch's UseHourly site watches production (`hourly`, usehourly.app); it needs staging targets (the Worker `hourly-staging` and https://staging.usehourly.app/api/health) to see a drill.
+- Night Watch watches production (site `hourly`, usehourly.app) and staging (site `usehourly-staging`: Worker `hourly-staging` logs, https://staging.usehourly.app/ and https://staging.usehourly.app/api/health). Staging incidents are labelled "UseHourly staging", so a drill never pages as production. Night Watch does not close log incidents by itself; after a fix (or after the drill ends), press Resolve on its board.
 
 ## Performance Check: a load test on staging (2026-10-25, issue 311)
 
