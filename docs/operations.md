@@ -232,3 +232,27 @@ Known and accepted on 2026-10-18:
 `node scripts/load-check.mjs http://localhost:3029` hits the public pages and the health endpoint with a small amount
 of concurrency and prints latency percentiles and error counts. It refuses to run against `usehourly.app` unless you
 pass `--i-own-this-site`: do not load-test production without telling Cloudflare-side alerting first.
+
+## Speed measure (production)
+
+`npm run measure:speed` (`scripts/measure-speed.mjs`, no dependencies) shows how fast production answers. For
+`/api/health`, `/auth/v2/login` and the landing page `/` it waits a pause, sends one first request, then a few more one
+after another, and prints a table: endpoint, status, first, median and p90, in ms. The median and p90 cover only the
+requests after the first. A time runs from sending the request to the end of the body. Redirects are not followed, so
+a `307` (a bad or expired cookie on a signed-in page) shows in the status column. It exits 1 when a path got no answer
+or a status of 500 and up.
+
+```
+npm run measure:speed -- [base url] [--runs=10] [--pause=10] [--path=/dashboard/today] [--cookie=USEHOURLY_COOKIE]
+```
+
+- The base URL defaults to `https://usehourly.app`; give a local or staging URL to measure that instead.
+- `--runs` (1 to 50, default 10) requests per path after the first; `--pause` (0 to 120 s, default 10) before each path.
+- `--path=` (repeatable) adds a path, for example a signed-in page.
+- `--cookie=NAME` reads the Cookie header from the environment variable `NAME`. The value is never printed. To keep it
+  out of shell history, copy the `Cookie` header of a signed-in request from the browser's network panel, then run
+  `read -s USEHOURLY_COOKIE`, paste, press Enter, and `export USEHOURLY_COOKIE`.
+
+It is safe on production: with the defaults it sends 33 GETs, one at a time, over about 35 seconds, and it never signs
+in (it only GETs the login page, so it cannot trip the sign-in limit). "First" means the first request after a pause,
+not a guaranteed cold Worker: Cloudflare may answer the landing page from its edge cache.
