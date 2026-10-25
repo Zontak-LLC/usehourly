@@ -1,10 +1,5 @@
+import { addDays } from "../src/lib/dates";
 import { expect, startFreshAccount, test, today } from "./helpers";
-
-const addDays = (iso: string, n: number) => {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-};
 
 /*
  * Today walks one day at a time (2026-10-23): the arrows, a date button with a month calendar, and buttons for recent

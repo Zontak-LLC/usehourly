@@ -121,7 +121,7 @@ export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>
   scope.getByText(text, { exact: true }).locator("visible=true").first();
-export const today = () => new Date().toISOString().slice(0, 10);
+export { today } from "./today";
 
 /** Run SQL against the local database (only for setup a user cannot do, like making an account a few days old). */
 export function sql(statement: string) {
