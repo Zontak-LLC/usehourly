@@ -11,6 +11,7 @@ import {
 
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { runSql } from "./local-db";
+import { today } from "./today";
 import { mkdirSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
@@ -108,11 +109,7 @@ export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number
   const clients = ((await listed.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
   const projectId = clients[0].projects[0].id;
   if (rate) await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
-  // "Today" in the browser's own time zone, where the app works it out (UTC can already be tomorrow).
-  const date = await page.evaluate(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  });
+  const date = today();
   for (const [i, m] of minutes.entries()) {
     await trpc(page, "entry.create", {
       projectId,
