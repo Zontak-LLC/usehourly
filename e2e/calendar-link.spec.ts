@@ -73,8 +73,10 @@ test("a private calendar address shows the day's meetings, refreshes, and is for
     await expect.poll(() => asked).toBe(true);
     await card.getByRole("button", { name: "Remove calendar" }).click();
     await expect(card).toContainText("Turn meetings into time entries");
+    const answered = page.waitForResponse("**/api/calendar-feed");
     release();
-    await page.waitForTimeout(500);
+    await (await answered).finished();
+    await page.waitForTimeout(100); // the late answer must NOT write the address back, so there is nothing to wait for
     expect(await page.evaluate(() => localStorage.getItem("hourly:calendarLink"))).toBeNull();
     expect(await page.evaluate(() => localStorage.getItem("hourly:calendar"))).toBeNull();
     await expect(card).toContainText("Turn meetings into time entries");

@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, pastTimerLock, startFreshAccount, test } from "./helpers";
 
 const IPHONE =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -44,7 +44,7 @@ test("the installed app: shortcuts, an install offer and a badge while the timer
     await watch.getByRole("button", { name: /Start\s+timer/ }).click();
     await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
     await expect.poll(badge).toBe("set");
-    await page.waitForTimeout(1100); // past the press lock
+    await pastTimerLock(page);
     await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
     await expect(watch.getByRole("group", { name: /Saved time/ })).toBeVisible();
     await expect.poll(badge).toBe("clear");

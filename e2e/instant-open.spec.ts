@@ -12,7 +12,8 @@ test("reopening a page shows the last data immediately, while fresh data is stil
   await page.getByLabel("Description").fill("Instant open check");
   await page.getByRole("button", { name: /Log time/ }).click();
   await expect(page.getByText("Instant open check")).toBeVisible();
-  await page.waitForTimeout(2500); // the saved copy is written a moment after the data changes
+  // the saved copy is written a moment after the data changes
+  await page.waitForFunction(() => localStorage.getItem("hourly:queryCache")?.includes("Instant open check"));
 
   let held = 0;
   await page.route("**/api/trpc/**", async (route) => {

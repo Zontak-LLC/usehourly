@@ -428,6 +428,12 @@ export const entryRouter = router({
     return { ok: true };
   }),
 
+  /** Whether the account has any entry at all (Today's import hint shows only before the first one). */
+  hasAny: protectedProcedure.query(async ({ ctx }) => {
+    const first = await ctx.prisma.timeEntry.findFirst({ where: { user_id: ctx.userId }, select: { id: true } });
+    return first !== null;
+  }),
+
   /** The user's currently running timer, if any. */
   running: protectedProcedure.query(({ ctx }) =>
     ctx.prisma.timeEntry.findFirst({

@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, pastTimerLock, startFreshAccount, test } from "./helpers";
 
 test("the timer strip: Start runs it, Stop saves at once with Undo and Resume (#218)", async ({ page, shot }) => {
   await startFreshAccount(page, "Acme");
@@ -14,13 +14,13 @@ test("the timer strip: Start runs it, Stop saves at once with Undo and Resume (#
     "Stop the timer on General",
   );
   await expect(watch.getByRole("timer")).toHaveAttribute("aria-label", /^Timer 0:0\d:\d\d$/); // the running time
-  await page.waitForTimeout(2500);
+  await expect(watch.getByRole("timer")).toHaveAttribute("aria-label", /^Timer 0:00:0[2-9]$/);
   await shot("timer-running");
   await expect(page).toHaveTitle(/⏱ \d+:\d\d:\d\d · General/); // the tab shows it too
   await expect(page.getByRole("button", { name: /Start\s+timer/ })).toHaveCount(0); // one timer, no rival button
 
   // Stop: the time is saved at once and the strip says so, with Undo, Resume and Done. Resume carries on with the same entry.
-  await page.waitForTimeout(1100); // past the press lock
+  // (No wait for the press lock here: it ran out while the timer counted to two seconds.)
   await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
   await expect(watch.getByRole("group", { name: /Saved time/ })).toBeVisible();
   await expect(watch).toContainText(/Saved 0:01 · General/); // a stop rounds up to at least a minute
@@ -28,17 +28,17 @@ test("the timer strip: Start runs it, Stop saves at once with Undo and Resume (#
   for (const name of [/Resume\s+timer/, /^Undo$/, /^Done$/])
     await expect(watch.getByRole("button", { name })).toBeVisible();
   await expect(page.getByRole("region", { name: "Today's entries" })).toBeVisible(); // already saved as an entry
-  await page.waitForTimeout(1100); // the choices are locked for a moment after they appear
+  await pastTimerLock(page); // the choices are locked for a moment after they appear
   await watch.getByRole("button", { name: /Resume\s+timer/ }).click();
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
   const sheet = page.getByRole("region", { name: "Today's entries" });
   await expect(sheet.getByRole("heading", { level: 2 })).toContainText("(1 entry)"); // the same entry, not a second one
 
   // Stop again and Undo: nothing is kept.
-  await page.waitForTimeout(1100);
+  await pastTimerLock(page);
   await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
   await expect(watch.getByRole("group", { name: /Saved time/ })).toBeVisible();
-  await page.waitForTimeout(1100); // the choices are locked for a moment after they appear
+  await pastTimerLock(page); // the choices are locked for a moment after they appear
   await watch.getByRole("button", { name: /^Undo$/ }).click();
   await expect(page.getByText("Undone. Nothing was saved.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Today's entries" })).toHaveCount(0);
@@ -50,14 +50,14 @@ test("Stop keeps the time as an entry; Done gets the timer ready again", async (
   await startFreshAccount(page, "Acme");
   const watch = page.getByRole("region", { name: "Timer" });
   await watch.getByRole("button", { name: /Start\s+timer/ }).click();
-  await page.waitForTimeout(1500);
+  await pastTimerLock(page);
   await watch.getByRole("button", { name: /Stop\s+timer/ }).click();
   await expect(watch.getByRole("group", { name: /Saved time/ })).toBeVisible();
   // Already in the entries before anything else is pressed: Stop saves it.
   const sheet = page.getByRole("region", { name: "Today's entries" });
   await expect(sheet.getByRole("heading", { level: 2 })).toContainText("(1 entry)");
   await expect(sheet).toContainText("Total 0:01"); // a stop rounds up to at least a minute
-  await page.waitForTimeout(1100); // the choices are locked for a moment after they appear
+  await pastTimerLock(page); // the choices are locked for a moment after they appear
   await watch.getByRole("button", { name: /^Done$/ }).click();
   await expect(watch.getByRole("button", { name: /Start\s+timer/ })).toBeVisible();
   await expect(sheet.getByRole("heading", { level: 2 })).toContainText("(1 entry)"); // Done keeps it
@@ -68,7 +68,7 @@ test("a double click on Start starts the timer and does not stop it again (found
   const watch = page.getByRole("region", { name: "Timer" });
   await watch.getByRole("button", { name: /Start\s+timer/ }).dblclick();
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
-  await page.waitForTimeout(1500);
+  await pastTimerLock(page); // a wrong stop by the second click would show by now, and Stop below must be past the lock
   // still running, and nothing was stopped by the second click
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toBeVisible();
   await expect(watch.getByRole("group", { name: /Saved time/ })).toHaveCount(0);
@@ -78,7 +78,7 @@ test("a double click on Start starts the timer and does not stop it again (found
   // and a double click on Stop stops once and offers the choices, without starting a new timer
   await watch.getByRole("button", { name: /Stop\s+timer/ }).dblclick();
   await expect(watch.getByRole("button", { name: /Resume\s+timer/ })).toBeVisible();
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(500); // nothing to wait for: a wrong restart by the second click would show by now
   await expect(watch.getByRole("button", { name: /Resume\s+timer/ })).toBeVisible();
   await expect(watch.getByRole("button", { name: /Stop\s+timer/ })).toHaveCount(0);
 });

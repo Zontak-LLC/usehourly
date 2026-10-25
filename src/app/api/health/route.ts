@@ -22,10 +22,14 @@ const since = (start: number) => Math.round(performance.now() - start);
  */
 async function check() {
   let db: { selectMs: number; probeMs: number } | null = null;
+  let drilled = false;
   try {
     const prisma = await getPrisma();
     // Staging drills only (lib/drill.ts); on production these return false without a database read.
-    if (await faultActive(prisma, "health-503")) throw drillError("database unavailable");
+    if (await faultActive(prisma, "health-503")) {
+      drilled = true;
+      throw drillError("database unavailable");
+    }
     if (await faultActive(prisma, "health-slow")) await new Promise((r) => setTimeout(r, HEALTH_SLOW_MS));
     let start = performance.now();
     await prisma.$queryRaw`SELECT 1`;
@@ -37,7 +41,9 @@ async function check() {
     logError("health_check_failed", err);
   }
   const body = db ? { ok: true, db } : { ok: false };
-  return Response.json(body, { status: db ? 200 : 503, headers: { "Cache-Control": "no-store" } });
+  // A drilled 503 says so in a header (the body stays `{ok:false}`), so triage can tell it from a real outage.
+  const headers = { "Cache-Control": "no-store", ...(drilled ? { "X-Drill": "health-503" } : {}) };
+  return Response.json(body, { status: db ? 200 : 503, headers });
 }
 
 export const GET = check;
