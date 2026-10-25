@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
+import { formatCount } from "@/lib/money";
+
 /**
  * How much one account may store. Registration is open and free, so without a ceiling one account
  * could fill the shared database. The numbers are far above real use (a busy freelancer logs a few
@@ -33,7 +35,7 @@ export function quotaLimit(kind: QuotaKind, demo = false): number {
 
 /** The plain-words error a person sees at the limit for `kind` (the one place its wording lives). */
 export function quotaError(kind: QuotaKind, demo = false): TRPCError {
-  const limit = quotaLimit(kind, demo).toLocaleString("en-US");
+  const limit = formatCount(quotaLimit(kind, demo));
   return new TRPCError({
     code: "FORBIDDEN",
     message: demo

@@ -36,6 +36,7 @@ describe("which saved values show the notice", () => {
   });
 
   it("says what hosting costs in plain words, and a changed amount is a new notice to dismiss", () => {
+    expect(supportNoticeText(5)).toContain("about $5 a month");
     expect(supportNoticeText(100)).toContain("about $100 a month");
     expect(supportNoticeText(1500)).toContain("$1,500");
     expect(supportNoticeDismissKey(25)).not.toBe(supportNoticeDismissKey(30));
