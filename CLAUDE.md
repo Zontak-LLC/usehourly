@@ -25,7 +25,7 @@ Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync
 - Running timer = a `TimeEntry` with `started_at` set. `entry.start` stops any running timer first; stop rounds elapsed up to ≥1 min.
 - Multi-tenancy = per-user: every procedure uses `protectedProcedure` and filters by `ctx.userId` (that filter is the isolation boundary).
 - tRPC router for clients is named `clients` (a router named `client` collides with tRPC's built-in).
-- `getPrisma()` is lazy on purpose — a top-level await on D1 breaks `next build` with SQLITE_BUSY.
+- `getPrisma()` is lazy on purpose — a top-level await on D1 breaks `next build` with SQLITE_BUSY. **It builds one client per request (issue 315), never one per isolate:** a shared client's DataLoader folds the findUnique calls of concurrent requests into one query sent from one of them, and when that request is canceled the others hang ("Worker's code had hung", 500). The key is OpenNext's per-request `{ env, ctx, cf }` object in a WeakMap. Never cache a client, a promise or an I/O object across requests. Test: `prisma-per-request-journey.test.ts` (real Prisma over a workerd-like D1; mutation-checked: the shared client hangs).
 - `trpc.ts` must not import next-auth/Prisma at runtime (context lives in `context.ts`) so routers are testable.
 - Sidebar user name is read from the DB in the dashboard layout, not the JWT (JWT goes stale after profile edits).
 
