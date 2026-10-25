@@ -1,0 +1,46 @@
+/* Night (issue 324, STEP 1 MOCKUP ONLY). Not loaded by the app. e2e/night-mockup.spec.ts pastes this block into the
+   page, with data-theme-mode="night" and the dark class on <html>, to photograph Today, Week and Invoices. After the
+   owner's pick, step 2 moves the same block into src/app/globals.css after .dark. Colours from the Claude Console
+   (read 2026-10-25). It only overrides tokens; every dark: style still applies. */
+html[data-theme-mode="night"] {
+  /* 8px controls (rounded-lg) and 12px cards (rounded-xl = radius + 4px). */
+  --radius: 0.5rem;
+  --background: #151515;
+  --foreground: #f0efec;
+  --card: #212121; /* white 5% over the page */
+  --card-foreground: #f0efec;
+  --popover: #212121;
+  --popover-foreground: #f0efec;
+  /* Buttons stay light-on-dark like Dark: white on the soft blue is only 2.4:1. */
+  --primary: #f0efec;
+  --primary-foreground: #151515;
+  --secondary: #212121;
+  --secondary-foreground: #c3c2b7;
+  --muted: #212121;
+  /* Lighter than the Console's #898781, which is only about 4.5:1 on a card and below it on a hover row. */
+  --muted-foreground: #9a9892;
+  --accent: #2c2c2c; /* hover / pressed: white 10% */
+  --accent-foreground: #f0efec;
+  --destructive: #ec7e7e;
+  --amber: #6da7ec; /* the accent: links, focus, small marks */
+  --amber-soft: color-mix(in oklab, #6da7ec 14%, #151515);
+  --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+  --border: #2c2c2c; /* white 10% */
+  --input: #2c2c2c;
+  --ring: #6da7ec;
+  --chart-1: #f0eee6; /* cream */
+  --chart-2: #6da7ec; /* blue */
+  --chart-3: #f09978; /* clay */
+  --chart-4: #bcd1ca; /* sage */
+  --chart-5: #9a9892; /* grey */
+  --sidebar: #0b0b0b;
+  --sidebar-foreground: #f0efec;
+  --sidebar-primary: #f0efec;
+  --sidebar-primary-foreground: #151515;
+  --sidebar-accent: #212121;
+  --sidebar-accent-foreground: #f0efec;
+  --sidebar-border: #2c2c2c;
+  --sidebar-ring: #6da7ec;
+  /* No glow, no gradient: a flat edge instead of a soft shadow. */
+  --shadow-sheet: none;
+}
