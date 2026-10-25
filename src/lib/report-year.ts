@@ -6,3 +6,6 @@ export function reportYear(search: string, thisYear: number): number {
   const asked = Number(new URLSearchParams(search).get("year"));
   return Number.isInteger(asked) && asked >= 2000 && asked <= thisYear ? asked : thisYear;
 }
+
+/** The year's range for `expense.list`: the view and the page wrapper ask with this, so they share one cache entry. */
+export const yearRange = (year: number) => ({ from: `${year}-01-01`, to: `${year}-12-31` });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reportYear } from "@/lib/report-year";
+import { reportYear, yearRange } from "@/lib/report-year";
 
 /** The page wrapper and the view both pick the year with this, so their queries are the same one in the cache. */
 describe("the year the Year summary opens on", () => {
@@ -15,5 +15,12 @@ describe("the year the Year summary opens on", () => {
     expect(reportYear("?year=1999", 2026)).toBe(2026);
     expect(reportYear("?year=20x5", 2026)).toBe(2026);
     expect(reportYear("?year=2025.5", 2026)).toBe(2026);
+  });
+});
+
+/** The wrapper prefetches the expense list with this range and the view reads it, so it must cover the whole year. */
+describe("the expense range of a Year summary year", () => {
+  it("runs from January 1 to December 31 of that year", () => {
+    expect(yearRange(2025)).toEqual({ from: "2025-01-01", to: "2025-12-31" });
   });
 });

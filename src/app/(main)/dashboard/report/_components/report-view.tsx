@@ -14,12 +14,12 @@ import { useLocationHash } from "@/components/use-location-hash";
 import { downloadAnnualXlsx } from "@/lib/export-annual-xlsx";
 import { feature } from "@/lib/features";
 import { isCurrency } from "@/lib/money";
-import { reportYear } from "@/lib/report-year";
+import { reportYear, yearRange } from "@/lib/report-year";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { yearSectionFromHash } from "@/lib/year-sections";
 
-import { ExpensesSection, expensesIn, yearRange } from "./expenses-section";
+import { ExpensesSection, expensesIn } from "./expenses-section";
 import { YearSplit } from "./report-body";
 import { ReportLoading } from "./report-client";
 

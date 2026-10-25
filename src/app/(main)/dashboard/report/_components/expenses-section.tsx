@@ -10,6 +10,7 @@ import { useMoney } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
 import { categoryLabel, describeTrip, type ExpenseDraft, NET_NOTE, netCents, summarizeExpenses } from "@/lib/expenses";
 import { ROW_FIGURE } from "@/lib/figures";
+import { yearRange } from "@/lib/report-year";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers/_app";
@@ -22,9 +23,6 @@ export type ExpenseList = inferRouterOutputs<AppRouter>["expense"]["list"];
 /** "Oct 9, 2026", the way dates read on screen. */
 const dayLabel = (d: string) =>
   new Date(`${d}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-
-/** The year's range, shared with the page so the list is fetched in the page's first request. */
-export const yearRange = (year: number) => ({ from: `${year}-01-01`, to: `${year}-12-31` });
 
 /** The default date for a new expense: today in this year, else the last day of the year shown. */
 function defaultDate(year: number) {
