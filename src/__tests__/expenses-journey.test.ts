@@ -295,6 +295,77 @@ describe("one account never sees or touches another's expenses", () => {
   });
 });
 
+/** An `expenses` table for `listAll`: honours where.user_id (none = every row, as Prisma would), the order, `take` and a cursor. */
+function exportWorld(rows: Row[]) {
+  const findMany = vi.fn(async (args: { where: { user_id?: string }; take?: number; cursor?: { id: string } }) => {
+    const hit = rows
+      .filter((r) => args.where.user_id === undefined || r.user_id === args.where.user_id)
+      .sort((a, b) => b.date.localeCompare(a.date) || b.created_at - a.created_at || a.id.localeCompare(b.id));
+    const start = Math.max(args.cursor ? hit.findIndex((r) => r.id === args.cursor?.id) : 0, 0);
+    return hit.slice(start, start + (args.take ?? hit.length)).map((r) => ({ ...r, client: null }));
+  });
+  const prisma = { expense: { findMany } };
+  const as = (id: string) => createCaller({ session: { user: { id }, expires: "" } as never, prisma: prisma as never });
+  return { prisma, as };
+}
+
+describe("every expense for 'export everything'", () => {
+  const spent = (id: string, user_id: string, date: string): Row => ({
+    id,
+    user_id,
+    date,
+    created_at: 1,
+    kind: "expense",
+  });
+  const drove = (id: string, user_id: string, date: string): Row => ({
+    id,
+    user_id,
+    date,
+    created_at: 1,
+    kind: "mileage",
+  });
+
+  it("hands over all of the caller's expenses and trips over two years, and none of another account's", async () => {
+    const w = exportWorld([
+      spent("a1", "u1", "2025-02-10"),
+      spent("a2", "u1", "2025-08-01"),
+      spent("a3", "u1", "2026-09-30"),
+      drove("a4", "u1", "2025-11-02"),
+      drove("a5", "u1", "2026-03-04"),
+      spent("b1", "u2", "2026-01-01"),
+    ]);
+    const mine = await w.as("u1").expense.listAll({});
+    expect(mine.items.map((e) => e.id)).toEqual(["a3", "a5", "a4", "a2", "a1"]);
+    expect(mine.nextCursor).toBeNull();
+    expect(w.prisma.expense.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { user_id: "u1" }, take: 2001 }),
+    );
+
+    const theirs = await w.as("u2").expense.listAll({});
+    expect(theirs.items.map((e) => e.id)).toEqual(["b1"]);
+    expect(w.prisma.expense.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: { user_id: "u2" } }));
+  });
+
+  it("pages 2,000 at a time, each row once, and refuses a runaway cursor", async () => {
+    const rows = Array.from({ length: 2001 }, (_, i) => spent(`x${String(i).padStart(5, "0")}`, "u1", "2026-05-01"));
+    const me = exportWorld(rows).as("u1");
+    const first = await me.expense.listAll({});
+    expect(first.items).toHaveLength(2000);
+    expect(first.nextCursor).toBe("x02000");
+    const second = await me.expense.listAll({ cursor: first.nextCursor });
+    expect(second.items.map((e) => e.id)).toEqual(["x02000"]);
+    expect(second.nextCursor).toBeNull();
+    await expect(me.expense.listAll({ cursor: "x".repeat(101) })).rejects.toThrow();
+  });
+
+  it("refuses a signed-out caller", async () => {
+    const w = exportWorld([spent("a1", "u1", "2026-01-01")]);
+    const anon = createCaller({ session: null, prisma: w.prisma as never });
+    await expect(anon.expense.listAll({})).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(w.prisma.expense.findMany).not.toHaveBeenCalled();
+  });
+});
+
 describe("what the server refuses", () => {
   it("refuses bad input before touching the database", async () => {
     const w = world();

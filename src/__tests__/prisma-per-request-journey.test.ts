@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { fakeD1 as fakeD1Over } from "./helpers/fake-d1";
+import { settles } from "./helpers/settles";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 
 /**
  * Issue 315: under load on staging about one request in 3,000 ended as a 500, "Worker's code had hung". The cause:
@@ -29,55 +28,8 @@ vi.mock("@opennextjs/cloudflare", () => ({
   },
 }));
 
-function fakeD1() {
-  const db = new DatabaseSync(":memory:");
-  const dir = path.join(process.cwd(), "migrations");
-  for (const f of readdirSync(dir)
-    .filter((n) => n.endsWith(".sql"))
-    .sort())
-    db.exec(readFileSync(path.join(dir, f), "utf8"));
-  const sent: { sql: string; by: Req | undefined }[] = [];
-  // workerd ties I/O to the request that started it: if that request is gone, the answer never arrives
-  const io = <T>(work: () => T): Promise<T> => {
-    const by = requests.als.getStore();
-    if (by?.canceled) return new Promise<T>(() => undefined);
-    return new Promise<T>((resolve, reject) =>
-      setTimeout(() => {
-        if (by?.canceled) return; // canceled while the query was out
-        try {
-          resolve(work());
-        } catch (err) {
-          reject(err);
-        }
-      }, 5),
-    );
-  };
-  const DB = {
-    prepare(sql: string) {
-      let args: unknown[] = [];
-      const stmt = {
-        bind(...a: unknown[]) {
-          args = a;
-          return stmt;
-        },
-        raw() {
-          sent.push({ sql, by: requests.als.getStore() });
-          return io(() => {
-            // column names from the first row: StatementSync.columns() needs Node 22.16+, CI runs 22.14
-            const objects = db.prepare(sql).all(...(args as never[]));
-            return [Object.keys(objects[0] ?? {}), ...objects.map((row) => Object.values(row))];
-          });
-        },
-        run() {
-          return io(() => ({ meta: { changes: Number(db.prepare(sql).run(...(args as never[])).changes) } }));
-        },
-      };
-      return stmt;
-    },
-    exec: (sql: string) => io(() => db.exec(sql)),
-  };
-  return { db, DB, sent };
-}
+// workerd ties I/O to the request that started it: if that request is gone, the answer never arrives
+const fakeD1 = () => fakeD1Over(() => requests.als.getStore());
 
 // vitest can hand a same-tick dynamic import of a mocked module the real one, so import the mock first
 async function loadPrisma() {
@@ -89,8 +41,6 @@ async function loadPrisma() {
 const request = (DB: unknown): Req => ({ env: { DB }, ctx: {}, cf: {}, canceled: false });
 // awaited inside the run: a Prisma query is lazy and only starts when someone awaits it
 const within = <T>(req: Req, fn: () => Promise<T>) => requests.als.run(req, async () => await fn());
-const settles = <T>(p: Promise<T>, ms = 1000) =>
-  Promise.race([p.then(() => "settled"), new Promise((r) => setTimeout(() => r("hung"), ms))]);
 
 describe("the database client under concurrent requests (issue 315)", () => {
   it("a request whose neighbour is canceled still gets its answer", async () => {

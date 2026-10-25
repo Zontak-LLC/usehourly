@@ -6,6 +6,8 @@ import { buildSheet, type SheetEntry } from "@/lib/timesheet";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
+
 const createCaller = createCallerFactory(appRouter);
 
 function entry(over: Partial<SheetEntry> & { id: string; date: string; minutes: number }): SheetEntry {
@@ -283,14 +285,18 @@ describe("week grid: several entries on the same day", () => {
         deleteMany: vi.fn(),
       },
     };
-    const caller = createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
+    const caller = createCaller({
+      session: { user: { id: "u1" }, expires: "" },
+      prisma: withGuardedInsert(prisma) as never,
+    });
 
     await caller.entry.create({ projectId: "p1", date: "2026-10-12", duration: "2", note: "Standup + planning" });
     await caller.entry.create({ projectId: "p1", date: "2026-10-12", duration: "1:30", note: "Code review" });
 
+    const id = expect.any(String); // the guarded insert makes the id (server/quota-insert.ts)
     expect(created).toEqual([
-      { user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 120, note: "Standup + planning" },
-      { user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 90, note: "Code review" },
+      { id, user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 120, note: "Standup + planning" },
+      { id, user_id: "u1", project_id: "p1", date: "2026-10-12", minutes: 90, note: "Code review" },
     ]);
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
     expect(prisma.timeEntry.deleteMany).not.toHaveBeenCalled();

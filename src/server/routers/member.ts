@@ -6,10 +6,10 @@ import { isDemoSession } from "@/lib/demo";
 import { parseDuration } from "@/lib/duration";
 import { hashToken } from "@/lib/email-token";
 import { NOTE_MAX } from "@/lib/notes";
-import { assertWithinQuota } from "@/lib/quotas";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 import { MAX_TEAMS_JOINED } from "@/lib/team";
 
+import { accountQuota, insertWithinQuota } from "../quota-insert";
 import { activeMembership } from "../team";
 import { protectedProcedure, router } from "../trpc";
 
@@ -123,18 +123,15 @@ export const memberRouter = router({
         where: { id: input.projectId, user_id: team.ownerId, archived: false, client_id: { in: team.clientIds } },
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
-      assertWithinQuota(await ctx.prisma.timeEntry.count({ where: { user_id: team.ownerId } }), 1, "entries");
       try {
-        return await ctx.prisma.timeEntry.create({
-          data: {
-            ...(input.clientId ? { id: input.clientId } : {}),
-            ...mine,
-            project_id: project.id,
-            date: input.date,
-            minutes,
-            note: input.note,
-          },
-        });
+        // Counts against the OWNER's entries (normal limits), in the same statement as the insert.
+        const id = await insertWithinQuota(
+          ctx.prisma,
+          "time_entries",
+          { id: input.clientId, ...mine, project_id: project.id, date: input.date, minutes, note: input.note },
+          accountQuota("time_entries", "entries", team.ownerId, false),
+        );
+        return await ctx.prisma.timeEntry.findUniqueOrThrow({ where: { id } });
       } catch (err) {
         if (input.clientId) {
           const won = await ctx.prisma.timeEntry.findFirst({ where: { id: input.clientId, ...mine } });

@@ -3,8 +3,7 @@
 import { useState } from "react";
 
 import { readLines, summarize } from "@/lib/hours-calc";
-
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+import { formatMoney } from "@/lib/money";
 
 export function HoursCalculator() {
   const [text, setText] = useState("1:30\n2h\n45m\n1.25");
@@ -44,7 +43,7 @@ export function HoursCalculator() {
         <p className="font-semibold text-4xl tabular-nums">{total.decimal} hours</p>
         <p className="text-lg tabular-nums">{total.clock} (hours:minutes)</p>
         {total.amountCents !== null && (
-          <p className="text-lg tabular-nums">Amount: {money.format(total.amountCents / 100)}</p>
+          <p className="text-lg tabular-nums">Amount: {formatMoney(total.amountCents, "USD")}</p>
         )}
         {total.unreadable > 0 && (
           <p className="text-destructive text-sm">

@@ -33,7 +33,7 @@ const SERIAL_SPECS = /support-notice\.spec\.ts$/;
 // testIgnore replaces the top-level one, so it is listed here too.
 const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-control/])];
 const PHONE_SPECS =
-  /(first-day|clients-split|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-split|user-menu|team|invoice-actions-height|invoice-pages|week-pills|timesheet-notes|year-summary|year-split|work-items-pages|project-chips|project-search|landing-deck|assistant-terminal|global-search|slide-to-delete|page-descriptions|installed-app|import-history|never-lose-a-day|invoice-schedule|side-column|month-rebuild|note-later|week-csv-export)\.spec\.ts$/;
+  /(first-day(-\d-[a-z-]+)?|clients-split|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|account-split|user-menu|team|invoice-actions-height|invoice-pages|week-pills|year-summary|year-split|work-items-pages|project-chips|project-search|landing-deck|slide-to-delete|page-descriptions|import-history|import-hint|side-column|month-rebuild|accounting-export-limit)\.spec\.ts$/;
 
 // A CircleCI container is about twice as slow as a laptop (2 workers, a cold app that compiles each page the first time),
 // so the waits are doubled there. A real regression still fails; a slow machine does not.
@@ -41,7 +41,13 @@ const SLOW = process.env.CIRCLECI ? 2 : 1;
 
 // The serial spec flips a setting with SQL on the local database, so it can never run against a live site (the
 // after-deploy smoke test points E2E_BASE_URL at production: running it there failed and rolled the site back).
-const SERIAL_FIRST = external ? [] : ["serial"];
+// E2E_SKIP_SERIAL=1 leaves it out too: a CircleCI container that does not hold its file (`--no-deps` would also skip
+// the shared account below).
+const SERIAL_FIRST = external || process.env.E2E_SKIP_SERIAL ? [] : ["serial"];
+// The one account the shared spec files sign in as (e2e/shared-account.setup.ts, issue 340). Only on the local test
+// copy: a run against an existing site (E2E_BASE_URL, the smoke test on production) never makes it. It waits for the
+// serial spec, so that one still runs alone (the order is serial, then shared-account, then desktop and phone).
+const FIRST = external ? [] : ["shared-account"];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -55,9 +61,10 @@ export default defineConfig({
     // CircleCI reads this to learn how long each spec takes, and splits the files evenly across containers by it.
     ...(process.env.CIRCLECI ? ([["junit", { outputFile: "test-results/e2e-junit.xml" }]] as const) : []),
   ],
-  // Spec FILES run side by side (the tests inside one file still run in order, and every test makes its own account, so
-  // they never share data). Override with E2E_WORKERS. The one spec that flips a global setting runs first, alone
-  // (the "serial" project below).
+  // Spec FILES run side by side (the tests inside one file still run in order). Most tests make their own account; the
+  // files that call `withSharedAccount()` share one made once per run (the "shared-account" project below), and each of
+  // their tests reads only data it named with `stamp()`, so no test sees another's. Override with E2E_WORKERS. The one
+  // spec that flips a global setting runs first, alone (the "serial" project below).
   fullyParallel: false,
   // A slow shared CI machine now and then times a test out that passes alone (issue #197). One retry there; a test that
   // needs it is listed as "flaky" in the report, so it is never hidden. Locally a failure is a failure.
@@ -75,9 +82,13 @@ export default defineConfig({
       testMatch: SERIAL_SPECS,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
+    // Signs up the shared account and saves its sign-in to e2e/.auth/shared.json (git-ignored, written fresh each run).
+    ...(external
+      ? []
+      : [{ name: "shared-account", dependencies: SERIAL_FIRST, testMatch: /shared-account\.setup\.ts$/ }]),
     {
       name: "desktop",
-      dependencies: SERIAL_FIRST,
+      dependencies: FIRST,
       testIgnore: NORMAL_IGNORE,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
@@ -86,7 +97,7 @@ export default defineConfig({
       // rest do the same thing on any screen, so running them twice only costs time. E2E_FULL_PHONE=1 (the nightly
       // run) runs every spec on the phone as well.
       name: "phone",
-      dependencies: SERIAL_FIRST,
+      dependencies: FIRST,
       testMatch: process.env.E2E_FULL_PHONE ? /.*\.spec\.ts$/ : PHONE_SPECS,
       testIgnore: NORMAL_IGNORE,
       use: { ...devices["Pixel 7"] },

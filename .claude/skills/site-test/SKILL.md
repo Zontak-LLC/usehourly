@@ -12,7 +12,7 @@ Two layers, in this order. The first says whether things **work**; the second sa
 ```bash
 cd ~/Projects/usehourly
 npm run e2e          # both devices: desktop 1280x800 and a Pixel 7 phone
-npm run e2e:summary  # writes e2e/report/summary.md
+npm run e2e:summary  # writes e2e/report/summary.md; it also lists the 10 slowest tests there and in the console
 ```
 
 - It starts its own copy of the app on port **3029** (own build folder) and a stand-in for Resend on **8899**. The normal dev server on 3028 is not touched. Nothing is sent to real people.
@@ -48,6 +48,6 @@ Protect the core: **Today is the product.** Sign-up to first logged entry should
 
 ## Extending the tests
 
-- Journeys live in `e2e/first-day.spec.ts` (one long story with a step per job) and `e2e/public.spec.ts`. Helpers (page checks, mail reader, database helper, anonymous client sessions) are in `e2e/helpers.ts`.
+- Journeys live in the four `e2e/first-day-*.spec.ts` parts (start, rate, invoice, share-delete; each makes its own account and runs on its own worker) and `e2e/public.spec.ts`. Helpers (page checks, mail reader, database helper, anonymous client sessions) are in `e2e/helpers.ts`.
 - Find things the way a person does: by visible label and role (`getByRole("button", { name: ... })`), not by CSS. Wait for a save to finish before leaving a page.
 - When adding a feature, add its step to the journey and make sure its buttons have names; the page checks then cover it automatically.

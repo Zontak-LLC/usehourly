@@ -128,10 +128,11 @@ browser-test run (`e2e.yml`).
 To see Night Watch catch and triage a real failure, staging can break ONE path for a few minutes (`src/lib/drill.ts`, route `/api/drill`).
 - **Faults:** `health-503` (`/api/health` answers 503 and logs `health_check_failed`), `health-slow` (`/api/health` answers after 6 s; Night Watch calls over 5 s slow), `entry-list-500` (`entry.list` fails, so Today, Week and Month cannot load entries, and tRPC logs `trpc_internal_error` with `path: entry.list`). Nothing else is touched: no sign-in, money, email or data.
 - **Off by default and impossible on production:** the route answers 404 unless the build is the staging build (`NEXT_PUBLIC_APP_ENV=staging`, set only by `npm run staging:deploy`), the address is not usehourly.app, AND the Worker secret `DRILL_TOKEN` (32+ characters) is set. On production the faulted paths do no extra database read.
+- **A drilled health 503 says so:** it carries the header `X-Drill: health-503` (the body stays `{"ok":false}`), so triage can tell it from a real outage (`curl -i https://staging.usehourly.app/api/health`). A real database failure has no such header.
 - **Always ends:** 10 minutes by default, 15 at most; `stop` ends it at once. The drill is one row in `app_settings` (key `drill`) so every isolate sees it within 5 seconds.
 - **Run one:** `node scripts/drill.mjs status`, `node scripts/drill.mjs start health-503 5`, `node scripts/drill.mjs stop` (token from the Keychain item `usehourly-staging-drill-token`).
 - **Set up once (owner):** `openssl rand -hex 24 | pbcopy && ~/.claude/bin/secret-save usehourly-staging-drill-token`, then `~/.claude/bin/secret-get usehourly-staging-drill-token | npx wrangler secret put DRILL_TOKEN --config wrangler.staging.jsonc`. To switch drills off for good: `npx wrangler secret delete DRILL_TOKEN --config wrangler.staging.jsonc`.
-- Night Watch's UseHourly site watches production (`hourly`, usehourly.app); it needs staging targets (the Worker `hourly-staging` and https://staging.usehourly.app/api/health) to see a drill.
+- Night Watch watches production (site `hourly`, usehourly.app) and staging (site `usehourly-staging`: Worker `hourly-staging` logs, https://staging.usehourly.app/ and https://staging.usehourly.app/api/health). Staging incidents are labelled "UseHourly staging", so a drill never pages as production. Night Watch does not close log incidents by itself; after a fix (or after the drill ends), press Resolve on its board.
 
 ## Performance Check: a load test on staging (2026-10-25, issue 311)
 
@@ -231,3 +232,27 @@ Known and accepted on 2026-10-18:
 `node scripts/load-check.mjs http://localhost:3029` hits the public pages and the health endpoint with a small amount
 of concurrency and prints latency percentiles and error counts. It refuses to run against `usehourly.app` unless you
 pass `--i-own-this-site`: do not load-test production without telling Cloudflare-side alerting first.
+
+## Speed measure (production)
+
+`npm run measure:speed` (`scripts/measure-speed.mjs`, no dependencies) shows how fast production answers. For
+`/api/health`, `/auth/v2/login` and the landing page `/` it waits a pause, sends one first request, then a few more one
+after another, and prints a table: endpoint, status, first, median and p90, in ms. The median and p90 cover only the
+requests after the first. A time runs from sending the request to the end of the body. Redirects are not followed, so
+a `307` (a bad or expired cookie on a signed-in page) shows in the status column. It exits 1 when a path got no answer
+or a status of 500 and up.
+
+```
+npm run measure:speed -- [base url] [--runs=10] [--pause=10] [--path=/dashboard/today] [--cookie=USEHOURLY_COOKIE]
+```
+
+- The base URL defaults to `https://usehourly.app`; give a local or staging URL to measure that instead.
+- `--runs` (1 to 50, default 10) requests per path after the first; `--pause` (0 to 120 s, default 10) before each path.
+- `--path=` (repeatable) adds a path, for example a signed-in page.
+- `--cookie=NAME` reads the Cookie header from the environment variable `NAME`. The value is never printed. To keep it
+  out of shell history, copy the `Cookie` header of a signed-in request from the browser's network panel, then run
+  `read -s USEHOURLY_COOKIE`, paste, press Enter, and `export USEHOURLY_COOKIE`.
+
+It is safe on production: with the defaults it sends 33 GETs, one at a time, over about 35 seconds, and it never signs
+in (it only GETs the login page, so it cannot trip the sign-in limit). "First" means the first request after a pause,
+not a guaranteed cold Worker: Cloudflare may answer the landing page from its edge cache.

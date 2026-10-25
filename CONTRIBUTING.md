@@ -25,6 +25,7 @@ checklist in the pull request template. If you add or change a dependency, `npm 
 - **Log errors with `logError`** from `src/lib/log.ts` (one JSON line with a stable event name), never `console.error` with free text, and never put a password, token or whole request in a log line.
 - **Migrations must work with both the old and the new code**, so a deploy can be rolled back safely. See `docs/operations.md`.
 - **Never commit secrets.** `.env*.local`, `.dev.vars` and `.wrangler` are git-ignored; keep it that way.
+- **One-off helpers** (screenshots, quick checks) go in `scripts/.tmp-<name>.mjs`. Git and Biome ignore them. If a helper should stay, give it a real name under `scripts/`.
 
 ## How the project is run
 

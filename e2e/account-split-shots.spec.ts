@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, setTheme, startFreshAccount, test } from "./helpers";
 import { mkdirSync } from "node:fs";
 
 /**
@@ -29,8 +29,7 @@ test("photograph the Account sections", async ({ page }) => {
       await expect(page.getByRole("heading", { name: "Account", level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");
       for (const mode of ["light", "dark"] as const) {
-        await page.evaluate((m) => document.documentElement.classList.toggle("dark", m === "dark"), mode);
-        await page.waitForTimeout(150);
+        await setTheme(page, mode);
         await page.screenshot({
           path: `${dir}/${label}-${section}-${width}-${mode}.png`,
           caret: "initial",

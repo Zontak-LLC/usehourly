@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  type AccountingInvoice,
   accountingFileName,
   buildAccountingCsv,
   cleanOptions,
   formatDate,
   paymentsCsv,
+  QUICKBOOKS_MAX_ROWS,
   quickbooksInvoicesCsv,
+  XERO_MAX_LINES,
   xeroInvoicesCsv,
 } from "@/lib/accounting-export";
 import { appRouter } from "@/server/routers/_app";
@@ -176,6 +179,37 @@ function world(rows: Row[] = INVOICES) {
 const YEAR = { from: "2026-01-01", to: "2026-12-31" };
 const XERO_COLUMNS = 27;
 
+/** The file a build made; fails the test with the screen's message when it made none. */
+function csvOf(file: ReturnType<typeof buildAccountingCsv>): string {
+  if (!file.ok) throw new Error(`expected a file, got: ${file.message}`);
+  return file.csv;
+}
+
+/** `count` invoice lines in total, `perInvoice` to an invoice, every invoice paid. */
+function invoicesWithLines(count: number, perInvoice = 1): AccountingInvoice[] {
+  const invoices: AccountingInvoice[] = [];
+  for (let left = count, n = 1; left > 0; left -= perInvoice, n++) {
+    invoices.push({
+      number: `INV-2026-${String(n).padStart(4, "0")}`,
+      issueDate: "2026-05-01",
+      dueDate: "2026-05-31",
+      paidDate: "2026-05-20",
+      periodFrom: "2026-04-01",
+      periodTo: "2026-04-30",
+      totalCents: 10000,
+      notes: "",
+      client: { name: "Acme", legalName: null, address: null, email: null },
+      lines: Array.from({ length: Math.min(perInvoice, left) }, (_, i) => ({
+        project: `Project ${i}`,
+        minutes: 60,
+        rateCents: 10000,
+        amountCents: 10000,
+      })),
+    });
+  }
+  return invoices;
+}
+
 describe("exporting invoices for an accounting app", () => {
   it("hands over the caller's invoices for the period, oldest first, with lines and the client's email", async () => {
     const { prisma, as } = world();
@@ -294,18 +328,54 @@ describe("exporting invoices for an accounting app", () => {
       ["InvoiceNumber", "Customer", "PaymentDate", "Amount"],
       ["INV-2026-001", "Acme Holdings, Inc.", "04/12/2026", "310.00"],
     ]);
-    expect(parseCsv(buildAccountingCsv("payments", [])).length).toBe(1); // nothing paid: just the header
+    expect(parseCsv(csvOf(buildAccountingCsv("payments", []))).length).toBe(1); // nothing paid: just the header
   });
 
   it("keeps a client's name from running as a spreadsheet formula, and quotes the rest", async () => {
     const { invoices } = await world().as("u1").accounting.invoices(YEAR);
     for (const kind of ["xero", "quickbooks"] as const) {
-      const rows = parseCsv(buildAccountingCsv(kind, invoices));
+      const rows = parseCsv(csvOf(buildAccountingCsv(kind, invoices)));
       const evil = rows.find((r) => r.some((c) => c.includes("HYPERLINK")));
       expect(evil?.find((c) => c.includes("HYPERLINK"))?.startsWith("'=")).toBe(true);
       const quoted = rows.find((r) => r.some((c) => c.includes('App "v2"')));
       expect(quoted?.some((c) => c.includes('App "v2"'))).toBe(true);
     }
+  });
+
+  it("makes a Xero file up to Xero's line limit, and past it says why instead of making one", () => {
+    const atLimit = buildAccountingCsv("xero", invoicesWithLines(XERO_MAX_LINES, 7));
+    expect(atLimit.ok).toBe(true);
+    expect(parseCsv(csvOf(atLimit))).toHaveLength(1 + XERO_MAX_LINES); // the header is not counted
+
+    const over = buildAccountingCsv("xero", invoicesWithLines(XERO_MAX_LINES + 1, 7));
+    expect(over).toEqual({
+      ok: false,
+      lines: 501,
+      limit: 500,
+      message: "This range makes 501 lines; Xero takes up to 500 per file. Pick a shorter date range.",
+    });
+    expect(over).not.toHaveProperty("csv"); // no file was built
+  });
+
+  it("makes a QuickBooks file up to its row limit, and past it says why with thousands commas", () => {
+    const atLimit = buildAccountingCsv("quickbooks", invoicesWithLines(QUICKBOOKS_MAX_ROWS, 3));
+    expect(atLimit.ok).toBe(true);
+    expect(parseCsv(csvOf(atLimit))).toHaveLength(1 + QUICKBOOKS_MAX_ROWS);
+
+    const over = buildAccountingCsv("quickbooks", invoicesWithLines(QUICKBOOKS_MAX_ROWS + 1, 3));
+    expect(over).toEqual({
+      ok: false,
+      lines: 1001,
+      limit: 1000,
+      message: "This range makes 1,001 lines; QuickBooks Online takes up to 1,000 per file. Pick a shorter date range.",
+    });
+    expect(over).not.toHaveProperty("csv");
+  });
+
+  it("has no limit on the payments file", () => {
+    const file = buildAccountingCsv("payments", invoicesWithLines(2000));
+    expect(file.ok).toBe(true);
+    expect(parseCsv(csvOf(file))).toHaveLength(1 + 2000);
   });
 
   it("names the file by kind and period", () => {

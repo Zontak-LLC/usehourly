@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
@@ -31,7 +32,7 @@ type P = ReturnType<typeof mockPrisma>;
 const asCaller = (prisma: P, userId: string | null) =>
   createCaller({
     session: userId ? { user: { id: userId }, expires: "" } : null,
-    prisma: prisma as never,
+    prisma: withGuardedInsert(prisma) as never,
   });
 
 describe("daily time entry journey", () => {
@@ -64,7 +65,14 @@ describe("daily time entry journey", () => {
     expect(prisma.project.findFirst).toHaveBeenCalledWith({ where: { id: "p1", user_id: "u1" } });
     expect(prisma.timeEntry.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: { user_id: "u1", project_id: "p1", date: "2026-10-09", minutes: 90, note: "homepage" },
+        data: {
+          id: expect.any(String),
+          user_id: "u1",
+          project_id: "p1",
+          date: "2026-10-09",
+          minutes: 90,
+          note: "homepage",
+        },
       }),
     );
   });

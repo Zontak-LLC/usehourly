@@ -4,17 +4,26 @@ import { bearerToken, hashApiToken, type TokenAccess, tokenState } from "@/lib/a
 import { logError } from "@/lib/log";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { sessionStillValid } from "@/lib/session-version";
+import { TimeLimitError, withTimeout } from "@/lib/time-limit";
 
 export type McpAuth = { userId: string; access: TokenAccess; tokenId: string; tokenName: string };
 
 export type AuthOutcome =
   | { ok: true; auth: McpAuth }
-  | { ok: false; status: 401 | 429; message: string; retryAfterSeconds?: number };
+  | { ok: false; status: 401 | 429 | 503; message: string; retryAfterSeconds?: number };
 
 /** Failed attempts per address: a token is 256 random bits, so this only protects the database. */
 const FAILS_PER_IP = { limit: 30, windowSeconds: 15 * 60 };
 /** How often `last_used_at` is refreshed, so a busy client doesn't write on every call. */
 const TOUCH_EVERY_SECONDS = 60;
+
+/**
+ * How long /api/mcp waits on the database before it answers anyway (incident 2026-10-25: a stalled D1 held every
+ * request for 25-90 s). Opening the client (`api/mcp/route.ts`), the fail counter, the token lookup and the
+ * `last_used_at` touch; worst case 2 + 4 + 2 = 8 s. Guarded by `hang-guard-journey.test.ts`.
+ */
+export const MCP_LIMITS = { openMs: 2000, failCounterMs: 3000, lookupMs: 4000, touchMs: 2000, retryAfterSeconds: 30 };
+export const CANT_CHECK_TOKENS = "UseHourly can't check tokens right now. Try again in a minute.";
 
 const reject = (message = "Missing or invalid access token."): AuthOutcome => ({ ok: false, status: 401, message });
 
@@ -30,13 +39,19 @@ export async function authenticateMcp(
 ): Promise<AuthOutcome> {
   const failed = async (message?: string): Promise<AuthOutcome> => {
     if (ip) {
-      const hit = await hitRateLimit(
-        prisma,
-        `mcp-fail:${ip}`,
-        FAILS_PER_IP.limit,
-        FAILS_PER_IP.windowSeconds,
-        nowSeconds,
-      );
+      let hit: Awaited<ReturnType<typeof hitRateLimit>>;
+      try {
+        hit = await withTimeout(
+          hitRateLimit(prisma, `mcp-fail:${ip}`, FAILS_PER_IP.limit, FAILS_PER_IP.windowSeconds, nowSeconds),
+          MCP_LIMITS.failCounterMs,
+          "mcp fail counter",
+        );
+      } catch (err) {
+        if (!(err instanceof TimeLimitError)) throw err;
+        // The caller has no valid token and gets no data, so a refusal without counting it is safe.
+        logError("mcp_fail_counter_timeout", err);
+        return reject(message);
+      }
       if (!hit.allowed) {
         return {
           ok: false,
@@ -52,10 +67,20 @@ export async function authenticateMcp(
   const token = bearerToken(header);
   if (!token) return failed();
 
-  const row = await prisma.apiToken.findUnique({
-    where: { token_hash: await hashApiToken(token) },
-    include: { user: { select: { id: true, token_version: true } } },
-  });
+  const findToken = async () =>
+    prisma.apiToken.findUnique({
+      where: { token_hash: await hashApiToken(token) },
+      include: { user: { select: { id: true, token_version: true } } },
+    });
+  let row: Awaited<ReturnType<typeof findToken>>;
+  try {
+    row = await withTimeout(findToken(), MCP_LIMITS.lookupMs, "mcp token lookup");
+  } catch (err) {
+    if (!(err instanceof TimeLimitError)) throw err;
+    // The token could not be checked: never let it through, and tell the client to try again.
+    logError("mcp_token_lookup_timeout", err);
+    return { ok: false, status: 503, message: CANT_CHECK_TOKENS, retryAfterSeconds: MCP_LIMITS.retryAfterSeconds };
+  }
   if (!row) return failed();
 
   const state = tokenState(row, nowSeconds);
@@ -67,7 +92,11 @@ export async function authenticateMcp(
 
   if (row.last_used_at === null || nowSeconds - row.last_used_at >= TOUCH_EVERY_SECONDS) {
     try {
-      await prisma.apiToken.update({ where: { id: row.id }, data: { last_used_at: nowSeconds } });
+      await withTimeout(
+        prisma.apiToken.update({ where: { id: row.id }, data: { last_used_at: nowSeconds } }),
+        MCP_LIMITS.touchMs,
+        "mcp last_used_at update",
+      );
     } catch (err) {
       // Cosmetic ("last used" in the token list); the request itself is fine.
       logError("mcp_last_used_update_failed", err);

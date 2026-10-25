@@ -15,6 +15,7 @@ import { handleMcpHttp } from "@/server/mcp/http";
 import { checkAuthorizeRequest, decideAuthorization, exchangeCode, registerClient, revokeToken } from "@/server/oauth";
 import { readOAuthFields } from "@/server/oauth-http";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const APP = "https://usehourly.app";
@@ -96,7 +97,8 @@ function fakeDb(userOver: Partial<{ is_demo: boolean; token_version: number }> =
       update: vi.fn(async () => ({})),
     },
   };
-  return { prisma: prisma as never, raw: prisma, clients, codes, tokens, user };
+  // the grant counts and inserts in one statement; this reads it back onto apiToken.count and create
+  return { prisma: withGuardedInsert(prisma) as never, raw: prisma, clients, codes, tokens, user };
 }
 
 async function register(db: ReturnType<typeof fakeDb>, redirect = REDIRECT, name = "Claude") {

@@ -189,7 +189,11 @@ describe("files it refuses, with a way forward", () => {
 
   it("refuses files that are too large or have too many rows", () => {
     const many = `Date,Duration\n${"2026-10-01,1:00\n".repeat(MAX_IMPORT_ROWS + 1)}`;
-    expect(readTimeCsv(many)).toMatchObject({ ok: false, error: expect.stringContaining("one year at a time") });
+    // The exact words, with the comma the Import time screen shows (written through formatCount).
+    expect(readTimeCsv(many)).toEqual({
+      ok: false,
+      error: "That file has more than 20,000 rows. Export one year at a time.",
+    });
     expect(readTimeCsv("x".repeat(6 * 1024 * 1024))).toMatchObject({
       ok: false,
       error: expect.stringContaining("5 MB"),

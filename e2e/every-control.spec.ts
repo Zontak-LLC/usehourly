@@ -96,7 +96,7 @@ test.describe("every control does something", () => {
         const quiet = QUIET.find((q) => q.page.test(path) && q.name.test(meta.name));
         const control = page.locator(CONTROLS).nth(i);
         await control.scrollIntoViewIfNeeded().catch(() => undefined);
-        await page.waitForTimeout(250);
+        await page.waitForTimeout(250); // let changes from the scroll settle first: nothing marks them, and they would count as the click's
         // Count changes ELSEWHERE on the page: the clicked control changing itself (its label, aria-expanded) does not
         // prove it did its job. A button that only flips its own state and opens nothing is exactly the bug to catch.
         await control.evaluate((el) => el.setAttribute("data-sweep-target", ""));
@@ -130,7 +130,7 @@ test.describe("every control does something", () => {
         }
         let changed = false;
         for (let wait = 0; wait < 8 && !changed; wait++) {
-          await page.waitForTimeout(150);
+          await page.waitForTimeout(150); // a dead control shows nothing, so only polling up to a limit can tell
           const n = await page
             .evaluate(() => (window as unknown as { __changes?: number }).__changes ?? 1)
             .catch(() => 1);

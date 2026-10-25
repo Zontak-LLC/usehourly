@@ -19,6 +19,6 @@
     "packages/quality-gates/bin/*.mjs",
     "quality-gates.config.mjs"
   ],
-  "ignore": ["src/components/ui/**"],
+  "ignore": ["src/components/ui/**", "docs/mockups/**"],
   "ignoreDependencies": ["postcss-load-config", "jscpd"]
 }

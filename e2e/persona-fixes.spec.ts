@@ -1,3 +1,4 @@
+import { toISODate } from "../src/lib/dates";
 import { FEATURES } from "../src/lib/features";
 import { expect, gotoClient, sql, startFreshAccount, test } from "./helpers";
 
@@ -31,7 +32,7 @@ test("picking the first day in Add to several days does not make the calendar ju
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/month");
   await page.getByRole("button", { name: "Add to several days" }).click();
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  const thisMonth = toISODate(new Date()).slice(0, 7);
   const day = page.getByRole("button", { name: new RegExp(`^${thisMonth}-10`) });
   // where the day sits on the whole page (not on the screen: the page may scroll to the clicked day)
   const top = () => day.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
@@ -92,7 +93,7 @@ test("the several-days panel does not change which project Today starts on (#183
 
   await page.goto("/dashboard/month");
   await page.getByRole("button", { name: "Add to several days" }).click();
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  const thisMonth = toISODate(new Date()).slice(0, 7);
   await page.getByRole("button", { name: new RegExp(`^${thisMonth}-10`) }).click();
   await page.getByLabel("Hours per day").fill("1");
   await page.locator("select").filter({ hasText: "Zeta" }).first().selectOption({ label: "Zeta" });
@@ -124,7 +125,7 @@ test("a page does not scroll itself down to the add form when it opens (#179)", 
   await page.setViewportSize({ width: 1024, height: 460 }); // short: the form is below the fold
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/week");
-  await page.waitForTimeout(500);
+  await expect(page.getByLabel("Time to add")).toBeFocused(); // the focus is what used to scroll the page
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 

@@ -6,6 +6,7 @@ import { OUTPUT_SCHEMAS } from "@/server/mcp/output-schemas";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
@@ -209,6 +210,7 @@ function setup(over: Partial<TokenRow> = {}) {
     }
     return { isError: result.isError, text: result.content[0].text, data: result.structuredContent };
   };
+  withGuardedInsert(prisma); // creates count and insert in one statement; this reads it back onto count and create
   return { prisma, token, row, http, rpc, call, limits };
 }
 
@@ -544,7 +546,14 @@ describe("an assistant tracks a day of work", () => {
     expect(s.prisma.project.findFirst).toHaveBeenCalledWith({ where: { id: "p1", user_id: "u1" } });
     expect(s.prisma.timeEntry.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: { user_id: "u1", project_id: "p1", date: "2026-10-09", minutes: 90, note: "homepage hero" },
+        data: {
+          id: expect.any(String),
+          user_id: "u1",
+          project_id: "p1",
+          date: "2026-10-09",
+          minutes: 90,
+          note: "homepage hero",
+        },
       }),
     );
     expect(r.data?.logged).toMatchObject({
@@ -725,7 +734,10 @@ describe("an assistant tracks a day of work", () => {
   it("manages clients and projects, converting dollars to cents", async () => {
     s.prisma.client.findFirst.mockResolvedValueOnce(null as never);
     await s.call("create_client", { name: "Initech" });
-    expect(s.prisma.client.create).toHaveBeenCalledWith({ data: { user_id: "u1", name: "Initech", color: "#2563c9" } });
+    const id = expect.any(String); // the guarded insert makes the id (server/quota-insert.ts)
+    expect(s.prisma.client.create).toHaveBeenCalledWith({
+      data: { id, user_id: "u1", name: "Initech", color: "#2563c9" },
+    });
 
     s.prisma.client.findFirst.mockResolvedValue(acme as never);
     s.prisma.project.findFirst.mockResolvedValue(null as never);
@@ -736,7 +748,7 @@ describe("an assistant tracks a day of work", () => {
       billable: false,
     });
     expect(s.prisma.project.create).toHaveBeenCalledWith({
-      data: { user_id: "u1", client_id: "c1", name: "Retainer", hourly_rate: 6250, billable: false },
+      data: { id, user_id: "u1", client_id: "c1", name: "Retainer", hourly_rate: 6250, billable: false },
     });
     expect(made.data?.project).toMatchObject({ label: "Acme / Retainer", hourly_rate: 62.5 });
 

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { auditPage, expect, signUpByApi, test } from "./helpers";
+import { auditPage, expect, signUpByApi, test, trpc } from "./helpers";
 
 /**
  * The side column (components/side-column.tsx): on a wide screen Week's "This week" card is min(its own content, the
@@ -10,12 +10,6 @@ import { auditPage, expect, signUpByApi, test } from "./helpers";
 const FLOOR = 24 * 16;
 // One page of the By project list (pages of 10 since 2026-10-24); the pages have their own test below.
 const PROJECTS = 10;
-
-async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
-  const res = await page.request.post(`/api/trpc/${path}`, { data });
-  expect(res.ok(), `${path} answered ${res.status()}`).toBe(true);
-  return ((await res.json()) as { result: { data: T } }).result.data;
-}
 
 /** Monday and Tuesday of this week, in the browser's own time zone (the app works out "today" there). */
 async function thisWeek(page: Page) {
@@ -35,11 +29,11 @@ async function seed(page: Page, count = PROJECTS) {
   await signUpByApi(page);
   await page.goto("/dashboard/today");
   const { monday, tuesday } = await thisWeek(page);
-  const client = await call<{ id: string }>(page, "clients.create", { name: "Side Co" });
+  const client = await trpc<{ id: string }>(page, "clients.create", { name: "Side Co" });
   for (let i = 1; i <= count; i++) {
     const name = `Project ${String(i).padStart(2, "0")}`;
-    const project = await call<{ id: string }>(page, "project.create", { clientId: client.id, name, hourlyRate: 5000 });
-    await call(page, "entry.create", { projectId: project.id, date: monday, minutes: 15 * i, note: "" });
+    const project = await trpc<{ id: string }>(page, "project.create", { clientId: client.id, name, hourlyRate: 5000 });
+    await trpc(page, "entry.create", { projectId: project.id, date: monday, minutes: 15 * i, note: "" });
   }
   await page.goto(`/dashboard/week?date=${tuesday}`);
   const card = page.getByRole("region", { name: "This week", exact: true });

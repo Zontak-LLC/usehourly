@@ -6,6 +6,8 @@ import { fitPaste, isLongNote, NOTE_COMPACT_CHARS, NOTE_MAX, NOTE_WARN_AT, noteC
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
+
 const createCaller = createCallerFactory(appRouter);
 
 function mockPrisma() {
@@ -24,7 +26,8 @@ function mockPrisma() {
   };
 }
 type P = ReturnType<typeof mockPrisma>;
-const asUser = (prisma: P) => createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
+const asUser = (prisma: P) =>
+  createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: withGuardedInsert(prisma) as never });
 
 describe("long description journey", () => {
   let prisma: P;

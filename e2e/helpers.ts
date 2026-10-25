@@ -9,11 +9,15 @@ import {
   type TestInfo,
 } from "@playwright/test";
 
+import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { runSql } from "./local-db";
 import { mkdirSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
+
+/** Waits out the press lock on the timer's buttons (Start, Stop and the choices after Stop), so the next press counts. */
+export const pastTimerLock = (page: Page) => page.waitForTimeout(TIMER_LOCK_MS + 100); // the lock is a ref in the timer: nothing on the page shows it
 
 /**
  * Opens an entry card's edit form (its one visible button, "Edit") and returns the card, so the form's fields and its
@@ -58,7 +62,7 @@ export const newUser = () => ({ name: "Sam Freelancer", email: `e2e-${stamp()}@e
  * A new account, ready for the first-run question, signed in and standing on Today. The account is made and signed in
  * through the same two calls the pages make (the sign-up procedure and the sign-in), not by clicking through the form: a
  * click-through costs about three seconds and 34 test files do it. The real sign-up PAGE is covered once, by the
- * first-day journey (e2e/first-day.spec.ts) and by e2e/public.spec.ts.
+ * first-day journey's first part (e2e/first-day-1-start.spec.ts) and by e2e/public.spec.ts.
  */
 export async function signUpByApi(page: Page) {
   const user = newUser();
@@ -74,6 +78,28 @@ export async function signUpByApi(page: Page) {
   return user;
 }
 
+/** Where the "shared-account" project (e2e/shared-account.setup.ts) saves the signed-in state of the run's one shared account. */
+export const SHARED_STATE = "e2e/.auth/shared.json";
+
+/**
+ * Signs every test in this file in as the run's one shared account (issue 340) instead of making a new account each.
+ * Call it once at the top of a spec file whose tests only read data they made themselves, named with `stamp()`: no
+ * first-run question, no settings, no sign-out, no counts of all clients, projects, entries or invoices (CLAUDE.md lists
+ * the rules). Against an existing site (E2E_BASE_URL) there is no shared account: each test signs up its own, as before.
+ */
+export function withSharedAccount() {
+  if (process.env.E2E_BASE_URL) test.beforeEach(({ page }) => signUpReady(page));
+  else test.use({ storageState: SHARED_STATE });
+}
+
+/** A new account with the first-run question answered through the API (a client and its first project), as the page does. */
+export async function signUpReady(page: Page) {
+  const user = await signUpByApi(page);
+  const client = await trpc<{ id: string }>(page, "clients.create", { name: "Shared Co" });
+  await trpc(page, "project.create", { clientId: client.id, name: "General", hourlyRate: 0 });
+  return user;
+}
+
 /** Signs a new account up and answers the first-run question, ending on Today with the add form ready. */
 export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   const user = await signUpByApi(page);
@@ -83,6 +109,47 @@ export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByLabel("Time to add")).toBeVisible();
   return user;
+}
+
+/** Switches the page to light or dark the way the sun/moon switch does (the `dark` class on <html>). */
+export async function setTheme(page: Page, mode: "light" | "dark") {
+  await page.evaluate((m) => document.documentElement.classList.toggle("dark", m === "dark"), mode);
+  await page.waitForTimeout(150); // the colour change after the theme switch fires no event to wait for
+}
+
+/** Calls one tRPC procedure as the signed-in account (setup through the API) and returns its answer. */
+export async function trpc<T>(page: Page, path: string, data: unknown): Promise<T> {
+  const res = await page.request.post(`/api/trpc/${path}`, { data });
+  expect(res.ok(), `${path} answered ${res.status()}`).toBe(true);
+  return ((await res.json()) as { result: { data: T } }).result.data;
+}
+
+/**
+ * The state a later part of the first-day journey starts from: a fresh account working for Acme Studio, its project
+ * General at `rate` (cents an hour; 0 leaves it without a rate) and one entry today per item of `minutes`. The first
+ * entry says "Logo concepts for the homepage", as the journey's first entry does. Go to a page after it: the one open does not show the seeded entries yet.
+ */
+export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number; minutes: number[] }) {
+  const user = await startFreshAccount(page, "Acme Studio");
+  const listed = await page.request.get("/api/trpc/clients.list");
+  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
+  const clients = ((await listed.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
+  const projectId = clients[0].projects[0].id;
+  if (rate) await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
+  // "Today" in the browser's own time zone, where the app works it out (UTC can already be tomorrow).
+  const date = await page.evaluate(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  for (const [i, m] of minutes.entries()) {
+    await trpc(page, "entry.create", {
+      projectId,
+      date,
+      minutes: m,
+      note: i === 0 ? "Logo concepts for the homepage" : "",
+    });
+  }
+  return { user, projectId, date };
 }
 
 /**
@@ -117,7 +184,7 @@ export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>
   scope.getByText(text, { exact: true }).locator("visible=true").first();
-export const today = () => new Date().toISOString().slice(0, 10);
+export { today } from "./today";
 
 /** Run SQL against the local database (only for setup a user cannot do, like making an account a few days old). */
 export function sql(statement: string) {
@@ -140,11 +207,13 @@ export const clearMail = (address: string) =>
 
 /** The newest message to `address` (optionally with a subject matching `subject`), waiting a few seconds for it. */
 export async function mailTo(address: string, subject?: RegExp): Promise<Mail> {
-  for (let i = 0; i < 30; i++) {
+  const until = Date.now() + 15_000;
+  for (;;) {
     const all = (await (await fetch(`${MAIL}/__emails`)).json()) as Mail[];
     const hit = [...all].reverse().find((m) => m.to === address && (!subject || subject.test(m.subject)));
     if (hit) return hit;
-    await new Promise((r) => setTimeout(r, 500));
+    if (Date.now() >= until) break;
+    await new Promise((r) => setTimeout(r, 100)); // the mailbox is another process: asking it again is the only way to see new mail
   }
   throw new Error(`No email to ${address}${subject ? ` matching ${subject}` : ""} arrived.`);
 }

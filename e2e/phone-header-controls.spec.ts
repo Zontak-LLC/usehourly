@@ -1,6 +1,8 @@
 import type { Locator } from "@playwright/test";
 
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, test, withSharedAccount } from "./helpers";
+
+withSharedAccount(); // reads only where the Clients header's buttons sit
 
 /** The right edge of an element, and how far it sits from the card header's right edge. */
 async function gapToHeaderEdge(control: Locator) {
@@ -16,7 +18,6 @@ async function gapToHeaderEdge(control: Locator) {
  */
 test("on a phone the header controls share the title's line on Clients", async ({ page }, info) => {
   test.skip(info.project.name !== "phone", "the wrapped header row only exists on a phone");
-  await startFreshAccount(page);
   // (Today has no header controls since 2026-10-23: its day buttons live in the day card.)
   await page.goto("/dashboard/clients");
   // The last header control: the page's ··· menu (New client sits before it).
