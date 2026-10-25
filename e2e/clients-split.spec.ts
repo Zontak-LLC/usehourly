@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { addDays } from "../src/lib/dates";
-import { expect, signUpByApi, test, today } from "./helpers";
+import { expect, signUpByApi, test, today, trpc } from "./helpers";
 
 // Clients as a split view with a bill bar (issue 238, design 3 variation B): the list groups the clients with time to
 // bill first, each with its amount; the chosen client's profile has three calm figures, tabs, and a bill bar pinned to
@@ -21,12 +21,6 @@ const short = (iso: string) => {
   }).format(new Date(y, m - 1, d));
 };
 
-async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
-  const res = await page.request.post(`/api/trpc/${path}`, { data });
-  expect(res.ok(), `${path} answered ${res.status()}`).toBe(true);
-  return ((await res.json()) as { result: { data: T } }).result.data;
-}
-
 /** Three clients: Fable Labs (5:30 to bill at $95), Northwind Studio (1:00 at $100), Quiet Co (a project, no time). */
 async function seed(page: Page) {
   await signUpByApi(page);
@@ -45,15 +39,15 @@ async function seed(page: Page) {
     { name: "Quiet Co", project: "Admin", rate: 5000, entries: [] },
   ] as const;
   for (const c of plan) {
-    const client = await call<{ id: string }>(page, "clients.create", { name: c.name });
+    const client = await trpc<{ id: string }>(page, "clients.create", { name: c.name });
     ids[c.name] = client.id;
-    const project = await call<{ id: string }>(page, "project.create", {
+    const project = await trpc<{ id: string }>(page, "project.create", {
       clientId: client.id,
       name: c.project,
       hourlyRate: c.rate,
     });
     for (const [ago, minutes] of c.entries) {
-      await call(page, "entry.create", { projectId: project.id, date: daysAgo(ago), minutes, note: "" });
+      await trpc(page, "entry.create", { projectId: project.id, date: daysAgo(ago), minutes, note: "" });
     }
   }
   return ids;

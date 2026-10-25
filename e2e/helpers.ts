@@ -62,7 +62,7 @@ export const newUser = () => ({ name: "Sam Freelancer", email: `e2e-${stamp()}@e
  * A new account, ready for the first-run question, signed in and standing on Today. The account is made and signed in
  * through the same two calls the pages make (the sign-up procedure and the sign-in), not by clicking through the form: a
  * click-through costs about three seconds and 34 test files do it. The real sign-up PAGE is covered once, by the
- * first-day journey (e2e/first-day.spec.ts) and by e2e/public.spec.ts.
+ * first-day journey's first part (e2e/first-day-1-start.spec.ts) and by e2e/public.spec.ts.
  */
 export async function signUpByApi(page: Page) {
   const user = newUser();
@@ -87,6 +87,41 @@ export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByLabel("Time to add")).toBeVisible();
   return user;
+}
+
+/** Calls one tRPC procedure as the signed-in account (setup through the API) and returns its answer. */
+export async function trpc<T>(page: Page, path: string, data: unknown): Promise<T> {
+  const res = await page.request.post(`/api/trpc/${path}`, { data });
+  expect(res.ok(), `${path} answered ${res.status()}`).toBe(true);
+  return ((await res.json()) as { result: { data: T } }).result.data;
+}
+
+/**
+ * The state a later part of the first-day journey starts from: a fresh account working for Acme Studio, its project
+ * General at `rate` (cents an hour; 0 leaves it without a rate) and one entry today per item of `minutes`. The first
+ * entry says "Logo concepts for the homepage", as the journey's first entry does. Go to a page after it: the one open does not show the seeded entries yet.
+ */
+export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number; minutes: number[] }) {
+  const user = await startFreshAccount(page, "Acme Studio");
+  const listed = await page.request.get("/api/trpc/clients.list");
+  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
+  const clients = ((await listed.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
+  const projectId = clients[0].projects[0].id;
+  if (rate) await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
+  // "Today" in the browser's own time zone, where the app works it out (UTC can already be tomorrow).
+  const date = await page.evaluate(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  for (const [i, m] of minutes.entries()) {
+    await trpc(page, "entry.create", {
+      projectId,
+      date,
+      minutes: m,
+      note: i === 0 ? "Logo concepts for the homepage" : "",
+    });
+  }
+  return { user, projectId, date };
 }
 
 /**

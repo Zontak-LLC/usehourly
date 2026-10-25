@@ -11,7 +11,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 ## Principles
 1. **Quiet by default.** A neutral page, white cards, grey text. Colour is rare so it means something.
 2. **One way to do each thing.** The same card, the same empty state, the same notice, everywhere.
-3. **UX is the product.** Logging a day takes seconds; every screen is judged on how few actions a job takes **[checked: action budgets in the first-day test]**.
+3. **UX is the product.** Logging a day takes seconds; every screen is judged on how few actions a job takes **[checked: action budgets in the first-day tests, `e2e/first-day-1-start.spec.ts` and `e2e/first-day-3-invoice.spec.ts`]**.
 4. **Works for everyone:** keyboard, screen reader, phone, offline, dark mode.
 
 ## The main priority: simple and intuitive (2026-10-22, from the owner)

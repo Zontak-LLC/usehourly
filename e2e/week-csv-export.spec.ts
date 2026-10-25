@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, startFreshAccount, test, trpc } from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -11,12 +11,6 @@ import { readFileSync } from "node:fs";
 const WEEK = "/dashboard/week?date=2026-09-08";
 const HEADER = "Date,Client,Project,Note,Hours,Minutes,Billable,Rate (per hour),Amount,Currency";
 
-async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
-  const res = await page.request.post(`/api/trpc/${path}`, { data });
-  expect(res.ok(), `${path} answered ${res.status()}`).toBe(true);
-  return ((await res.json()) as { result: { data: T } }).result.data;
-}
-
 /** A new account (currency USD) with client Acme and its project General, billable at $100 an hour. */
 async function seed(page: Page) {
   await startFreshAccount(page, "Acme");
@@ -24,9 +18,9 @@ async function seed(page: Page) {
   const clients = ((await res.json()) as { result: { data: { id: string; projects: { id: string }[] }[] } }).result
     .data;
   const general = clients[0].projects[0].id;
-  await call(page, "project.update", { id: general, hourlyRate: 10000, billable: true });
+  await trpc(page, "project.update", { id: general, hourlyRate: 10000, billable: true });
   const add = (projectId: string, date: string, minutes: number, note: string) =>
-    call(page, "entry.create", { projectId, date, minutes, note });
+    trpc(page, "entry.create", { projectId, date, minutes, note });
   return { clientId: clients[0].id, general, add };
 }
 
@@ -46,7 +40,7 @@ test("the week's CSV has its name, the header and one row per entry the page sho
   const { general, add } = await seed(page);
   await add(general, "2026-09-08", 90, "Design");
   await add(general, "2026-09-09", 30, "=1+1"); // would run as a formula in a spreadsheet
-  await call(page, "entry.start", { projectId: general, date: "2026-09-10", note: "Still running" });
+  await trpc(page, "entry.start", { projectId: general, date: "2026-09-10", note: "Still running" });
 
   await page.goto(WEEK);
   await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("Design");
@@ -65,7 +59,7 @@ test("an entry on a day marked non-billable is not in the CSV", async ({ page })
   const { general, add } = await seed(page);
   await add(general, "2026-09-08", 90, "Design");
   await add(general, "2026-09-09", 60, "Day off work");
-  await call(page, "entry.setNonBillable", { date: "2026-09-09", nonBillable: true });
+  await trpc(page, "entry.setNonBillable", { date: "2026-09-09", nonBillable: true });
 
   await page.goto(WEEK);
   await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("Day off work");
@@ -76,7 +70,7 @@ test("an entry on a day marked non-billable is not in the CSV", async ({ page })
 
 test("with a project filter the CSV holds only that project's entries", async ({ page }) => {
   const { clientId, general, add } = await seed(page);
-  const other = await call<{ id: string }>(page, "project.create", { clientId, name: "Support", hourlyRate: 5000 });
+  const other = await trpc<{ id: string }>(page, "project.create", { clientId, name: "Support", hourlyRate: 5000 });
   await add(general, "2026-09-08", 60, "General work");
   await add(other.id, "2026-09-08", 45, "Call");
   await add(other.id, "2026-09-11", 15, "Email");

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { auditPage, expect, startFreshAccount, test } from "./helpers";
+import { auditPage, expect, startFreshAccount, test, trpc } from "./helpers";
 
 /**
  * Month (2026-10-24 rebuild): the calendar on the left, and on the right one day (‹ › steps, its entries, Log time behind
@@ -9,12 +9,6 @@ import { auditPage, expect, startFreshAccount, test } from "./helpers";
  */
 const MARCH = "/dashboard/month?month=2026-03";
 
-async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
-  const res = await page.request.post(`/api/trpc/${path}`, { data });
-  expect(res.ok(), `${path} answered ${res.status()}`).toBe(true);
-  return ((await res.json()) as { result: { data: T } }).result.data;
-}
-
 /** A fresh account with time on March 30 (1:00 Alpha, 2:00 Beta) and March 31 (1:30 Gamma), plus `extra` short days. */
 async function seed(page: Page, extra = 0) {
   await startFreshAccount(page, "Acme");
@@ -22,7 +16,7 @@ async function seed(page: Page, extra = 0) {
   const clients = ((await res.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
   const projectId = clients[0].projects[0].id;
   const add = (date: string, minutes: number, note: string) =>
-    call(page, "entry.create", { projectId, date, minutes, note });
+    trpc(page, "entry.create", { projectId, date, minutes, note });
   await add("2026-03-30", 60, "Alpha work");
   await add("2026-03-30", 120, "Beta work");
   await add("2026-03-31", 90, "Gamma work");
