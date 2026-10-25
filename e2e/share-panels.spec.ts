@@ -1,7 +1,8 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, test, withSharedAccount } from "./helpers";
+
+withSharedAccount(); // reads no data at all
 
 test("the export and share forms open under the toolbar, and follow the week when reopened", async ({ page }) => {
-  await startFreshAccount(page);
   await page.goto("/dashboard/week");
 
   await page.getByRole("button", { name: /^(Share & export|Export)$/ }).click();
