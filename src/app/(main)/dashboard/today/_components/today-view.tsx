@@ -26,6 +26,7 @@ import { useToday } from "@/lib/use-today";
 
 import { DayCard } from "./day-card";
 import { FirstRun } from "./first-run";
+import { ImportHint } from "./import-hint";
 import { MissedDays } from "./missed-days";
 import { NoteReminder } from "./note-reminder";
 import { QuickAdd } from "./quick-add";
@@ -50,6 +51,8 @@ export function TodayView() {
   const [timerContext, setTimerContext] = useState({ projectId: "", projectName: "", note: "" });
   const todayTimer = useTodayTimer({ ...timerContext, date: date ?? "" });
   const running = trpc.entry.running.useQuery();
+  // Whether the account has any entry yet, for the import hint (started here, in the first render: still one request).
+  const hasAny = trpc.entry.hasAny.useQuery(undefined, { enabled: feature("importTime") });
   // A timer running on the day shown adds its minutes to the day and week totals in the header.
   const timer = running.data?.started_at ? running.data : null;
   const timerOnThisDay = !!timer && timer.date === date;
@@ -107,6 +110,8 @@ export function TodayView() {
       // Swipe left for the next day, right for the previous one (the day buttons do the same).
       onSwipe={feature("swipe") ? (direction) => go(addDays(date, direction === "left" ? 1 : -1)) : undefined}
     >
+      {/* Unknown week counts as "has entries" until it loads, so the note never flashes. */}
+      <ImportHint hasEntries={hasAny.data} weekHasEntries={!week.data || week.data.length > 0 || !!running.data} />
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : !hasProjects ? (
