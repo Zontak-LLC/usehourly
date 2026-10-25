@@ -12,6 +12,7 @@ import {
 } from "@/lib/api-token";
 import { isDemoSession } from "@/lib/demo";
 
+import { insertWithinQuota, liveTokens } from "../quota-insert";
 import { protectedProcedure } from "../trpc";
 import { nowSeconds } from "./account-shared";
 
@@ -51,13 +52,6 @@ export const tokenProcedures = {
       if (isDemoSession(ctx.session)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to connect an AI assistant." });
       }
-      const live = await ctx.prisma.apiToken.count({ where: { user_id: ctx.userId, revoked_at: null } });
-      if (live >= MAX_TOKENS_PER_USER) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `You can have ${MAX_TOKENS_PER_USER} active tokens. Revoke one you no longer use first.`,
-        });
-      }
       const user = await ctx.prisma.authUser.findUnique({
         where: { id: ctx.userId },
         select: { token_version: true, is_demo: true },
@@ -68,8 +62,11 @@ export const tokenProcedures = {
       }
 
       const token = newApiToken();
-      const row = await ctx.prisma.apiToken.create({
-        data: {
+      // The live-token count and the insert are one statement, so two at once cannot both take the last place.
+      const id = await insertWithinQuota(
+        ctx.prisma,
+        "api_tokens",
+        {
           user_id: ctx.userId,
           name: input.name,
           token_hash: await hashApiToken(token),
@@ -78,6 +75,18 @@ export const tokenProcedures = {
           token_version: user.token_version,
           expires_at: expiryToEpoch(input.expires as (typeof EXPIRY_CHOICES)[number]["key"]),
         },
+        {
+          used: liveTokens(ctx.userId),
+          limit: MAX_TOKENS_PER_USER,
+          refuse: () =>
+            new TRPCError({
+              code: "BAD_REQUEST",
+              message: `You can have ${MAX_TOKENS_PER_USER} active tokens. Revoke one you no longer use first.`,
+            }),
+        },
+      );
+      const row = await ctx.prisma.apiToken.findUniqueOrThrow({
+        where: { id },
         select: { id: true, name: true, prefix: true, access: true, expires_at: true },
       });
       return { ...row, token };

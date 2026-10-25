@@ -6,6 +6,7 @@ import { MAX_TEAM_MEMBERS } from "@/lib/team";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { withGuardedInsert } from "./helpers/guarded-insert-mock";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
@@ -208,7 +209,7 @@ function world() {
   const as = (id: string | null, demo = false) =>
     createCaller({
       session: id ? ({ user: { id, ...(demo ? { demo: true } : {}) }, expires: "" } as never) : null,
-      prisma: prisma as never,
+      prisma: withGuardedInsert(prisma) as never,
       ip: "203.0.113.5",
       mailer: mailer.on
         ? {

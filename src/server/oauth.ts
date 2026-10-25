@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { hashApiToken, MAX_TOKENS_PER_USER, newApiToken, tokenPrefix } from "@/lib/api-token";
 import { newToken } from "@/lib/email-token";
@@ -18,6 +18,8 @@ import {
   withParams,
 } from "@/lib/oauth";
 import { hitRateLimit } from "@/lib/rate-limit";
+
+import { countRows, insertIfRoom, liveTokens } from "./quota-insert";
 
 export type OAuthError = { error: string; error_description: string; status?: number };
 const oauthError = (error: string, error_description: string, status = 400): OAuthError => ({
@@ -255,22 +257,17 @@ export async function exchangeCode(
     OR: [{ oauth_client_id: row.client_id }, { oauth_client_id: null, name }],
   };
   // The limit is checked BEFORE anything is revoked, counting the earlier token as replaced, so a refusal never costs
-  // the person the connection they already had.
-  const [live, replaced] = await Promise.all([
-    prisma.apiToken.count({ where: { user_id: user.id, revoked_at: null } }),
-    prisma.apiToken.count({ where: mine }),
-  ]);
-  if (live - replaced >= MAX_TOKENS_PER_USER) {
-    return oauthError(
-      "access_denied",
-      "This account has too many active tokens. Revoke one in UseHourly under Account.",
-      403,
-    );
-  }
-
+  // the person the connection they already had. The count and the insert are one statement (two grants at once cannot
+  // both take the last place); the second count is `mine` above in SQL.
+  const replaced = countRows(
+    "api_tokens",
+    Prisma.sql`user_id = ${user.id} AND revoked_at IS NULL AND (oauth_client_id = ${row.client_id} OR (oauth_client_id IS NULL AND name = ${name}))`,
+  );
   const token = newApiToken();
-  const created = await prisma.apiToken.create({
-    data: {
+  const createdId = await insertIfRoom(
+    prisma,
+    "api_tokens",
+    {
       user_id: user.id,
       name,
       oauth_client_id: row.client_id,
@@ -280,14 +277,21 @@ export async function exchangeCode(
       token_version: user.token_version,
       expires_at: nowSeconds + OAUTH_TOKEN_SECONDS,
     },
-    select: { id: true },
-  });
+    { used: Prisma.sql`${liveTokens(user.id)} - ${replaced}`, limit: MAX_TOKENS_PER_USER },
+  );
+  if (createdId === null) {
+    return oauthError(
+      "access_denied",
+      "This account has too many active tokens. Revoke one in UseHourly under Account.",
+      403,
+    );
+  }
   // Connecting the same app again replaces its earlier token instead of piling them up (the new one exists first).
   await prisma.apiToken.updateMany({
-    where: { ...mine, id: { not: created.id } },
+    where: { ...mine, id: { not: createdId } },
     data: { revoked_at: nowSeconds },
   });
-  await prisma.oauthCode.update({ where: { id: row.id }, data: { token_id: created.id } });
+  await prisma.oauthCode.update({ where: { id: row.id }, data: { token_id: createdId } });
   return { access_token: token, token_type: "Bearer", expires_in: OAUTH_TOKEN_SECONDS, scope: row.access };
 }
 
