@@ -13,6 +13,7 @@ import {
   seconds,
   stepSummary,
   timeline,
+  ttfbSummary,
 } from "./stats.mjs";
 
 const esc = (s) =>
@@ -167,13 +168,46 @@ function allowanceBars(cost) {
     .join("")}</tbody></table></div>`;
 }
 
-const stepRow = (s, step) => {
+const stepRow = (s, step, ttfb) => {
   const db = step.db;
   const w = step.worker;
+  const m = s.machine;
+  const busy = m && m.loadMax > m.cores;
   return `<tr><td>${s.users} people</td><td>${seconds(s.data.median)}</td><td>${seconds(s.data.p95)}</td><td>${seconds(s.data.max)}${s.slowest ? ` <span class="note">(${esc(s.slowest.page)})</span>` : ""}</td>
-<td>${fixed(s.requestsPerSecond)}</td><td>${n(s.requests)}</td><td>${n(s.serverErrors)}</td><td>${n(s.failed)} of ${n(s.actions)}</td><td>${n(s.consoleErrors)}</td>
+<td>${seconds(ttfb.median)} / ${seconds(ttfb.p95)}</td>
+<td${busy ? ' class="slower"' : ""}>${m ? `${fixed(m.loadMax)} on ${m.cores} cores, lag ${fixed(m.lagP95Ms, 0)} ms` : "n/a"}</td>
+<td>${fixed(s.requestsPerSecond)}</td><td>${n(s.requests)}</td><td>${n(s.serverErrors)}</td><td>${n(s.failed)} of ${n(s.actions)}${s.timedOut ? ` (${n(s.timedOut)} timed out)` : ""}</td><td>${n(s.consoleErrors)}</td>
 <td>${db ? n(db.rowsRead) : "n/a"}</td><td>${db ? n(db.rowsWritten) : "n/a"}</td><td>${w ? `${fixed(w.cpuP50Ms)} / ${fixed(w.cpuP99Ms)} ms` : "n/a"}</td></tr>`;
 };
+
+const at = (t) => `${Math.floor(t / 60_000)}:${String(Math.floor((t % 60_000) / 1000)).padStart(2, "0")}`;
+/** Every server error: when, which procedure, the tRPC code, what the server said, and its cf-ray. */
+function serverErrorTable(serverErrors) {
+  return serverErrors.length
+    ? `<div class="scroll"><table><thead><tr><th>At</th><th>Step</th><th>Status</th><th>Procedure</th><th>Code</th><th>What the server said</th><th>cf-ray</th></tr></thead><tbody>${serverErrors
+        .slice(0, 200)
+        .map(
+          (e) =>
+            `<tr><td>${at(e.t)}</td><td>${e.step} people</td><td>${e.status || "no answer"}</td><td style="white-space:normal;text-align:left;min-width:14em"><code>${esc([...new Set(e.paths?.length ? e.paths : (e.procedures ?? [e.url]))].join(", "))}</code></td><td>${esc((e.codes ?? []).join(", ") || "n/a")}</td><td style="white-space:normal;text-align:left">${esc(e.noAnswer ?? e.message ?? "")}</td><td><code>${esc(e.cfRay ?? "n/a")}</code></td></tr>`,
+        )
+        .join(
+          "",
+        )}</tbody></table></div><p class="note">Time is minutes:seconds since the start. The cf-ray finds the request in the staging Worker logs.</p>`
+    : `<p class="note">None.</p>`;
+}
+
+/** Every action that did not finish: when, who, after how long, and whether it timed out. */
+function failuresTable(failures) {
+  return failures.length
+    ? `<div class="scroll"><table><thead><tr><th>At</th><th>Step</th><th>Action</th><th>Page</th><th>Person</th><th>After</th><th>Kind</th><th>Message</th></tr></thead><tbody>${failures
+        .slice(0, 200)
+        .map(
+          (f) =>
+            `<tr><td>${at(f.t)}</td><td>${f.step} people</td><td>${esc(f.action)}</td><td>${esc(f.page)}</td><td>${esc(f.person)}</td><td>${seconds(f.elapsedMs)}</td><td>${f.kind === "timeout" ? "timed out" : "error"}</td><td style="white-space:normal;text-align:left">${esc(f.message)}</td></tr>`,
+        )
+        .join("")}</tbody></table></div>`
+    : `<p class="note">None.</p>`;
+}
 
 /** The run's cost: from Cloudflare's own counts when measured, else the requests this run counted itself. */
 export function runCost(run) {
@@ -201,8 +235,8 @@ export function renderReport(run, previous = null, commitsBetween = []) {
   const procedures = procedureSummary(run.requests.map(([, ms, , kind, procs]) => ({ ms, kind, procedures: procs })));
   const when = new Date(run.startedAt).toISOString().replace("T", " ").slice(0, 16);
 
-  const stepTable = `<div class="scroll"><table><thead><tr><th>Step</th><th>Median</th><th>p95</th><th>Slowest</th><th>Requests/s</th><th>Requests</th><th>Server errors</th><th>Steps failed</th><th>Console errors</th><th>DB rows read</th><th>DB rows written</th><th>Worker CPU p50 / p99</th></tr></thead><tbody>${steps
-    .map((s, i) => stepRow(s, run.steps[i]))
+  const stepTable = `<div class="scroll"><table><thead><tr><th>Step</th><th>Median</th><th>p95</th><th>Slowest</th><th>Server wait (TTFB) median / p95</th><th>Test machine (load max, event-loop lag p95)</th><th>Requests/s</th><th>Requests</th><th>Server errors</th><th>Steps failed</th><th>Console errors</th><th>DB rows read</th><th>DB rows written</th><th>Worker CPU p50 / p99</th></tr></thead><tbody>${steps
+    .map((s, i) => stepRow(s, run.steps[i], ttfbSummary(run.requests, run.steps[i], run.startedAt)))
     .join("")}</tbody></table></div>`;
 
   const pageTable = `<details><summary>The numbers as a table</summary><div class="scroll"><table><thead><tr><th>Page</th><th>Times measured</th><th>Median</th><th>p95</th><th>Slowest</th><th>Failed</th></tr></thead><tbody>${pages
@@ -226,7 +260,12 @@ export function renderReport(run, previous = null, commitsBetween = []) {
 ${commitsBetween.length ? `<p class="note">Commits in between:</p><ul>${commitsBetween.map((c) => `<li><code>${esc(c)}</code></li>`).join("")}</ul>` : `<p class="note">No commits in between (the same code).</p>`}`;
   }
 
-  const problems = [...(run.samples?.failures ?? []), ...(run.samples?.consoleErrors ?? [])];
+  const serverTable = serverErrorTable(run.serverErrors ?? []);
+  const failureTable = failuresTable(run.failures ?? []);
+  const problems = [
+    ...(run.crashes ?? []).map((c) => `kept going after ${c.where}: ${c.message}`),
+    ...(run.samples?.consoleErrors ?? []),
+  ];
   const procTable = procedures.length
     ? `<div class="scroll"><table><thead><tr><th>Procedure</th><th>Calls</th><th>Median</th><th>p95</th><th>Slowest</th></tr></thead><tbody>${procedures
         .slice(0, 15)
@@ -248,7 +287,8 @@ ${commitsBetween.length ? `<p class="note">Commits in between:</p><ul>${commitsB
 <p class="meta">${esc(when)} UTC · ${esc(run.base)} · ${run.minutes} min per step · code ${esc(run.commit ?? "unknown")} · swarm pass ${run.swarm ? "on" : "off (normal limits)"} · database figures: ${esc(run.measuredBy)}</p>
 <section><p class="lead">${esc(lead)}</p>
 <p class="note">Page time here is the page data time: how long the page's tRPC request took, from the browser. Each person signs in as a test account (light, regular or heavy) and goes through Today, logging time, another day, search, Week and its export, Month, Invoices, Clients, the Year summary, and on regular and heavy accounts one new invoice.</p></section>
-<section><h2>Per step</h2>${stepTable}</section>
+${run.complete === false ? `<section><p class="lead">This run did not finish${run.stoppedEarly ? " (stopped by hand)" : ""}: these are the results measured until then.</p></section>` : ""}
+<section><h2>Per step</h2>${stepTable}<p class="note">Server wait is the time to first byte of the app's requests: the server's part plus the network. When page times grow but the server wait does not, or the test machine's load passes its cores, the slowness is on the test machine, not the server.</p></section>
 <section><h2>Per page</h2>${pageBars(pages)}${pageTable}</section>
 <section><h2>Response time over the run</h2>${lineChart(
     slices,
@@ -271,7 +311,9 @@ ${commitsBetween.length ? `<p class="note">Commits in between:</p><ul>${commitsB
 <p class="note">Cost of the run at list price past the allowance: ${dollars(cost.totalUsd)}. Prices: Cloudflare Workers Paid (10 million requests and 30 million CPU ms included, then $0.30 per million requests and $0.02 per million CPU ms; D1 25 billion rows read and 50 million rows written included, then $0.001 per million reads and $1 per million writes).</p></section>
 <section><h2>Slowest tRPC procedures</h2>${procTable}</section>
 <section><h2>Compared with the last run</h2>${comparison}</section>
-${problems.length ? `<section><h2>What went wrong (first ${problems.length})</h2><ul>${problems.map((p) => `<li><code>${esc(p)}</code></li>`).join("")}</ul></section>` : ""}
+<section><h2>Server errors</h2>${serverTable}</section>
+<section><h2>Steps that did not finish</h2>${failureTable}</section>
+${problems.length ? `<section><h2>Other problems (first ${problems.length})</h2><ul>${problems.map((p) => `<li><code>${esc(p)}</code></li>`).join("")}</ul></section>` : ""}
 </main>
 `;
 }

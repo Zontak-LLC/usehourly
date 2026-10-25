@@ -17,10 +17,13 @@
 import { chromium } from "@playwright/test";
 
 import { renderReport } from "./perf/report.mjs";
+import { serverTiming, trpcErrorDetail } from "./perf/stats.mjs";
 import { emailFor, profileOf } from "./stress/seed.mjs";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { monitorEventLoopDelay } from "node:perf_hooks";
 
 const STAGING = "https://staging.usehourly.app";
 const ALLOWED_HOSTS = new Set(["staging.usehourly.app"]);
@@ -110,9 +113,17 @@ const run = {
   endedAt: 0,
   measuredBy: "not measured",
   steps: [],
-  // [t (ms since start), ms, status, kind ("trpc" | "doc" | "app"), procedures?]
+  // [t (ms since start), ms, status, kind ("trpc" | "doc" | "app"), procedures?, ttfb ms?, server ms?]
   requests: [],
   samples: { failures: [], consoleErrors: [] },
+  // every action that did not finish: { t, step, action, page, person, elapsedMs, kind: "timeout" | "error", message }
+  failures: [],
+  // every server error: { t, step, status, procedures, codes, paths, message, cfRay, url }
+  serverErrors: [],
+  // anything that escaped an action (it is recorded, never allowed to stop the run)
+  crashes: [],
+  machine: { cores: os.cpus().length, platform: `${os.platform()} ${os.arch()}` },
+  complete: false,
 };
 
 function gitOut(args) {
@@ -129,6 +140,24 @@ const procedures = (url) => {
   const m = /\/api\/trpc\/([^?]+)/.exec(url);
   return m ? decodeURIComponent(m[1]).split(",") : null;
 };
+
+/** A 5xx, or a request that got no answer at all (not a download the browser stopped on purpose), in detail. */
+async function recordServerError(step, { req, response, headers, url, status, failed, t, procs }) {
+  const errorText = failed ? (req.failure()?.errorText ?? "") : "";
+  if (!(status >= 500 || (failed && !/aborted/i.test(errorText)))) return;
+  step.serverErrors++;
+  const body = response ? await response.text().catch(() => "") : "";
+  run.serverErrors.push({
+    t,
+    step: step.users,
+    status,
+    procedures: procs ?? null,
+    ...trpcErrorDetail(body),
+    noAnswer: failed ? errorText.slice(0, 80) : null,
+    cfRay: headers["cf-ray"] ?? null,
+    url: url.split("?")[0].replace(base, "").slice(0, 200), // never the input (it can hold someone's data)
+  });
+}
 
 /** One virtual person: a browser context signed in to one stress account. */
 async function person(browser, account, step, stopAt) {
@@ -160,25 +189,29 @@ async function person(browser, account, step, stopAt) {
     started.delete(req);
     const url = req.url();
     const end = performance.now();
-    let status = 0;
-    if (!failed) status = (await req.response().catch(() => null))?.status() ?? 0;
-    const kind = url.includes("/api/trpc/") ? "trpc" : req.resourceType() === "document" ? "doc" : "app";
-    const t = Math.round(Date.now() - (end - t0) - run.startedAt);
-    run.requests.push([t, Math.round(end - t0), status, kind, kind === "trpc" ? procedures(url) : undefined]);
-    step.appRequests++;
-    // A download the browser aborts on purpose is not a server error; a 5xx or no answer at all is.
-    if (status >= 500 || (failed && !/aborted/i.test(req.failure()?.errorText ?? ""))) {
-      step.serverErrors++;
-      if (run.samples.failures.length < 20) run.samples.failures.push(`${status || "no answer"} ${url.slice(0, 160)}`);
-    }
-    if (kind === "trpc") {
+    if (url.includes("/api/trpc/")) {
       trpc.push({ start: t0, end });
       pending.delete(t0);
       lastDone = end;
     }
+    const response = failed ? null : await req.response().catch(() => null);
+    const status = response?.status() ?? 0;
+    const kind = url.includes("/api/trpc/") ? "trpc" : req.resourceType() === "document" ? "doc" : "app";
+    const t = Math.round(Date.now() - (end - t0) - run.startedAt);
+    const timing = req.timing();
+    // Time to first byte: from the browser sending the request to the first byte of the answer (the server's part
+    // plus the network); the rest of the total is download and the browser's own delay.
+    const ttfb = timing.responseStart > 0 ? Math.round(timing.responseStart) : null;
+    const headers = response ? await response.allHeaders().catch(() => ({})) : {};
+    const serverMs = serverTiming(headers["server-timing"]);
+    const procs = kind === "trpc" ? procedures(url) : undefined;
+    run.requests.push([t, Math.round(end - t0), status, kind, procs, ttfb, serverMs]);
+    step.appRequests++;
+    // A download the browser aborts on purpose is not a server error; a 5xx or no answer at all is.
+    await recordServerError(step, { req, response, headers, url, status, failed, t, procs });
   };
-  page.on("requestfinished", (req) => void finish(req, false));
-  page.on("requestfailed", (req) => void finish(req, true));
+  page.on("requestfinished", (req) => void finish(req, false).catch((err) => crashed("request", err)));
+  page.on("requestfailed", (req) => void finish(req, true).catch((err) => crashed("request", err)));
   const consoleError = (text) => {
     step.consoleErrors++;
     if (run.samples.consoleErrors.length < 20) run.samples.consoleErrors.push(`console: ${text.slice(0, 200)}`);
@@ -207,10 +240,21 @@ async function person(browser, account, step, stopAt) {
       await settled(t0);
     } catch (err) {
       record.ok = false;
+      record.kind =
+        err?.name === "TimeoutError" || /Timeout \d+ms exceeded/.test(String(err?.message)) ? "timeout" : "error";
       record.error = String(err?.message ?? err)
         .split("\n")[0]
         .slice(0, 200);
-      if (run.samples.failures.length < 20) run.samples.failures.push(`${action} (${account.email}): ${record.error}`);
+      run.failures.push({
+        t: Math.round(Date.now() - run.startedAt),
+        step: step.users,
+        action,
+        page: pageName,
+        person: account.email,
+        elapsedMs: Math.round(performance.now() - t0),
+        kind: record.kind,
+        message: record.error,
+      });
     }
     const t1 = performance.now();
     const mine = trpc.filter((r) => r.start >= t0 && r.start <= t1);
@@ -254,9 +298,10 @@ async function person(browser, account, step, stopAt) {
       async () => {
         await page.getByLabel("Time to add").fill("0:15");
         await page.getByLabel("Description").fill("perf check");
-        const saved = page.waitForResponse((r) => r.url().includes("entry.create"));
-        await page.getByRole("button", { name: /^Log time/ }).click();
-        await saved;
+        await Promise.all([
+          page.waitForResponse((r) => r.url().includes("entry.create")),
+          page.getByRole("button", { name: /^Log time/ }).click(),
+        ]);
       },
     ],
     ["Another day", "Today", () => page.getByRole("button", { name: /^Previous day/ }).click()],
@@ -266,9 +311,10 @@ async function person(browser, account, step, stopAt) {
       async () => {
         await page.keyboard.press("ControlOrMeta+k");
         const box = page.getByRole("combobox", { name: /Search pages, settings/ });
-        const found = page.waitForResponse((r) => r.url().includes("entry.search"));
-        await box.fill(SEARCH_WORDS[(account.n + round) % SEARCH_WORDS.length]);
-        await found;
+        await Promise.all([
+          page.waitForResponse((r) => r.url().includes("entry.search")),
+          box.fill(SEARCH_WORDS[(account.n + round) % SEARCH_WORDS.length]),
+        ]);
         await page.keyboard.press("Escape");
       },
     ],
@@ -278,9 +324,11 @@ async function person(browser, account, step, stopAt) {
       "Week",
       async () => {
         await page.getByRole("button", { name: /^Export/ }).click();
-        const download = page.waitForEvent("download");
-        await page.getByRole("menuitem", { name: /as CSV/ }).click();
-        await (await download).delete();
+        const [download] = await Promise.all([
+          page.waitForEvent("download"),
+          page.getByRole("menuitem", { name: /as CSV/ }).click(),
+        ]);
+        await download.delete();
       },
     ],
     ["Month", "Month", open("/dashboard/month", /20\d\d/)],
@@ -294,9 +342,7 @@ async function person(browser, account, step, stopAt) {
     await create.waitFor();
     if (await create.isDisabled()) return; // nothing left to bill on this client: a normal state, not a failure
     const download = page.waitForEvent("download").catch(() => null);
-    const made = page.waitForResponse((r) => r.url().includes("invoice.create"));
-    await create.click();
-    await made;
+    await Promise.all([page.waitForResponse((r) => r.url().includes("invoice.create")), create.click()]);
     await (await download)?.delete();
   };
 
@@ -328,8 +374,10 @@ async function runStep(browser, count) {
     consoleErrors: 0,
     db: null,
     worker: null,
+    machine: null,
   };
   run.steps.push(step);
+  const stopWatching = watchMachine(step);
   const stopAt = step.start + minutes * 60_000;
   const people = pickAccounts(count);
   console.log(`${new Date().toISOString().slice(11, 19)} step: ${count} people for ${minutes} min`);
@@ -337,17 +385,49 @@ async function runStep(browser, count) {
   await Promise.all(
     people.map(async (a, i) => {
       await sleep((10_000 * i) / count);
-      await person(browser, a, step, stopAt).catch((err) => {
-        if (run.samples.failures.length < 20)
-          run.samples.failures.push(`person ${a.email}: ${String(err).slice(0, 160)}`);
-      });
+      await person(browser, a, step, stopAt).catch((err) => crashed(`person ${a.email}`, err));
     }),
   );
+  stopWatching();
   step.end = Date.now();
   const ok = step.actions.filter((a) => a.ok).length;
   console.log(
     `  ${ok} of ${step.actions.length} steps ok, ${step.appRequests} requests, ${step.serverErrors} server errors`,
   );
+}
+
+/** Anything that escaped an action is written down; it never stops the run. */
+function crashed(where, err) {
+  const message = String(err?.message ?? err)
+    .split("\n")[0]
+    .slice(0, 200);
+  run.crashes.push({ t: Math.round(Date.now() - run.startedAt), where, message });
+  console.warn(`  (kept going) ${where}: ${message}`);
+}
+
+/**
+ * How busy THIS machine is during a step: the 1-minute load average every 5 seconds and how late Node's event loop
+ * runs. A load above the number of cores means the browsers queue for the CPU, so the times include the test
+ * machine's own waiting, not only the server's.
+ */
+function watchMachine(step) {
+  const loads = [];
+  const sample = () => loads.push(os.loadavg()[0]);
+  sample();
+  const timer = setInterval(sample, 5000);
+  const lag = monitorEventLoopDelay({ resolution: 20 });
+  lag.enable();
+  return () => {
+    clearInterval(timer);
+    lag.disable();
+    step.machine = {
+      cores: run.machine.cores,
+      loadMax: Math.max(...loads),
+      loadAvg: loads.reduce((a, b) => a + b, 0) / loads.length,
+      lagP95Ms: lag.percentile(95) / 1e6,
+      lagMaxMs: lag.max / 1e6,
+    };
+  };
 }
 
 // ---- Cloudflare figures for the run ----------------------------------------------------------------------------
@@ -496,6 +576,43 @@ if (!swarmToken)
   );
 
 const previous = previousRun();
+process.on("unhandledRejection", (err) => crashed("unhandled", err));
+process.on("uncaughtException", (err) => crashed("uncaught", err));
+
+let written = false;
+/** Writes the JSON and the report, whatever happened: after the run, after a crash, or on Ctrl-C (partial results). */
+function writeResults() {
+  if (written) return;
+  written = true;
+  run.endedAt = run.endedAt || Date.now();
+  for (const step of run.steps) if (!step.end) step.end = run.endedAt;
+  run.requests.sort((a, b) => a[0] - b[0]);
+  mkdirSync(OUT, { recursive: true });
+  const stamp = new Date(run.startedAt).toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const commits =
+    previous?.commit && run.commit && previous.commit !== run.commit
+      ? (gitOut(["log", "--oneline", `${previous.commit}..${run.commit}`]) ?? "")
+          .split("\n")
+          .filter(Boolean)
+          .slice(0, 30)
+      : [];
+  writeFileSync(path.join(OUT, `${stamp}.json`), JSON.stringify(run));
+  const html = renderReport(run, previous, commits);
+  const htmlPath = path.join(OUT, `${stamp}.html`);
+  writeFileSync(htmlPath, html);
+  const lead = /<p class="lead">([^<]*)<\/p>/.exec(html)?.[1] ?? "";
+  console.log(`\n${lead.replace(/&amp;/g, "&")}\n\nReport: ${path.resolve(htmlPath)}`);
+}
+process.once("SIGINT", () => {
+  console.log("\nStopped: writing what was measured so far…");
+  run.stoppedEarly = true;
+  try {
+    writeResults();
+  } finally {
+    process.exit(130);
+  }
+});
+
 const browser = await chromium.launch({ headless: true });
 try {
   for (const [i, count] of users.entries()) {
@@ -503,24 +620,14 @@ try {
       console.log(`Resting ${COOL_DOWN_MS / 1000} s between steps…`);
       await sleep(COOL_DOWN_MS);
     }
-    await runStep(browser, count);
+    await runStep(browser, count).catch((err) => crashed(`step ${count}`, err));
   }
+  run.complete = true;
+} catch (err) {
+  crashed("run", err);
 } finally {
-  await browser.close();
+  await browser.close().catch(() => null);
 }
 run.endedAt = Date.now();
-run.requests.sort((a, b) => a[0] - b[0]);
-await cloudflareFigures();
-
-mkdirSync(OUT, { recursive: true });
-const stamp = new Date(run.startedAt).toISOString().replace(/[:.]/g, "-").slice(0, 19);
-const commits =
-  previous?.commit && run.commit && previous.commit !== run.commit
-    ? (gitOut(["log", "--oneline", `${previous.commit}..${run.commit}`]) ?? "").split("\n").filter(Boolean).slice(0, 30)
-    : [];
-writeFileSync(path.join(OUT, `${stamp}.json`), JSON.stringify(run));
-const html = renderReport(run, previous, commits);
-const htmlPath = path.join(OUT, `${stamp}.html`);
-writeFileSync(htmlPath, html);
-const lead = /<p class="lead">([^<]*)<\/p>/.exec(html)?.[1] ?? "";
-console.log(`\n${lead.replace(/&amp;/g, "&")}\n\nReport: ${path.resolve(htmlPath)}`);
+await cloudflareFigures().catch((err) => crashed("cloudflare figures", err));
+writeResults();
