@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { fakeD1 as fakeD1Over } from "./helpers/fake-d1";
+import { settles } from "./helpers/settles";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 /**
@@ -40,8 +41,6 @@ async function loadPrisma() {
 const request = (DB: unknown): Req => ({ env: { DB }, ctx: {}, cf: {}, canceled: false });
 // awaited inside the run: a Prisma query is lazy and only starts when someone awaits it
 const within = <T>(req: Req, fn: () => Promise<T>) => requests.als.run(req, async () => await fn());
-const settles = <T>(p: Promise<T>, ms = 1000) =>
-  Promise.race([p.then(() => "settled"), new Promise((r) => setTimeout(() => r("hung"), ms))]);
 
 describe("the database client under concurrent requests (issue 315)", () => {
   it("a request whose neighbour is canceled still gets its answer", async () => {
