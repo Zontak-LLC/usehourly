@@ -36,6 +36,29 @@ export function fromISODate(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** The one locale dates are written in (issue 71 will make this a choice). */
+export const DATE_LOCALE = "en-US";
+
+/** "day" = Oct 25, 2026 · "dayWithWeekday" = Sun, Oct 25 · "full" = October 25, 2026. */
+export type DateStyle = "day" | "dayWithWeekday" | "full";
+
+const DATE_STYLES: Record<DateStyle, Intl.DateTimeFormatOptions> = {
+  day: { month: "short", day: "numeric", year: "numeric" },
+  dayWithWeekday: { weekday: "short", month: "short", day: "numeric" },
+  full: { month: "long", day: "numeric", year: "numeric" },
+};
+
+/** A YYYY-MM-DD date as text. Built and written in local time, so it never moves a day in any time zone. */
+export function formatDate(iso: string, style: DateStyle): string {
+  return fromISODate(iso).toLocaleDateString(DATE_LOCALE, DATE_STYLES[style]);
+}
+
+/** A moment in time as a date, in `timeZone` (the runtime's own zone when left out). */
+export function formatInstant(at: Date | number | string, style: DateStyle, timeZone?: string): string {
+  const options = timeZone ? { ...DATE_STYLES[style], timeZone } : DATE_STYLES[style];
+  return new Date(at).toLocaleDateString(DATE_LOCALE, options);
+}
+
 /** First and last day of the month containing `s` (YYYY-MM-DD), for "this month" figures. */
 export function monthBounds(s: string): { from: string; to: string } {
   const d = fromISODate(s);

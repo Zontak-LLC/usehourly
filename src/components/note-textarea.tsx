@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { PolishButtons, usePolish } from "@/components/polish-action";
 import { Textarea } from "@/components/ui/textarea";
+import { formatCount } from "@/lib/money";
 import { fitPaste, NOTE_MAX, noteCounter } from "@/lib/notes";
 
 type Props = Omit<React.ComponentProps<typeof Textarea>, "value" | "onChange" | "maxLength"> & {
@@ -38,7 +39,7 @@ export function NoteTextarea({ value, onChange, className, onPaste, polish, ...r
     e.preventDefault();
     onChange(value.slice(0, el.selectionStart) + text + value.slice(el.selectionEnd));
     toast.warning(
-      `Descriptions can be ${NOTE_MAX.toLocaleString("en-US")} characters. The last ${dropped.toLocaleString("en-US")} of what you pasted were left out.`,
+      `Descriptions can be ${formatCount(NOTE_MAX)} characters. The last ${formatCount(dropped)} of what you pasted were left out.`,
     );
   }
 
