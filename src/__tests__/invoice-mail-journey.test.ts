@@ -365,6 +365,22 @@ describe("emailing an invoice", () => {
     expect(info.blocked).toBeNull();
   });
 
+  it("writes the due date as the plain calendar day, even far from UTC", async () => {
+    const tz = process.env.TZ;
+    try {
+      for (const zone of ["America/Los_Angeles", "Pacific/Kiritimati"]) {
+        process.env.TZ = zone;
+        const w = world();
+        Object.assign(w.invoices.find((i) => i.id === "a") as Inv, { due_date: "2026-11-13" });
+        await w.as("u1").invoiceMail.send({ invoiceId: "a" });
+        expect(w.sent[0].text, zone).toContain("due Nov 13, 2026");
+      }
+    } finally {
+      if (tz === undefined) delete process.env.TZ;
+      else process.env.TZ = tz;
+    }
+  });
+
   it("refuses accounts that are unconfirmed, brand new, sample or bounced, sending and creating nothing", async () => {
     for (const [id, invoiceId] of [
       ["unverified", "e"],

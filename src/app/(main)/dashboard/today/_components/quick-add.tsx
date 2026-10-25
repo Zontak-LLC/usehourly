@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
-import { fromISODate, monthBounds } from "@/lib/dates";
+import { formatDate, monthBounds } from "@/lib/dates";
 import { formatDuration, parseDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
@@ -280,11 +280,6 @@ export function QuickAdd({
     client: polishOwner?.name ?? "",
   };
 
-  const dayLabel = fromISODate(date).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
   const onlyProject = projects.length === 1 ? projects[0] : null;
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
@@ -436,7 +431,9 @@ export function QuickAdd({
       <div className="border-b bg-band-2 px-3 py-3 sm:px-4">
         <h2 id={headingId} className="font-semibold text-base">
           Log time
-          {showDate && <span className="font-normal text-muted-foreground"> · {dayLabel}</span>}
+          {showDate && (
+            <span className="font-normal text-muted-foreground"> · {formatDate(date, "dayWithWeekday")}</span>
+          )}
         </h2>
       </div>
       {body}

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { formatDate } from "@/lib/dates";
 import { normalizeEmail } from "@/lib/email";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
 import {
@@ -16,15 +17,6 @@ import { sha256Hex } from "@/lib/sha256";
 import { createInvoiceLink, LinkLimitError } from "./invoice-link";
 
 type Db = PrismaClient;
-
-/** 2026-11-13 as "Nov 13, 2026", read as a plain calendar date (no time zone shifts). */
-const longDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
 
 /** Remember addresses that must not be mailed again (they asked to stop, or bounced for good). */
 export async function suppressEmails(prisma: Pick<Db, "emailSuppression">, emails: string[], reason: string) {
@@ -165,7 +157,7 @@ export async function deliverInvoiceEmail(i: DeliverInput): Promise<{ to: string
     sellerEmail: owner.email,
     number: invoice.number,
     totalLabel: formatMoney(invoice.total_cents, currency),
-    dueLabel: invoice.due_date ? longDate(invoice.due_date) : null,
+    dueLabel: invoice.due_date ? formatDate(invoice.due_date, "day") : null,
     note: i.note,
     link: `${i.appUrl}/invoice/${link.token}`,
     stopUrl: `${i.appUrl}/stop-emails?${query}`,
