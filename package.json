@@ -33,6 +33,7 @@
     "staging:smoke": "node scripts/staging-smoke.mjs",
     "stress:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/stress/ts-hook.mjs scripts/stress/seed.mjs",
     "stress:cleanup-staging": "node scripts/stress/recreate-staging.mjs",
+    "measure:speed": "node scripts/measure-speed.mjs",
     "perf-check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/stress/ts-hook.mjs scripts/perf-check.mjs",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
