@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
-import { expect, signUpByApi, test } from "./helpers";
+import { addDays } from "../src/lib/dates";
+import { expect, signUpByApi, test, today } from "./helpers";
 
 // Clients as a split view with a bill bar (issue 238, design 3 variation B): the list groups the clients with time to
 // bill first, each with its amount; the chosen client's profile has three calm figures, tabs, and a bill bar pinned to
@@ -8,11 +9,7 @@ import { expect, signUpByApi, test } from "./helpers";
 // the profile are two screens.
 
 /** A local YYYY-MM-DD some days before today (the browser and the test run on the same machine). */
-const daysAgo = (n: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+const daysAgo = (n: number) => addDays(today(), -n);
 /** "Oct 9", with the year when it is not this year (as the page writes it). */
 const short = (iso: string) => {
   const [y, m, d] = iso.split("-").map(Number);

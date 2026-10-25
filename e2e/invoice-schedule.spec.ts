@@ -1,3 +1,4 @@
+import { toISODate as iso } from "../src/lib/dates";
 import { expect, gotoClient, invoiceRows, menuAction, openInvoice, sql, startFreshAccount, test } from "./helpers";
 
 /*
@@ -5,9 +6,6 @@ import { expect, gotoClient, invoiceRows, menuAction, openInvoice, sql, startFre
  * Invoices and Acme's bill bar say "<Month> invoice for Acme is due" and open the builder on that month; the prompt goes
  * once the invoice exists. An overdue invoice gets "Write a reminder", a polite email for my own mail app.
  */
-
-const iso = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 test("a monthly client: the due prompt, the invoice from it, and a reminder once it is late", async ({ page }) => {
   const user = await startFreshAccount(page, "Acme");
