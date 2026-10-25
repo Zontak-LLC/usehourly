@@ -48,6 +48,6 @@ Protect the core: **Today is the product.** Sign-up to first logged entry should
 
 ## Extending the tests
 
-- Journeys live in `e2e/first-day.spec.ts` (one long story with a step per job) and `e2e/public.spec.ts`. Helpers (page checks, mail reader, database helper, anonymous client sessions) are in `e2e/helpers.ts`.
+- Journeys live in the four `e2e/first-day-*.spec.ts` parts (start, rate, invoice, share-delete; each makes its own account and runs on its own worker) and `e2e/public.spec.ts`. Helpers (page checks, mail reader, database helper, anonymous client sessions) are in `e2e/helpers.ts`.
 - Find things the way a person does: by visible label and role (`getByRole("button", { name: ... })`), not by CSS. Wait for a save to finish before leaving a page.
 - When adding a feature, add its step to the journey and make sure its buttons have names; the page checks then cover it automatically.
