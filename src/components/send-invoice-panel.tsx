@@ -12,13 +12,12 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatInstant } from "@/lib/dates";
 import { invoiceDraft, MAILTO_SAFE_LENGTH, mailtoHref, pdfFileName, reminderDraft } from "@/lib/invoice-draft";
 import { DEFAULT_LINK_EXPIRY_DAYS, type LinkStatus } from "@/lib/invoice-link";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
-const when = (d: Date | string) =>
-  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 const LINK_STATUS: Record<LinkStatus, string> = { live: "Works now", revoked: "Turned off", expired: "Expired" };
 
 type PanelInvoice = {
@@ -322,7 +321,7 @@ function LinkList({ invoiceId, onTurnedOff }: { invoiceId: string; onTurnedOff: 
       {links.data.map((l) => (
         <li key={l.id} className="flex items-center justify-between gap-2 text-sm">
           <span className="text-muted-foreground">
-            Link made {when(l.created_at)} · {LINK_STATUS[l.status]}
+            Link made {formatInstant(l.created_at, "day")} · {LINK_STATUS[l.status]}
           </span>
           {l.status === "live" && (
             <Button type="button" size="sm" variant="ghost" onClick={() => turnOff(l.id)} disabled={revoke.isPending}>

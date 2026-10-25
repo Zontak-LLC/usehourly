@@ -1,5 +1,6 @@
 import type { MailMessage } from "@/lib/mailer";
 
+import { formatDate } from "./dates";
 import { renderEmail } from "./email-template";
 
 /**
@@ -90,13 +91,6 @@ export function reminderTimePassed(now: Date, timeZone: string): boolean {
 type ReminderEntry = { date: string; minutes: number; project: { name: string; client: { name: string } } };
 
 const hours = (minutes: number) => `${(Math.round((minutes / 60) * 100) / 100).toString()} h`;
-const dayLabel = (isoDate: string) =>
-  new Date(utc(isoDate)).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
 
 /** Monday to Friday of the week that contains `today`. */
 export function workDays(today: string): string[] {
@@ -129,11 +123,11 @@ export function buildWeeklyReminder(input: {
     greeting: `Hi${first ? ` ${first}` : ""},`,
     blocks: [
       total > 0
-        ? `Here's your week so far (${dayLabel(days[0])} to ${dayLabel(days[4])}):`
+        ? `Here's your week so far (${formatDate(days[0], "dayWithWeekday")} to ${formatDate(days[4], "dayWithWeekday")}):`
         : "You haven't logged any time this week yet:",
       {
         rows: days.map((d): [string, string] => [
-          dayLabel(d),
+          formatDate(d, "dayWithWeekday"),
           byDay.get(d) ? hours(byDay.get(d) as number) : "nothing logged",
         ]),
       },

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { InvoiceDocument, readSnapshot } from "@/components/invoice-document";
 import { LogoMark } from "@/components/logo";
-import { fromISODate } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import { getPrisma } from "@/lib/prisma";
 import { findInvoiceLinkByToken } from "@/server/invoice-link";
 import { withInvoiceLogos } from "@/server/invoice-logos";
@@ -16,9 +16,6 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 export const dynamic = "force-dynamic";
-
-const day = (iso: string) =>
-  fromISODate(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
@@ -69,7 +66,8 @@ export default async function SharedInvoicePage({ params }: { params: Promise<{ 
       <InvoiceDocument s={s} paidDate={invoice.paid_date} />
 
       <p className="text-muted-foreground text-xs print:hidden">
-        Sent with UseHourly. This link works until {day(new Date(link.expires_at * 1000).toISOString().slice(0, 10))}.
+        Sent with UseHourly. This link works until{" "}
+        {formatDate(new Date(link.expires_at * 1000).toISOString().slice(0, 10), "day")}.
       </p>
     </Frame>
   );
