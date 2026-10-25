@@ -12,7 +12,7 @@ Two layers, in this order. The first says whether things **work**; the second sa
 ```bash
 cd ~/Projects/usehourly
 npm run e2e          # both devices: desktop 1280x800 and a Pixel 7 phone
-npm run e2e:summary  # writes e2e/report/summary.md
+npm run e2e:summary  # writes e2e/report/summary.md; it also lists the 10 slowest tests there and in the console
 ```
 
 - It starts its own copy of the app on port **3029** (own build folder) and a stand-in for Resend on **8899**. The normal dev server on 3028 is not touched. Nothing is sent to real people.

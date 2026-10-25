@@ -74,6 +74,9 @@ test.describe("public pages", () => {
     });
     await page.goto("/dashboard/today");
     await expect(page).toHaveURL(/\/auth\/v2\/login/);
+    // The Year summary renders in the browser only (issue 280), and still sends a signed-out visitor to log in.
+    await page.goto("/dashboard/report");
+    await expect(page).toHaveURL(/\/auth\/v2\/login/);
   });
 
   test("a made-up shared link says it isn't available, for timesheets and invoices alike", async ({ page, audit }) => {
