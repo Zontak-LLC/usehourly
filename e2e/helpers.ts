@@ -111,6 +111,12 @@ export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   return user;
 }
 
+/** Switches the page to light or dark the way the sun/moon switch does (the `dark` class on <html>). */
+export async function setTheme(page: Page, mode: "light" | "dark") {
+  await page.evaluate((m) => document.documentElement.classList.toggle("dark", m === "dark"), mode);
+  await page.waitForTimeout(150); // the colour change after the theme switch fires no event to wait for
+}
+
 /** Calls one tRPC procedure as the signed-in account (setup through the API) and returns its answer. */
 export async function trpc<T>(page: Page, path: string, data: unknown): Promise<T> {
   const res = await page.request.post(`/api/trpc/${path}`, { data });

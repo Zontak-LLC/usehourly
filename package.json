@@ -25,6 +25,7 @@
     "e2e:desktop": "playwright test --project=desktop",
     "e2e:report": "playwright show-report e2e/report/html",
     "e2e:summary": "node e2e/summarize.mjs",
+    "shots": "node scripts/shots.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "smoke:prod": "E2E_BASE_URL=https://usehourly.app playwright test e2e/smoke --project=desktop --project=phone",
