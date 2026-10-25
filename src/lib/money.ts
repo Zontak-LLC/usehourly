@@ -40,9 +40,23 @@ export const currencyOrDefault = (value: unknown): CurrencyCode => (isCurrency(v
 export const effectiveCurrency = (clientCurrency: unknown, accountCurrency: unknown): CurrencyCode =>
   isCurrency(clientCurrency) ? clientCurrency : currencyOrDefault(accountCurrency);
 
-/** "$1,234.50", "€1,234.50", "CHF 1,234.50": always the en-US pattern, so server and browser write it the same way. */
-export const formatMoney = (cents: number, currency: string = DEFAULT_CURRENCY) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: currencyOrDefault(currency) }).format(cents / 100);
+/**
+ * "$1,234.50", "€1,234.50", "CHF 1,234.50": always the en-US pattern, so server and browser write it the same way.
+ * With `dropZeroCents` a whole amount loses its ".00": "$640", but still "$12.50".
+ */
+export const formatMoney = (
+  cents: number,
+  currency: string = DEFAULT_CURRENCY,
+  { dropZeroCents = false }: { dropZeroCents?: boolean } = {},
+) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyOrDefault(currency),
+    ...(dropZeroCents && cents % 100 === 0 ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {}),
+  }).format(cents / 100);
+
+/** "1,234": a whole-number count in the same fixed en-US pattern. */
+export const formatCount = (n: number) => new Intl.NumberFormat("en-US").format(n);
 
 /** The symbol or short code a person types next to an amount: "$", "€", "CHF". */
 export const currencySymbol = (currency: string = DEFAULT_CURRENCY) =>

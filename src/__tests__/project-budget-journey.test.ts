@@ -290,6 +290,12 @@ describe("budget rules", () => {
   it("shows money and time the way the rest of the app does", () => {
     expect(formatBudgetAmount(100_000, "dollars")).toBe("$1,000");
     expect(formatBudgetAmount(12_345, "dollars")).toBe("$123.45");
+    expect(formatBudgetAmount(64_000, "dollars")).toBe("$640");
+    expect(formatBudgetAmount(1_250, "dollars")).toBe("$12.50");
+    expect(formatBudgetAmount(100_000, "dollars", "EUR")).toBe("€1,000");
+    expect(describeBudget(budgetStatus({ amount: 100_000, used: 64_000, unit: "dollars", period: "month" }))).toBe(
+      "$640 of $1,000 this month · 64%",
+    );
     expect(formatBudgetAmount(1350, "hours")).toBe("22:30 h");
     expect(describeBudget(budgetStatus({ amount: 1200, used: 1500, unit: "hours", period: "total" }))).toBe(
       "25:00 h of 20:00 h · 125%",

@@ -1,4 +1,5 @@
 import { parseDuration } from "@/lib/duration";
+import { formatCount } from "@/lib/money";
 import { NOTE_MAX } from "@/lib/notes";
 
 /**
@@ -237,7 +238,7 @@ export function readTimeCsv(text: string, opts: { dateOrder?: DateOrder } = {}):
   if (table.length - 1 > MAX_IMPORT_ROWS) {
     return {
       ok: false,
-      error: `That file has more than ${MAX_IMPORT_ROWS.toLocaleString("en-US")} rows. Export one year at a time.`,
+      error: `That file has more than ${formatCount(MAX_IMPORT_ROWS)} rows. Export one year at a time.`,
     };
   }
 

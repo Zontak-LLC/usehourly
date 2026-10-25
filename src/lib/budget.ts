@@ -1,5 +1,5 @@
 import { formatDuration } from "@/lib/duration";
-import { currencyOrDefault, DEFAULT_CURRENCY } from "@/lib/money";
+import { DEFAULT_CURRENCY, formatMoney } from "@/lib/money";
 
 /**
  * Project budgets: a limit in hours or dollars, per calendar month or for the whole project. Money is compared as
@@ -40,18 +40,12 @@ export function budgetStatus(b: {
   return { ...b, fraction, level: fraction >= 1 ? "over" : fraction >= WARN_AT ? "warn" : "ok" };
 }
 
-/** A budget amount in the account's currency, without ".00" when it is whole: "$640", "€1,000", "$12.50". */
-const money = (cents: number, currency: string) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currencyOrDefault(currency),
-    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
-
-/** "$640" for a money budget, "9:30 h" for an hours budget (the money is in the account's currency). */
+/**
+ * "$640" for a money budget, "9:30 h" for an hours budget. The money is in the account's currency, without ".00" when
+ * it is whole: "$640", "€1,000", "$12.50".
+ */
 export function formatBudgetAmount(value: number, unit: BudgetUnit, currency: string = DEFAULT_CURRENCY): string {
-  return unit === "dollars" ? money(value, currency) : `${formatDuration(value)} h`;
+  return unit === "dollars" ? formatMoney(value, currency, { dropZeroCents: true }) : `${formatDuration(value)} h`;
 }
 
 /** "$640 of $1,000 this month · 64%". */
