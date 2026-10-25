@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { MAX_TOKENS_PER_USER } from "@/lib/api-token";
 import { pkceChallenge } from "@/lib/oauth";
+import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
 import { DEMO_QUOTAS, QUOTAS } from "@/lib/quotas";
 import { decideAuthorization, exchangeCode, registerClient } from "@/server/oauth";
 import { accountQuota, insertWithinQuota, QUOTA_TABLES } from "@/server/quota-insert";
@@ -455,6 +456,43 @@ describe("rows written by the guarded insert look like rows Prisma writes", () =
 
     const tokens = await owner.account.listApiTokens();
     expect(tokens.slice(0, 2).map((t) => t.name)).toEqual(["By guard", "By Prisma"]);
+  });
+});
+
+describe("a first day well below every limit (PR #335: browser tests caught what these did not)", () => {
+  // D1 counts the entry_changes row that time_entries' insert trigger writes, so a saved entry reports 2 changes.
+  // The guard once read that as "nothing written" and refused every entry with the limit message.
+  it("adds a client, a project, an entry and a timer, and each answer is the saved row", async () => {
+    const w = world();
+    const owner = w.as(OWNER);
+
+    const client = await owner.clients.create({ name: "Globex" });
+    expect(client).toMatchObject({
+      user_id: OWNER,
+      name: "Globex",
+      color: DEFAULT_CLIENT_COLOR,
+      archived: false,
+      round_step: 0,
+    });
+    const project = await owner.project.create({ clientId: client.id, name: "Rebrand" });
+    expect(project).toMatchObject({ user_id: OWNER, client_id: client.id, name: "Rebrand" });
+
+    const entry = await owner.entry.create({ projectId: project.id, date: "2026-10-25", minutes: 45, note: "Kickoff" });
+    expect(entry).toMatchObject({ user_id: OWNER, project_id: project.id, date: "2026-10-25", minutes: 45 });
+    expect(entry.note).toBe("Kickoff");
+    expect(entry.started_at).toBeNull();
+    expect(entry.project.client.name).toBe("Globex");
+
+    const timer = await owner.entry.start({ projectId: project.id, date: "2026-10-25", note: "Design" });
+    expect(timer).toMatchObject({ user_id: OWNER, project_id: project.id, minutes: 0, note: "Design" });
+    expect(timer.started_at).toBeInstanceOf(Date);
+
+    expect(w.count("time_entries", `user_id = '${OWNER}' AND id IN ('${entry.id}', '${timer.id}')`)).toBe(2);
+    // the trigger's rows are what made D1 report 2 changes per insert
+    const logged = w.db
+      .prepare(`SELECT COUNT(*) AS n FROM entry_changes WHERE entry_id IN ('${entry.id}', '${timer.id}')`)
+      .get() as { n: number };
+    expect(Number(logged.n)).toBe(2);
   });
 });
 

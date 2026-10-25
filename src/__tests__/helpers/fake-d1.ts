@@ -55,7 +55,13 @@ export function fakeD1<R extends { canceled: boolean }>(requester: () => R | und
           });
         },
         run() {
-          return io(() => ({ meta: { changes: Number(db.prepare(sql).run(...(args as never[])).changes) } }));
+          // Like D1, `changes` includes rows written by triggers (an entry insert also logs to entry_changes, so D1
+          // reports 2). node:sqlite's own `changes` leaves them out, which hid a bug once (PR #335).
+          return io(() => {
+            const before = Number(db.prepare("SELECT total_changes() AS n").get()?.n);
+            db.prepare(sql).run(...(args as never[]));
+            return { meta: { changes: Number(db.prepare("SELECT total_changes() AS n").get()?.n) - before } };
+          });
         },
       };
       return stmt;

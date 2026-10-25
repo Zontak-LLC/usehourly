@@ -111,7 +111,9 @@ export async function insertIfRoom<T extends QuotaTable>(
       await prisma.$executeRaw`INSERT INTO ${Prisma.raw(table)} (${Prisma.raw(columns.join(", "))}) SELECT ${Prisma.join(
         columns.map((c) => values[c]),
       )} WHERE ${quota.used} < ${quota.limit}`;
-    return changed === 1 ? String(id) : null;
+    // D1 counts rows written by triggers too (time_entries' insert trigger logs to entry_changes, so a saved entry
+    // reports 2). The statement inserts at most one row, so any change at all means it was written.
+    return changed > 0 ? String(id) : null;
   } catch (err) {
     if (isUniqueFailure(err)) throw new QuotaInsertDuplicate();
     throw err;
