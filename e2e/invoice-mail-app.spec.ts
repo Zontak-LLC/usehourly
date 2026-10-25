@@ -122,12 +122,13 @@ test("at the live-link limit the panel says how to fix it, and writes the email 
   await page.getByRole("button", { name: `Send ${number}` }).click();
   const panel = page.getByRole("region", { name: `Send invoice ${number}` });
   await expect(panel.getByLabel("Invoice link")).toBeVisible();
-  // Four more live links for the same invoice: five in all, the most an invoice may have.
+  // Four more live links for the same invoice: five in all, the most an invoice may have. Each is n minutes older than
+  // the real link, in the stored format, so no two share a time (the list sorts by time alone; a tie has no fixed order).
   sql(
     `WITH RECURSIVE n(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM n WHERE n < 4)
     INSERT INTO invoice_links (id, user_id, invoice_id, token_hash, token_prefix, expires_at, revoked_at, created_at)
     SELECT lower(hex(randomblob(16))), l.user_id, l.invoice_id, lower(hex(randomblob(32))), l.token_prefix, l.expires_at,
-      NULL, l.created_at
+      NULL, strftime('%Y-%m-%dT%H:%M:%f+00:00', l.created_at, '-' || n.n || ' minutes')
     FROM (SELECT * FROM invoice_links WHERE user_id = (SELECT id FROM auth_users WHERE email = '${user.email}') LIMIT 1) l,
       n`.replace(/\s+/g, " "),
   );
@@ -139,9 +140,12 @@ test("at the live-link limit the panel says how to fix it, and writes the email 
   const links = panel.getByRole("list", { name: "Links for this invoice" }).getByRole("listitem");
   await expect(links).toHaveCount(5);
 
+  // Checked by content, not by place: the list comes back in a new request after Turn off.
   await links.first().getByRole("button", { name: "Turn off" }).click();
-  await expect(links.first()).toContainText("Turned off");
+  await expect(links.filter({ hasText: "Turned off" })).toHaveCount(1);
+  await expect(links.filter({ hasText: "Works now" })).toHaveCount(4);
   await panel.getByRole("button", { name: "Try again with a link" }).click();
+  await expect(panel.getByLabel("Invoice link")).toBeVisible();
   const link = await panel.getByLabel("Invoice link").inputValue();
   expect(link).toMatch(/\/invoice\/\S{40,}$/);
   await expect(panel.getByLabel("Message")).toHaveValue(new RegExp(link));
