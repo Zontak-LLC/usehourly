@@ -107,8 +107,10 @@ export function stepSummary(step) {
     failed: step.actions.filter((a) => !a.ok).length,
     requests: step.appRequests,
     requestsPerSecond: step.appRequests / seconds,
+    timedOut: step.actions.filter((a) => !a.ok && a.kind === "timeout").length,
     serverErrors: step.serverErrors,
     consoleErrors: step.consoleErrors,
+    machine: step.machine ?? null,
   };
 }
 
@@ -203,11 +205,74 @@ export function headline({ accounts, steps, cost }) {
     `With ${count(accounts)} accounts: ${parts.join(" ")}`,
     `${count(errors)} ${errors === 1 ? "error" : "errors"} in ${count(requests)} requests.`,
   ];
-  if (failed > 0) sentences.push(`${count(failed)} ${failed === 1 ? "step" : "steps"} of the people did not finish.`);
+  const timedOut = steps.reduce((n, s) => n + (s.timedOut ?? 0), 0);
+  if (failed > 0)
+    sentences.push(
+      `${count(failed)} ${failed === 1 ? "step" : "steps"} of the people did not finish${timedOut ? ` (${count(timedOut)} timed out)` : ""}.`,
+    );
   if (consoleErrors > 0)
     sentences.push(`The browsers logged ${count(consoleErrors)} console ${consoleErrors === 1 ? "error" : "errors"}.`);
+  const busy = overloadedSteps(steps);
+  const list = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+  if (busy.length === 1)
+    sentences.push(
+      `The test machine was overloaded (load ${Math.round(busy[0].load)} on ${busy[0].cores} cores) at ${busy[0].users} people; treat that step's times with care.`,
+    );
+  else if (busy.length > 1)
+    sentences.push(
+      `The test machine was overloaded (load ${list(busy.map((o) => Math.round(o.load)))} on ${busy[0].cores} cores) at ${list(busy.map((o) => o.users))} people; treat those steps' times with care.`,
+    );
   sentences.push(
     cost ? `Cost of the run: ${dollars(cost.totalUsd)}.` : "Cost of the run: not measured (no Cloudflare figures).",
   );
   return sentences.join(" ");
+}
+
+/** The server's own time from a Server-Timing header ("db;dur=12, app;dur=30.5" -> 42.5), or null without one. */
+export function serverTiming(header) {
+  if (!header) return null;
+  const durs = [...String(header).matchAll(/(?:^|;)\s*dur=([\d.]+)/g)].map((m) => Number(m[1]));
+  return durs.length ? Math.round(durs.reduce((a, b) => a + b, 0) * 10) / 10 : null;
+}
+
+/**
+ * What a failed tRPC answer says, without anything private: per call the tRPC code ("INTERNAL_SERVER_ERROR"), the
+ * procedure path, and the start of the message (the server's words, cut short). A body that is not tRPC JSON (a
+ * Cloudflare error page) is described by its kind only.
+ */
+export function trpcErrorDetail(body) {
+  let parsed;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    const text = String(body ?? "").trim();
+    if (!text) return { codes: [], paths: [], message: "empty answer" };
+    const title = /<title>([^<]{0,80})/i.exec(text)?.[1];
+    return { codes: [], paths: [], message: title ? `HTML page: ${title.trim()}` : "not JSON" };
+  }
+  const items = (Array.isArray(parsed) ? parsed : [parsed]).map((x) => x?.error).filter(Boolean);
+  const pick = (e) => e.json ?? e;
+  return {
+    codes: [...new Set(items.map((e) => pick(e).data?.code).filter(Boolean))],
+    paths: [...new Set(items.map((e) => pick(e).data?.path).filter(Boolean))],
+    message:
+      items
+        .map((e) => String(pick(e).message ?? ""))
+        .find(Boolean)
+        ?.slice(0, 160) ?? null,
+  };
+}
+
+/** Time to first byte of the app's requests during one step: how long the server (plus the network) took. */
+export function ttfbSummary(requests, step, startedAt) {
+  const from = step.start - startedAt;
+  const to = step.end - startedAt;
+  return summarize(requests.filter((r) => r[0] >= from && r[0] <= to).map((r) => r[5]));
+}
+
+/** "the test machine was overloaded (load 24 on 10 cores) at 50 people" for each step whose load passed the cores. */
+export function overloadedSteps(steps) {
+  return steps
+    .filter((s) => s.machine && s.machine.loadMax > s.machine.cores)
+    .map((s) => ({ users: s.users, load: s.machine.loadMax, cores: s.machine.cores }));
 }

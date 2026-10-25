@@ -6,15 +6,20 @@ import {
   costEstimate,
   dollars,
   headline,
+  overloadedSteps,
   PRICES,
   pageSummary,
   percent,
   percentile,
   seconds,
+  serverTiming,
   stepSummary,
   summarize,
   timeline,
+  trpcErrorDetail,
+  ttfbSummary,
 } from "../../scripts/perf/stats.mjs";
+import { readFileSync } from "node:fs";
 
 /**
  * The Performance Check's numbers (scripts/perf/stats.mjs) and its report (scripts/perf/report.mjs): a run of virtual
@@ -67,7 +72,19 @@ function sampleRun(scale = 1) {
       [20_000, 900, 200, "doc"],
       [260_000, 300, 500, "trpc", ["invoice.list"]],
     ],
-    samples: { failures: ["Month (stress-00001@stress.invalid): Timeout"], consoleErrors: [] },
+    samples: { failures: [], consoleErrors: [] },
+    failures: [
+      {
+        t: 300_000,
+        step: 50,
+        action: "Month",
+        page: "Month",
+        person: "stress-00001@stress.invalid",
+        elapsedMs: 30_000,
+        kind: "timeout",
+        message: "Timeout",
+      },
+    ],
   };
 }
 
@@ -239,7 +256,7 @@ describe("the report page", () => {
     expect(html).toContain("Database rows written");
     expect(html).toContain("<code>entry.list</code>");
     expect(html).toContain("This is the first run");
-    expect(html).toContain("Month (stress-00001@stress.invalid): Timeout");
+    expect(html).toContain("<td>stress-00001@stress.invalid</td><td>30 s</td><td>timed out</td>");
     // charts are drawn to scale: the p95 bar of the slowest page is the widest
     const widths = [...html.matchAll(/<rect x="150" y="[\d.]+" width="([\d.]+)"[^>]*var\(--s2\)/g)].map((m) =>
       Number(m[1]),
@@ -257,9 +274,135 @@ describe("the report page", () => {
 
   it("escapes what came from the browser, so an error message cannot add markup", () => {
     const run = sampleRun();
-    run.samples.failures = ['<img src=x onerror="alert(1)">'];
+    run.failures[0].message = '<img src=x onerror="alert(1)">';
     const html = renderReport(run as never);
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
+  });
+});
+
+describe("telling the server's slowness from the test machine's, and what failed", () => {
+  it("reads the server's own time from Server-Timing, when the answer has one", () => {
+    expect(serverTiming("db;dur=12, app;dur=30.5")).toBe(42.5);
+    expect(serverTiming('cfL4;desc="?proto=TCP"')).toBeNull();
+    expect(serverTiming(undefined)).toBeNull();
+  });
+
+  it("reads a failed tRPC batch: codes, procedures and the start of the message", () => {
+    const body = JSON.stringify([
+      { result: { data: [] } },
+      {
+        error: {
+          message: "D1_ERROR: too many requests",
+          code: -32603,
+          data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 500, path: "entry.list" },
+        },
+      },
+      { error: { json: { message: "x", data: { code: "INTERNAL_SERVER_ERROR", path: "entry.nonBillableDays" } } } },
+    ]);
+    expect(trpcErrorDetail(body)).toEqual({
+      codes: ["INTERNAL_SERVER_ERROR"],
+      paths: ["entry.list", "entry.nonBillableDays"],
+      message: "D1_ERROR: too many requests",
+    });
+    expect(trpcErrorDetail("<html><title>502 Bad gateway</title></html>").message).toBe("HTML page: 502 Bad gateway");
+    expect(trpcErrorDetail("").message).toBe("empty answer");
+  });
+
+  it("time to first byte per step comes only from that step's requests", () => {
+    const requests = [
+      [1_000, 300, 200, "trpc", null, 120],
+      [2_000, 900, 200, "trpc", null, 140],
+      [400_000, 2_000, 200, "trpc", null, 1_900],
+    ];
+    expect(ttfbSummary(requests as never, { start: T0, end: T0 + 180_000 } as never, T0)).toMatchObject({
+      count: 2,
+      median: 130,
+      max: 140,
+    });
+  });
+
+  it("says when the test machine was overloaded, and how many steps timed out", () => {
+    const busy = step(50, T0, [act("Today", 300), { ...act("Today", null, false), kind: "timeout" } as never], {
+      machine: { cores: 10, loadMax: 24.3, loadAvg: 18, lagP95Ms: 40, lagMaxMs: 300 },
+    });
+    const calm = step(10, T0, [act("Today", 200)], {
+      machine: { cores: 10, loadMax: 4, loadAvg: 3, lagP95Ms: 5, lagMaxMs: 20 },
+    });
+    const steps = [stepSummary(calm), stepSummary(busy)];
+    expect(overloadedSteps(steps)).toEqual([{ users: 50, load: 24.3, cores: 10 }]);
+    const text = headline({ accounts: 10_000, steps, cost: { totalUsd: 0.04 } as never });
+    expect(text).toContain("1 step of the people did not finish (1 timed out).");
+    expect(text).toContain(
+      "The test machine was overloaded (load 24 on 10 cores) at 50 people; treat that step's times with care.",
+    );
+    expect(text).not.toContain("at 10 people; treat");
+    const both = headline({
+      accounts: 10_000,
+      steps: [
+        stepSummary(
+          step(25, T0, [act("Today", 200)], {
+            machine: { cores: 10, loadMax: 41, loadAvg: 30, lagP95Ms: 5, lagMaxMs: 9 },
+          }),
+        ),
+        steps[1],
+      ],
+      cost: null,
+    });
+    expect(both).toContain(
+      "overloaded (load 41 and 24 on 10 cores) at 25 and 50 people; treat those steps' times with care.",
+    );
+  });
+
+  it("the report lists every server error and every unfinished step, and says when a run did not finish", () => {
+    const run = {
+      ...sampleRun(),
+      complete: false,
+      stoppedEarly: true,
+      serverErrors: [
+        {
+          t: 75_000,
+          step: 50,
+          status: 500,
+          procedures: ["entry.list"],
+          codes: ["INTERNAL_SERVER_ERROR"],
+          paths: ["entry.list"],
+          message: "D1_ERROR: overloaded",
+          noAnswer: null,
+          cfRay: "a4fd5447ba325164-SEA",
+          url: "/api/trpc/entry.list",
+        },
+      ],
+      failures: [
+        {
+          t: 61_000,
+          step: 50,
+          action: "Log time",
+          page: "Today",
+          person: "stress-00048@stress.invalid",
+          elapsedMs: 30_010,
+          kind: "timeout",
+          message: "page.waitForResponse: Timeout 30000ms exceeded",
+        },
+      ],
+    };
+    const html = renderReport(run as never);
+    expect(html).toContain("This run did not finish (stopped by hand)");
+    expect(html).toContain("<code>a4fd5447ba325164-SEA</code>");
+    expect(html).toContain("D1_ERROR: overloaded");
+    expect(html).toContain("<td>1:15</td><td>50 people</td><td>500</td>");
+    expect(html).toContain(
+      "<td>Log time</td><td>Today</td><td>stress-00048@stress.invalid</td><td>30 s</td><td>timed out</td>",
+    );
+  });
+
+  it("the runner never leaves a wait for a response or a download without a handler (it crashed a run once)", () => {
+    const source = readFileSync("scripts/perf-check.mjs", "utf8");
+    const dangling = source
+      .split("\n")
+      .filter((line) => /=\s*page\.waitFor(Response|Event)\(/.test(line) && !/\.catch\(/.test(line));
+    expect(dangling).toEqual([]);
+    expect(source).toContain('process.on("unhandledRejection"');
+    expect(source).toContain('process.once("SIGINT"');
   });
 });
