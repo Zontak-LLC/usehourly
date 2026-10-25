@@ -112,7 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Throttle guessing (see lib/login-throttle.ts); a refused attempt looks like a wrong password.
         const ip = clientIpFrom(request?.headers);
-        if (!(await loginAllowed(prisma, email, ip))) return null;
+        if (!(await loginAllowed(prisma, email, ip, request?.headers))) return null;
 
         const user = await prisma.authUser.findUnique({ where: { email } });
         if (!user || !(await passwordMatches(parsed.data.password, user.password_hash))) {
