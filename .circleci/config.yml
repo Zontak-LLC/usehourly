@@ -88,9 +88,10 @@ jobs:
             echo "$FILES"
             # The "chip in" spec runs alone before the others (a Playwright project dependency), and a dependency runs even
             # when its file is not in the list: so only the container that holds it runs it (it used to run in all four).
-            DEPS=""
-            if ! echo "$FILES" | grep -q "support-notice.spec.ts"; then DEPS="--no-deps"; fi
-            npx playwright test $DEPS $FILES
+            # E2E_SKIP_SERIAL drops just that dependency (playwright.config.ts); --no-deps would also skip the
+            # "shared-account" setup, which every container needs (issue 340).
+            if ! echo "$FILES" | grep -q "support-notice.spec.ts"; then export E2E_SKIP_SERIAL=1; fi
+            npx playwright test $FILES
       # Uploads test-results/e2e-junit.xml (playwright.config.ts writes it when CIRCLECI is set): the split's timings.
       - store_test_results:
           path: test-results

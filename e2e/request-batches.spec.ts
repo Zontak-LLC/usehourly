@@ -1,4 +1,6 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, test, withSharedAccount } from "./helpers";
+
+withSharedAccount(); // counts requests, not data
 
 /**
  * Every request to the server costs a full round trip before the page can show its data, and a page that asks for
@@ -20,7 +22,6 @@ test("each busy page loads all its data in a single request", async ({ page }) =
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true });
   });
-  await startFreshAccount(page);
   for (const [label, heading, url] of PAGES) {
     const calls: string[] = [];
     const onRequest = (r: { url(): string }) => {

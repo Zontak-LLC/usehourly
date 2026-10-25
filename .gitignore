@@ -73,6 +73,8 @@ next-env.d.ts
 /.next-e2e/
 /.next-e2e-build/
 /.next-promo/
+# the shared test account's saved sign-in (e2e/shared-account.setup.ts), written fresh on every run
+/e2e/.auth/
 
 # mutation testing
 .stryker-tmp/

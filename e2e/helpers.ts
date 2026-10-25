@@ -78,6 +78,28 @@ export async function signUpByApi(page: Page) {
   return user;
 }
 
+/** Where the "shared-account" project (e2e/shared-account.setup.ts) saves the signed-in state of the run's one shared account. */
+export const SHARED_STATE = "e2e/.auth/shared.json";
+
+/**
+ * Signs every test in this file in as the run's one shared account (issue 340) instead of making a new account each.
+ * Call it once at the top of a spec file whose tests only read data they made themselves, named with `stamp()`: no
+ * first-run question, no settings, no sign-out, no counts of all clients, projects, entries or invoices (CLAUDE.md lists
+ * the rules). Against an existing site (E2E_BASE_URL) there is no shared account: each test signs up its own, as before.
+ */
+export function withSharedAccount() {
+  if (process.env.E2E_BASE_URL) test.beforeEach(({ page }) => signUpReady(page));
+  else test.use({ storageState: SHARED_STATE });
+}
+
+/** A new account with the first-run question answered through the API (a client and its first project), as the page does. */
+export async function signUpReady(page: Page) {
+  const user = await signUpByApi(page);
+  const client = await trpc<{ id: string }>(page, "clients.create", { name: "Shared Co" });
+  await trpc(page, "project.create", { clientId: client.id, name: "General", hourlyRate: 0 });
+  return user;
+}
+
 /** Signs a new account up and answers the first-run question, ending on Today with the add form ready. */
 export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   const user = await signUpByApi(page);
