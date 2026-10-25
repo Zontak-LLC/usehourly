@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { clearRateLimit, hitRateLimit, LOGIN_PER_EMAIL, LOGIN_PER_EMAIL_AND_IP, LOGIN_PER_IP } from "@/lib/rate-limit";
+import { swarmPass } from "@/lib/swarm";
 
 type Db = Pick<PrismaClient, "rateLimit">;
 
@@ -14,8 +15,16 @@ const emailKey = (email: string) => `login:email:${email}`;
  *  - per address from one connection: one source cannot hammer one account;
  *  - per address overall, a much higher ceiling: spread-out guessing still has a limit, but a stranger
  *    typing wrong passwords from one place cannot lock the real owner out.
+ * The swarm pass (staging only, stress-test accounts only, lib/swarm.ts) skips the throttle; the password check
+ * still runs.
  */
-export async function loginAllowed(prisma: Db, email: string, ip: string | null): Promise<boolean> {
+export async function loginAllowed(
+  prisma: Db,
+  email: string,
+  ip: string | null,
+  headers?: Headers | null,
+): Promise<boolean> {
+  if (await swarmPass(headers, email)) return true;
   if (ip) {
     const byIp = await hitRateLimit(prisma, `login:ip:${ip}`, LOGIN_PER_IP.limit, LOGIN_PER_IP.windowSeconds);
     if (!byIp.allowed) return false;
