@@ -63,9 +63,9 @@ function fakeD1() {
         raw() {
           sent.push({ sql, by: requests.als.getStore() });
           return io(() => {
-            const s = db.prepare(sql);
-            const rows = s.all(...(args as never[])).map((row) => Object.values(row));
-            return [s.columns().map((c) => c.name), ...rows];
+            // column names from the first row: StatementSync.columns() needs Node 22.16+, CI runs 22.14
+            const objects = db.prepare(sql).all(...(args as never[]));
+            return [Object.keys(objects[0] ?? {}), ...objects.map((row) => Object.values(row))];
           });
         },
         run() {
