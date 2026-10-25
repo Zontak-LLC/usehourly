@@ -129,7 +129,9 @@ describe("the switch can never be armed on production", () => {
     );
     expect((await call("GET")).status).toBe(404);
     expect((await start("health-503")).status).toBe(404);
-    expect((await health()).status).toBe(200);
+    const up = await health();
+    expect(up.status).toBe(200);
+    expect(up.headers.get("x-drill")).toBeNull();
     expect((await entries(db)).status).toBe(200);
     expect(db.appSetting.findUnique).not.toHaveBeenCalled();
     expect(db.rateLimit.updateMany).not.toHaveBeenCalled();
@@ -201,6 +203,30 @@ describe("a drill breaks only its own path, then undoes itself", () => {
     expect(await stopped.json()).toMatchObject({ stopped: "health-503", running: false });
     expect((await health()).status).toBe(200);
     expect(events().at(-1)).toBe("drill_stopped");
+  });
+
+  it("health-503: the drilled answer says so in an X-Drill header, the body still reads like a real failure", async () => {
+    useStaging();
+    await start("health-503");
+    const down = await health();
+    expect(down.status).toBe(503);
+    expect(await down.json()).toEqual({ ok: false });
+    expect(down.headers.get("x-drill")).toBe("health-503");
+    expect(down.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("no X-Drill header without a drill, and none on a real database failure", async () => {
+    useStaging();
+    const up = await health();
+    expect(up.status).toBe(200);
+    expect(await up.json()).toMatchObject({ ok: true });
+    expect(up.headers.get("x-drill")).toBeNull();
+
+    db.$queryRaw.mockRejectedValueOnce(new Error("D1 unavailable"));
+    const down = await health();
+    expect(down.status).toBe(503);
+    expect(await down.json()).toEqual({ ok: false });
+    expect(down.headers.get("x-drill")).toBeNull();
   });
 
   it("entry-list-500: loading entries fails and tRPC logs it, the health check stays green", async () => {
