@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Accounting export: the file is too long (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 353 (part of issue 72). The foot strip of Account > Your data > "Send invoices to your accounting
+  app" (src/components/accounting-export.tsx). Colours are the app's light tokens from src/app/globals.css:
+  --foreground, --card, --border, --band-2, --destructive, --amber (the main button). No new colour, no new box.
+-->
+<style>
+  :root {
+    --background: #eef2f7;
+    --foreground: #1c2434;
+    --card: #ffffff;
+    --border: #dbe2ec;
+    --destructive: #d04a3a;
+    --amber: #2563c9;
+    --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; color: color-mix(in oklab, var(--foreground) 75%, transparent); max-width: 70ch; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: color-mix(in oklab, var(--foreground) 75%, transparent); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .desktop { width: 760px; max-width: 100%; }
+  .phone { width: 375px; }
+  .fields { padding: 16px 24px 20px; color: color-mix(in oklab, var(--foreground) 60%, transparent); font-size: 13px; }
+  .fields span { display: inline-block; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 0 6px 6px 0; }
+  /* The foot strip: same as the component (flex-wrap, gap-x-6 gap-y-3, border-t, bg-band-2, px-5 py-4 / sm:px-6). */
+  .strip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px;
+    border-top: 1px solid var(--border); background: var(--band-2); padding: 16px 24px; }
+  .phone .strip { padding: 16px 20px; }
+  .strip p { margin: 0; flex: 1 1 16rem; min-width: 0; font-size: 14px; }
+  .hint { color: color-mix(in oklab, var(--foreground) 75%, transparent); }
+  .alert { color: var(--destructive); }
+  .btn { display: inline-flex; align-items: center; gap: 10px; border: 0; border-radius: 10px; padding: 10px 16px;
+    background: var(--amber); color: #fff; font: inherit; font-weight: 600; }
+  .btn small { display: block; font-weight: 400; opacity: .85; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Accounting export: the file is too long</h1>
+<p class="note">The message takes the place of the format hint, in the same spot and size, in the destructive text
+colour, read out by a screen reader (<code>role="alert"</code>). No file is downloaded and no toast shows. Download CSV
+stays on, so the person can pick another year and try again. A new choice (Send to, Invoices issued in, Currency) or
+the next Download clears it.</p>
+
+<h2>Desktop: today (hint)</h2>
+<div class="frames">
+  <div class="card desktop">
+    <div class="fields"><span>Send to: Xero invoices</span><span>Invoices issued in: All time</span><span>Date format</span></div>
+    <div class="strip">
+      <p class="hint">Import under Business &gt; Invoices &gt; Import. They arrive as drafts to approve.</p>
+      <button class="btn" type="button">⤓ <span>Download CSV<small>Ready to import</small></span></button>
+    </div>
+  </div>
+</div>
+
+<h2>Desktop: too long for Xero</h2>
+<div class="frames">
+  <div class="card desktop">
+    <div class="fields"><span>Send to: Xero invoices</span><span>Invoices issued in: All time</span><span>Date format</span></div>
+    <div class="strip">
+      <p class="alert" role="alert">This range makes 501 lines; Xero takes up to 500 per file. Pick a shorter date range.</p>
+      <button class="btn" type="button">⤓ <span>Download CSV<small>Ready to import</small></span></button>
+    </div>
+  </div>
+</div>
+
+<h2>Phone (375 px): too long for QuickBooks Online</h2>
+<div class="frames">
+  <div class="card phone">
+    <div class="fields"><span>Send to: QuickBooks Online invoices</span><span>Invoices issued in: All time</span></div>
+    <div class="strip">
+      <p class="alert" role="alert">This range makes 1,001 lines; QuickBooks Online takes up to 1,000 per file. Pick a shorter date range.</p>
+      <button class="btn" type="button">⤓ <span>Download CSV<small>Ready to import</small></span></button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
