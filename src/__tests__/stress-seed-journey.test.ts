@@ -114,7 +114,8 @@ describe("stress test: filling staging with a realistic mix of accounts and remo
         "SELECT COUNT(*) n FROM time_entries e JOIN projects p ON p.id = e.project_id WHERE p.user_id <> e.user_id",
       ),
     ).toBe(0);
-  });
+    // Seeding 200 accounts can pass 5 s when several builds share the machine.
+  }, 30000);
 
   it("stores invoices the app can read: the same snapshot, PDF and list row as invoice.create's, billing each hour once", async () => {
     const db = migratedDb();
