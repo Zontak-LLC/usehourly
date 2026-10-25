@@ -104,7 +104,8 @@ describe("measure speed", () => {
     expect(res.code).toBe(0);
     expect(res.stdout).toMatch(/endpoint\s+status\s+first\s+median\s+p90/);
     expect(res.stdout).toContain("signed in (cookie from TEST_COOKIE)");
-    for (const p of PATHS) expect(res.stdout).toMatch(new RegExp(`^${p.replace(/\//g, "\\/")}\\s+200\\s`, "m"));
+    for (const p of PATHS)
+      expect(res.stdout).toMatch(new RegExp(`^${p.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}\\s+200\\s`, "m"));
     expect(seen).toHaveLength(PATHS.length * (1 + 3));
     expect(seen.every((s) => s.cookie === "secret-value-123" && s.method === "GET")).toBe(true);
     expect(res.stdout).not.toContain("secret-value-123");
