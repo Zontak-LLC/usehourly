@@ -47,9 +47,14 @@ const GROUPS = [
   { group: "(other)", bytes: 40 },
 ];
 
+// A git hook (pre-push) sets GIT_DIR and friends for every program it starts; without dropping them the script's
+// `git rev-parse` in the temp folder would read the real repository's commit instead of "unknown".
+const env: NodeJS.ProcessEnv = { ...process.env };
+for (const key of Object.keys(env)) if (key.startsWith("GIT_")) delete env[key];
+
 function run(args: string[], cwd: string) {
   return new Promise<{ code: number; stdout: string; stderr: string }>((resolve) => {
-    execFile(process.execPath, [SCRIPT, ...args], { cwd, encoding: "utf8" }, (err, stdout, stderr) =>
+    execFile(process.execPath, [SCRIPT, ...args], { cwd, env, encoding: "utf8" }, (err, stdout, stderr) =>
       resolve({ code: err ? Number(err.code ?? 1) : 0, stdout, stderr }),
     );
   });
