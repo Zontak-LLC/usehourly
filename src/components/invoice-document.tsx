@@ -1,12 +1,9 @@
 import { InvoiceDocActions } from "@/components/invoice-doc-actions";
-import { fromISODate } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
 import { describeRounding } from "@/lib/rounding";
 import { taxNumberLine, taxRowLabel } from "@/lib/tax";
-
-const day = (iso: string) =>
-  fromISODate(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 /** What a page can safely read from the stored text, or null if it is not an invoice snapshot. */
 export function readSnapshot(json: string): InvoiceSnapshot | null {
@@ -60,21 +57,21 @@ export function InvoiceDocument({
         </div>
         <div className="text-right">
           <Title className="font-semibold text-2xl tracking-tight">Invoice {s.number}</Title>
-          <p className="text-muted-foreground text-sm">Issued {day(s.issueDate)}</p>
-          {s.dueDate && <p className="text-muted-foreground text-sm">Due {day(s.dueDate)}</p>}
+          <p className="text-muted-foreground text-sm">Issued {formatDate(s.issueDate, "day")}</p>
+          {s.dueDate && <p className="text-muted-foreground text-sm">Due {formatDate(s.dueDate, "day")}</p>}
           <p className="text-muted-foreground text-sm">
-            For {day(s.periodFrom)} – {day(s.periodTo)}
+            For {formatDate(s.periodFrom, "day")} – {formatDate(s.periodTo, "day")}
           </p>
         </div>
       </div>
 
       {paidDate ? (
         <p className="rounded-xl border border-success-bright/60 bg-success-soft p-3 font-medium text-sm text-success">
-          Paid on {day(paidDate)}. Thank you.
+          Paid on {formatDate(paidDate, "day")}. Thank you.
         </p>
       ) : overdue ? (
         <p className="rounded-xl border border-destructive/40 p-3 font-medium text-destructive text-sm">
-          This invoice was due on {day(s.dueDate as string)}.
+          This invoice was due on {formatDate(s.dueDate as string, "day")}.
         </p>
       ) : null}
 
@@ -162,7 +159,7 @@ export function InvoiceDocument({
             {s.detail.map((d) => (
               <li key={`${d.date}|${d.project}|${d.note}|${d.minutes}`} className="grid gap-0.5">
                 <span className="text-muted-foreground tabular-nums">
-                  {day(d.date)} · {d.project} · {formatDuration(d.minutes)}
+                  {formatDate(d.date, "day")} · {d.project} · {formatDuration(d.minutes)}
                 </span>
                 {d.note && <span className="whitespace-pre-wrap break-words">{d.note}</span>}
               </li>

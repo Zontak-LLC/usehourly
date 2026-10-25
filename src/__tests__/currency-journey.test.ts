@@ -7,6 +7,7 @@ import {
   currencyOrDefault,
   currencySymbol,
   excelMoneyFormat,
+  formatCount,
   formatMoney,
   formatMoneyForPdf,
 } from "@/lib/money";
@@ -108,6 +109,18 @@ describe("money is written in the account's currency", () => {
     expect(excelMoneyFormat()).toBe('"$"#,##0.00');
     expect(formatMoneyForPdf(15000, "EUR")).toBe("EUR\u00a0150.00");
     expect(formatMoneyForPdf(15000, "USD")).toBe("$150.00");
+  });
+
+  it("drops .00 from a whole amount only when asked, and writes counts with the same commas", () => {
+    expect(formatMoney(64000, "USD", { dropZeroCents: true })).toBe("$640");
+    expect(formatMoney(1250, "USD", { dropZeroCents: true })).toBe("$12.50");
+    expect(formatMoney(100000, "EUR", { dropZeroCents: true })).toBe("€1,000");
+    expect(formatMoney(64000, "USD")).toBe("$640.00");
+    expect(formatMoney(64000, "USD", { dropZeroCents: false })).toBe("$640.00");
+    expect(formatCount(1234)).toBe("1,234");
+    expect(formatCount(50000)).toBe("50,000");
+    expect(formatCount(2000)).toBe("2,000");
+    expect(formatCount(5)).toBe("5");
   });
 });
 

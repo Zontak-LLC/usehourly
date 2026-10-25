@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { csvFilename, entriesCsv } from "@/lib/export-all";
+import { categoryLabel } from "@/lib/expenses";
+import { csvFilename, type ExpenseCsvRow, type ExportPlan, entriesCsv, planExport } from "@/lib/export-all";
 import { exportableEntries, type SheetEntry } from "@/lib/timesheet";
 
 /**
@@ -46,5 +47,66 @@ describe("exportableEntries", () => {
     ]);
     const empty = entriesCsv(exportableEntries([entry({ id: "b", minutes: 0 })]), "USD");
     expect(empty).toBe("﻿Date,Client,Project,Note,Hours,Minutes,Billable,Rate (per hour),Amount,Currency\r\n");
+  });
+});
+
+describe("expenses in 'export everything'", () => {
+  const office: ExpenseCsvRow = {
+    date: "2026-03-04",
+    kind: "expense",
+    category: "office",
+    amount_cents: 1250,
+    currency: "USD",
+    note: "Paper",
+    distance: null,
+    distance_unit: null,
+    mileage_rate: null,
+    client: { name: "Acme" },
+  };
+  const trip: ExpenseCsvRow = {
+    date: "2025-11-02",
+    kind: "mileage",
+    category: "mileage",
+    amount_cents: 861, // 12.3 mi at $0.70
+    currency: "USD",
+    note: null,
+    distance: 123,
+    distance_unit: "mi",
+    mileage_rate: 700,
+    client: null,
+  };
+  const text = (plan: ExportPlan, path: string) => plan.files.find((f) => f.path === path)?.content as string;
+
+  it("adds expenses.csv, oldest first in real units, and a README line", async () => {
+    const plan = await planExport({
+      entries: [entry({ id: "a", minutes: 60 })],
+      invoices: [],
+      expenses: [office, trip],
+      today: "2026-10-25",
+    });
+    expect(text(plan, "expenses.csv")).toBe(
+      "﻿Date,Kind,Category,Amount,Currency,Distance,Unit,Rate (per unit),Client,Note\r\n" +
+        `2025-11-02,Mileage,${categoryLabel("mileage")},8.61,USD,12.3,mi,0.70,,\r\n` +
+        `2026-03-04,Expense,${categoryLabel("office")},12.5,USD,,,,Acme,Paper\r\n`,
+    );
+    expect(text(plan, "README.txt")).toContain("\r\n  expenses.csv       Your expenses and mileage trips (2).\r\n");
+  });
+
+  it("leaves expenses.csv and its README line out when there are none", async () => {
+    for (const expenses of [[], undefined]) {
+      const plan = await planExport({
+        entries: [entry({ id: "a", minutes: 60 })],
+        invoices: [],
+        ...(expenses ? { expenses } : {}),
+        today: "2026-10-25",
+      });
+      expect(plan.files.map((f) => f.path)).toEqual([
+        "README.txt",
+        "all-time.xlsx",
+        "all-entries.csv",
+        "by-client/Acme.xlsx",
+      ]);
+      expect(text(plan, "README.txt")).not.toContain("expenses");
+    }
   });
 });

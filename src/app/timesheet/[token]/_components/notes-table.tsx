@@ -1,4 +1,4 @@
-import { fromISODate } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import type { ShareSnapshot } from "@/lib/timesheet-share";
 
@@ -6,8 +6,6 @@ type Note = NonNullable<ShareSnapshot["notes"]>[number];
 
 const GRID = "grid-cols-[6.5rem_minmax(0,13rem)_minmax(0,1fr)_4rem]";
 const COLS = "sm:grid-cols-[6.5rem_minmax(0,13rem)_minmax(0,1fr)_4rem]";
-const day = (iso: string) =>
-  fromISODate(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
 /**
  * "What was worked on" as a table: Date, Project, the work, Hours. The date is written once per day (later rows of the
@@ -39,7 +37,7 @@ export function NotesTable({ notes }: { notes: Note[] }) {
               <span
                 className={`font-medium tabular-nums max-sm:col-span-2 max-sm:text-xs ${firstOfDay ? "" : "max-sm:hidden sm:invisible"}`}
               >
-                {day(n.date)}
+                {formatDate(n.date, "dayWithWeekday")}
               </span>
               <span className="min-w-0 text-foreground/80 max-sm:col-start-1 max-sm:row-start-2 max-sm:text-xs">
                 <span className="font-medium text-foreground">{n.project}</span>

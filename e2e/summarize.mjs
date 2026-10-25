@@ -1,5 +1,6 @@
 // Turns the last Playwright run (e2e/report/results.json) into e2e/report/summary.md: what passed and failed, how many
-// actions each job took, the advice the page checks gave (small tap targets and the like), and where the screenshots are.
+// actions each job took, the 10 slowest tests, the advice the page checks gave (small tap targets and the like), and
+// where the screenshots are.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const file = "e2e/report/results.json";
@@ -24,7 +25,7 @@ const walk = (suite) => {
           .slice(0, 6)
           .join(" | "),
       );
-      rows.push({ project: t.projectName, title: spec.title, status, errors });
+      rows.push({ project: t.projectName, file: spec.file, title: spec.title, status, errors, duration: r?.duration });
       for (const a of t.annotations ?? []) {
         if (a.type.startsWith("advice:")) advice.set(`${t.projectName}|${a.type.slice(8)}|${a.description}`, true);
         if (a.type === "effort") effort.push({ project: t.projectName, ...JSON.parse(a.description) });
@@ -58,6 +59,13 @@ if (effort.length) {
     );
   lines.push(``);
 }
+const slowest = rows
+  .filter((r) => r.status !== "skipped" && typeof r.duration === "number")
+  .sort((a, b) => b.duration - a.duration)
+  .slice(0, 10)
+  .map((r) => `- ${(r.duration / 1000).toFixed(1)} s [${r.project}] ${r.file}: ${r.title}`);
+const slowLines = slowest.length ? [`## Slowest 10 tests`, ``, ...slowest, ``] : [];
+lines.push(...slowLines);
 if (advice.size) {
   lines.push(`## Advice from the page checks (not failures)`, ``);
   for (const k of advice.keys()) {
@@ -73,5 +81,5 @@ const shots = ["desktop", "phone"].flatMap((d) =>
 );
 lines.push(`## Screenshots (${shots.length})`, ``, ...shots.map((s) => `- ${s}`), ``);
 writeFileSync("e2e/report/summary.md", lines.join("\n"));
-console.log(lines.slice(0, 4).join("\n"));
+console.log([...lines.slice(0, 4), ...slowLines].join("\n"));
 console.log(`Full summary: e2e/report/summary.md (${failed.length} failures, ${advice.size} pieces of advice)`);
