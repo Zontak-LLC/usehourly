@@ -10,7 +10,8 @@ import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { supportNoticeDismissKey, supportNoticeText } from "@/lib/support-notice";
 
-const safe = <T,>(fn: () => T, fallback: T): T => {
+/** Runs a storage call that may throw (private mode, storage off) and falls back. Also used by Today's import hint. */
+export const safe = <T,>(fn: () => T, fallback: T): T => {
   try {
     return fn();
   } catch {
