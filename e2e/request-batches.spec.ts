@@ -30,7 +30,7 @@ test("each busy page loads all its data in a single request", async ({ page }) =
     await page.goto(url);
     await expect(page.getByRole("heading", { name: heading, level: 1 })).toBeVisible();
     await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(600); // a late second batch would show up here
+    await page.waitForTimeout(300); // nothing to wait for: a late second batch would show up here (networkidle already gave 500 ms)
     page.off("request", onRequest);
     expect(calls, `${label}: requests to the API`).toHaveLength(1);
   }

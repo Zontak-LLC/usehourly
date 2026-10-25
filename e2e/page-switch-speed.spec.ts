@@ -1,3 +1,5 @@
+import { toISODate } from "../src/lib/dates";
+import { warmRanges } from "../src/lib/warm-pages";
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
@@ -18,10 +20,16 @@ test("Week opens on pre-cached entries after Today has settled", async ({ page }
       .first(),
   ).toBeVisible();
   // A fresh load of Today (logging time marks cached entries as stale, which is right: they changed).
+  // The pre-cache waits 3 seconds and an idle moment, then asks for Week's entries with Week's own range.
+  const { week } = warmRanges(toISODate(new Date()));
+  const weekRange = `"from":"${week.from}","to":"${week.to}"`;
+  const preCached = page.waitForResponse((r) => {
+    const url = decodeURIComponent(r.url());
+    return url.includes("/api/trpc/") && url.includes("entry.list") && url.includes(weekRange);
+  });
   await page.reload();
   await expect(page.getByLabel("Time to add")).toBeVisible();
-  // The pre-cache waits 3 seconds and an idle moment; give it room to finish.
-  await page.waitForTimeout(5000);
+  await preCached;
   await page.waitForLoadState("networkidle");
 
   const asked: string[] = [];

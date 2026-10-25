@@ -30,7 +30,7 @@ test("photograph the Account sections", async ({ page }) => {
       await page.waitForLoadState("networkidle");
       for (const mode of ["light", "dark"] as const) {
         await page.evaluate((m) => document.documentElement.classList.toggle("dark", m === "dark"), mode);
-        await page.waitForTimeout(150);
+        await page.waitForTimeout(150); // the colour change after the theme switch fires no event to wait for
         await page.screenshot({
           path: `${dir}/${label}-${section}-${width}-${mode}.png`,
           caret: "initial",

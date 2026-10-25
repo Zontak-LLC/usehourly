@@ -124,7 +124,7 @@ test("a page does not scroll itself down to the add form when it opens (#179)", 
   await page.setViewportSize({ width: 1024, height: 460 }); // short: the form is below the fold
   await startFreshAccount(page, "Acme");
   await page.goto("/dashboard/week");
-  await page.waitForTimeout(500);
+  await expect(page.getByLabel("Time to add")).toBeFocused(); // the focus is what used to scroll the page
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
