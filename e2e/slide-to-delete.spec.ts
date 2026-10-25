@@ -38,7 +38,7 @@ test("slide to delete: off until the password is typed, a short drag springs bac
     await expect(slider).toHaveAttribute("aria-disabled", "true");
     await expect(page.getByText("Type your password above first.")).toBeVisible();
     await drag(page, slider, 1);
-    await page.waitForTimeout(500); // a wrongly started delete would navigate away meanwhile
+    await page.waitForTimeout(300); // nothing to wait for: a wrongly started delete would navigate away meanwhile
     await expect(page).toHaveURL(/\/dashboard\/account/);
     await expect(slider).toHaveAttribute("aria-valuenow", "0");
   });
@@ -50,7 +50,7 @@ test("slide to delete: off until the password is typed, a short drag springs bac
   await test.step("Enter in the box only moves to the slider", async () => {
     await box.press("Enter");
     await expect(slider).toBeFocused();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300); // nothing to wait for: a delete started by Enter would navigate away meanwhile
     await expect(page).toHaveURL(/\/dashboard\/account/);
   });
 
@@ -68,7 +68,7 @@ test("slide to delete: off until the password is typed, a short drag springs bac
   await test.step("a short drag springs back and deletes nothing", async () => {
     await drag(page, slider, 0.55);
     await expect(slider).toHaveAttribute("aria-valuenow", "0");
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300); // nothing to wait for: a delete started by the short drag would navigate away meanwhile
     await expect(page).toHaveURL(/\/dashboard\/account/);
     // The account is still there: its page still loads for this person.
     await page.reload();

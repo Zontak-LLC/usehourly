@@ -1,4 +1,4 @@
-import { addProjects, expect, startFreshAccount, test } from "./helpers";
+import { addProjects, expect, pastTimerLock, startFreshAccount, test } from "./helpers";
 
 /**
  * One project picker on Today (issue 218): the timer has no chooser of its own. It starts on the project picked in the
@@ -41,7 +41,7 @@ test("the timer starts on the project picked in Log time and runs inside the sam
   });
 
   await test.step("stop: the saved entry is on project B", async () => {
-    await page.waitForTimeout(1100); // past the press lock
+    await pastTimerLock(page);
     await strip.getByRole("button", { name: "Stop timer" }).click();
     await expect(strip.getByRole("group", { name: /Saved time/ })).toBeVisible();
     await expect(strip).toContainText(/Saved 0:01 · Design/);

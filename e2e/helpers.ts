@@ -9,11 +9,15 @@ import {
   type TestInfo,
 } from "@playwright/test";
 
+import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { runSql } from "./local-db";
 import { mkdirSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
+
+/** Waits out the press lock on the timer's buttons (Start, Stop and the choices after Stop), so the next press counts. */
+export const pastTimerLock = (page: Page) => page.waitForTimeout(TIMER_LOCK_MS + 100); // the lock is a ref in the timer: nothing on the page shows it
 
 /**
  * Opens an entry card's edit form (its one visible button, "Edit") and returns the card, so the form's fields and its
@@ -140,11 +144,13 @@ export const clearMail = (address: string) =>
 
 /** The newest message to `address` (optionally with a subject matching `subject`), waiting a few seconds for it. */
 export async function mailTo(address: string, subject?: RegExp): Promise<Mail> {
-  for (let i = 0; i < 30; i++) {
+  const until = Date.now() + 15_000;
+  for (;;) {
     const all = (await (await fetch(`${MAIL}/__emails`)).json()) as Mail[];
     const hit = [...all].reverse().find((m) => m.to === address && (!subject || subject.test(m.subject)));
     if (hit) return hit;
-    await new Promise((r) => setTimeout(r, 500));
+    if (Date.now() >= until) break;
+    await new Promise((r) => setTimeout(r, 100)); // the mailbox is another process: asking it again is the only way to see new mail
   }
   throw new Error(`No email to ${address}${subject ? ` matching ${subject}` : ""} arrived.`);
 }

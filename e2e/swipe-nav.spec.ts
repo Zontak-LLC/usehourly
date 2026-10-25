@@ -22,7 +22,7 @@ async function swipe(page: Page, from: [number, number], to: [number, number]) {
 
 /** The address must not change: give a wrongly started navigation time to happen before checking (a check right away passes either way). */
 async function stays(page: Page, url: RegExp) {
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(1200); // nothing to wait for: the check is that no navigation starts
   await expect(page).toHaveURL(url);
 }
 
@@ -76,7 +76,7 @@ test("a swipe that starts in a text field or a dialog does not change the page",
 });
 
 /** Touch gestures are timing-sensitive: let the page settle after one before the next (a person never swipes 10 ms apart). */
-const settle = (page: Page) => page.waitForTimeout(600);
+const settle = (page: Page) => page.waitForTimeout(600); // the gesture handler's state is not on the page to wait for
 
 /** The middle of an element on the page, to start a swipe from it. */
 async function centreOf(_page: Page, locator: ReturnType<Page["locator"]>) {
