@@ -39,7 +39,8 @@ export type EntryData = {
   project: { name: string; client: { name: string; color: string } };
 };
 
-const FIELD_LABEL = "font-mono text-[11px] text-foreground/75 uppercase tracking-widest";
+// 13px, not 11px (2026-10-26, walkthrough: the edit form's labels were too small to read at a glance).
+const FIELD_LABEL = "font-mono text-[13px] text-foreground/75 uppercase tracking-widest";
 const leadDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 const movedDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 

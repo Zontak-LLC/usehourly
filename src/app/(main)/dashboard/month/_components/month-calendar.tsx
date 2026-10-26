@@ -115,7 +115,7 @@ function DayCell({
       </span>
 
       {mins > 0 ? (
-        <span className="mt-auto text-right font-medium font-mono text-[11px] text-foreground/85 tabular-nums tracking-tight sm:text-xs">
+        <span className="mt-auto text-right font-medium font-mono text-foreground/85 text-xs tabular-nums tracking-tight">
           {formatDuration(mins)}
         </span>
       ) : state.isGap ? (
@@ -199,7 +199,7 @@ export function MonthCalendar({
         {[...weekdayNames, "Week"].map((n, i) => (
           <div
             key={n}
-            className={`border-b px-0.5 py-2 text-center font-mono text-[10px] uppercase tracking-wider ${
+            className={`border-b px-0.5 py-2 text-center font-mono text-xs uppercase tracking-wider ${
               n === "Week"
                 ? "hidden bg-band-2 text-foreground/75 sm:block"
                 : i >= 5
@@ -273,14 +273,14 @@ export function MonthCalendar({
               {/* The week's total (this month's days only), at the end of its row. */}
               <div className="hidden flex-col items-end justify-end border-b bg-band-2 p-1 sm:flex">
                 <span className="sr-only">Week of {weekOf.format(fromISODate(w[0]))}: </span>
-                <span className="font-mono font-semibold text-[11px] text-foreground/85 tabular-nums tracking-tight sm:text-xs">
+                <span className="font-mono font-semibold text-foreground/85 text-xs tabular-nums tracking-tight">
                   {/* An empty week is blank, not a bold "0:00". */}
                   {weekTotal ? formatDuration(weekTotal) : ""}
                 </span>
               </div>
               {/* On a phone there is no room for a "Week" column, so the week's total is a small line under its row. */}
               {weekTotal > 0 && (
-                <div className="col-span-7 flex justify-end gap-1 border-b px-2 py-1 text-[11px] text-foreground/70 sm:hidden">
+                <div className="col-span-7 flex justify-end gap-1 border-b px-2 py-1 text-foreground/70 text-xs sm:hidden">
                   <span className="sr-only">Week of {weekOf.format(fromISODate(w[0]))}: </span>
                   <span aria-hidden>Week</span>
                   <span className="font-mono font-semibold text-foreground/85 tabular-nums">
