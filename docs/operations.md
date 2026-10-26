@@ -102,6 +102,7 @@ Events you may see (all `level: "error"`), and what they mean:
 | `mcp_internal_error`, `mcp_tool_error`, `mcp_last_used_update_failed` | A failure inside the MCP endpoint | Same as tRPC; the caller got a plain "try again" |
 | `social_sign_in_failed`, `demo_sign_in_failed` | A GitHub/Google or sample-account sign-in failed | Check the provider's status and the secrets |
 | `prisma_warmup_failed` | The early connection attempt failed; it reconnects on the first query | Only matters if it repeats |
+| `d1_retry` (warn) | A read failed with a short-lived D1 error ("Network connection lost" and similar) and is tried again (`attempt` 1 or 2, `message`); the adapter's own "Error in performIO: %O" line comes with it | Harmless alone; many in a row mean D1 itself is in trouble (Cloudflare status, D1 metrics) |
 | `drill_started`, `drill_stopped`, `drill_expired` (warn) | STAGING only: a planned test failure began, was stopped or ran out (`fault`, `expires`) | Nothing: errors between started and stopped/expired are the drill (see "Drills") |
 | `drill_refused` (warn) | STAGING only: a call to `/api/drill` with a wrong or missing token | One is a typo; many is someone guessing (20 per 15 minutes per connection) |
 | `drill_read_failed` | STAGING only: the drill setting could not be read; the path runs normally | Harmless |

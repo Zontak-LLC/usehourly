@@ -56,6 +56,41 @@ describe("structured logging", () => {
     expect(spy).toHaveBeenCalled();
   });
 
+  it("keeps the message of an Error's cause, so a wrapped driver error is not lost", () => {
+    const err = new Error("query failed", { cause: new TypeError("D1_ERROR: Network connection lost.") });
+    expect(describeError(err).cause).toEqual({ name: "TypeError", message: "D1_ERROR: Network connection lost." });
+  });
+
+  it("keeps the message of a plain-object cause, like the D1 adapter's", () => {
+    expect(describeError(new Error("e", { cause: { message: "x" } })).cause).toEqual({
+      name: "NonError",
+      message: "x",
+    });
+    expect(describeError(new Error("e", { cause: { originalMessage: "x", kind: "sqlite" } })).cause).toEqual({
+      name: "NonError",
+      message: "x",
+    });
+    expect(describeError(new Error("e", { cause: { code: 7 } })).cause).toEqual({
+      name: "NonError",
+      message: '{"code":7}',
+    });
+  });
+
+  it("walks at most 3 causes deep and caps each cause message", () => {
+    const long = "y".repeat(2000);
+    const err = new Error("0", {
+      cause: new Error(long, { cause: new Error("2", { cause: new Error("3", { cause: new Error("4") }) }) }),
+    });
+    const cause = describeError(err).cause;
+    expect(cause?.message.length).toBe(500);
+    expect(cause?.cause?.cause).toEqual({ name: "Error", message: "3" });
+  });
+
+  it("gives the same output as before for an Error with no cause", () => {
+    const err = new RangeError("plain");
+    expect(describeError(err)).toEqual({ name: "RangeError", message: "plain", stack: err.stack });
+  });
+
   it("caps a very long stack so one failure cannot flood the log", () => {
     const err = new Error("deep");
     err.stack = `Error: deep\n${"    at frame (file.ts:1:1)\n".repeat(500)}`;

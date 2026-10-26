@@ -12,12 +12,35 @@ type Fields = Record<string, unknown>;
 
 const SECRET_KEY = /pass(word)?|secret|token|authorization|cookie|api[-_]?key|signature/i;
 const MAX_STACK = 1500;
+const MAX_CAUSE = 500;
+const CAUSE_DEPTH = 3;
 
-export function describeError(err: unknown): { name: string; message: string; stack?: string } {
+type Cause = { name: string; message: string; cause?: Cause };
+
+export function describeError(err: unknown): { name: string; message: string; stack?: string; cause?: Cause } {
   if (err instanceof Error) {
-    return { name: err.name, message: err.message, stack: err.stack?.slice(0, MAX_STACK) };
+    const cause = describeCause(err.cause, 1);
+    return { name: err.name, message: err.message, stack: err.stack?.slice(0, MAX_STACK), ...(cause ? { cause } : {}) };
   }
   return { name: "NonError", message: typeof err === "string" ? err : safeString(err) };
+}
+
+/** A `cause` (an Error, or a plain object such as a driver adapter's `{ originalMessage, kind }`), 3 levels at most. */
+function describeCause(value: unknown, depth: number): Cause | undefined {
+  if (value === undefined || value === null || depth > CAUSE_DEPTH) return undefined;
+  let out: Cause;
+  if (value instanceof Error) out = { name: value.name, message: value.message.slice(0, MAX_CAUSE) };
+  else {
+    const o = value as { originalMessage?: unknown; message?: unknown };
+    const text =
+      typeof o.originalMessage === "string" ? o.originalMessage : typeof o.message === "string" ? o.message : null;
+    out = {
+      name: "NonError",
+      message: (text ?? (typeof value === "string" ? value : safeString(value))).slice(0, MAX_CAUSE),
+    };
+  }
+  const next = describeCause((value as { cause?: unknown }).cause, depth + 1);
+  return next ? { ...out, cause: next } : out;
 }
 
 function safeString(value: unknown): string {
