@@ -509,15 +509,16 @@ function LogTimeButton({
       type="submit"
       disabled={disabled}
       // The main event: a calm amber fill with a clock-plus disc (time going in); no glow or lift since 2026-10-23. While no time is typed
-      // it is a pale amber (still the main button, only waiting: drawing audit 2026-10-23), and it comes alive when there
+      // it is a plain grey "not ready yet" button with readable words and a thin edge (2026-10-26: the pale accent looked like a
+      // normal button in light mode and almost vanished in dark), and it comes alive when there
       // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
       style={logged ? { backgroundColor: "var(--amber-fill)" } : undefined}
-      className="group relative flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white dark:text-[var(--background)] shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      className="group relative flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white dark:text-[var(--background)] shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-muted disabled:text-muted-foreground disabled:ring-1 disabled:ring-border disabled:ring-inset dark:disabled:text-muted-foreground disabled:shadow-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}
-        className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 dark:bg-background/25 dark:text-background sm:size-6"
+        className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 dark:group-disabled:bg-foreground/10 dark:group-disabled:text-muted-foreground dark:bg-background/25 dark:text-background sm:size-6"
       >
         {logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
