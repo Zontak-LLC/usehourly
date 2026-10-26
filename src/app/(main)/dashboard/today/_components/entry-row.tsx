@@ -206,7 +206,9 @@ export function EntryRow({
             <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <div className="flex min-w-0 items-center gap-2">
+            {/* On a phone the "Invoiced" / "by …" tags wrap under the name instead of squeezing it (walkthrough
+                2026-10-25: "Mo… Fabl…" beside an Invoiced tag). */}
+            <div className="flex min-w-0 items-center gap-2 max-sm:flex-wrap max-sm:gap-y-1">
               {editing ? (
                 <p className="truncate text-sm">
                   <span className="font-medium">{entry.project.name}</span>
