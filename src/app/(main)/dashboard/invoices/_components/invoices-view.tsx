@@ -71,9 +71,10 @@ export function InvoicesView() {
       title="Invoices"
       description="Every invoice you've issued, saved exactly as sent."
       actions={
-        <Button asChild size="icon" variant="outline" className="size-10">
-          <Link href="/dashboard/invoices/new" aria-label="New invoice" title="New invoice">
-            <Plus />
+        // Words with the +, like Clients' "New client" (issue 374: a lone + in the corner was a guess).
+        <Button asChild variant="outline" className="h-10 gap-1.5">
+          <Link href="/dashboard/invoices/new">
+            <Plus /> New invoice
           </Link>
         </Button>
       }

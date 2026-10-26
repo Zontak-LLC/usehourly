@@ -12,7 +12,7 @@ import {
   MAX_LIVE_DEMOS,
 } from "@/lib/demo";
 import { DEMO_QUOTAS } from "@/lib/quotas";
-import { createDemoUser } from "@/server/demo";
+import { createDemoUser, demoToday } from "@/server/demo";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -261,6 +261,34 @@ describe("a visitor tries the demo", () => {
     expect(w.invoices.every((i) => i.total_cents > 0)).toBe(true);
     // the sample invoice never carries a demo address as the seller's email
     expect(w.invoices.every((i) => JSON.parse(i.snapshot).seller.email === "you@yourbusiness.example")).toBe(true);
+  });
+
+  it("dates the sample invoice by the visitor's own day, not the server's UTC day (8:26 pm in New York)", async () => {
+    const w = world();
+    // Oct 25, 8:26 pm US Eastern is already Oct 26 on the server.
+    const made = await createDemoUser(w.prisma as never, {
+      now: new Date("2026-10-26T00:26:00Z"),
+      today: "2026-10-25",
+    });
+    expect(made.ok).toBe(true);
+    const unpaid = w.invoices.find((i) => i.number === "INV-2026-002");
+    expect(unpaid).toMatchObject({ issue_date: "2026-10-25", due_date: "2026-11-24" }); // Net 30 from the local day
+    expect(JSON.parse(unpaid?.snapshot ?? "{}")).toMatchObject({ issueDate: "2026-10-25", dueDate: "2026-11-24" });
+    expect(w.invoices.find((i) => i.number === "INV-2026-001")).toMatchObject({ issue_date: "2026-10-11" });
+    // the sample time still ends the day before the visitor's today
+    expect(w.entries.every((e) => e.date <= "2026-10-24")).toBe(true);
+  });
+
+  it("falls back to the UTC day when the browser's day is missing, not a real date, or more than a day away", () => {
+    const now = new Date("2026-10-26T00:26:00Z");
+    expect(demoToday(now)).toBe("2026-10-26");
+    expect(demoToday(now, null)).toBe("2026-10-26");
+    expect(demoToday(now, "2026-02-30")).toBe("2026-10-26");
+    expect(demoToday(now, "26/10/2026")).toBe("2026-10-26");
+    expect(demoToday(now, "2026-10-24")).toBe("2026-10-26"); // no time zone is two days behind
+    expect(demoToday(now, "2026-10-28")).toBe("2026-10-26");
+    expect(demoToday(now, "2026-10-25")).toBe("2026-10-25");
+    expect(demoToday(now, "2026-10-27")).toBe("2026-10-27"); // Kiribati is a day ahead
   });
 
   it("sweeps demos older than a day before making a new one, and never touches real accounts", async () => {

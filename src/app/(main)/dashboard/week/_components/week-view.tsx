@@ -25,8 +25,6 @@ function chooseDay(start: string, picked: string | null, today: string | null): 
   return picked && days.includes(picked) ? picked : today && days.includes(today) ? today : days[0];
 }
 
-const rangeLabel = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
-
 export function WeekView({ initialProject, initialDate }: { initialProject?: string; initialDate?: string }) {
   const [today, setToday] = useState<string | null>(null);
   const [start, setStart] = useState<string | null>(null);
@@ -97,12 +95,8 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
     <PageShell
       nav="week"
       title="Weekly timesheet"
-      description={
-        <>
-          {rangeLabel.format(fromISODate(start))} – {rangeLabel.format(fromISODate(end))}
-          <span className="max-sm:hidden"> · pick a day to see and change its time</span>
-        </>
-      }
+      // The dates are in the toolbar right under it ("‹ Oct 19 – Oct 25 ›"), so not here as well (walkthrough 2026-10-25).
+      description="Pick a day to see and change its time."
       descriptionOnPhone
       onSwipe={feature("swipe") ? (direction) => moveDay(direction === "left" ? 1 : -1) : undefined}
     >

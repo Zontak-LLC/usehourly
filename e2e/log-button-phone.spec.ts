@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 import { startDemo } from "./helpers";
 
 // On a phone the sample's four project pills pushed Log time under the bottom menu at load (2026-10-25). The button now
-// stays just above the menu until the page reaches its place in the form.
-test("on a phone Today's Log time button is in view at load, above the menu, and back in the form at the end", async ({
+// sits right under the quick times: in view at load, and covering nothing (a floating button hid the project pills).
+test("on a phone Today's Log time button is in view at load, under the quick times, and hides no project", async ({
   page,
 }, info) => {
   test.skip(info.project.name !== "phone", "a phone check");
@@ -27,14 +27,25 @@ test("on a phone Today's Log time button is in view at load, above the menu, and
   });
   expect(onTop).toBe(true);
 
-  // it still works from there: a quick time, then Log time
+  // under the quick times, above the projects
+  const chip = await page.getByRole("button", { name: "1 hour", exact: true }).boundingBox();
+  const firstPill = page.getByRole("radio").first();
+  const pill = await firstPill.boundingBox();
+  expect(chip && pill && chip.y < button.y && button.y < pill.y).toBe(true);
+
+  // every project pill is reachable: scrolled into view, a tap on its middle lands on the pill itself
+  for (const radio of await page.getByRole("radio").all()) {
+    const free = await radio.evaluate((el) => {
+      el.scrollIntoView({ block: "center" }); // the bottom menu covers the screen's last 90 px on purpose
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return hit !== null && el.contains(hit);
+    });
+    expect(free, `${await radio.textContent()} is not covered`).toBe(true);
+  }
+
+  // it still works: a quick time, then Log time
   await page.getByRole("button", { name: "1 hour", exact: true }).click();
   await log.click();
   await expect(page.getByText("Logged 1:00")).toBeVisible();
-
-  // scrolled to the bottom it sits back in its place, under the note box (after a save its label names the entry)
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  const description = await page.locator("form textarea").first().boundingBox();
-  const settled = await log.boundingBox();
-  expect(description && settled && settled.y > description.y).toBe(true);
 });

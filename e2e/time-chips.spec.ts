@@ -1,6 +1,7 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
-test("tapping a time chip again adds its time again; typing or another chip starts over", async ({ page }) => {
+// Every chip adds its time to what is in the box (2026-10-25): the same chip again, another chip, or after typing.
+test("every time chip adds its time to what is in the box, also after typing", async ({ page }) => {
   await startFreshAccount(page);
   const time = page.getByLabel("Time to add");
   const chip = (name: string) => page.getByRole("button", { name, exact: true });
@@ -9,21 +10,15 @@ test("tapping a time chip again adds its time again; typing or another chip star
   await expect(time).toHaveValue("2h");
   await chip("2 hours").click();
   await expect(time).toHaveValue("4h"); // 2 hours, again = 4 hours
-  await chip("2 hours").click();
-  await expect(time).toHaveValue("6h");
 
-  await chip("30 min").click(); // another chip starts over
-  await expect(time).toHaveValue("30m");
-  await chip("30 min").click();
-  await expect(time).toHaveValue("1h");
+  await chip("30 min").click(); // another chip adds too
+  await expect(time).toHaveValue("4h30");
 
-  await time.fill("1:30"); // typing starts over: the chip fills, it does not add to what was typed
+  await time.fill("1:30"); // after typing, a chip adds to the typed time
   await chip("1 hour").click();
-  await expect(time).toHaveValue("1h");
-  await chip("1 hour").click();
-  await expect(time).toHaveValue("2h");
+  await expect(time).toHaveValue("2h30");
 
-  // the doubled time is what is saved
+  // the added-up time is what is saved
   await page.getByRole("button", { name: /^Log time/ }).click();
-  await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:00 this day");
+  await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:30 this day");
 });

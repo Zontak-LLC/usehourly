@@ -30,6 +30,22 @@ test("time field: a chip's token flies in, the value is ready at once, and there
     await expect(page.getByRole("navigation", { name: "Days" })).toContainText("4:00 this day");
     await expect(time).toHaveValue("");
   });
+
+  // QA 2026-10-25: a different chip used to replace the value ("+ 1 hour" then "+ 30 min" saved 0:30).
+  await test.step("different chips add up: + 1 hour then + 30 min logs 1:30", async () => {
+    await chip("1 hour").click();
+    await chip("30 min").click();
+    await expect(time).toHaveValue("1h30");
+    await expect(page.getByRole("button", { name: /^Log time/ })).toBeEnabled(); // the 4:00 above has been answered
+    await time.press("Enter");
+    await expect(page.getByRole("navigation", { name: "Days" })).toContainText("5:30 this day");
+  });
+
+  await test.step("a chip adds to a typed time: 1:15 then + 30 min is 1:45", async () => {
+    await time.fill("1:15");
+    await chip("30 min").click();
+    await expect(time).toHaveValue("1h45");
+  });
 });
 
 test("with reduced motion the chip sets the value and nothing flies", async ({ page }) => {

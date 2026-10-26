@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { addDays, isRealDate } from "@/lib/dates";
 import {
   buildDemoData,
   DEMO_EMAIL_DOMAIN,
@@ -21,14 +22,25 @@ export type DemoResult =
 const INSERT_GROUP = 8;
 
 /**
+ * The visitor's own day, sent by the browser (Workers run in UTC, so an evening in America is
+ * already tomorrow there). It must be a real date within a day of the UTC day, as every time zone
+ * is; anything else, or nothing, falls back to the UTC day.
+ */
+export function demoToday(now: Date, sent?: string | null): string {
+  const utcDay = now.toISOString().slice(0, 10);
+  if (!sent || !isRealDate(sent)) return utcDay;
+  return sent >= addDays(utcDay, -1) && sent <= addDays(utcDay, 1) ? sent : utcDay;
+}
+
+/**
  * Makes a demo account with sample clients, projects, entries and two invoices (the invoices go
  * through the real invoice code, so they are exactly what a member would get). Old demos are swept
  * first, so no scheduled job is needed. Refuses when one connection asks too often or too many
- * demos are alive at once.
+ * demos are alive at once. `today` is the visitor's own day from the browser.
  */
 export async function createDemoUser(
   prisma: PrismaClient,
-  opts: { ip?: string | null; now?: Date } = {},
+  opts: { ip?: string | null; now?: Date; today?: string | null } = {},
 ): Promise<DemoResult> {
   const now = opts.now ?? new Date();
   if (opts.ip) {
@@ -66,7 +78,7 @@ export async function createDemoUser(
   });
 
   try {
-    await seedDemo(prisma, user.id, now);
+    await seedDemo(prisma, user.id, demoToday(now, opts.today));
   } catch (err) {
     // Never leave a half-made demo behind.
     await prisma.authUser.deleteMany({ where: { id: user.id } });
@@ -78,8 +90,9 @@ export async function createDemoUser(
   };
 }
 
-async function seedDemo(prisma: PrismaClient, userId: string, now: Date) {
-  const data = buildDemoData(now.toISOString().slice(0, 10));
+async function seedDemo(prisma: PrismaClient, userId: string, todayIso: string) {
+  // The sample entries end and the sample invoice is issued on the visitor's day, not the server's.
+  const data = buildDemoData(todayIso);
 
   const clientIds = new Map<string, string>();
   for (const c of data.clients) {
