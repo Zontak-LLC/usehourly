@@ -1,5 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { projectShades } from "@/lib/project-shade";
 import { trpc } from "@/lib/trpc";
 
 /** {projectId: logo data URL}. One shared, cached query — logos never ride along with entries. */
@@ -8,7 +11,17 @@ export function useProjectLogos() {
 }
 
 /**
- * A project's logo if it has one, otherwise the client's color dot. Small and fixed-size so
+ * `shade(projectId, clientColor)`: the project's own shade of its client's colour (lib/project-shade.ts), read from the
+ * cached client list every page already loads; the client's colour until that list arrives or for a project not in it.
+ */
+export function useProjectShade() {
+  const clients = trpc.clients.list.useQuery();
+  const shades = useMemo(() => projectShades(clients.data ?? []), [clients.data]);
+  return (projectId: string, clientColor: string) => shades.get(projectId) ?? clientColor;
+}
+
+/**
+ * A project's logo if it has one, otherwise its colour dot (a shade of the client's colour). Small and fixed-size so
  * rows don't shift when a logo is added.
  */
 export function ProjectMark({
@@ -22,6 +35,7 @@ export function ProjectMark({
   size?: number;
   logos: Record<string, string>;
 }) {
+  const shade = useProjectShade();
   const logo = logos[projectId];
   if (logo) {
     return (
@@ -37,6 +51,9 @@ export function ProjectMark({
     );
   }
   return (
-    <span className="inline-block shrink-0 rounded-full" style={{ width: 10, height: 10, backgroundColor: color }} />
+    <span
+      className="inline-block shrink-0 rounded-full"
+      style={{ width: 10, height: 10, backgroundColor: shade(projectId, color) }}
+    />
   );
 }

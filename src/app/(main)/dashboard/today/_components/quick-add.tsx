@@ -23,6 +23,7 @@ import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
 import { pendingEntry } from "@/lib/optimistic-entries";
+import { pickableProjects } from "@/lib/project-shade";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -378,9 +379,7 @@ export function QuickAdd({
           ) : (
             <ProjectPicker
               labelledBy={projectLabel}
-              projects={(clients.data ?? []).flatMap((c) =>
-                c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name, color: c.color })),
-              )}
+              projects={pickableProjects(clients.data ?? [])}
               value={projectId}
               onChange={remember}
               onPicked={() => durationRef.current?.focus({ preventScroll: true })}
