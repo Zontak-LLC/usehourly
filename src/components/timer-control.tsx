@@ -5,11 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, Square } from "lucide-react";
 import { toast } from "sonner";
 
+import { useProjectShade } from "@/components/project-logo";
 import { TimeTicket } from "@/components/time-ticket";
 import { STOPPED_EVENT, type Stopped, TIMER_LOCK_MS, timerParts, useStopTimer } from "@/components/timer-panel";
 import { playClick } from "@/lib/click-sound";
 import { formatDuration } from "@/lib/duration";
 import { NOTE_MAX } from "@/lib/notes";
+import { pickableProjects } from "@/lib/project-shade";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -124,9 +126,7 @@ export function useTodayTimer({
   const entry = running.data?.started_at ? running.data : null;
   const runningNote = useRunningNote(entry);
 
-  const projects: TimerProject[] = (clients.data ?? []).flatMap((c) =>
-    c.projects.map((p) => ({ id: p.id, name: p.name, clientName: c.name, color: c.color })),
-  );
+  const projects: TimerProject[] = pickableProjects(clients.data ?? []);
   // One project picker on Today (issue 218): the timer always starts on the project picked in the Log time form.
   const timerProjectId = projectId;
   const timerProject = projects.find((p) => p.id === timerProjectId) ?? null;
@@ -292,6 +292,7 @@ const BUTTON =
 
 /** The project the running timer is on, with the client's colour (the Log time form picks it: one picker on Today). */
 function ProjectChip({ timer }: { timer: TodayTimer }) {
+  const shade = useProjectShade();
   const running = timer.entry;
   if (!running) return null;
   return (
@@ -300,7 +301,7 @@ function ProjectChip({ timer }: { timer: TodayTimer }) {
       <span
         aria-hidden
         className="size-2.5 shrink-0 rounded-full"
-        style={{ background: running.project.client.color }}
+        style={{ background: shade(running.project_id, running.project.client.color) }}
       />
       <span className="min-w-0 truncate">
         {running.project.name}

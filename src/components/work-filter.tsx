@@ -2,6 +2,7 @@
 
 import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
+import { useProjectShade } from "@/components/project-logo";
 import { SegmentedSwitch } from "@/components/segmented-switch";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
@@ -20,6 +21,7 @@ export function WorkFilter({
   projectId: string;
   onProjectId: (id: string) => void;
 }) {
+  const shade = useProjectShade();
   const chip = (on: boolean) =>
     `inline-flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-sm ring-1 transition-colors ${
       on ? "bg-foreground/10 font-semibold ring-2 ring-amber" : "bg-card ring-foreground/15 hover:bg-muted"
@@ -47,7 +49,11 @@ export function WorkFilter({
             onClick={() => onProjectId(on ? "" : p.projectId)}
             className={chip(on)}
           >
-            <span aria-hidden className="size-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+            <span
+              aria-hidden
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: shade(p.projectId, p.color) }}
+            />
             {p.project}
             <span className="font-mono text-foreground/70 text-xs tabular-nums">{formatDuration(p.total)}</span>
           </button>
@@ -90,11 +96,16 @@ export function ProjectGroups({
   editing: ReadonlySet<string>;
   onEditDone: (id: string) => void;
 }) {
+  const shade = useProjectShade();
   return groups.map((g) => (
     <section key={g.projectId} aria-label={`${g.project} · ${g.client}`} className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-3 px-1">
         <h3 className="flex min-w-0 items-center gap-2 font-medium text-sm">
-          <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: g.color }} />
+          <span
+            aria-hidden
+            className="size-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: shade(g.projectId, g.color) }}
+          />
           <span className="truncate">
             {g.project} <span className="font-normal text-muted-foreground">· {g.client}</span>
           </span>

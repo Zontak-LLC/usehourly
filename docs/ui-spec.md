@@ -28,7 +28,7 @@ Look at the real thing first: the pages are the reference, this file is the expl
 | **Ocean blue** `PALETTE.money.waiting` (violet until 2026-10-24; no purple anywhere now) | Invoices: waiting part of the bar, Unpaid pill | money expected |
 | **Coral** `PALETTE.money.late` | Invoices: late, the overdue row stripe | money overdue |
 | **Soft grey** `PALETTE.soft` | every other bar and line (week bars, Month day lines, By project bars, Year bars) | "has time", nothing more |
-| **Project colour** (the user's own) | a small dot beside a project or client name, never a bar | which project |
+| **Project colour** (the client's own colour; each project a shade of it, `src/lib/project-shade.ts`, 2026-10-26) | a small dot beside a project or client name, never a bar | which project (and whose) |
 | **Green** (`success`) | check icons and the word Paid | done, confirmed |
 | **Red** (`destructive`) | delete, stop, errors | remove, problem |
 
