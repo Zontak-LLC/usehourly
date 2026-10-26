@@ -304,18 +304,10 @@ export function EntryRow({
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${uid}-date`} className={FIELD_LABEL}>
-              Day
-            </label>
-            <Input
-              id={`${uid}-date`}
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-11 font-mono text-base tabular-nums"
-            />
-            <label htmlFor={`${uid}-time`} className={`${FIELD_LABEL} mt-2.5`}>
+          {/* Time first, then Day, and on a phone this column comes before Project and Description: the time is what
+              people change most (walkthrough 2026-10-25: it was the last field, under Day). */}
+          <div className="flex flex-col gap-1.5 max-lg:order-first">
+            <label htmlFor={`${uid}-time`} className={FIELD_LABEL}>
               Time
             </label>
             <Input
@@ -344,6 +336,16 @@ export function EntryRow({
                 </Button>
               ))}
             </div>
+            <label htmlFor={`${uid}-date`} className={`${FIELD_LABEL} mt-2.5`}>
+              Day
+            </label>
+            <Input
+              id={`${uid}-date`}
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-11 font-mono text-base tabular-nums"
+            />
           </div>
           {entry.invoice_id && (
             <p className="text-muted-foreground text-sm lg:col-span-2">
