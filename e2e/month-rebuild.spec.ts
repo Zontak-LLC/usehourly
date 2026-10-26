@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { auditPage, expect, startFreshAccount, test, trpc } from "./helpers";
+import { auditPage, expect, shownMonth, startFreshAccount, test, trpc } from "./helpers";
 
 /**
  * Month (2026-10-24 rebuild): the calendar on the left, and on the right one day (‹ › steps, its entries, Log time behind
@@ -48,10 +48,10 @@ test("a picked day shows on the right, ‹ › step days across the month's edge
     await expect(dayCard(page, "Tuesday, March 31")).toBeVisible();
     await page.getByRole("button", { name: "Next day" }).click();
     await expect(page).toHaveURL(/month=2026-04.*date=2026-04-01|date=2026-04-01.*month=2026-04/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("April 2026");
+    await expect(shownMonth(page)).toHaveText("April 2026");
     await expect(cell(page, "2026-04-01")).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Previous day" }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("March 2026");
+    await expect(shownMonth(page)).toHaveText("March 2026");
     await expect(dayCard(page, "Tuesday, March 31")).toContainText("Gamma work");
   });
 
