@@ -40,3 +40,13 @@ export function formatDuration(minutes: number): string {
 export function formatDecimalHours(minutes: number): string {
   return (minutes / 60).toFixed(2);
 }
+
+/**
+ * What a "+" quick-time chip does to the time box: it adds its minutes to what is there ("1:15" + 30 = 105).
+ * An empty box starts at 0. A box that cannot be read also starts at 0, so the chip's own amount replaces the bad text.
+ * `from` is where the reward roll starts, `to` is the new value.
+ */
+export function addChipTime(current: string, chipMinutes: number): { from: number; to: number } {
+  const from = parseDuration(current) ?? 0;
+  return { from, to: from + chipMinutes };
+}

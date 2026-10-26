@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { formatDate, monthBounds } from "@/lib/dates";
-import { formatDuration, parseDuration } from "@/lib/duration";
+import { addChipTime, formatDuration, parseDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
@@ -92,8 +92,6 @@ export function QuickAdd({
   const [followUp, setFollowUp] = useState<FollowUp | null>(null);
   const saveNote = useSaveNote();
   const followUpDone = useRef<string | null>(null);
-  // Tapping the same chip again adds its time again (2 hours, again = 4 hours); typing or another chip starts over.
-  const [chipRun, setChipRun] = useState<{ minutes: number; taps: number } | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
   const logIconRef = useRef<HTMLSpanElement>(null);
   // The reward for adding time: the field's value and the day total roll up after a chip (decoration only: the real
@@ -165,7 +163,6 @@ export function QuickAdd({
       setLogged(formatDuration(parsed));
       fieldRoll.stop();
       dayRoll.stop();
-      setChipRun(null);
       setDuration("");
       setNote("");
       durationRef.current?.focus();
@@ -306,7 +303,6 @@ export function QuickAdd({
               setDuration(e.target.value);
               if (!note.trim()) setFollowUp(null); // the next time is on its way: the box is for it now
               setLogged(null);
-              setChipRun(null);
               fieldRoll.stop();
               dayRoll.stop();
             }}
@@ -345,12 +341,8 @@ export function QuickAdd({
                 aria-pressed={parsed === c.minutes}
                 className="h-9 flex-1 gap-1 rounded-full px-3 text-sm sm:flex-none"
                 onClick={(e) => {
-                  // Same chip, field still untouched since the last tap: add the chip's time once more.
-                  const again = chipRun?.minutes === c.minutes && parsed === c.minutes * chipRun.taps;
-                  const taps = again ? chipRun.taps + 1 : 1;
-                  const from = again ? c.minutes * chipRun.taps : 0;
-                  const to = c.minutes * taps;
-                  setChipRun({ minutes: c.minutes, taps });
+                  // Every chip adds its time to what is in the box ("+ 1 hour" then "+ 30 min" = 1:30).
+                  const { from, to } = addChipTime(duration, c.minutes);
                   if (!note.trim()) setFollowUp(null);
                   setLogged(null);
                   setDuration(chipText(to));
