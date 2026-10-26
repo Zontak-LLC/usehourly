@@ -10,6 +10,8 @@ import { ChevronDown, Search } from "lucide-react";
 import { GuideBody } from "@/components/guide/guide-body";
 import { searchGuide } from "@/lib/guide-search";
 
+import { AskQuestion } from "./ask-question";
+
 export type HelpItem = {
   id: string;
   question: string;
@@ -27,9 +29,9 @@ const words = (s: string) => s.toLowerCase().match(/[a-z0-9$%']+/g) ?? [];
 /**
  * The Help page: one search box first, then the common questions. Every answer opens in place; searching finds the
  * rest. `?a=<id>` (or an old `#anchor`) opens one answer, `?q=<words>` fills the search. Runs in the browser, so it
- * answers as you type.
+ * answers as you type. `signedIn` only decides whether "Still stuck?" offers the question form or a sign-in link.
  */
-export function HelpCenter({ answers }: { answers: HelpItem[] }) {
+export function HelpCenter({ answers, signedIn }: { answers: HelpItem[]; signedIn: boolean }) {
   const params = useSearchParams();
   const asked = params.get("a");
   const typed = params.get("q");
@@ -169,20 +171,7 @@ export function HelpCenter({ answers }: { answers: HelpItem[] }) {
         )}
       </section>
 
-      <aside className="flex flex-col gap-1 rounded-3xl bg-muted/60 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div>
-          <p className="font-semibold">Still stuck?</p>
-          <p className="text-muted-foreground text-sm">Tell us in plain words what you did and what you expected.</p>
-        </div>
-        <a
-          href="https://github.com/Zontak-LLC/usehourly/issues/new"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-flex min-h-10 shrink-0 items-center self-start rounded-full border bg-card px-4 font-medium text-sm hover:bg-background sm:mt-0 sm:self-auto"
-        >
-          Ask a question
-        </a>
-      </aside>
+      <AskQuestion signedIn={signedIn} />
     </div>
   );
 }

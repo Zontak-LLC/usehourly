@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Help: ask a question without GitHub (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 375. The "Still stuck?" aside at the foot of /help (src/app/help/help-center.tsx). It keeps its look
+  (rounded-3xl, bg-muted/60, p-5) and title; the GitHub link becomes a button that opens a small form IN the aside.
+  Colours are the app's tokens from src/app/globals.css (light and dark): --background, --foreground, --muted, --card,
+  --border, --destructive, --amber (the main button, white words). No new colour, no new box inside the aside.
+-->
+<style>
+  .light {
+    --background: #eef2f7; --foreground: #1c2434; --card: #ffffff; --border: #dbe2ec;
+    --muted: #e3e9f1; --muted-fg: #586377; --destructive: #d04a3a; --amber: #2563c9; --on-amber: #ffffff;
+  }
+  .dark {
+    --background: #131a26; --foreground: #e6ebf3; --card: #1a2232; --border: #2a3447;
+    --muted: #222b3c; --muted-fg: #9ba7ba; --destructive: #f07a6a; --amber: #7fa6ef; --on-amber: #131a26;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: #eef2f7; color: #1c2434;
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; max-width: 75ch; color: #586377; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 32px 0 10px; color: #586377; }
+  .theme { padding: 20px; border-radius: 16px; background: var(--background); color: var(--foreground); margin-bottom: 24px; }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .frame { display: flex; flex-direction: column; gap: 6px; }
+  .label { font: 11px/1 ui-monospace, monospace; color: var(--muted-fg); }
+  .desktop { width: 672px; max-width: 100%; }
+  .phone { width: 343px; }
+  /* The aside: rounded-3xl bg-muted/60 p-5; closed = a row from 640px, a column on a phone. */
+  .aside { border-radius: 24px; background: color-mix(in oklab, var(--muted) 60%, transparent); padding: 20px;
+    display: flex; flex-direction: column; gap: 4px; }
+  .desktop .aside.row { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+  .aside p { margin: 0; }
+  .title { font-weight: 600; }
+  .sub { color: var(--muted-fg); font-size: 14px; }
+  .pill { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--card); color: var(--foreground); font: inherit; font-weight: 500;
+    align-self: flex-start; margin-top: 8px; text-decoration: none; white-space: nowrap; }
+  .desktop .row .pill { margin-top: 0; align-self: auto; }
+  .form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .form label { display: flex; flex-direction: column; gap: 8px; font-weight: 500; font-size: 14px; }
+  textarea { width: 100%; min-height: 116px; resize: none; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--foreground); padding: 8px 12px; font: inherit; }
+  textarea:focus { outline: 3px solid color-mix(in oklab, var(--foreground) 25%, transparent); }
+  .count { color: var(--muted-fg); font-size: 12px; text-align: right; }
+  .alert { color: var(--destructive); font-size: 14px; }
+  .alert a, .thanks a { color: inherit; }
+  .buttons { display: flex; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 12px; border: 0;
+    font: inherit; font-weight: 600; background: var(--amber); color: var(--on-amber); }
+  .btn[disabled] { opacity: .5; }
+  .ghost { background: transparent; color: var(--foreground); font-weight: 500; }
+  .thanks { margin-top: 12px; font-weight: 500; }
+</style>
+</head>
+<body>
+<h1>Help: ask a question without GitHub</h1>
+<p class="note">The "Still stuck?" aside at the foot of /help. "Ask a question" no longer opens GitHub (most people have
+no GitHub account). It opens a short form in the same aside: one text box, Send and Cancel. The question is emailed to
+admin@zontakllc.com with reply-to set to the person's address. The page never shows the person's name or email (the
+service worker keeps /help across sign-out). Signed-out visitors get a sign-in link instead of the form.</p>
+
+<template id="closed"><div class="aside row">
+  <div><p class="title">Still stuck?</p><p class="sub">Tell us in plain words what you did and what you expected.</p></div>
+  <button class="pill" type="button">Ask a question</button>
+</div></template>
+
+<template id="open"><div class="aside">
+  <p class="title">Still stuck?</p><p class="sub">Tell us in plain words what you did and what you expected.</p>
+  <div class="form">
+    <label>What did you do, and what did you expect?
+      <textarea rows="5">I logged 2h on Monday and Week shows 0:00. I expected 2:00 on Monday.</textarea></label>
+    <div class="buttons"><button class="btn" type="button">Send</button><button class="btn ghost" type="button">Cancel</button></div>
+  </div>
+</div></template>
+
+<template id="near-limit"><div class="aside">
+  <p class="title">Still stuck?</p><p class="sub">Tell us in plain words what you did and what you expected.</p>
+  <div class="form">
+    <label>What did you do, and what did you expect?
+      <textarea rows="5">(a long question…)</textarea></label>
+    <p class="count">1,850 of 2,000</p>
+    <div class="buttons"><button class="btn" type="button" disabled>Sending…</button><button class="btn ghost" type="button">Cancel</button></div>
+  </div>
+</div></template>
+
+<template id="sent"><div class="aside">
+  <p class="title">Still stuck?</p><p class="sub">Tell us in plain words what you did and what you expected.</p>
+  <p class="thanks" role="status">Thanks, we got it. We'll answer by email.</p>
+  <button class="pill" type="button">Ask another question</button>
+</div></template>
+
+<template id="error"><div class="aside">
+  <p class="title">Still stuck?</p><p class="sub">Tell us in plain words what you did and what you expected.</p>
+  <div class="form">
+    <label>What did you do, and what did you expect?
+      <textarea rows="5">I logged 2h on Monday and Week shows 0:00.</textarea></label>
+    <p class="alert" role="alert">Couldn't send it right now. Please try again in a minute, or write to <a href="mailto:admin@zontakllc.com">admin@zontakllc.com</a>.</p>
+    <div class="buttons"><button class="btn" type="button">Send</button><button class="btn ghost" type="button">Cancel</button></div>
+  </div>
+</div></template>
+
+<template id="signed-out"><div class="aside row">
+  <div><p class="title">Still stuck?</p><p class="sub">Tell us in plain words what you did and what you expected.</p></div>
+  <a class="pill" href="/auth/v2/login?next=/help">Sign in to ask a question</a>
+</div></template>
+
+<div id="out"></div>
+<script>
+  const states = [
+    ["closed", "Closed (signed in): the same pill, now a button"],
+    ["open", "Open: focus in the box; Escape or Cancel closes and keeps the text"],
+    ["near-limit", "From 1,800 characters the count shows; while sending the button says Sending…"],
+    ["sent", "Sent: role=status, and a way to ask another"],
+    ["error", "Error: role=alert under the box, the text stays"],
+    ["signed-out", "Signed out: a link to /auth/v2/login?next=/help, no form"],
+  ];
+  const out = document.getElementById("out");
+  for (const theme of ["light", "dark"]) {
+    const box = document.createElement("section");
+    box.className = `theme ${theme}`;
+    box.innerHTML = `<h2>${theme}</h2>`;
+    for (const [id, label] of states) {
+      const row = document.createElement("div");
+      row.className = "frames";
+      for (const size of ["desktop", "phone"]) {
+        const frame = document.createElement("div");
+        frame.className = `frame ${size}`;
+        frame.innerHTML = `<span class="label">${size} · ${label}</span>`;
+        frame.append(document.getElementById(id).content.cloneNode(true));
+        row.append(frame);
+      }
+      box.append(row);
+    }
+    out.append(box);
+  }
+</script>
+</body>
+</html>

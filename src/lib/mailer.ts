@@ -126,6 +126,40 @@ export function timesheetApprovedMessage(
 }
 
 /**
+ * A question sent from the Help page to the support address. The sender's name and address come from their account row
+ * (never from the browser); a reply goes straight back to them.
+ */
+export function helpQuestionMessage(
+  to: string,
+  d: { userId: string; name: string | null; email: string; confirmed: boolean; question: string },
+): MailMessage {
+  const who = oneLine(d.name || d.email, 80) || d.email;
+  const mail = renderEmail({
+    title: "A question from the Help page",
+    greeting: "Hi,",
+    blocks: [
+      `${who} asked a question on the Help page:`,
+      { quote: d.question },
+      {
+        rows: [
+          ["Name", oneLine(d.name ?? "", 80) || "(none)"],
+          ["Email", `${d.email}${d.confirmed ? "" : " (not confirmed)"}`],
+          ["Account id", d.userId],
+        ],
+      },
+      "Reply to this email to answer them.",
+    ],
+  });
+  return {
+    to,
+    subject: `UseHourly question from ${who}`,
+    ...mail,
+    fromName: `${who} via UseHourly`,
+    replyTo: d.email,
+  };
+}
+
+/**
  * An invoice sent to a client, or a reminder that it is overdue. The freelancer's own words are quoted under a fixed lead
  * ("A note from <name>"), so they cannot pass as UseHourly speaking. Every message carries a one-click way to stop them.
  */

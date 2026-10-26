@@ -205,18 +205,27 @@ export type Mail = {
 export const clearMail = (address: string) =>
   fetch(`${MAIL}/__emails?to=${encodeURIComponent(address)}`, { method: "DELETE" });
 
-/** The newest message to `address` (optionally with a subject matching `subject`), waiting a few seconds for it. */
-export async function mailTo(address: string, subject?: RegExp): Promise<Mail> {
+/** Every message the mock mailbox holds right now (all specs' mail: filter it by something only your test owns). */
+export const allMail = async () => (await (await fetch(`${MAIL}/__emails`)).json()) as Mail[];
+
+/** The newest message that `match` accepts, waiting a few seconds for it; `what` names it in the failure. */
+export async function mailWhere(match: (m: Mail) => boolean, what: string): Promise<Mail> {
   const until = Date.now() + 15_000;
   for (;;) {
-    const all = (await (await fetch(`${MAIL}/__emails`)).json()) as Mail[];
-    const hit = [...all].reverse().find((m) => m.to === address && (!subject || subject.test(m.subject)));
+    const hit = [...(await allMail())].reverse().find(match);
     if (hit) return hit;
     if (Date.now() >= until) break;
     await new Promise((r) => setTimeout(r, 100)); // the mailbox is another process: asking it again is the only way to see new mail
   }
-  throw new Error(`No email to ${address}${subject ? ` matching ${subject}` : ""} arrived.`);
+  throw new Error(`No email ${what} arrived.`);
 }
+
+/** The newest message to `address` (optionally with a subject matching `subject`), waiting a few seconds for it. */
+export const mailTo = (address: string, subject?: RegExp): Promise<Mail> =>
+  mailWhere(
+    (m) => m.to === address && (!subject || subject.test(m.subject)),
+    `to ${address}${subject ? ` matching ${subject}` : ""}`,
+  );
 
 /** The first link in a message that contains `part`, e.g. "/verify-email?token=". */
 export function linkIn(text: string, part: string): string {
