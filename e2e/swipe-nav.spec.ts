@@ -120,7 +120,8 @@ test("on Month a swipe on the calendar moves a month", async ({ page }, info) =>
   await startFreshAccount(page);
   const w = page.viewportSize()?.width ?? 412;
   await page.goto("/dashboard/month");
-  const title = page.getByRole("heading", { level: 1 });
+  // The month's name is on the calendar's stepper, between its two arrows.
+  const title = page.getByRole("button", { name: "Previous month" }).locator("xpath=following-sibling::*[1]");
   const thisMonth = await title.innerText();
   const cell = page.getByRole("button", { name: /^\d{4}-\d\d-\d\d: / }).nth(10);
   const { y } = await centreOf(page, cell);
