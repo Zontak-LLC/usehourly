@@ -1,5 +1,7 @@
 import { FEATURES } from "../src/lib/features";
-import { expect, startFreshAccount, test } from "./helpers";
+import { allMail, expect, mailWhere, signUpReady, startFreshAccount, test } from "./helpers";
+
+const GITHUB_ISSUES = 'a[href*="github.com/Zontak-LLC/usehourly/issues"]';
 
 /** The Help page (issue #216): one search box, six common questions that open in place, and old guide links that still land. */
 test("a visitor finds an answer by searching, opens it in place, and old guide links still land", async ({ page }) => {
@@ -120,4 +122,126 @@ test("the app links to Help from the account menu and the side menu, and no ? bu
     await expect(page.getByRole("menuitem", { name: "Which one do I use?" })).toHaveCount(0);
     await page.keyboard.press("Escape");
   });
+});
+
+/** "Ask a question" (issue 375): a form on Help that emails support, instead of a GitHub link most people cannot use. */
+const QUESTION = "I logged 2h on Monday and Week shows 0:00";
+const LABEL = "What did you do, and what did you expect?";
+
+/** A tRPC error answer for help.ask, the shape the server sends. */
+const refuse = (code: string, message: string) => ({
+  status: 200,
+  contentType: "application/json",
+  body: JSON.stringify([{ error: { message, code: -32600, data: { code, httpStatus: 400 } } }]),
+});
+
+test("a signed-in person asks a question on Help, and it is emailed to support with replies going to them", async ({
+  page,
+}) => {
+  const user = await signUpReady(page);
+  await page.goto("/help");
+  const aside = page.getByRole("complementary", { name: "Still stuck?" });
+  const box = aside.getByRole("textbox", { name: LABEL });
+  const send = aside.getByRole("button", { name: "Send" });
+  await expect(page.locator(GITHUB_ISSUES)).toHaveCount(0);
+
+  await test.step("the button opens the form in place, with the cursor in the box; Send is off while it is empty", async () => {
+    await aside.getByRole("button", { name: "Ask a question" }).click();
+    await expect(box).toBeFocused();
+    await expect(send).toBeDisabled();
+    await box.fill("   ");
+    await expect(send).toBeDisabled();
+  });
+
+  await test.step("the count shows from 1,800 characters, and the box takes no more than 2,000", async () => {
+    await box.fill("x".repeat(1799));
+    await expect(aside.getByText(/ of 2,000$/)).toHaveCount(0);
+    await box.fill("x".repeat(1850));
+    await expect(aside.getByText("1,850 of 2,000")).toBeVisible();
+    await box.fill("x".repeat(1999));
+    await box.pressSequentially("abc");
+    await expect(box).toHaveValue(`${"x".repeat(1999)}a`);
+    await expect(aside.getByText("2,000 of 2,000")).toBeVisible();
+  });
+
+  await test.step("Escape closes the form and keeps the text while the page stays open", async () => {
+    await box.fill(QUESTION);
+    await box.press("Escape");
+    await expect(box).toHaveCount(0);
+    await aside.getByRole("button", { name: "Ask a question" }).click();
+    await expect(box).toHaveValue(QUESTION);
+  });
+
+  await test.step("Send emails it to support, with reply-to set to the account's address", async () => {
+    await send.click();
+    await expect(aside.getByRole("status")).toHaveText("Thanks, we got it. We'll answer by email.");
+    // filtered by reply_to: specs run side by side and all send their questions to the same support address
+    const mail = await mailWhere((m) => m.reply_to === user.email, `with reply-to ${user.email}`);
+    expect(mail.to).toBe("admin@zontakllc.com");
+    expect(mail.text).toContain(QUESTION);
+    expect(mail.text).toContain(user.email);
+    expect((await allMail()).filter((m) => m.reply_to === user.email)).toHaveLength(1);
+  });
+
+  await test.step("Ask another question opens an empty form", async () => {
+    await aside.getByRole("button", { name: "Ask another question" }).click();
+    await expect(box).toHaveValue("");
+    await expect(box).toBeFocused();
+  });
+});
+
+test("a send that fails says so plainly under the box and keeps the text; an ended session asks to sign in", async ({
+  page,
+}) => {
+  await signUpReady(page);
+  await page.goto("/help");
+  const aside = page.getByRole("complementary", { name: "Still stuck?" });
+  const box = aside.getByRole("textbox", { name: LABEL });
+  await aside.getByRole("button", { name: "Ask a question" }).click();
+  await box.fill(QUESTION);
+
+  for (const [code, message, shown] of [
+    [
+      "PRECONDITION_FAILED",
+      "Email isn't set up on this server yet.",
+      "Email isn't set up on this server yet. Please write to admin@zontakllc.com.",
+    ],
+    [
+      "INTERNAL_SERVER_ERROR",
+      "Something went wrong. Please try again.", // what the server's error formatter leaves of a failed send
+      "Couldn't send it right now. Please try again in a minute, or write to admin@zontakllc.com.",
+    ],
+  ]) {
+    await page.unroute("**/api/trpc/help.ask*");
+    await page.route("**/api/trpc/help.ask*", (route) => route.fulfill(refuse(code, message)));
+    await aside.getByRole("button", { name: "Send" }).click();
+    await expect(aside.getByRole("alert")).toHaveText(shown);
+    await expect(aside.getByRole("alert").getByRole("link", { name: "admin@zontakllc.com" })).toHaveAttribute(
+      "href",
+      "mailto:admin@zontakllc.com",
+    );
+    await expect(box).toHaveValue(QUESTION);
+  }
+
+  await page.unroute("**/api/trpc/help.ask*");
+  await page.route("**/api/trpc/help.ask*", (route) => route.fulfill(refuse("UNAUTHORIZED", "Please sign in.")));
+  await aside.getByRole("button", { name: "Send" }).click();
+  await expect(aside.getByRole("link", { name: "Sign in to ask a question" })).toHaveAttribute(
+    "href",
+    "/auth/v2/login?next=/help",
+  );
+  await expect(box).toHaveCount(0);
+});
+
+test("a visitor with no account is asked to sign in, and gets no form", async ({ page }) => {
+  await page.goto("/help");
+  const aside = page.getByRole("complementary", { name: "Still stuck?" });
+  await expect(aside.getByRole("link", { name: "Sign in to ask a question" })).toHaveAttribute(
+    "href",
+    "/auth/v2/login?next=/help",
+  );
+  await expect(page.locator(GITHUB_ISSUES)).toHaveCount(0);
+  await expect(aside.getByRole("textbox")).toHaveCount(0);
+  await expect(aside.getByRole("button", { name: "Send" })).toHaveCount(0);
+  await expect(aside.getByRole("button", { name: "Ask a question" })).toHaveCount(0);
 });
