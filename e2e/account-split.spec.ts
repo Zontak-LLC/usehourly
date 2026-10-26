@@ -74,11 +74,12 @@ test("each section opens from the list, keeps its address on a reload, and the p
     await expect(heading(page, "Your account")).toBeVisible();
   });
 
-  await test.step("Support is a quiet last row that opens the donation page in a new tab", async () => {
+  await test.step("Support is the last row; it opens the donation page in a new tab and says so", async () => {
     if (isPhone) await page.goto("/dashboard/account");
     const support = sections(page).getByRole("link", { name: /^Support UseHourly/ });
     await expect(support).toHaveAttribute("target", "_blank");
     await expect(support).toHaveAttribute("href", /^https:\/\//);
+    await expect(support).toHaveAccessibleName(/opens in a new tab/);
   });
 });
 

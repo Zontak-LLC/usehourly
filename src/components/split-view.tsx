@@ -4,7 +4,7 @@ import type { MouseEvent, ReactNode } from "react";
 
 import Link from "next/link";
 
-import { ChevronLeft, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, type LucideIcon } from "lucide-react";
 
 import { pushLocationHash } from "@/components/use-location-hash";
 import { ROW_FIGURE } from "@/lib/figures";
@@ -115,7 +115,16 @@ export function SplitRow({
         </span>
         <span className="block truncate text-foreground/70 text-xs">{line}</span>
       </span>
-      {trailing}
+      {/* A link that leaves the app says so: an arrow you can see, and words for a screen reader (walkthrough
+          2026-10-25: "Support UseHourly" opened GitHub in a new tab with no sign it would). */}
+      {external ? (
+        <span className="flex items-center text-foreground/70">
+          <ArrowUpRight aria-hidden className="size-4" />
+          <span className="sr-only">(opens in a new tab)</span>
+        </span>
+      ) : (
+        trailing
+      )}
     </a>
   );
 }

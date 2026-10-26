@@ -44,10 +44,9 @@ export function AccountSectionList({
             href={donate}
             external
             selected={false}
-            quiet
-            leading={<SplitTile icon={Heart} quiet />}
+            leading={<SplitTile icon={Heart} />}
             title="Support UseHourly"
-            line="Free · chip in if you like"
+            line="Free · chip in on GitHub if you like"
           />
         )
       }
