@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUnbilled } from "@/components/use-unbilled";
 import { addDays, isRealDate, MAX_QUERY_DAYS, spanDays, toISODate } from "@/lib/dates";
-import { formatDuration } from "@/lib/duration";
+import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { buildInvoice } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
@@ -84,7 +84,10 @@ function AlreadyInvoiced({
       <p className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" />
         <span>
-          {formatDuration(minutes)} of this client&rsquo;s time in this period is already on an invoice.{" "}
+          {/* Decimal hours, like the preview just above (walkthrough 2026-10-25: "9.75 h" there and "14:30" here read as
+              two different amounts); h:mm in brackets for the screen's usual form. */}
+          {formatDecimalHours(minutes)} h ({formatDuration(minutes)}) of this client&rsquo;s time in this period is
+          already on an invoice.{" "}
           {include ? "It is included again on this one." : "It is left out, so it is not billed twice."}
         </span>
       </p>
