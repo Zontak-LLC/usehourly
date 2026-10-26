@@ -106,6 +106,26 @@ Events you may see (all `level: "error"`), and what they mean:
 | `drill_refused` (warn) | STAGING only: a call to `/api/drill` with a wrong or missing token | One is a typo; many is someone guessing (20 per 15 minutes per connection) |
 | `drill_read_failed` | STAGING only: the drill setting could not be read; the path runs normally | Harmless |
 
+### Known log noise
+
+Lines that are not ours and need no fix. Match the whole signature, not one frame.
+
+**Stale Server Action after a deploy** (incident `usehourly:b9180f8241326666`, 2026-10-25)
+
+- Signature: a multi-line `warn` whose frames are `at Object.get` (custom-worker.js), then `rD`, `r$`, `sg`, `sy`,
+  `n2`, `p2`, `o8.handleResponse`, `v2`. Line numbers change with each deploy; the frame names stay.
+- Warning text (the first line, which Night Watch does not capture):
+  `Error: Failed to find Server Action "<id>". This request might be from an older or newer deployment.`
+  Its rarer twin, for a malformed id: `The Server Reference ID did not match the expected format.`
+- Source: Next.js 16.4.2, `createServerModuleMap()` in `next/dist/server/app-render/manifests-singleton.js` (the
+  `Object.get` is its Proxy getter). `handleAction` (`r$`) catches the error, writes it with `console.warn` and answers
+  404 with `x-nextjs-action-not-found: 1`; the browser then reloads the page.
+- Why: a tab opened before a deploy still holds the old action ids and posts one after the new Worker is live. Each
+  click or retry in that tab writes one line, so a few lines within seconds of each other are normal.
+- Upstream: https://nextjs.org/docs/messages/failed-to-find-server-action (Next's own page for this message).
+- Night Watch triage: close as known noise. Do look further when the lines come with no deploy in the hour before, or
+  in a steady stream from many `requestId`s: that is someone posting made-up action ids.
+
 ## Shipping a change
 
 Pushing to `main` is the release: CircleCI runs `npm run ci` (Biome, types, tests with the coverage floor), applies
