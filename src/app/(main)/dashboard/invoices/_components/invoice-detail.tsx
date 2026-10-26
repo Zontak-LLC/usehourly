@@ -184,7 +184,7 @@ export function InvoiceDetail({
           </Link>
         </div>
         {/* A smaller copy from 768px (zoom keeps the layout true, unlike a transform); full size on a phone and on paper. */}
-        <div className="flex flex-col gap-5 rounded-xl bg-background p-4 ring-1 ring-foreground/10 md:[zoom:0.8] print:bg-transparent print:p-0 print:ring-0 print:[zoom:1]">
+        <div className="paper flex flex-col gap-5 rounded-xl bg-background p-4 ring-1 ring-foreground/10 md:[zoom:0.8] print:bg-transparent print:p-0 print:ring-0 print:[zoom:1]">
           {doc ? (
             <InvoiceDocument s={doc.snapshot} paidDate={doc.paidDate} preview />
           ) : (
