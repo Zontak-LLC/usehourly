@@ -514,11 +514,11 @@ function LogTimeButton({
       // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
       style={logged ? { backgroundColor: "var(--amber-fill)" } : undefined}
-      className="group relative flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white dark:text-[var(--background)] shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-muted disabled:text-muted-foreground disabled:ring-1 disabled:ring-border disabled:ring-inset dark:disabled:text-muted-foreground disabled:shadow-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
+      className="group relative flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none disabled:ring-1 disabled:ring-border disabled:ring-inset sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base dark:text-[var(--background)] dark:disabled:text-muted-foreground"
     >
       <span
         ref={iconRef}
-        className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 dark:group-disabled:bg-foreground/10 dark:group-disabled:text-muted-foreground dark:bg-background/25 dark:text-background sm:size-6"
+        className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 sm:size-6 dark:bg-background/25 dark:text-background dark:group-disabled:bg-foreground/10 dark:group-disabled:text-muted-foreground"
       >
         {logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
