@@ -68,7 +68,7 @@ export function ClientProfile({
     { id: "projects", label: `Projects · ${c.projects.length}` },
     { id: "time", label: "Time" },
     { id: "invoices", label: invoiceCount ? `Invoices · ${invoiceCount}` : "Invoices" },
-    { id: "billing", label: "Billing details" },
+    { id: "billing", label: "Billing" }, // "Billing details" was cut to "Billing deta" on a 390 px phone
   ];
 
   return (

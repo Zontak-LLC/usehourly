@@ -1,7 +1,7 @@
 import { expect, startFreshAccount, test } from "./helpers";
 
-// One Log time form everywhere (2026-10-23 redesign): the time first, Log time beside it on a wide screen and at the
-// foot on a phone, quick times, "on" and the project pills, then the description. Week's day panel is the same form.
+// One Log time form everywhere (2026-10-23 redesign): the time first, Log time beside it on a wide screen and under the
+// quick times on a phone (2026-10-25), "on" and the project pills, then the description. Week's day panel is the same form.
 test("the Log time form: layout, the Logged moment, the help line fading out, and the same form on Week", async ({
   page,
 }, info) => {
@@ -14,10 +14,12 @@ test("the Log time form: layout, the Logged moment, the help line fading out, an
 
   const top = async (l: typeof time) => (await l.boundingBox())?.y ?? 0;
 
-  await test.step("time first; Log time beside it on a wide screen, at the foot on a phone", async () => {
+  await test.step("time first; Log time beside it on a wide screen, under the quick times on a phone", async () => {
     await expect(time).toBeVisible();
-    if (phone) expect(await top(log)).toBeGreaterThan(await top(description));
-    else expect(Math.abs((await top(log)) - (await top(time)))).toBeLessThan(8);
+    if (phone) {
+      expect(await top(log)).toBeGreaterThan(await top(page.getByRole("button", { name: "1 hour", exact: true })));
+      expect(await top(log)).toBeLessThan(await top(description));
+    } else expect(Math.abs((await top(log)) - (await top(time)))).toBeLessThan(8);
     await expect(page.getByText("on", { exact: true }).first()).toBeVisible(); // "on" Acme · General
     expect(await top(page.getByText("on", { exact: true }).first())).toBeGreaterThan(await top(time));
   });

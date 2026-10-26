@@ -324,13 +324,6 @@ export function QuickAdd({
           )}
         </div>
 
-        <LogTimeButton
-          logged={logged}
-          disabled={create.isPending || parsed === null}
-          iconRef={logIconRef}
-          rideAboveMenu={!bare}
-        />
-
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <div className="flex flex-wrap gap-2">
             {DURATION_CHIPS.map((c) => (
@@ -367,6 +360,11 @@ export function QuickAdd({
             </p>
           )}
         </div>
+
+        {/* After the quick times in the source, so on a phone it sits right under them and is in view when Today opens
+            (2026-10-25: at the foot it was under the bottom menu, and floating over the form it hid the projects). On a
+            wide screen the grid still puts it beside the time box (`sm:col-start-2 sm:row-start-1`). */}
+        <LogTimeButton logged={logged} disabled={create.isPending || parsed === null} iconRef={logIconRef} />
 
         <div className="flex min-w-0 items-start gap-2 sm:col-span-2">
           <span id={projectLabel} className="mt-2 shrink-0 text-muted-foreground text-sm">
@@ -408,8 +406,7 @@ export function QuickAdd({
             if (followUp && note.trim()) saveFollowUp();
           }}
         />
-        {/* At the foot, so picking a project with a budget never moves the controls above it. `order-last` because the
-            Log time button is moved to the end on a phone (`order-last` too): the bar then follows it, by source order. */}
+        {/* At the foot, so picking a project with a budget never moves the controls above it. */}
         {budget && feature("budgets") && (
           <div className="order-last sm:col-span-2">
             <ClientCurrency currency={clients.data?.find((c) => c.projects.some((p) => p.id === projectId))?.currency}>
@@ -423,9 +420,7 @@ export function QuickAdd({
   );
   if (bare) return body;
   return (
-    // `overflow-clip`, not `overflow-hidden`: both clip the corners, but hidden makes the card a scroll box, and the
-    // Log time button could no longer stay above the phone's bottom menu (`rideAboveMenu`).
-    <section aria-labelledby={headingId} className="overflow-clip rounded-xl border bg-card">
+    <section aria-labelledby={headingId} className="overflow-hidden rounded-xl border bg-card">
       {/* Same tinted header band as every other card (see "Page and card layout" in CLAUDE.md). */}
       <div className="border-b bg-band-2 px-3 py-3 sm:px-4">
         <h2 id={headingId} className="font-semibold text-base">
@@ -504,14 +499,10 @@ function LogTimeButton({
   logged,
   disabled,
   iconRef,
-  rideAboveMenu,
 }: {
   logged: string | null;
   disabled: boolean;
   iconRef: React.RefObject<HTMLSpanElement | null>;
-  /** Today's card on a phone: the button stays just above the bottom menu until the page reaches its place (2026-10-25:
-   * it sat under the menu at load on every phone). Not in Week's day panel or the day dialog, which are `bare`. */
-  rideAboveMenu: boolean;
 }) {
   return (
     <button
@@ -522,7 +513,7 @@ function LogTimeButton({
       // is something to add. After a save it says what went in.
       // Just after a save the field is empty (so the button is off), but it stays amber for the moment it says "Logged".
       style={logged ? { backgroundColor: "var(--amber-fill)" } : undefined}
-      className={`group relative order-last flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white dark:text-[var(--background)] shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:order-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base ${rideAboveMenu ? "max-sm:sticky max-sm:bottom-[calc(6rem+env(safe-area-inset-bottom))] max-sm:z-10" : ""}`}
+      className="group relative flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-amber-fill px-6 font-bold font-display text-lg text-white dark:text-[var(--background)] shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[filter,transform] hover:brightness-105 active:scale-[0.99] disabled:bg-amber-soft disabled:text-foreground/60 disabled:shadow-none sm:col-start-2 sm:row-start-1 sm:h-11 sm:w-auto sm:text-base"
     >
       <span
         ref={iconRef}

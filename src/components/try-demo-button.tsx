@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { signIn } from "next-auth/react";
 
+import { toISODate } from "@/lib/dates";
+
 /** "Try the demo": makes a throwaway account with sample data and goes straight to the app. No sign-up. */
 export function TryDemoButton({ className, children }: { className?: string; children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
@@ -13,7 +15,7 @@ export function TryDemoButton({ className, children }: { className?: string; chi
     setBusy(true);
     setProblem(null);
     try {
-      const res = await signIn("demo", { redirect: false });
+      const res = await signIn("demo", { redirect: false, today: toISODate(new Date()) }); // the visitor's own day
       if (res?.error || !res?.ok) {
         setProblem(
           "We couldn't start a demo just now (a limit may have been reached). Please try again in a little while, or create a free account.",

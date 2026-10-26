@@ -37,15 +37,13 @@ export function TeamView() {
         shown.length > 0 && (
           <Button
             type="button"
-            size="icon"
             variant="outline"
-            className="size-10"
+            className="h-10 gap-1.5"
             aria-label="Invite someone"
             aria-expanded={inviting}
-            title="Invite someone"
             onClick={() => setInviting((open) => !open)}
           >
-            <Plus />
+            <Plus /> Invite
           </Button>
         )
       }
