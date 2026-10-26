@@ -80,9 +80,21 @@ export function YearChart({ data }: { data: AnnualReport }) {
           const pct = Math.max(v ? 4 : 0, (v / max) * 100);
           return (
             <li key={m.month} className="group relative flex h-full flex-col justify-end">
+              {/* From 640px every month with time shows its amount, whole dollars so neighbours never collide
+                  (walkthrough 2026-10-26: amounts only on hover went unseen); a phone's columns are too narrow, so
+                  there it stays the tap/hover tip. */}
+              {v > 0 && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap font-mono text-[11px] text-foreground/80 tabular-nums sm:block"
+                  style={{ bottom: `${pct}%` }}
+                >
+                  {read(v).replace(/\.\d\d$/, "")}
+                </span>
+              )}
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-0.5 font-mono text-[11px] text-background opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+                className="pointer-events-none absolute left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-0.5 font-mono text-[11px] text-background opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 sm:hidden"
                 style={{ bottom: `${pct}%` }}
               >
                 {read(v)}
@@ -105,6 +117,7 @@ export function YearChart({ data }: { data: AnnualReport }) {
           <span key={m.month}>{MONTH_NAMES[m.month - 1][0]}</span>
         ))}
       </div>
+      <p className="mt-3 text-muted-foreground text-xs">The coloured bar is the latest month with time.</p>
     </section>
   );
 }

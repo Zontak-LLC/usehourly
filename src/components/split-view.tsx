@@ -169,6 +169,8 @@ export type SplitSection<Id extends string> = {
   line: string;
   icon: LucideIcon;
   figure?: string;
+  /** A word under the figure that says what it is ("received"); the Year summary uses it. */
+  figureLabel?: string;
 };
 
 /**
@@ -218,7 +220,17 @@ export function SectionSplit<Id extends string>({
               leading={<SplitTile icon={s.icon} />}
               title={s.label}
               line={s.line}
-              trailing={s.figure && <span className={ROW_FIGURE}>{s.figure}</span>}
+              trailing={
+                s.figure &&
+                (s.figureLabel ? (
+                  <span className="flex flex-col items-end leading-tight">
+                    <span className={ROW_FIGURE}>{s.figure}</span>
+                    <span className="text-muted-foreground text-xs">{s.figureLabel}</span>
+                  </span>
+                ) : (
+                  <span className={ROW_FIGURE}>{s.figure}</span>
+                ))
+              }
             />
           ))}
           {after}
