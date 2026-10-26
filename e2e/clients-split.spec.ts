@@ -113,7 +113,7 @@ test("the list puts clients to bill first, and the profile's bill bar says how m
     await fable.getByRole("tab", { name: "Time" }).click();
     await expect(fable.getByText("Mobile app").first()).toBeVisible();
     await expect(fable.getByTestId("bill-bar")).toBeVisible();
-    await fable.getByRole("tab", { name: "Billing details" }).click();
+    await fable.getByRole("tab", { name: "Billing" }).click();
     await expect(page.getByRole("form", { name: "Billing details for Fable Labs" })).toBeVisible();
     // A form with its own Save is open, so Make invoice steps down to an outline (one solid button per screen).
     await expect(fable.getByRole("link", { name: "Make an invoice for Fable Labs" })).toHaveAttribute(
