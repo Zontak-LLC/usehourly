@@ -89,10 +89,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       id: "demo",
       name: "Demo",
-      credentials: {},
-      async authorize(_credentials, request) {
+      // The browser sends its own day, so the sample invoice is not dated by the server's UTC day.
+      credentials: { today: {} },
+      async authorize(credentials, request) {
         try {
-          const made = await createDemoUser(await getPrisma(), { ip: clientIpFrom(request?.headers) });
+          const today = typeof credentials?.today === "string" ? credentials.today : null;
+          const made = await createDemoUser(await getPrisma(), { ip: clientIpFrom(request?.headers), today });
           if (!made.ok) return null;
           const { id, name, email, token_version } = made.user;
           return { id, name, email, tv: token_version, demo: true };
