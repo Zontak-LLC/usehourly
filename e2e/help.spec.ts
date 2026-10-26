@@ -116,6 +116,15 @@ test("the app links to Help from the account menu and the side menu, and no ? bu
     await expect(page.getByRole("button", { name: /^Account menu for/ })).toHaveCount(0);
   });
 
+  await test.step("Help's top bar has search and a plain Account button, on a phone too", async () => {
+    // Two Search buttons exist (a square one on narrow screens, a wide field from 1280 px); one of them shows.
+    await page.getByRole("button", { name: "Search", exact: true }).locator("visible=true").click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("link", { name: "Account", exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard\/account/);
+  });
+
   await test.step("the Export menu no longer sends people to read about it", async () => {
     await page.goto("/dashboard/week");
     await page.getByRole("button", { name: /^(Share & export|Export)$/ }).click();

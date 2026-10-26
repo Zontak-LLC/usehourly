@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { cn } from "cn";
+import { UserRound } from "lucide-react";
 
+import { GlobalSearch } from "@/components/global-search";
 import { LogoMark } from "@/components/logo";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
@@ -16,7 +18,8 @@ import { ThemeSwitcher } from "../(main)/dashboard/_components/header/theme-swit
 /**
  * The frame for the Help page: public (linked from anywhere, readable with no account) and kept by the service worker
  * once opened, so it holds NOTHING personal. A signed-in person gets the app's own navigation (the tab bar, the optional
- * left menu, the light/dark switch) built without a name or address. A visitor with no account is not shown the app's pages (they would
+ * left menu, search, the light/dark switch, and a plain Account button in place of the named account menu) built without
+ * a name or address. A visitor with no account is not shown the app's pages (they would
  * only lead to sign-in): they get a plain header with the logo, Log in and Create account.
  */
 export default async function HelpLayout({ children }: { children: ReactNode }) {
@@ -39,7 +42,18 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
             </Link>
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
               {signedIn ? (
-                <AppearanceControl />
+                <>
+                  <GlobalSearch />
+                  <AppearanceControl />
+                  <Link
+                    href="/dashboard/account"
+                    aria-label="Account"
+                    title="Account"
+                    className="grid size-10 place-items-center rounded-lg border bg-card outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    <UserRound aria-hidden className="size-4" />
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link
