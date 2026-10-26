@@ -62,14 +62,18 @@ describe("Year summary split view: the sections and their list lines", () => {
 
   it("writes each row's line and figure from the year's own numbers", () => {
     const f = yearSectionFacts(report, money, { count: 2, totalCents: 4900 });
-    expect(f.year).toEqual({ line: "$550.00 unpaid", figure: "$200.00" });
-    expect(f.quarters).toEqual({ line: "Busiest: Q3", figure: money(report.totals.earnedCents) });
+    expect(f.year).toEqual({ line: "$550.00 unpaid", figure: "$200.00", figureLabel: "received" });
+    expect(f.quarters).toEqual({
+      line: "Busiest: Q3",
+      figure: money(report.totals.earnedCents),
+      figureLabel: "earned",
+    });
     expect(report.totals.earnedCents).toBe(75000); // 7 h × $100 + 1 h × $50 (the non-billable project earns nothing)
-    expect(f.months).toEqual({ line: "4 months active", figure: "9:30" }); // Feb, Aug, Sep, and March for its payment
-    expect(f.clients).toEqual({ line: "2 clients · 3 projects", figure: "9:30" });
-    expect(f.invoices).toEqual({ line: "2 · 1 unpaid", figure: "$750.00" });
-    expect(f.payments).toEqual({ line: "1 payment", figure: "$200.00" });
-    expect(f.expenses).toEqual({ line: "2 expenses", figure: "$49.00" });
+    expect(f.months).toEqual({ line: "4 months active", figure: "9:30", figureLabel: "worked" }); // Feb, Aug, Sep, and March for its payment
+    expect(f.clients).toEqual({ line: "2 clients · 3 projects", figure: "9:30", figureLabel: "worked" });
+    expect(f.invoices).toEqual({ line: "2 · 1 unpaid", figure: "$750.00", figureLabel: "invoiced" });
+    expect(f.payments).toEqual({ line: "1 payment", figure: "$200.00", figureLabel: "received" });
+    expect(f.expenses).toEqual({ line: "2 expenses", figure: "$49.00", figureLabel: "spent" });
   });
 
   it("says so plainly when the year is empty", () => {
@@ -79,6 +83,6 @@ describe("Year summary split view: the sections and their list lines", () => {
     expect(f.months.line).toBe("No activity");
     expect(f.invoices.line).toBe("None in 2024");
     expect(f.payments.line).toBe("None in 2024");
-    expect(f.expenses).toEqual({ line: "None yet", figure: "$0.00" });
+    expect(f.expenses).toEqual({ line: "None yet", figure: "$0.00", figureLabel: "spent" });
   });
 });

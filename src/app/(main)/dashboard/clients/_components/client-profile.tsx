@@ -61,8 +61,9 @@ export function ClientProfile({
   const allMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.total ?? 0), 0);
   const rate = usualRate(c.projects, (id) => totals?.[id]?.total ?? 0);
   const invoiceCount = invoices.filter((i) => i.client_id === c.id).length;
-  // A form with its own solid Save is open: the bill bar's button steps down (one solid button per screen).
-  const formOpen = tab === "billing" || c.projects.some((p) => editing.editingId === p.id);
+  // A form with its own solid Save is open (Billing, editing a project, adding one): the bill bar's button steps down
+  // (one solid button per screen), and on a phone the bar stops covering the form.
+  const formOpen = tab === "billing" || adding || c.projects.some((p) => editing.editingId === p.id);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "projects", label: `Projects · ${c.projects.length}` },

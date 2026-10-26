@@ -48,7 +48,7 @@ function Neighbour({
         <Arrow aria-hidden className="size-5 text-foreground/50 transition-transform group-hover:-translate-x-0.5" />
       )}
       <span className="flex flex-col items-center gap-0.5">
-        <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-wider">
+        <span className="font-mono text-[13px] text-foreground/70 uppercase tracking-wider">
           {isToday ? "Today" : weekday.format(when)}
         </span>
         {/* The same drawing as Week's tiles and Month's cells: a quiet date, the hours the stronger figure. */}
@@ -125,7 +125,7 @@ export function DayCard({
             date === today ? "ring-amber" : "ring-foreground"
           }`}
         >
-          <span className="flex items-center gap-1.5 font-mono text-[10px] text-foreground/70 uppercase tracking-wider">
+          <span className="flex items-center gap-1.5 font-mono text-[13px] text-foreground/70 uppercase tracking-wider">
             {date === today ? (
               <>
                 <span aria-hidden className="size-1.5 rounded-full bg-amber" /> Today

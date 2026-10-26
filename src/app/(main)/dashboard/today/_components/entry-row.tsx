@@ -39,7 +39,8 @@ export type EntryData = {
   project: { name: string; client: { name: string; color: string } };
 };
 
-const FIELD_LABEL = "font-mono text-[11px] text-foreground/75 uppercase tracking-widest";
+// 13px, not 11px (2026-10-26, walkthrough: the edit form's labels were too small to read at a glance).
+const FIELD_LABEL = "font-mono text-[13px] text-foreground/75 uppercase tracking-widest";
 const leadDate = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 const movedDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
 
@@ -206,7 +207,9 @@ export function EntryRow({
             <ProjectMark projectId={entry.project_id} color={entry.project.client.color} logos={logos} />
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <div className="flex min-w-0 items-center gap-2">
+            {/* On a phone the "Invoiced" / "by …" tags wrap under the name instead of squeezing it (walkthrough
+                2026-10-25: "Mo… Fabl…" beside an Invoiced tag). */}
+            <div className="flex min-w-0 items-center gap-2 max-sm:flex-wrap max-sm:gap-y-1">
               {editing ? (
                 <p className="truncate text-sm">
                   <span className="font-medium">{entry.project.name}</span>
@@ -244,9 +247,12 @@ export function EntryRow({
             </span>
           )}
           {/* Edit is the common action and stays a button; it opens the form and, while open, closes it again (and says so to a screen reader). */}
+          {/* The word "Edit" beside the pencil from 768px (walkthrough 2026-10-25: a lone pencil was a guess); a phone's
+              row keeps the square button so the entry's name has room. */}
           <Button
             size="icon"
             variant="outline"
+            className="md:w-auto md:gap-1.5 md:px-3"
             onClick={() => setEditing(!editing)}
             aria-label="Edit"
             aria-expanded={editing}
@@ -254,6 +260,9 @@ export function EntryRow({
             disabled={!canEdit}
           >
             <Pencil />
+            <span aria-hidden className="max-md:hidden">
+              Edit
+            </span>
           </Button>
         </div>
       </header>
@@ -295,18 +304,10 @@ export function EntryRow({
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${uid}-date`} className={FIELD_LABEL}>
-              Day
-            </label>
-            <Input
-              id={`${uid}-date`}
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-11 font-mono text-base tabular-nums"
-            />
-            <label htmlFor={`${uid}-time`} className={`${FIELD_LABEL} mt-2.5`}>
+          {/* Time first, then Day, and on a phone this column comes before Project and Description: the time is what
+              people change most (walkthrough 2026-10-25: it was the last field, under Day). */}
+          <div className="flex flex-col gap-1.5 max-lg:order-first">
+            <label htmlFor={`${uid}-time`} className={FIELD_LABEL}>
               Time
             </label>
             <Input
@@ -335,6 +336,16 @@ export function EntryRow({
                 </Button>
               ))}
             </div>
+            <label htmlFor={`${uid}-date`} className={`${FIELD_LABEL} mt-2.5`}>
+              Day
+            </label>
+            <Input
+              id={`${uid}-date`}
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-11 font-mono text-base tabular-nums"
+            />
           </div>
           {entry.invoice_id && (
             <p className="text-muted-foreground text-sm lg:col-span-2">

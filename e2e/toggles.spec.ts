@@ -1,4 +1,4 @@
-import { expect, menuAction, openAllEntries, startFreshAccount, test } from "./helpers";
+import { expect, menuAction, openAllEntries, shownMonth, startFreshAccount, test } from "./helpers";
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
@@ -70,7 +70,7 @@ test("the Month page's This month button shows only away from this month, and co
   await startFreshAccount(page);
   await page.goto("/dashboard/month");
   const thisMonth = page.getByRole("button", { name: "This month" });
-  const heading = page.getByRole("heading", { level: 1 });
+  const heading = shownMonth(page);
   const now = await heading.textContent();
   await expect(thisMonth).toHaveCount(0); // already here: nothing to go back to
   await page.getByRole("button", { name: "Previous month" }).click();

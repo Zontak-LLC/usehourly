@@ -13,6 +13,7 @@ import { MoreMenu } from "@/components/more-menu";
 import { SendInvoicePanel } from "@/components/send-invoice-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import type { InvoiceSnapshot } from "@/lib/invoice";
@@ -58,6 +59,7 @@ export function InvoiceDetail({
   onDeleted: () => void;
 }) {
   const [panel, setPanel] = useState<Panel>(null);
+  const narrow = useIsMobile();
   const state = invoiceState(i, today);
   const toggle = (next: Exclude<Panel, null>) => setPanel((p) => (p === next ? null : next));
   const close = () => setPanel(null);
@@ -121,10 +123,13 @@ export function InvoiceDetail({
             <Mail />
           </IconAction>
         )}
+        {/* "PDF" beside the arrow from 768px (walkthrough 2026-10-25: a lone arrow was a guess); a phone's row is full. */}
         <IconAction
           label={pdfBusy ? `Making the PDF of ${i.number}` : `Download ${i.number} as a PDF`}
           tip="Download PDF"
-          className={ICON}
+          text={narrow ? undefined : "PDF"}
+          inline
+          className={narrow ? ICON : PILL}
           onClick={() => !pdfBusy && onDownload()}
         >
           <Download />
@@ -179,7 +184,7 @@ export function InvoiceDetail({
           </Link>
         </div>
         {/* A smaller copy from 768px (zoom keeps the layout true, unlike a transform); full size on a phone and on paper. */}
-        <div className="flex flex-col gap-5 rounded-xl bg-background p-4 ring-1 ring-foreground/10 md:[zoom:0.8] print:bg-transparent print:p-0 print:ring-0 print:[zoom:1]">
+        <div className="paper flex flex-col gap-5 rounded-xl bg-background p-4 ring-1 ring-foreground/10 md:[zoom:0.8] print:bg-transparent print:p-0 print:ring-0 print:[zoom:1]">
           {doc ? (
             <InvoiceDocument s={doc.snapshot} paidDate={doc.paidDate} preview />
           ) : (

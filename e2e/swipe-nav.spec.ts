@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { FEATURES } from "../src/lib/features";
 import { icsFor } from "./calendar-fixture";
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, shownMonth, startFreshAccount, test } from "./helpers";
 
 test.skip(!FEATURES.swipe, "Swiping is hidden in this release (src/lib/features.ts)");
 
@@ -120,7 +120,7 @@ test("on Month a swipe on the calendar moves a month", async ({ page }, info) =>
   await startFreshAccount(page);
   const w = page.viewportSize()?.width ?? 412;
   await page.goto("/dashboard/month");
-  const title = page.getByRole("heading", { level: 1 });
+  const title = shownMonth(page);
   const thisMonth = await title.innerText();
   const cell = page.getByRole("button", { name: /^\d{4}-\d\d-\d\d: / }).nth(10);
   const { y } = await centreOf(page, cell);

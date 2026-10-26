@@ -10,7 +10,7 @@ withSharedAccount(); // counts requests, not data
 const PAGES: [label: string, heading: RegExp, url: string][] = [
   ["Today", /^Today$/, "/dashboard/today"],
   ["Week", /Weekly timesheet/, "/dashboard/week"],
-  ["Month", /\d{4}$/, "/dashboard/month"],
+  ["Month", /Monthly calendar/, "/dashboard/month"],
   ["Clients", /^Clients$/, "/dashboard/clients"],
   ["Invoices", /^Invoices$/, "/dashboard/invoices"],
   ["Account", /^Account$/, "/dashboard/account"],
