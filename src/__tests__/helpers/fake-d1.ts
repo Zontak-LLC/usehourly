@@ -20,16 +20,27 @@ export function migratedDb(): DatabaseSync {
  *
  * `requester` (optional) names the request a query is sent from. Like workerd, a query sent from a canceled request
  * never settles, and one canceled while it was out never answers.
+ *
+ * `failNext(message, times)` makes the next `times` `raw()` or `run()` calls reject with `new Error(message)` before
+ * any SQL runs, like a short-lived D1 error ("D1_ERROR: Network connection lost."). `sent` lists reads and writes.
  */
 export function fakeD1<R extends { canceled: boolean }>(requester: () => R | undefined = () => undefined) {
   const db = migratedDb();
   const sent: { sql: string; by: R | undefined }[] = [];
-  const io = <T>(work: () => T): Promise<T> => {
+  const fault = { message: "", left: 0 };
+  const failNext = (message: string, times = 1) => {
+    fault.message = message;
+    fault.left = times;
+  };
+  const io = <T>(work: () => T, canFail = false): Promise<T> => {
     const by = requester();
     if (by?.canceled) return new Promise<T>(() => undefined);
+    const failure = canFail && fault.left > 0 ? new Error(fault.message) : null;
+    if (failure) fault.left--;
     return new Promise<T>((resolve, reject) =>
       setTimeout(() => {
         if (by?.canceled) return; // canceled while the query was out
+        if (failure) return reject(failure);
         try {
           resolve(work());
         } catch (err) {
@@ -52,21 +63,22 @@ export function fakeD1<R extends { canceled: boolean }>(requester: () => R | und
             // column names from the first row: StatementSync.columns() needs Node 22.16+, CI runs 22.14
             const objects = db.prepare(sql).all(...(args as never[]));
             return [Object.keys(objects[0] ?? {}), ...objects.map((row) => Object.values(row))];
-          });
+          }, true);
         },
         run() {
           // Like D1, `changes` includes rows written by triggers (an entry insert also logs to entry_changes, so D1
           // reports 2). node:sqlite's own `changes` leaves them out, which hid a bug once (PR #335).
+          sent.push({ sql, by: requester() });
           return io(() => {
             const before = Number(db.prepare("SELECT total_changes() AS n").get()?.n);
             db.prepare(sql).run(...(args as never[]));
             return { meta: { changes: Number(db.prepare("SELECT total_changes() AS n").get()?.n) - before } };
-          });
+          }, true);
         },
       };
       return stmt;
     },
     exec: (sql: string) => io(() => db.exec(sql)),
   };
-  return { db, DB, sent };
+  return { db, DB, sent, failNext };
 }
