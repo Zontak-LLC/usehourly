@@ -142,7 +142,9 @@ export function MonthView({ initialProject }: { initialProject?: string }) {
       inlineDescription
       // The month's total is the page's key figure: shown on a phone too.
       descriptionOnPhone
-      title={monthTitle.format(fromISODate(first))}
+      // The month's name is on the calendar's stepper just below, so the title names the page (like Week's) instead of
+      // saying the month twice.
+      title="Monthly calendar"
       description={
         <>
           <span className="font-display font-extrabold text-foreground text-xl tabular-nums">

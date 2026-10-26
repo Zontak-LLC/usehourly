@@ -184,6 +184,10 @@ export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>
   scope.getByText(text, { exact: true }).locator("visible=true").first();
+/** The month Month's calendar shows: the name between its ‹ › arrows (the page title says "Monthly calendar"). */
+export const shownMonth = (page: Page) =>
+  page.getByRole("button", { name: "Previous month" }).locator("xpath=following-sibling::*[1]");
+
 export { today } from "./today";
 
 /** Run SQL against the local database (only for setup a user cannot do, like making an account a few days old). */

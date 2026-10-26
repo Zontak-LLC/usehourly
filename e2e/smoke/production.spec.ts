@@ -72,7 +72,7 @@ test("sample account: every main page loads, and an entry can be added, edited a
 
   const pages: [string, RegExp | string][] = [
     ["/dashboard/week", "Weekly timesheet"],
-    ["/dashboard/month", /20\d\d$/],
+    ["/dashboard/month", "Monthly calendar"],
     ["/dashboard/invoices", "Invoices"],
     ["/dashboard/clients", "Clients"],
     ["/dashboard/report", /Year summary|20\d\d/],
