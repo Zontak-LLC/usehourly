@@ -244,9 +244,12 @@ export function EntryRow({
             </span>
           )}
           {/* Edit is the common action and stays a button; it opens the form and, while open, closes it again (and says so to a screen reader). */}
+          {/* The word "Edit" beside the pencil from 768px (walkthrough 2026-10-25: a lone pencil was a guess); a phone's
+              row keeps the square button so the entry's name has room. */}
           <Button
             size="icon"
             variant="outline"
+            className="md:w-auto md:gap-1.5 md:px-3"
             onClick={() => setEditing(!editing)}
             aria-label="Edit"
             aria-expanded={editing}
@@ -254,6 +257,9 @@ export function EntryRow({
             disabled={!canEdit}
           >
             <Pencil />
+            <span aria-hidden className="max-md:hidden">
+              Edit
+            </span>
           </Button>
         </div>
       </header>
