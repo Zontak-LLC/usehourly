@@ -47,7 +47,9 @@ export function NoteReminder({ entries, date, today }: { entries: Entry[]; date:
       aria-label="Entries with no note"
       className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-muted/70 px-3 py-2 text-foreground/80 text-sm"
     >
-      <span className="inline-flex min-w-0 flex-1 items-center gap-2">
+      {/* On a phone the sentence takes its own line and the buttons go under it (walkthrough 2026-10-25: squeezed beside
+          them it was a six-line column); the buttons are full finger size there. */}
+      <span className="inline-flex min-w-0 flex-1 items-center gap-2 max-sm:basis-full">
         <NotebookPen aria-hidden className="size-4 shrink-0" />
         <span>
           <span className="font-medium text-foreground">{noteReminderText(count)}</span> Clients see notes on invoices.
@@ -58,7 +60,7 @@ export function NoteReminder({ entries, date, today }: { entries: Entry[]; date:
           type="button"
           size="sm"
           variant="outline"
-          className="h-8"
+          className="h-8 max-sm:h-11"
           onClick={() => {
             const first = entriesWithoutNote(entries)[0];
             if (!first) return;
@@ -73,7 +75,7 @@ export function NoteReminder({ entries, date, today }: { entries: Entry[]; date:
           type="button"
           size="sm"
           variant="ghost"
-          className="h-8"
+          className="h-8 max-sm:h-11"
           onClick={() => setNotNow(saveNotNow(safeStorage(), date, NOTE_NOT_NOW_KEY))}
         >
           Not now

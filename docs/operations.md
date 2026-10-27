@@ -102,9 +102,30 @@ Events you may see (all `level: "error"`), and what they mean:
 | `mcp_internal_error`, `mcp_tool_error`, `mcp_last_used_update_failed` | A failure inside the MCP endpoint | Same as tRPC; the caller got a plain "try again" |
 | `social_sign_in_failed`, `demo_sign_in_failed` | A GitHub/Google or sample-account sign-in failed | Check the provider's status and the secrets |
 | `prisma_warmup_failed` | The early connection attempt failed; it reconnects on the first query | Only matters if it repeats |
+| `d1_retry` (warn) | A read failed with a short-lived D1 error ("Network connection lost" and similar) and is tried again (`attempt` 1 or 2, `message`); the adapter's own "Error in performIO: %O" line comes with it | Harmless alone; many in a row mean D1 itself is in trouble (Cloudflare status, D1 metrics) |
 | `drill_started`, `drill_stopped`, `drill_expired` (warn) | STAGING only: a planned test failure began, was stopped or ran out (`fault`, `expires`) | Nothing: errors between started and stopped/expired are the drill (see "Drills") |
 | `drill_refused` (warn) | STAGING only: a call to `/api/drill` with a wrong or missing token | One is a typo; many is someone guessing (20 per 15 minutes per connection) |
 | `drill_read_failed` | STAGING only: the drill setting could not be read; the path runs normally | Harmless |
+
+### Known log noise
+
+Lines that are not ours and need no fix. Match the whole signature, not one frame.
+
+**Stale Server Action after a deploy** (incident `usehourly:b9180f8241326666`, 2026-10-25)
+
+- Signature: a multi-line `warn` whose frames are `at Object.get` (custom-worker.js), then `rD`, `r$`, `sg`, `sy`,
+  `n2`, `p2`, `o8.handleResponse`, `v2`. Line numbers change with each deploy; the frame names stay.
+- Warning text (the first line, which Night Watch does not capture):
+  `Error: Failed to find Server Action "<id>". This request might be from an older or newer deployment.`
+  Its rarer twin, for a malformed id: `The Server Reference ID did not match the expected format.`
+- Source: Next.js 16.4.2, `createServerModuleMap()` in `next/dist/server/app-render/manifests-singleton.js` (the
+  `Object.get` is its Proxy getter). `handleAction` (`r$`) catches the error, writes it with `console.warn` and answers
+  404 with `x-nextjs-action-not-found: 1`; the browser then reloads the page.
+- Why: a tab opened before a deploy still holds the old action ids and posts one after the new Worker is live. Each
+  click or retry in that tab writes one line, so a few lines within seconds of each other are normal.
+- Upstream: https://nextjs.org/docs/messages/failed-to-find-server-action (Next's own page for this message).
+- Night Watch triage: close as known noise. Do look further when the lines come with no deploy in the hour before, or
+  in a steady stream from many `requestId`s: that is someone posting made-up action ids.
 
 ## Shipping a change
 

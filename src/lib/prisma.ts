@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { retryTransientD1 } from "@/lib/d1-retry";
 import { logError } from "@/lib/log";
 
 /**
@@ -40,8 +41,9 @@ async function build(env: unknown): Promise<PrismaClient> {
   // PRISMA_QUERY_LOG=1 (local diagnosis only, never set in production) writes one line per query with its duration.
   const logQueries = process.env.PRISMA_QUERY_LOG === "1";
   const built = new PrismaClient({
+    // a read that D1 fails with a short-lived error is retried (src/lib/d1-retry.ts); the wrapper is per request too
     // check-rules-ok: the Cloudflare env type does not declare the D1 binding name
-    adapter: new PrismaD1((env as unknown as { DB: D1Database }).DB),
+    adapter: new PrismaD1(retryTransientD1((env as unknown as { DB: D1Database }).DB)),
     ...(logQueries ? { log: [{ emit: "event" as const, level: "query" as const }] } : {}),
   });
   if (logQueries) {

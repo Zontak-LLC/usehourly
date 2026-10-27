@@ -213,7 +213,12 @@ function MailAppSection({
         </Notice>
       )}
       {linkFailed && (
-        <Notice tone="danger" className="flex flex-col items-start gap-2 text-sm">
+        // Red only for a real failure: a demo account (no links) or the live-link limit is expected, so it reads as
+        // a calm note, not an error (walkthrough 2026-10-25: the red demo note looked like something had broken).
+        <Notice
+          tone={/free account|turn (one|some) off/i.test(linkFailed) ? undefined : "danger"}
+          className="flex flex-col items-start gap-2 text-sm"
+        >
           <p>
             {linkFailed} The email has no link, so attach the PDF yourself.
             {/* The live-link limit: links can be turned off in the list below, then the email written again. */}

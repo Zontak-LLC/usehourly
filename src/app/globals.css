@@ -361,6 +361,23 @@ textarea,
   background-repeat: no-repeat;
   background-position: right 0.65rem center;
 }
+/* An invoice is white paper in every theme: the client gets a white page, so the preview of "what your client sees"
+   stays light in dark mode too (walkthrough 2026-10-25). These are the light theme's values. */
+.paper {
+  --background: #eef2f7;
+  --foreground: #1c2434;
+  --card: #ffffff;
+  --card-foreground: #1c2434;
+  --muted: #e8edf4;
+  --muted-foreground: #586377;
+  --border: #dbe2ec;
+  --destructive: #d04a3a;
+  --success: oklch(0.45 0.13 141);
+  --success-soft: oklch(0.955 0.05 141);
+  color: var(--foreground);
+  color-scheme: light;
+}
+
 .dark .field-chevron {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='m6 9 6 6 6-6' stroke='rgb(255 255 255 / .85)' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }

@@ -18,7 +18,8 @@ import type { Unbilled } from "@/lib/unbilled";
  * is due · $1,187.50") and Make invoice opens the builder on that period.
  *
  * Make invoice is the page's one solid button; while a form with its own Save is open in the profile, it steps down to
- * an outline so the screen still has one main action.
+ * an outline so the screen still has one main action. On a phone it also lets go of the screen's foot then and waits at
+ * the end of the page (2026-10-26: pinned, it covered a third of the Billing form while you typed).
  */
 export function BillBar({
   clientId,
@@ -31,7 +32,7 @@ export function BillBar({
   clientName: string;
   unbilled: Unbilled;
   today: string | null;
-  /** A form is open in the profile: the button is an outline, not the solid main action. */
+  /** A form is open in the profile: the button is an outline, not the solid main action, and on a phone the bar is not pinned. */
   quiet: boolean;
 }) {
   const money = useMoney();
@@ -39,7 +40,7 @@ export function BillBar({
   return (
     <div
       data-testid="bill-bar"
-      className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t bg-card/90 px-4 py-3 backdrop-blur max-sm:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-sm:rounded-b-xl max-sm:shadow-[var(--shadow-sheet)]"
+      className={`sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t bg-card/90 px-4 py-3 backdrop-blur max-sm:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-sm:rounded-b-xl max-sm:shadow-[var(--shadow-sheet)] ${quiet ? "max-sm:static max-sm:shadow-none" : ""}`}
     >
       {due && today ? (
         <p className="flex min-w-0 flex-1 flex-col">

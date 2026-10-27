@@ -39,7 +39,8 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
 
   await test.step("a new invoice for the same time warns, and bills it again only when asked", async () => {
     await page.goto("/dashboard/invoices/new");
-    await expect(page.getByText(/2:00 of this client.s time in this period is already on an invoice/)).toBeVisible();
+    // the same decimal hours as the preview, h:mm in brackets (one form on the screen, 2026-10-26)
+    await expect(page.getByText(/2.00 h \(2:00\) of this client.s time in this period is already on/)).toBeVisible();
     const create = page.getByRole("button", { name: /Create invoice/ });
     await expect(create).toBeDisabled();
     await page.getByLabel("Bill it again anyway").check();

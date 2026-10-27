@@ -95,7 +95,8 @@ export function WeekPills({
             }`}
           >
             {nonBillable?.has(d) && <NoDollar className="absolute top-1 left-1 size-3" />}
-            <span className="font-mono text-[10px] text-foreground/70 uppercase tracking-wider">
+            {/* 13px, not 10px (2026-10-26): the day names are read at a glance; the tiles keep their size. */}
+            <span className="font-mono text-[13px] text-foreground/70 uppercase tracking-wider">
               {dayName.format(when)}
             </span>
             <span
