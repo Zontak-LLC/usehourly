@@ -2,6 +2,14 @@
 
 Purpose: find out where a first-time freelancer gets stuck, **before** the Show HN post (Tue Oct 20) sends strangers to the site. The browser tests prove the app works; this proves people can *find* what works.
 
+## 0. The claim this test proves (or disproves)
+"UseHourly is intuitive" is an opinion. These are the numbers that back it up, measured with this test:
+- **First hour in under 60 seconds:** a new person signs up and logs their first entry (task 2) in under 60 s of their own time, with no help. Target: 4 of 5 people.
+- **Every core task done without help:** tasks 2 to 8 marked "yes" (not "aided") by at least 4 of 5 people.
+- **SUS of 80 or more** (section 4b). 68 is an average product; 80+ is "excellent" and is the number you may quote.
+- **Ease per task:** the 1 to 7 question averages 6 or more on every core task.
+If a number misses, the product is not yet "intuitive" on that point: fix it and re-test with one fresh person.
+
 ## 1. Who and how
 - **5 people** who bill by the hour or could (freelancers, contractors, consultants, a small-agency owner). Not other developers who already know the project. At least **2 who have never used a time tracker**, and at least **2 on their phone** (the rest on a laptop).
 - One at a time, **30 minutes**, in person or on a video call with screen share. Five people uncover about 85% of the big problems; more adds little.
@@ -41,6 +49,21 @@ Stop a task at 3 minutes ("let's move on") and mark it failed.
 - After each task ask: **"How easy was that, 1 (hard) to 7 (easy)?"**
 - Known good numbers from the automated test: signing up takes about 5 actions, the first entry about 5, an invoice about 2. A person taking far more than that is a finding.
 
+## 4b. SUS: the standard ten questions (2 minutes, right after the last task)
+Ask each person to answer every statement from **1 (strongly disagree) to 5 (strongly agree)**, without thinking long. Use these exact words, so the score compares with other products:
+1. I think that I would like to use this system frequently.
+2. I found the system unnecessarily complex.
+3. I thought the system was easy to use.
+4. I think that I would need the support of a technical person to be able to use this system.
+5. I found the various functions in this system were well integrated.
+6. I thought there was too much inconsistency in this system.
+7. I would imagine that most people would learn to use this system very quickly.
+8. I found the system very cumbersome to use.
+9. I felt very confident using the system.
+10. I needed to learn a lot of things before I could get going with this system.
+
+**Score:** for odd questions (1, 3, 5, 7, 9) take the answer minus 1; for even ones (2, 4, 6, 8, 10) take 5 minus the answer. Add the ten results and multiply by 2.5. That gives 0 to 100 per person; report the average of the five. **68 = average, 80+ = excellent, under 50 = real trouble.**
+
 ## 5. Ten-minute interview at the end
 1. What was the most confusing moment?
 2. What did you expect to find that wasn't there?
@@ -68,3 +91,6 @@ Stop a task at 3 minutes ("let's move on") and mark it failed.
 - Sat to Sun, Oct 18-19: recruit and run the first 2 or 3 sessions
 - Mon Oct 19: finish sessions 4 and 5, fix the top blockers, re-test one task
 - Tue Oct 20 morning: go/no-go on the Show HN post (scheduled around 9:07 ET). If a blocker remains, pause the post
+
+## 10. Between human tests: AI first-time users (cheap, nightly)
+Real people are the proof; an AI "first-time user" is the smoke alarm. The QA agent Maya (an everyday, non-technical persona) runs tasks 2 to 10 on a local copy with a fresh account, no hints, and records actions, dead ends and confusion per task. Compare with the "known good numbers" in section 4: a task that suddenly takes many more actions means a change made it harder. Planned as Forge's "AI users" epic (dayshift #99).
