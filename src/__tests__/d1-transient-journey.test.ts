@@ -49,7 +49,13 @@ describe("a short-lived D1 error on a read (incident c6e22d9fe8d78087)", () => {
   afterEach(() => spy.mockRestore());
 
   // JSON lines only: the adapter's own "Error in performIO: %O" line goes to console.error too
-  type Line = { event: string; attempt?: number; message: string; error: { name: string; message: string } };
+  type Line = {
+    event: string;
+    attempt?: number;
+    attempts?: number;
+    message: string;
+    error: { name: string; message: string };
+  };
   const lines = (event: string): Line[] =>
     (spy.mock.calls as unknown[][])
       .map((c) => String(c[0]))
@@ -138,6 +144,82 @@ describe("a short-lived D1 error on a read (incident c6e22d9fe8d78087)", () => {
     await expect(run(() => prisma.authUser.findUnique({ where: { id: "u1" } }))).rejects.toThrow();
     expect(userReads(sent)).toBe(1);
     expect(lines("d1_retry").length).toBe(0);
+  });
+
+  // issue 410: words between "D1_ERROR:" and "internal error", so the plain "D1_ERROR: internal error" did not match
+  const COMMIT_TOKEN = "D1_ERROR: Failed to get session commit token: internal error; reference = abc";
+
+  it("retries a read that fails once with 'Failed to get session commit token' (issue 410)", async () => {
+    const { prisma, run, sent, failNext } = await signedIn();
+    failNext(COMMIT_TOKEN, 1);
+    const user = await run(() => prisma.authUser.findUnique({ where: { id: "u1" } }));
+    expect(user?.email).toBe("a@x.invalid");
+    expect(userReads(sent)).toBe(2);
+    const retries = lines("d1_retry");
+    expect(retries.length).toBe(1);
+    expect(retries[0]).toMatchObject({ level: "warn", attempt: 1 });
+    expect(lines("d1_read_failed").length).toBe(0);
+  });
+
+  it("gives up after 3 tries and logs d1_read_failed with the real D1 text", async () => {
+    const { prisma, run, sent, failNext } = await signedIn();
+    failNext(COMMIT_TOKEN, 3);
+    const err = await run(() => prisma.authUser.findUnique({ where: { id: "u1" } })).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(userReads(sent)).toBe(3);
+    const failed = lines("d1_read_failed");
+    expect(failed.length).toBe(1);
+    expect(failed[0]).toMatchObject({ level: "error", attempts: 3 });
+    expect(failed[0].message).toContain("Failed to get session commit token");
+  });
+
+  it("logs d1_read_failed once for a read error that is not short-lived", async () => {
+    const { prisma, run, sent, failNext } = await signedIn();
+    failNext("D1_ERROR: no such table: x", 1);
+    await expect(run(() => prisma.authUser.findUnique({ where: { id: "u1" } }))).rejects.toThrow();
+    expect(userReads(sent)).toBe(1);
+    expect(lines("d1_retry").length).toBe(0);
+    const failed = lines("d1_read_failed");
+    expect(failed.length).toBe(1);
+    expect(failed[0]).toMatchObject({ level: "error", attempts: 1 });
+    expect(failed[0].message).toContain("no such table: x");
+  });
+
+  it("cuts the logged D1 text to 300 characters", async () => {
+    const { DB, failNext } = fakeD1();
+    const wrapped = retryTransientD1(DB as unknown as D1Database);
+    failNext(`D1_ERROR: ${"x".repeat(400)}`, 1);
+    await expect(wrapped.prepare("SELECT 1").bind().raw()).rejects.toThrow();
+    expect(lines("d1_read_failed")[0].message.length).toBe(300);
+  });
+
+  it("still retries the plain 'D1_ERROR: internal error'", async () => {
+    const { prisma, run, sent, failNext } = await signedIn();
+    failNext("D1_ERROR: internal error", 1);
+    const user = await run(() => prisma.authUser.findUnique({ where: { id: "u1" } }));
+    expect(user?.email).toBe("a@x.invalid");
+    expect(userReads(sent)).toBe(2);
+  });
+
+  it("never retries a write that gets 'Failed to get session commit token'", async () => {
+    const { prisma, run, sent, failNext } = await signedIn();
+    failNext(COMMIT_TOKEN, 1);
+    await expect(run(() => prisma.authUser.update({ where: { id: "u1" }, data: { name: "B" } }))).rejects.toThrow();
+    expect(sent.filter((s) => /^\s*UPDATE/i.test(s.sql)).length).toBe(1);
+    expect(lines("d1_retry").length).toBe(0);
+
+    const d1 = fakeD1();
+    const wrapped = retryTransientD1(d1.DB as unknown as D1Database);
+    for (const sql of [
+      "INSERT INTO auth_users (id, name, email, password_hash, created_at) VALUES ('u2','B','b@x.invalid','x', 0)",
+      "UPDATE auth_users SET name = 'C' WHERE id = 'u2'",
+      "DELETE FROM auth_users WHERE id = 'u2'",
+    ]) {
+      d1.sent.length = 0;
+      d1.failNext(COMMIT_TOKEN, 1);
+      await expect(wrapped.prepare(sql).bind().run()).rejects.toThrow("Failed to get session commit token");
+      expect(d1.sent.length).toBe(1);
+    }
   });
 
   it("wrapping reads nothing from the binding (getPrisma stays lazy)", () => {
