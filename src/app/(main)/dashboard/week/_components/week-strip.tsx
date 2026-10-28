@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ListSearch } from "@/components/list-search";
 import { Pagination } from "@/components/pagination";
 import { toggleProjectFilter } from "@/components/project-filter";
+import { useProjectShade } from "@/components/project-logo";
 import { SIDE_CARD, SideScroll } from "@/components/side-column";
 import { usePageSize } from "@/components/use-page-size";
 import { formatDuration } from "@/lib/duration";
@@ -42,6 +43,7 @@ export function WeekTotalCard({
   projectId: string;
   onProjectId: (id: string) => void;
 }) {
+  const shade = useProjectShade();
   const longest = Math.max(1, ...sheet.rows.map((x) => x.total));
   // A-Z, searchable from 9 projects, pages of 10 on a wide screen and one scrolling list on a phone (the owner,
   // 2026-10-24). A picked project's page opens with it.
@@ -112,7 +114,10 @@ export function WeekTotalCard({
                       on ? "bg-tint" : projectId ? "text-muted-foreground" : ""
                     }`}
                   >
-                    <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} />
+                    <span
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: shade(r.projectId, r.color) }}
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">
                         <span className="font-medium">{r.project}</span>

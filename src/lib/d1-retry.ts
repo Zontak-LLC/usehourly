@@ -1,4 +1,4 @@
-import { logWarn } from "@/lib/log";
+import { logError, logWarn } from "@/lib/log";
 
 /**
  * A D1 binding that retries a READ once or twice when D1 fails it with a short-lived error (Cloudflare documents
@@ -6,6 +6,10 @@ import { logWarn } from "@/lib/log";
  * `prepare(sql).bind(...).raw()`, so only `raw()` on SQL that starts with SELECT or WITH is retried. Writes (`run`,
  * `exec`, `batch`, `INSERT ... RETURNING` through `raw`) are never retried: a write that failed may still have been
  * applied, and a retry could double it.
+ *
+ * D1 also says "D1_ERROR: Failed to get session commit token: internal error; reference = …" (issue 410), so any
+ * "D1_ERROR: … internal error" counts. A read that fails for good logs `d1_read_failed` with the D1 text, because
+ * Prisma's own line only says "Error in performIO: %O" in the live logs. Never log the bind values.
  *
  * Lazy on purpose: wrapping reads nothing from `DB`; every call reaches the real binding at call time. Made per
  * request in `build()` (src/lib/prisma.ts), so nothing is shared across requests (issue 315).
@@ -15,13 +19,17 @@ const TRANSIENT = [
   "storage caused object to be reset",
   "reset because its code was updated",
   "D1_ERROR: internal error",
+  "Failed to get session commit token",
 ];
+const INTERNAL = /D1_ERROR:.*internal error/i;
 const WAITS_MS = [50, 150];
 const READ = /^\s*(SELECT|WITH)\b/i;
 
+const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
 const isTransient = (err: unknown) => {
-  const message = err instanceof Error ? err.message : String(err);
-  return TRANSIENT.some((t) => message.includes(t));
+  const message = messageOf(err);
+  return TRANSIENT.some((t) => message.includes(t)) || INTERNAL.test(message);
 };
 
 type Statement = D1PreparedStatement;
@@ -48,8 +56,11 @@ async function rawWithRetry(stmt: Statement, args: unknown[]): Promise<unknown> 
     try {
       return await raw.apply(stmt, args);
     } catch (err) {
-      if (attempt >= WAITS_MS.length || !isTransient(err)) throw err;
-      const message = (err instanceof Error ? err.message : String(err)).slice(0, 300);
+      const message = messageOf(err).slice(0, 300);
+      if (attempt >= WAITS_MS.length || !isTransient(err)) {
+        logError("d1_read_failed", err, { message, attempts: attempt + 1 });
+        throw err;
+      }
       logWarn("d1_retry", { attempt: attempt + 1, message });
       await new Promise((resolve) => setTimeout(resolve, WAITS_MS[attempt]));
     }
