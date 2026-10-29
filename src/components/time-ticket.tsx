@@ -8,11 +8,14 @@ import { formatDuration } from "@/lib/duration";
 const NUDGE_BUTTON =
   "grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40";
 const LINK_BUTTON = "inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm hover:bg-muted";
+/** A quiet toy to rest the eyes after a block of work (Denis's pond on zontak-1, 2026-10-29). Opens in a new tab. */
+export const POND_URL = "https://pond.zontakllc.com";
 
 /**
  * After Stop (issue 218, 2026-10-23): the time is ALREADY an entry in the timesheet, so the strip says so ("Saved 0:42") instead
  * of asking to "Add to timesheet". Beside it: - / + 5 min to correct it, Undo (the entry goes away, as if the timer never
- * ran), Resume (the stopwatch carries on with the same entry) and Done (the strip goes back to Start timer).
+ * ran), Resume (the stopwatch carries on with the same entry) and Done (the strip goes back to Start timer). Under them, one
+ * small line offers a pause: the pond, in a new tab so the work stays open.
  */
 export function TimeTicket({ timer }: { timer: TodayTimer }) {
   const s = timer.stopped;
@@ -67,6 +70,17 @@ export function TimeTicket({ timer }: { timer: TodayTimer }) {
           Done
         </button>
       </div>
+      <p className="mt-1 px-2 text-muted-foreground text-xs">
+        Need a pause?{" "}
+        <a
+          href={POND_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-9 items-center underline-offset-4 hover:text-foreground hover:underline"
+        >
+          🌙 Visit the pond
+        </a>
+      </p>
     </fieldset>
   );
 }
