@@ -9,7 +9,7 @@ const NUDGE_BUTTON =
   "grid size-9 place-items-center rounded-full text-lg ring-1 ring-foreground/20 hover:bg-muted disabled:opacity-40";
 const LINK_BUTTON = "inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm hover:bg-muted";
 /** A quiet toy to rest the eyes after a block of work (Denis's pond on zontak-1, 2026-10-29). Opens in a new tab. */
-export const POND_URL = "https://pond.zontakllc.com";
+export const POND_URL = "https://quiet.zontakllc.com/pond/";
 
 /**
  * After Stop (issue 218, 2026-10-23): the time is ALREADY an entry in the timesheet, so the strip says so ("Saved 0:42") instead

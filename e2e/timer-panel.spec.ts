@@ -29,7 +29,7 @@ test("the timer strip: Start runs it, Stop saves at once with Undo and Resume (#
     await expect(watch.getByRole("button", { name })).toBeVisible();
   // A quiet pause after work: the pond opens in a new tab, so the timesheet stays open.
   const pond = watch.getByRole("link", { name: /Visit the pond/ });
-  await expect(pond).toHaveAttribute("href", "https://pond.zontakllc.com");
+  await expect(pond).toHaveAttribute("href", "https://quiet.zontakllc.com/pond/");
   await expect(pond).toHaveAttribute("target", "_blank");
   await expect(page.getByRole("region", { name: "Today's entries" })).toBeVisible(); // already saved as an entry
   await pastTimerLock(page); // the choices are locked for a moment after they appear
