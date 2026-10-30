@@ -13,7 +13,7 @@ probes each): 54, 51, 65; 47, 49, 53; 138, 47, 49; 131, 138, 47; 48, 50, 48 ms; 
 
 **Checked in the code (no app cause):**
 - `src/app/api/health/route.ts:50-58` times two Prisma `$queryRaw` calls only: `SELECT 1` (`selectMs`) and one
-  indexed read of the `health-probe` user (`probeMs`). Neither changed near 2026-10-27.
+  indexed read of the `health-probe` user (`probeMs`).
 - `retryTransientD1` (`src/lib/d1-retry.ts`) adds one Proxy hop unless a read fails; D1 errors are 0, so no retries.
 - A steady +35-40 ms on a two-query probe is the Worker-to-D1 round trip (placement, region or network), not our SQL.
 - Staging runs `placement: { mode: "smart" }` (`wrangler.staging.example.jsonc:11`) and has no cron. Production has a
@@ -26,6 +26,8 @@ probes each): 54, 51, 65; 47, 49, 53; 138, 47, 49; 131, 138, 47; 48, 50, 48 ms; 
   the `cf-placement` header. Reproduces if most `probeMs` are over 30 ms with `ok: true`.
 - `git log --since=2026-10-27T12:00 --until=2026-10-28T00:00 -- 'wrangler*.jsonc' scripts/ci-wrangler-config.mjs
   .circleci/ src/lib/prisma.ts`, and any merge to `next` that deployed staging near 18:41.
+- Whether `src/app/api/health/route.ts` or `src/lib/d1-retry.ts` changed near 2026-10-27 (add both paths to the
+  `git log` above).
 
 **For the owner or Day Shift (scoped Cloudflare access):**
 - D1 > `hourly-staging-db` > Metrics: query time before and after 2026-10-27 18:41.
