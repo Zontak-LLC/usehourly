@@ -42,6 +42,10 @@ jobs:
       - run: npm run e2e
         env:
           E2E_FULL_PHONE: "1"
+      # Before the sweep: the sweep's json reporter overwrites results.json with its one test (issue 354).
+      - name: Slowest 10 tests
+        if: always()
+        run: npm run e2e:summary
       # Reuses the build from the step above (nothing changed), so only the sweep itself takes time.
       - name: Click every control (nightly and on demand)
         if: github.event_name != 'pull_request'

@@ -132,7 +132,8 @@ Lines that are not ours and need no fix. Match the whole signature, not one fram
 Pushing to `main` is the release: CircleCI runs `npm run ci` (Biome, types, tests with the coverage floor), applies
 D1 migrations (`wrangler d1 migrations apply DB --remote`), then deploys. Run `npm run ci` before every push. Two more
 workflows run on GitHub: the same `npm run ci` for pull requests, a weekly dependency audit and CodeQL, and a nightly
-browser-test run (`e2e.yml`).
+browser-test run (`e2e.yml`). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
+`summary.md` in the `e2e-report` artifact.
 
 ## Staging and daily releases (2026-10-21)
 
