@@ -4,13 +4,13 @@ import { z } from "zod";
 
 import { isDemoSession } from "@/lib/demo";
 import { emailField } from "@/lib/email";
-import { invoiceScheduleSchema } from "@/lib/invoice-schedule";
 import { CURRENCY_CODES, effectiveCurrency } from "@/lib/money";
 import { DEFAULT_CLIENT_COLOR } from "@/lib/palette";
-import { roundingSchema } from "@/lib/rounding";
 
 import { logoSchema } from "../logo-schema";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
+import { invoiceScheduleSchema } from "../schemas/invoice-schedule";
+import { roundingSchema } from "../schemas/rounding";
 import { protectedProcedure, router } from "../trpc";
 
 const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);

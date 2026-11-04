@@ -2,9 +2,8 @@ import type { Page } from "@playwright/test";
 
 import { type AccountingInvoice, XERO_MAX_LINES } from "../src/lib/accounting-export";
 import { FEATURES } from "../src/lib/features";
-import { expect, test, withSharedAccount } from "./helpers";
+import { downloadEverything, expect, stamp, test, trpc, withSharedAccount } from "./helpers";
 
-test.skip(!FEATURES.accountingExport, "The accounting export is hidden in this release (src/lib/features.ts)");
 withSharedAccount();
 
 /** One paid invoice with `lines` lines: one line past Xero's limit makes a file Xero would refuse. */
@@ -44,7 +43,28 @@ async function fakeInvoices(page: Page, lines: number) {
   );
 }
 
+test("Week: Export a date range opens its panel, and Download everything in it downloads the zip", async ({ page }) => {
+  // The panel and the zip code load on first open and on the click (issue 425); this is the user's path through both.
+  const client = await trpc<{ id: string }>(page, "clients.create", { name: `Range ${stamp()}` });
+  const project = await trpc<{ id: string }>(page, "project.create", {
+    clientId: client.id,
+    name: "General",
+    hourlyRate: 0,
+  });
+  const note = `Range zip ${stamp()}`;
+  await trpc(page, "entry.create", { projectId: project.id, date: "2026-09-08", minutes: 45, note });
+
+  await page.goto("/dashboard/week?date=2026-09-08");
+  await page.getByRole("button", { name: /^(Share & export|Export)$/ }).click();
+  await page.getByRole("menuitem", { name: "Export a date range…" }).click();
+  const panel = page.getByRole("region", { name: "Export a date range" });
+  await expect(panel).toBeVisible();
+  const csv = await downloadEverything(page, panel);
+  expect(csv).toContain(note);
+});
+
 test("a file too long for Xero says so and downloads nothing; payments still download", async ({ page }) => {
+  test.skip(!FEATURES.accountingExport, "The accounting export is hidden in this release (src/lib/features.ts)");
   await fakeInvoices(page, XERO_MAX_LINES + 1);
   await page.goto("/dashboard/account#data");
   const card = page.getByRole("region", { name: "Send invoices to your accounting app" });

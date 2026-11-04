@@ -1,12 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
+
+import dynamic from "next/dynamic";
+
 import { Download, FileSpreadsheet, FileText, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Caret } from "@/components/caret";
 import { useAccountCurrency } from "@/components/currency-provider";
-import { RangeExport } from "@/components/range-export";
-import { ShareTimesheet } from "@/components/share-timesheet";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,13 +16,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv } from "@/lib/accounting-export";
-import { csvFilename, entriesCsv } from "@/lib/export-all";
+import { csvFilename } from "@/lib/csv";
 import { downloadTimesheetXlsx } from "@/lib/export-xlsx";
 import { feature } from "@/lib/features";
 import { exportableEntries, type SheetEntry } from "@/lib/timesheet";
 
 export type SharePanelKind = "range" | "share";
+
+type PanelProps = { onClose: () => void; defaultFrom: string; defaultTo: string; projectId: string };
+
+/** Shown in the panel's place while its code loads (only on the first open of a page visit). */
+function PanelLoading() {
+  return <Skeleton className="h-40 w-full rounded-xl" />;
+}
+
+/** What a panel whose code could not load turns into: it closes itself, so the menu can be used again. */
+function ClosedPanel({ onClose }: PanelProps) {
+  useEffect(() => onClose(), [onClose]);
+  return null;
+}
+
+/** A failed load says so (never silently) and leaves the panel closed. */
+function panelLoadFailed() {
+  toast.error("Could not load the export. Please try again.");
+  return ClosedPanel;
+}
+
+// Both panels load on first open, not with Week and Month (issue 425). Never import them statically here: that would
+// put their code (and the zip export behind "Download everything") back into those pages' first load.
+const RangeExport = dynamic<PanelProps>(
+  () => import("@/components/range-export").then((m) => m.RangeExport, panelLoadFailed),
+  { ssr: false, loading: PanelLoading },
+);
+const ShareTimesheet = dynamic<PanelProps>(
+  () => import("@/components/share-timesheet").then((m) => m.ShareTimesheet, panelLoadFailed),
+  { ssr: false, loading: PanelLoading },
+);
 
 /** The form a menu choice opens, drawn by the toolbar right under its row (not in a pop-up). */
 export function SharePanel({
@@ -73,8 +106,11 @@ export function ShareExportMenu({
   async function download(format: "xlsx" | "csv") {
     if (!entries) return;
     try {
-      if (format === "csv") downloadCsv(csvFilename(filename), entriesCsv(exportableEntries(entries), accountCurrency));
-      else await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
+      if (format === "csv") {
+        // Loaded on click: a static import would keep the "Download everything" zip code in Week and Month (issue 425).
+        const { entriesCsv } = await import("@/lib/export-all");
+        downloadCsv(csvFilename(filename), entriesCsv(exportableEntries(entries), accountCurrency));
+      } else await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     }

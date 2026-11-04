@@ -1,21 +1,13 @@
-/** Billing rounding rules (issue #36). Applied per entry when an invoice is built; stored entries never change. */
-import { z } from "zod";
-
+/**
+ * Billing rounding rules (issue #36). Applied per entry when an invoice is built; stored entries never change.
+ * The request schema is in `src/server/schemas/rounding.ts`, so invoices in the browser do not load zod (issue 425).
+ */
 export const ROUND_STEPS = [0, 6, 15, 30] as const;
 export const ROUND_MINIMUMS = [0, 15, 30, 60] as const;
 
 export type Rounding = { step: number; mode: "up" | "nearest"; min: number };
 
 export const NO_ROUNDING: Rounding = { step: 0, mode: "up", min: 0 };
-
-export const roundingSchema = z.object({
-  step: z
-    .number()
-    .int()
-    .refine((n) => (ROUND_STEPS as readonly number[]).includes(n), "Choose 6, 15 or 30 minutes."),
-  mode: z.enum(["up", "nearest"]),
-  min: z.number().int().min(0).max(240),
-});
 
 export const isRounding = (r: Rounding) => r.step > 0 || r.min > 0;
 
