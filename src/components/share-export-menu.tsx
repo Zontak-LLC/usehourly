@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-
-import dynamic from "next/dynamic";
+import { type ComponentType, useEffect, useState } from "react";
 
 import { Download, FileSpreadsheet, FileText, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,33 +31,41 @@ function PanelLoading() {
 }
 
 /**
- * What a panel whose code could not load turns into. next/dynamic keeps this result for the rest of the visit, so the
- * message is shown here on every mount (every open), not once in the loader: a later open must never fail silently.
- * It then closes itself, so the menu can be used again.
+ * A panel whose code loads on its first open. Not next/dynamic: that keeps a failed load for the rest of the visit, so
+ * one network blip would break the panel until a reload. Here only a successful load is kept; a failed one shows the
+ * message and closes the panel, and the next open tries again (every failed open shows the message).
  */
-function ClosedPanel({ onClose }: PanelProps) {
-  useEffect(() => {
-    // A fixed id keeps a double mount (React strict mode) to one toast.
-    toast.error("Could not load the export. Please try again.", { id: "export-panel-load-failed" });
-    onClose();
-  }, [onClose]);
-  return null;
-}
-
-function panelLoadFailed() {
-  return ClosedPanel;
+function lazyPanel(load: () => Promise<ComponentType<PanelProps>>) {
+  let loaded: ComponentType<PanelProps> | null = null;
+  return function LazyPanel(props: PanelProps) {
+    const [Panel, setPanel] = useState(() => loaded);
+    const { onClose } = props;
+    useEffect(() => {
+      if (Panel) return;
+      let mounted = true;
+      load().then(
+        (component) => {
+          loaded = component;
+          if (mounted) setPanel(() => component);
+        },
+        () => {
+          if (!mounted) return;
+          toast.error("Could not load the export. Please try again.");
+          onClose();
+        },
+      );
+      return () => {
+        mounted = false;
+      };
+    }, [Panel, onClose]);
+    return Panel ? <Panel {...props} /> : <PanelLoading />;
+  };
 }
 
 // Both panels load on first open, not with Week and Month (issue 425). Never import them statically here: that would
 // put their code (and the zip export behind "Download everything") back into those pages' first load.
-const RangeExport = dynamic<PanelProps>(
-  () => import("@/components/range-export").then((m) => m.RangeExport, panelLoadFailed),
-  { ssr: false, loading: PanelLoading },
-);
-const ShareTimesheet = dynamic<PanelProps>(
-  () => import("@/components/share-timesheet").then((m) => m.ShareTimesheet, panelLoadFailed),
-  { ssr: false, loading: PanelLoading },
-);
+const RangeExport = lazyPanel(() => import("@/components/range-export").then((m) => m.RangeExport));
+const ShareTimesheet = lazyPanel(() => import("@/components/share-timesheet").then((m) => m.ShareTimesheet));
 
 /** The form a menu choice opens, drawn by the toolbar right under its row (not in a pop-up). */
 export function SharePanel({
