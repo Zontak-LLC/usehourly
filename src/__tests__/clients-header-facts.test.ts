@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { invoiceStatus, latestInvoiceByClient } from "@/app/(main)/dashboard/clients/_components/client-facts";
+import { invoiceStatus, latestInvoiceByClient } from "@/app/(app)/dashboard/clients/_components/client-facts";
 import { slideKey } from "@/components/slide-to-confirm";
 import { orderClients } from "@/lib/client-list";
 

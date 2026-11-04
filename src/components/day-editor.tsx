@@ -7,8 +7,8 @@ import Link from "next/link";
 import type { inferRouterOutputs } from "@trpc/server";
 import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 
-import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
-import { QuickAdd } from "@/app/(main)/dashboard/today/_components/quick-add";
+import { EntryRow } from "@/app/(app)/dashboard/today/_components/entry-row";
+import { QuickAdd } from "@/app/(app)/dashboard/today/_components/quick-add";
 import { HeaderCard } from "@/components/header-card";
 import { HoursChip } from "@/components/hours-chip";
 import { MergeEntriesBar } from "@/components/merge-entries-bar";

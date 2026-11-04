@@ -10,10 +10,10 @@ import { LogoMark } from "@/components/logo";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 
-import { AppearanceControl } from "../(main)/dashboard/_components/header/appearance-control";
-import { MobileNav } from "../(main)/dashboard/_components/header/mobile-nav";
-import { SideNav } from "../(main)/dashboard/_components/header/side-nav";
-import { ThemeSwitcher } from "../(main)/dashboard/_components/header/theme-switcher";
+import { AppearanceControl } from "../dashboard/_components/header/appearance-control";
+import { MobileNav } from "../dashboard/_components/header/mobile-nav";
+import { SideNav } from "../dashboard/_components/header/side-nav";
+import { ThemeSwitcher } from "../dashboard/_components/header/theme-switcher";
 
 /**
  * The frame for the Help page: public (linked from anywhere, readable with no account) and kept by the service worker

@@ -56,9 +56,10 @@ There is currently no automated test command. Run build, lint, check, or other v
 
 Keep feature code close to the route that owns it.
 
-- Dashboard routes: `src/app/(main)/dashboard/<screen>/page.tsx`
-- Screen-specific components, data, and schemas: `src/app/(main)/dashboard/<screen>/_components/`
-- Shared dashboard components: `src/app/(main)/dashboard/_components/`
+- Dashboard routes: `src/app/(app)/dashboard/<screen>/page.tsx`
+- Screen-specific components, data, and schemas: `src/app/(app)/dashboard/<screen>/_components/`
+- Shared dashboard components: `src/app/(app)/dashboard/_components/`
+- Root layouts: `src/app/(app)/layout.tsx` (every page, per request, CSP nonce) and `src/app/(landing)/layout.tsx` (the static landing page `/` only)
 - Shared application components: `src/components/`
 - Local shadcn components: `src/components/ui/`
 - Shared hooks and utilities: `src/hooks/` and `src/lib/`
