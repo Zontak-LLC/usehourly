@@ -32,15 +32,21 @@ function PanelLoading() {
   return <Skeleton className="h-40 w-full rounded-xl" />;
 }
 
-/** What a panel whose code could not load turns into: it closes itself, so the menu can be used again. */
+/**
+ * What a panel whose code could not load turns into. next/dynamic keeps this result for the rest of the visit, so the
+ * message is shown here on every mount (every open), not once in the loader: a later open must never fail silently.
+ * It then closes itself, so the menu can be used again.
+ */
 function ClosedPanel({ onClose }: PanelProps) {
-  useEffect(() => onClose(), [onClose]);
+  useEffect(() => {
+    // A fixed id keeps a double mount (React strict mode) to one toast.
+    toast.error("Could not load the export. Please try again.", { id: "export-panel-load-failed" });
+    onClose();
+  }, [onClose]);
   return null;
 }
 
-/** A failed load says so (never silently) and leaves the panel closed. */
 function panelLoadFailed() {
-  toast.error("Could not load the export. Please try again.");
   return ClosedPanel;
 }
 
