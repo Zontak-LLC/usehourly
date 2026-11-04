@@ -42,6 +42,14 @@ describe("the landing page's _headers (issue 424)", () => {
     expect(csp).toContain("upgrade-insecure-requests");
   });
 
+  it("reads the page by the HTML rules, not a regex: odd end tags, case, quoted '>' and comments", () => {
+    const odd =
+      `<!-- <script>not a script</script> --><SCRIPT data-x="a>b">${THEME}</script >` +
+      `<script type='application/ld+json'>{}</SCRIPT/><script>${FLIGHT}</script\n>`;
+    expect(inlineScriptHashes(odd)).toEqual([sha(THEME), sha(FLIGHT)]);
+    expect(() => inlineScriptHashes("<script>never closed")).toThrow(/no end tag/);
+  });
+
   it("carries the five security headers every other page gets, and X-Robots-Tag only on staging", () => {
     const prod = landingHeaders(page(), undefined);
     expect(headerLine(prod, "X-Content-Type-Options")).toContain("nosniff");

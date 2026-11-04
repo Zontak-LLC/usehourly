@@ -23,19 +23,91 @@ import { pathToFileURL } from "node:url";
 const MAX_HEADER_LINE = 2000;
 const JS_TYPES = new Set(["", "module", "text/javascript", "application/javascript"]);
 
-const attribute = (attrs, name) =>
-  attrs
-    .match(new RegExp(`(?:^|\\s)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"))
-    ?.slice(1)
-    .find(Boolean);
+// The page is read with the small tokenizer below, not with regular expressions: a regex cannot follow the HTML rules
+// (an end tag may be `</script >` or `</SCRIPT/>`, a `>` may sit inside a quoted attribute), and CodeQL rightly flags
+// one (js/bad-tag-filter). There is no HTML parser among the dependencies, and the page is our own build's output.
+const isSpace = (char) => char === " " || char === "\n" || char === "\t" || char === "\r" || char === "\f";
+const endsName = (char) => isSpace(char) || char === "/" || char === ">";
+const isLetter = (char) => (char >= "a" && char <= "z") || (char >= "A" && char <= "Z");
+
+/** Reads the attributes of the start tag whose name ends at `from`. Returns them (names lower-cased) and where the tag ends. */
+function readAttributes(html, from) {
+  const attrs = Object.create(null);
+  let at = from;
+  const readUntil = (stop) => {
+    const start = at;
+    while (at < html.length && !stop(html[at])) at++;
+    return html.slice(start, at);
+  };
+  while (at < html.length) {
+    readUntil((char) => !isSpace(char) && char !== "/");
+    if (at >= html.length || html[at] === ">") break;
+    const name = readUntil((char) => isSpace(char) || char === "=" || char === "/" || char === ">").toLowerCase();
+    readUntil((char) => !isSpace(char));
+    let value = "";
+    if (html[at] === "=") {
+      at++;
+      readUntil((char) => !isSpace(char));
+      const quote = html[at];
+      if (quote === '"' || quote === "'") {
+        at++;
+        value = readUntil((char) => char === quote);
+        at++;
+      } else value = readUntil((char) => isSpace(char) || char === ">");
+    }
+    if (!(name in attrs)) attrs[name] = value;
+  }
+  return { attrs, end: Math.min(at + 1, html.length) };
+}
+
+/** Where the next `</script` end tag starts (any case, then a space, `/` or `>`), or -1. */
+function scriptEndAt(lower, from) {
+  for (let at = lower.indexOf("</script", from); at !== -1; at = lower.indexOf("</script", at + 1)) {
+    if (endsName(lower[at + "</script".length])) return at;
+  }
+  return -1;
+}
+
+/** Every start tag in the page, in order: its name, its attributes and, for a script, its text. Comments are skipped. */
+function startTags(html) {
+  const lower = html.toLowerCase();
+  const tags = [];
+  let at = lower.indexOf("<");
+  while (at !== -1) {
+    if (lower.startsWith("<!--", at)) {
+      const close = lower.indexOf("-->", at + 4);
+      at = close === -1 ? -1 : lower.indexOf("<", close + 3);
+      continue;
+    }
+    let nameEnd = at + 1;
+    while (nameEnd < lower.length && !endsName(lower[nameEnd])) nameEnd++;
+    const name = lower.slice(at + 1, nameEnd);
+    if (!isLetter(name[0])) {
+      at = lower.indexOf("<", at + 1); // an end tag, a doctype or a stray "<"
+      continue;
+    }
+    const { attrs, end } = readAttributes(html, nameEnd);
+    let next = end;
+    let text = "";
+    if (name === "script") {
+      const close = scriptEndAt(lower, end);
+      if (close === -1) throw new Error("The landing page has a <script> with no end tag.");
+      text = html.slice(end, close);
+      next = close + 1;
+    }
+    tags.push({ name, attrs, text });
+    at = lower.indexOf("<", next);
+  }
+  return tags;
+}
 
 /** The `'sha256-…'` source of every inline script in the page that runs (JSON data blocks such as JSON-LD do not). */
 export function inlineScriptHashes(html) {
   const hashes = new Set();
-  for (const [, attrs, body] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
-    if (attribute(attrs, "src") !== undefined) continue;
-    if (!JS_TYPES.has((attribute(attrs, "type") ?? "").trim().toLowerCase())) continue;
-    hashes.add(`'sha256-${createHash("sha256").update(body, "utf8").digest("base64")}'`);
+  for (const { name, attrs, text } of startTags(html)) {
+    if (name !== "script" || "src" in attrs) continue;
+    if (!JS_TYPES.has((attrs.type ?? "").trim().toLowerCase())) continue;
+    hashes.add(`'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`);
   }
   return [...hashes];
 }
@@ -43,11 +115,9 @@ export function inlineScriptHashes(html) {
 /** The page's canonical and og:url addresses. */
 function pageUrls(html) {
   const urls = [];
-  for (const [, attrs] of html.matchAll(/<link\b([^>]*)>/gi)) {
-    if (attribute(attrs, "rel")?.toLowerCase() === "canonical") urls.push(attribute(attrs, "href"));
-  }
-  for (const [, attrs] of html.matchAll(/<meta\b([^>]*)>/gi)) {
-    if (attribute(attrs, "property") === "og:url") urls.push(attribute(attrs, "content"));
+  for (const { name, attrs } of startTags(html)) {
+    if (name === "link" && attrs.rel?.toLowerCase() === "canonical") urls.push(attrs.href);
+    if (name === "meta" && attrs.property === "og:url") urls.push(attrs.content);
   }
   return urls.filter(Boolean);
 }
