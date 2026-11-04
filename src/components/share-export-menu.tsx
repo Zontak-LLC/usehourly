@@ -1,6 +1,6 @@
 "use client";
 
-import { type ComponentType, useEffect, useState } from "react";
+import { type ComponentType, useEffect, useRef, useState } from "react";
 
 import { Download, FileSpreadsheet, FileText, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,9 +39,14 @@ function lazyPanel(load: () => Promise<ComponentType<PanelProps>>) {
   let loaded: ComponentType<PanelProps> | null = null;
   return function LazyPanel(props: PanelProps) {
     const [Panel, setPanel] = useState(() => loaded);
-    const { onClose } = props;
+    // The toolbars pass a new onClose on every render; a ref keeps the load to one try per mount.
+    const onCloseRef = useRef(props.onClose);
+    onCloseRef.current = props.onClose;
     useEffect(() => {
-      if (Panel) return;
+      if (loaded) {
+        setPanel(() => loaded);
+        return;
+      }
       let mounted = true;
       load().then(
         (component) => {
@@ -51,13 +56,13 @@ function lazyPanel(load: () => Promise<ComponentType<PanelProps>>) {
         () => {
           if (!mounted) return;
           toast.error("Could not load the export. Please try again.");
-          onClose();
+          onCloseRef.current();
         },
       );
       return () => {
         mounted = false;
       };
-    }, [Panel, onClose]);
+    }, []);
     return Panel ? <Panel {...props} /> : <PanelLoading />;
   };
 }
