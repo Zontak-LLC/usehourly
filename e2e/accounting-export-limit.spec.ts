@@ -83,6 +83,9 @@ test.describe("with no service worker", () => {
   }) => {
     await page.goto("/dashboard/week?date=2026-09-08");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    // The h1 comes with the server's HTML, before the page's own scripts: on a slow CI machine failing chunks from there
+    // also failed the toolbar's code, so the Export menu never answered. Wait until every page script has arrived.
+    await page.waitForLoadState("networkidle");
     // Every script fetched from now on is the panel's own code (the page is loaded), so failing them all is the outage.
     await page.route("**/_next/static/chunks/**", (route) => route.abort());
     const menu = page.getByRole("button", { name: /^(Share & export|Export)$/ });
