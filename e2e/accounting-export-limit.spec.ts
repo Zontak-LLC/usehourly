@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { type AccountingInvoice, XERO_MAX_LINES } from "../src/lib/accounting-export";
 import { FEATURES } from "../src/lib/features";
-import { downloadEverything, expect, stamp, test, trpc, withSharedAccount } from "./helpers";
+import { downloadEverything, expect, signUpByApi, test, trpc, withSharedAccount } from "./helpers";
 
 withSharedAccount();
 
@@ -43,46 +43,62 @@ async function fakeInvoices(page: Page, lines: number) {
   );
 }
 
-test("Week: Export a date range opens its panel, and Download everything in it downloads the zip", async ({ page }) => {
-  // The panel and the zip code load on first open and on the click (issue 425); this is the user's path through both.
-  const client = await trpc<{ id: string }>(page, "clients.create", { name: `Range ${stamp()}` });
-  const project = await trpc<{ id: string }>(page, "project.create", {
-    clientId: client.id,
-    name: "General",
-    hourlyRate: 0,
-  });
-  const note = `Range zip ${stamp()}`;
-  await trpc(page, "entry.create", { projectId: project.id, date: "2026-09-08", minutes: 45, note });
+test.describe("on a fresh account", () => {
+  // "Download everything" zips every entry of the account, so it may not run on the shared one (CLAUDE.md, issue 340):
+  // there it would read what other spec files write at the same time.
+  test.use({ storageState: { cookies: [], origins: [] } });
 
-  await page.goto("/dashboard/week?date=2026-09-08");
-  await page.getByRole("button", { name: /^(Share & export|Export)$/ }).click();
-  await page.getByRole("menuitem", { name: "Export a date range…" }).click();
-  const panel = page.getByRole("region", { name: "Export a date range" });
-  await expect(panel).toBeVisible();
-  const csv = await downloadEverything(page, panel);
-  expect(csv).toContain(note);
+  test("Week: Export a date range opens its panel, and Download everything in it downloads the zip", async ({
+    page,
+  }) => {
+    // The panel and the zip code load on first open and on the click (issue 425); this is the user's path through both.
+    await signUpByApi(page);
+    const client = await trpc<{ id: string }>(page, "clients.create", { name: "Range Co" });
+    const project = await trpc<{ id: string }>(page, "project.create", {
+      clientId: client.id,
+      name: "General",
+      hourlyRate: 0,
+    });
+    const note = "Range zip check";
+    await trpc(page, "entry.create", { projectId: project.id, date: "2026-09-08", minutes: 45, note });
+
+    await page.goto("/dashboard/week?date=2026-09-08");
+    await page.getByRole("button", { name: /^(Share & export|Export)$/ }).click();
+    await page.getByRole("menuitem", { name: "Export a date range…" }).click();
+    const panel = page.getByRole("region", { name: "Export a date range" });
+    await expect(panel).toBeVisible();
+    const csv = await downloadEverything(page, panel);
+    expect(csv).toContain(note);
+    await expect(page.getByText("Downloaded 1 entry for 1 client.")).toBeVisible();
+  });
 });
 
-test("Week: a panel whose code fails to load says so on every open, then opens once the network is back", async ({
-  page,
-}) => {
-  await page.goto("/dashboard/week?date=2026-09-08");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  // Every script fetched from now on is the panel's own code (the page is loaded), so failing them all is the outage.
-  await page.route("**/_next/static/chunks/**", (route) => route.abort());
-  const menu = page.getByRole("button", { name: /^(Share & export|Export)$/ });
-  const message = page.getByText("Could not load the export. Please try again.");
-  for (let open = 0; open < 2; open++) {
+test.describe("with no service worker", () => {
+  // The built app's service worker (public/sw.js) fetches /_next/static/ itself, and page.route never sees what a
+  // service worker fetches: with it on, the outage below would not happen and the panel would open.
+  test.use({ serviceWorkers: "block" });
+
+  test("Week: a panel whose code fails to load says so on every open, then opens once the network is back", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/week?date=2026-09-08");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    // Every script fetched from now on is the panel's own code (the page is loaded), so failing them all is the outage.
+    await page.route("**/_next/static/chunks/**", (route) => route.abort());
+    const menu = page.getByRole("button", { name: /^(Share & export|Export)$/ });
+    const message = page.getByText("Could not load the export. Please try again.");
+    for (let open = 0; open < 2; open++) {
+      await menu.click();
+      await page.getByRole("menuitem", { name: "Export a date range…" }).click();
+      await expect(message).toBeVisible();
+      await expect(page.getByRole("region", { name: "Export a date range" })).toBeHidden();
+      await expect(message).toBeHidden({ timeout: 10_000 });
+    }
+    await page.unroute("**/_next/static/chunks/**");
     await menu.click();
     await page.getByRole("menuitem", { name: "Export a date range…" }).click();
-    await expect(message).toBeVisible();
-    await expect(page.getByRole("region", { name: "Export a date range" })).toBeHidden();
-    await expect(message).toBeHidden({ timeout: 10_000 });
-  }
-  await page.unroute("**/_next/static/chunks/**");
-  await menu.click();
-  await page.getByRole("menuitem", { name: "Export a date range…" }).click();
-  await expect(page.getByRole("region", { name: "Export a date range" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Export a date range" })).toBeVisible();
+  });
 });
 
 test("a file too long for Xero says so and downloads nothing; payments still download", async ({ page }) => {
