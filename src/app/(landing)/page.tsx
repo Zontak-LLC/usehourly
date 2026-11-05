@@ -3,12 +3,13 @@ import Link from "next/link";
 import { ArrowRight, Bot, Code2, Heart, type LucideIcon, ShieldCheck, WifiOff } from "lucide-react";
 import type { Metadata } from "next";
 
-import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
+import { ThemeSwitcher } from "@/app/(app)/dashboard/_components/header/theme-switcher";
 import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos";
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { LandingShowcase } from "@/components/landing-showcase";
 import { LogoMark } from "@/components/logo";
 import { Reveal } from "@/components/reveal";
+import { SignedInRedirect } from "@/components/signed-in-redirect";
 import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
 import { APP_CONFIG } from "@/config/app-config";
@@ -76,6 +77,7 @@ const secondary =
 export default function LandingPage() {
   return (
     <div className="landing relative isolate min-h-dvh overflow-x-clip bg-[var(--landing-page)] text-foreground">
+      <SignedInRedirect />
       {/* Behind the hero: a faint timesheet grid that fades out, and one soft purple glow behind the headline (2026-10-24:
           it replaced three blurred colour blobs, which made the page look muddy). Both come from the theme's tokens. */}
       <div aria-hidden className="landing-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[46rem]" />

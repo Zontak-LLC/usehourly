@@ -89,7 +89,7 @@
     {
       "includes": [
         "e2e/**",
-        "src/app/(main)/dashboard/today/_components/today-view.tsx",
+        "src/app/(app)/dashboard/today/_components/today-view.tsx",
         "src/lib/invoice-pdf.ts",
         "src/server/routers/time-import.ts"
       ],

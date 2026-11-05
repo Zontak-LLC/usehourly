@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import Link from "next/link";
 
-import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
+import { ThemeSwitcher } from "@/app/(app)/dashboard/_components/header/theme-switcher";
 import { LogoMark } from "@/components/logo";
 
 import { AuthSwitchLink } from "../_components/auth-switch-link";

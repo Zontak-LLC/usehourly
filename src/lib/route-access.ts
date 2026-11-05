@@ -2,8 +2,10 @@
  * Who may see which page. Kept as a pure function so the rule can be tested without the
  * auth middleware: `src/proxy.ts` just asks it and acts on the answer.
  *
- * - `/` is the public landing page. Visitors see it; someone already signed in goes straight
- *   to their day, so returning users never see the sales page.
+ * - `/` is the public landing page. Visitors see it; someone already signed in goes on to their
+ *   day. The proxy no longer runs on `/` (it is a static file, see the matcher in `src/proxy.ts`):
+ *   the page's `SignedInRedirect` does it after paint, so the rule here only covers a request that
+ *   reaches the proxy anyway.
  * - `/auth/*` are the log-in and create-account pages: public, but pointless once signed in.
  * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off`, the app manifest and the offline worker (`/sw.js`, `/offline.html`) are public for everyone, signed in or not.
  * - `/timesheet/<token>` is a private link a freelancer sends a client for sign-off: public for everyone, protected by the unguessable token.

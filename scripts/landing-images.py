@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Turns the pictures made by `LANDING_SHOTS=1 npx playwright test e2e/landing-shots.spec.ts --project=desktop`
 (e2e/report/landing/*.png, whole content columns at 2x) into the cropped webp files the landing page uses
-(public/landing/*.webp), and prints the width and height to put in src/app/(main)/page.tsx.
+(public/landing/*.webp), and prints the width and height to put in src/app/(landing)/page.tsx.
 Needs Pillow and cwebp (brew install webp). Crops keep the top of each page, where the story is."""
 import os
 import subprocess

@@ -1,15 +1,19 @@
 /**
- * The Content-Security-Policy, built per request so that scripts need a one-time nonce instead of 'unsafe-inline'.
- * A script the page did not mark with this request's nonce (an injected `<script>` or an `onclick=` attribute) will
- * not run. Everything else is locked down too: no plugins, no <base> hijack, no framing, forms and fetches only to
- * this origin, images only from this origin or data/blob (logos are data URLs, downloads are blobs).
+ * The Content-Security-Policy. Inline scripts never get 'unsafe-inline': a page rendered per request allows only
+ * scripts carrying that request's nonce (src/proxy.ts), and the static landing page allows only the exact scripts it
+ * holds, by hash (scripts/landing-static.mjs). An injected `<script>` or an `onclick=` attribute will not run.
+ * Everything else is locked down too: no plugins, no <base> hijack, no framing, forms and fetches only to this
+ * origin, images only from this origin or data/blob (logos are data URLs, downloads are blobs).
+ *
+ * `inlineScripts` is a nonce (a string) or a list of ready sources such as `'sha256-…'`.
  */
-export function buildCsp(nonce: string, isProd: boolean, upgradeToHttps = isProd): string {
+export function buildCsp(inlineScripts: string | readonly string[], isProd: boolean, upgradeToHttps = isProd): string {
+  const scriptSources = typeof inlineScripts === "string" ? [`'nonce-${inlineScripts}'`] : inlineScripts;
   return [
     "default-src 'self'",
-    // The nonce covers Next.js's own inline scripts and the theme boot script. static.cloudflareinsights.com is
+    // The nonce or hashes cover Next.js's own inline scripts and the theme boot script. static.cloudflareinsights.com is
     // Cloudflare Web Analytics (injected at the edge in production); challenges.cloudflare.com is the sign-up robot check.
-    `script-src 'self' 'nonce-${nonce}'${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"} https://challenges.cloudflare.com https://accounts.google.com`,
+    `script-src 'self' ${scriptSources.join(" ")}${isProd ? " https://static.cloudflareinsights.com" : " 'unsafe-eval'"} https://challenges.cloudflare.com https://accounts.google.com`,
     // accounts.google.com is Google's sign-in script for "Connect Google Calendar" (issue #99), loaded when the Today calendar card is shown.
     // Turnstile draws its widget in an iframe from Cloudflare.
     "frame-src https://challenges.cloudflare.com",
