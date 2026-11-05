@@ -1,6 +1,8 @@
-import { z } from "zod";
-
-/** Local-date helpers. Dates are YYYY-MM-DD strings, never timezone-shifted. */
+/**
+ * Local-date helpers. Dates are YYYY-MM-DD strings, never timezone-shifted.
+ * No zod here (issue 425): the root layout reaches this file through the tRPC provider, so a schema here put zod in every
+ * page's first load. Request schemas live in `src/server/schemas/dates.ts`.
+ */
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** True for a real calendar date such as 2026-02-28, false for 2026-99-99 or 2026-02-30. */
@@ -9,12 +11,6 @@ export function isRealDate(s: string): boolean {
   const d = new Date(`${s}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
-
-/** A real YYYY-MM-DD calendar date, for request inputs. */
-export const dateSchema = z
-  .string()
-  .regex(DATE_RE, "Use YYYY-MM-DD")
-  .refine((s) => isRealDate(s), "That is not a real date.");
 
 /** Days from `from` to `to`, both included (a single day is 1). */
 export function spanDays(from: string, to: string): number {

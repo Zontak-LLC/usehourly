@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { auditPage, expect, startFreshAccount, test } from "./helpers";
+import { auditPage, downloadEverything, expect, startFreshAccount, test, trpc } from "./helpers";
 
 /**
  * Account as a split view like Clients (issue 283): the sections on the left, each a link with one status line, the
@@ -81,6 +81,22 @@ test("each section opens from the list, keeps its address on a reload, and the p
     await expect(support).toHaveAttribute("href", /^https:\/\//);
     await expect(support).toHaveAccessibleName(/opens in a new tab/);
   });
+});
+
+test("Your data: Download everything loads its zip code on the click and downloads every entry", async ({ page }) => {
+  await startFreshAccount(page, "Acme Studio");
+  const res = await page.request.get("/api/trpc/clients.list");
+  const clients = ((await res.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
+  const note = "Logo concepts";
+  await trpc(page, "entry.create", { projectId: clients[0].projects[0].id, date: "2026-09-08", minutes: 90, note });
+
+  await page.goto("/dashboard/account#data");
+  const card = page.getByRole("region", { name: "Download everything" });
+  await expect(card).toBeVisible();
+  const csv = await downloadEverything(page, card);
+  expect(csv).toContain("2026-09-08");
+  expect(csv).toContain(note);
+  await expect(page.getByText("Downloaded 1 entry for 1 client.")).toBeVisible();
 });
 
 test("a setting found by search opens its section, also from the Account page itself", async ({ page }) => {

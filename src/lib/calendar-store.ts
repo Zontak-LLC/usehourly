@@ -1,8 +1,7 @@
-import { z } from "zod";
-
 import { type CalendarEvent, MAX_EVENTS } from "@/lib/calendar-events";
 import { MAX_LINK_CHARS } from "@/lib/calendar-link";
 import { type CalendarRule, MAX_RULE_CHARS, MAX_RULES } from "@/lib/calendar-suggest";
+import { type Fields, isFields, isListUpTo, isNumber, isText } from "@/lib/stored-guards";
 
 /**
  * The imported calendar (issue #99), kept ONLY in this browser (localStorage), under the account that imported it. The
@@ -36,22 +35,52 @@ export const cancelCalendarReads = () => {
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-const saved = z.object({
-  userId: z.string().min(1),
-  importedAt: z.number(),
-  name: z.string().max(200),
-  events: z
-    .array(
-      z.object({
-        uid: z.string().max(400),
-        title: z.string().max(200),
-        start: z.number(),
-        end: z.number(),
-      }),
-    )
-    .max(MAX_EVENTS),
-});
-export type SavedCalendar = z.infer<typeof saved>;
+export type SavedCalendar = { userId: string; importedAt: number; name: string; events: CalendarEvent[] };
+
+/*
+ * The stored values are checked by hand (no zod in the browser, issue 425) with the rules the zod schemas had: each
+ * parse returns only the known fields, or null when any rule fails, and the whole value is then dropped.
+ */
+
+function parseEvent(v: unknown): CalendarEvent | null {
+  if (!isFields(v)) return null;
+  const { uid, title, start, end } = v;
+  return isText(uid, 0, 400) && isText(title, 0, 200) && isNumber(start) && isNumber(end)
+    ? { uid, title, start, end }
+    : null;
+}
+
+/** Each item of `list` through `parse`, or null when one fails (as `z.array` did). */
+function parseAll<T>(list: unknown[], parse: (v: unknown) => T | null): T[] | null {
+  const out: T[] = [];
+  for (const item of list) {
+    const ok = parse(item);
+    if (ok === null) return null;
+    out.push(ok);
+  }
+  return out;
+}
+
+function parseSavedCalendar(v: unknown): SavedCalendar | null {
+  if (!isFields(v)) return null;
+  const { userId, importedAt, name, events } = v;
+  if (!isText(userId, 1) || !isNumber(importedAt) || !isText(name, 0, 200) || !isListUpTo(events, MAX_EVENTS)) {
+    return null;
+  }
+  const parsed = parseAll(events, parseEvent);
+  return parsed && { userId, importedAt, name, events: parsed };
+}
+
+/** The stored value's fields when it belongs to `userId` (`{ userId: z.string(), ... }` and the same account). */
+function ownedBy(v: unknown, userId: string): Fields | null {
+  return isFields(v) && isText(v.userId) && v.userId === userId ? v : null;
+}
+
+function parseRule(v: unknown): CalendarRule | null {
+  if (!isFields(v)) return null;
+  const { word, projectId } = v;
+  return isText(word, 1, MAX_RULE_CHARS) && isText(projectId, 1, 100) ? { word, projectId } : null;
+}
 
 /** The calendar imported by this account, or null (none, another account's, damaged, or storage unreadable). */
 export function loadCalendar(storage: StorageLike | null, userId: string | null | undefined): SavedCalendar | null {
@@ -59,8 +88,8 @@ export function loadCalendar(storage: StorageLike | null, userId: string | null 
   try {
     const raw = storage.getItem(CALENDAR_KEY);
     if (!raw) return null;
-    const ok = saved.safeParse(JSON.parse(raw));
-    return ok.success && ok.data.userId === userId ? ok.data : null;
+    const calendar = parseSavedCalendar(JSON.parse(raw));
+    return calendar && calendar.userId === userId ? calendar : null;
   } catch {
     return null;
   }
@@ -87,10 +116,8 @@ export function saveCalendar(
 export function loadLink(storage: StorageLike | null, userId: string | null | undefined): string | null {
   if (!storage || !userId) return null;
   try {
-    const parsed = z
-      .object({ userId: z.string(), url: z.string().max(MAX_LINK_CHARS) })
-      .safeParse(JSON.parse(storage.getItem(CALENDAR_LINK_KEY) ?? "null"));
-    return parsed.success && parsed.data.userId === userId ? parsed.data.url : null;
+    const url = ownedBy(JSON.parse(storage.getItem(CALENDAR_LINK_KEY) ?? "null"), userId)?.url;
+    return isText(url, 0, MAX_LINK_CHARS) ? url : null;
   } catch {
     return null;
   }
@@ -112,10 +139,7 @@ export function saveLink(storage: StorageLike | null, userId: string, url: strin
 export function loadGoogle(storage: StorageLike | null, userId: string | null | undefined): boolean {
   if (!storage || !userId) return false;
   try {
-    const parsed = z
-      .object({ userId: z.string() })
-      .safeParse(JSON.parse(storage.getItem(CALENDAR_GOOGLE_KEY) ?? "null"));
-    return parsed.success && parsed.data.userId === userId;
+    return ownedBy(JSON.parse(storage.getItem(CALENDAR_GOOGLE_KEY) ?? "null"), userId) !== null;
   } catch {
     return false;
   }
@@ -149,10 +173,9 @@ export function forgetCalendar(storage: StorageLike | null): void {
 export function loadSkipped(storage: StorageLike | null, userId: string | null | undefined): Set<string> {
   if (!storage || !userId) return new Set();
   try {
-    const parsed = z
-      .object({ userId: z.string(), ids: z.array(z.string().max(500)).max(MAX_SKIPPED) })
-      .safeParse(JSON.parse(storage.getItem(CALENDAR_SKIPPED_KEY) ?? "null"));
-    return parsed.success && parsed.data.userId === userId ? new Set(parsed.data.ids) : new Set();
+    const ids = ownedBy(JSON.parse(storage.getItem(CALENDAR_SKIPPED_KEY) ?? "null"), userId)?.ids;
+    const ok = isListUpTo(ids, MAX_SKIPPED) && ids.every((id): id is string => isText(id, 0, 500));
+    return ok ? new Set(ids) : new Set();
   } catch {
     return new Set();
   }
@@ -173,15 +196,8 @@ export function addSkipped(storage: StorageLike | null, userId: string, id: stri
 export function loadRules(storage: StorageLike | null, userId: string | null | undefined): CalendarRule[] {
   if (!storage || !userId) return [];
   try {
-    const parsed = z
-      .object({
-        userId: z.string(),
-        rules: z
-          .array(z.object({ word: z.string().min(1).max(MAX_RULE_CHARS), projectId: z.string().min(1).max(100) }))
-          .max(MAX_RULES),
-      })
-      .safeParse(JSON.parse(storage.getItem(CALENDAR_RULES_KEY) ?? "null"));
-    return parsed.success && parsed.data.userId === userId ? parsed.data.rules : [];
+    const rules = ownedBy(JSON.parse(storage.getItem(CALENDAR_RULES_KEY) ?? "null"), userId)?.rules;
+    return (isListUpTo(rules, MAX_RULES) && parseAll(rules, parseRule)) || [];
   } catch {
     return [];
   }

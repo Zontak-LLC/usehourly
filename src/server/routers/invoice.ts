@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { dateSchema, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
+import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildInvoice, buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
 import { summarizeInvoice } from "@/lib/invoice-summary";
@@ -14,6 +14,7 @@ import { nextInvoiceNumber } from "@/lib/unbilled";
 
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
 import { nonBillableDates } from "../non-billable";
+import { dateSchema } from "../schemas/dates";
 import { type Context, protectedProcedure, router } from "../trpc";
 import { markInvoiced, unbilledByClient } from "../unbilled";
 

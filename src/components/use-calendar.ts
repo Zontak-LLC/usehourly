@@ -24,7 +24,6 @@ import {
   saveRules,
 } from "@/lib/calendar-store";
 import { addRule, type CalendarRule } from "@/lib/calendar-suggest";
-import { fetchGoogleEvents, GoogleCalendarError } from "@/lib/google-calendar";
 import { requestGoogleToken, revokeGoogleToken } from "@/lib/google-identity";
 import { safeStorage } from "@/lib/offline-cache";
 
@@ -138,6 +137,7 @@ export function useSavedCalendar() {
         revokeGoogleToken(); // disconnected while Google's window was open: drop the access it just gave
         return null;
       }
+      const { fetchGoogleEvents } = await import("@/lib/google-calendar"); // zod with it, so only on use (issue 425)
       const { events, truncated } = await fetchGoogleEvents(token, keepWindow(new Date()));
       if (started !== calendarGeneration()) return null;
       if (!saveCalendar(safeStorage(), userId, { name: "Google Calendar", events, importedAt: Date.now() })) {
@@ -148,7 +148,7 @@ export function useSavedCalendar() {
       window.dispatchEvent(new Event(CALENDAR_EVENT));
       return { count: events.length, truncated };
     } catch (err) {
-      if (err instanceof GoogleCalendarError || err instanceof Error) throw err;
+      if (err instanceof Error) throw err; // GoogleCalendarError, a failed load, or one of the errors above
       throw new Error("Couldn't read your Google Calendar.");
     } finally {
       setBusy(false);

@@ -1,6 +1,4 @@
-import { z } from "zod";
-
-import { addDays, dateSchema, fromISODate, isRealDate, monthBounds } from "@/lib/dates";
+import { addDays, fromISODate, isRealDate, monthBounds } from "@/lib/dates";
 import { daysBetween as daysFrom } from "@/lib/invoice-mail";
 
 /*
@@ -11,20 +9,13 @@ import { daysBetween as daysFrom } from "@/lib/invoice-mail";
  * "Today" always comes from the browser (the Worker runs in UTC), so every rule here takes it as an argument.
  */
 
-const INVOICE_EVERY = ["month", "2weeks"] as const;
+export const INVOICE_EVERY = ["month", "2weeks"] as const;
 export type InvoiceEvery = (typeof INVOICE_EVERY)[number];
 
 export const isInvoiceEvery = (v: unknown): v is InvoiceEvery => INVOICE_EVERY.includes(v as InvoiceEvery);
 
+/** What `clients.update` takes is `invoiceScheduleSchema` in `src/server/schemas/invoice-schedule.ts` (no zod here). */
 export type InvoiceSchedule = { every: InvoiceEvery; anchor: string | null };
-
-/** What `clients.update` takes: null = "when I choose"; every 2 weeks needs the first day of the first period. */
-export const invoiceScheduleSchema = z
-  .object({ every: z.enum(INVOICE_EVERY).nullable(), anchor: dateSchema.nullable() })
-  .refine((v) => v.every !== "2weeks" || v.anchor !== null, {
-    message: "Choose the first day of the first two weeks.",
-    path: ["anchor"],
-  });
 
 /** A billing period and the day its invoice is due (the day after it ends). */
 export type SchedulePeriod = { from: string; to: string; due: string };
