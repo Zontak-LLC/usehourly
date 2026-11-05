@@ -1,19 +1,12 @@
 import type { Page } from "@playwright/test";
 
-import { entryAction, expect, openEntryEdit, startFreshAccount, test } from "./helpers";
+import { entryAction, expect, hold, openEntryEdit, startFreshAccount, test } from "./helpers";
 
 /**
  * Adding, editing and deleting an entry show on screen at once; the server's answer only confirms them. Each test
  * holds the server's answer back for four seconds (or has it refuse) and checks the screen within a second and a half.
  */
 const SLOW = 4000;
-
-async function hold(page: Page, procedure: string) {
-  await page.route(`**/api/trpc/${procedure}*`, async (route) => {
-    await new Promise((r) => setTimeout(r, SLOW));
-    await route.continue();
-  });
-}
 
 async function addEntry(page: Page, time: string, note: string) {
   await page.getByPlaceholder(/Time:/).fill(time);
@@ -24,7 +17,7 @@ async function addEntry(page: Page, time: string, note: string) {
 test("a new entry is in the list and the form is clear before the server has answered", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/today");
-  await hold(page, "entry.create");
+  await hold(page, "entry.create", SLOW);
   const typedAt = Date.now();
   await addEntry(page, "90m", "Added instantly");
   await expect(page.getByText("Added instantly")).toBeVisible({ timeout: 1500 });
@@ -74,7 +67,7 @@ test("deleting an entry removes it at once, and an edit shows its new time at on
   await expect(card.getByRole("button", { name: "Delete", exact: true })).toBeEnabled();
   await card.getByRole("button", { name: "Cancel" }).click();
 
-  await hold(page, "entry.update");
+  await hold(page, "entry.update", SLOW);
   await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await page.getByLabel("Time", { exact: true }).fill("3h");
   await page.getByRole("button", { name: "Save" }).click();
@@ -84,7 +77,7 @@ test("deleting an entry removes it at once, and an edit shows its new time at on
     timeout: SLOW + 6000,
   }); // and it stays
 
-  await hold(page, "entry.delete");
+  await hold(page, "entry.delete", SLOW);
   await entryAction(page, "Delete");
   await page.getByRole("region", { name: "Delete this entry?" }).getByRole("button", { name: "Delete entry" }).click();
   await expect(page.getByText("Edit then delete me")).toHaveCount(0, { timeout: 1500 });

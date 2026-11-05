@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Loading: one calm spinner for slow waits (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 430. The one loading sign: a thin ring in the text colour (25%) with 12 short dashes inside. The dashes
+  stay still; a wave of brightness runs round them, about once a second (each dash fades from full to 25%, 1/12 s after
+  the one before). It takes the text colour (currentColor), so it fits the amber fill, the tint buttons, light and dark.
+  It shows only after 300 ms of waiting (SPINNER_DELAY_MS in src/lib/loading.ts); a fast save shows nothing.
+  Under reduced motion it is a still picture of the wave. Colours are the app's tokens (src/app/globals.css); no new
+  colour, no glow, no brown. Built as src/components/ui/spinner.tsx, keyframes "spinner-dash" in globals.css.
+-->
+<style>
+  .light {
+    --background: #eef2f7; --foreground: #1c2434; --card: #ffffff; --border: #dbe2ec;
+    --muted: #e3e9f1; --muted-fg: #586377; --amber: #2563c9; --on-amber: #ffffff; --tint: #e6ecf5;
+  }
+  .dark {
+    --background: #131a26; --foreground: #e6ebf3; --card: #1a2232; --border: #2a3447;
+    --muted: #222b3c; --muted-fg: #9ba7ba; --amber: #7fa6ef; --on-amber: #131a26; --tint: #253047;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: #eef2f7; color: #1c2434;
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; max-width: 75ch; color: #586377; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px; color: var(--muted-fg); }
+  .theme { padding: 20px; border-radius: 16px; background: var(--background); color: var(--foreground); margin-bottom: 24px; }
+  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+  .frame { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .label { font: 11px/1 ui-monospace, monospace; color: var(--muted-fg); }
+
+  /* The spinner: the ring, 12 dashes turned 30° apart, each one fading 1/12 s after the one before. */
+  .spinner { position: relative; display: inline-block; flex-shrink: 0; border-radius: 999px;
+    border: 1px solid color-mix(in oklab, currentColor 25%, transparent); }
+  .sm { width: 16px; height: 16px; } .md { width: 24px; height: 24px; } .lg { width: 40px; height: 40px; }
+  .arm { position: absolute; inset: 0; }
+  .dash { position: absolute; top: 16%; left: 50%; height: 24%; width: 10%; transform: translateX(-50%);
+    border-radius: 999px; background: currentColor; }
+  @media (prefers-reduced-motion: no-preference) { .dash { animation: spinner-dash 1s linear infinite; } }
+  @keyframes spinner-dash { from { opacity: 1; } to { opacity: .25; } }
+
+  /* The buttons it sits in. */
+  .log { display: inline-flex; align-items: center; gap: 12px; height: 44px; padding: 0 24px; border-radius: 16px; border: 0;
+    background: var(--amber); color: var(--on-amber); font: 700 16px system-ui, sans-serif; }
+  .disc { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 999px;
+    background: color-mix(in oklab, var(--on-amber) 20%, transparent); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 12px; border: 0;
+    font: 600 14px system-ui, sans-serif; background: var(--amber); color: var(--on-amber); }
+  .btn[disabled], .doc[disabled] { opacity: .5; }
+  .doc { display: inline-flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 20px 8px 8px; border-radius: 16px;
+    border: 0; background: var(--amber); color: var(--on-amber); text-align: left; font: inherit; }
+  .tile { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
+    background: color-mix(in oklab, var(--on-amber) 20%, transparent); }
+  .doc b { display: block; font-size: 16px; } .doc small { opacity: .75; font-size: 12px; }
+  .tint { background: var(--tint); color: var(--foreground); border: 1px solid var(--border); font-weight: 500; }
+</style>
+</head>
+<body>
+<h1>Loading: one calm spinner, only on slow waits</h1>
+<p class="note">When a save, invoice, export or send is still open after 300 ms, the button you pressed shows this small
+spinner; a faster answer shows nothing, so nothing flickers. While it works the button is off and says what it is doing
+("Saving…", "Creating…"). On Log time the spinner sits in the round disc instead of the clock icon; the words stay
+"Logged 2:00" for their moment, then "Log time". With reduced motion the spinner stands still.</p>
+
+<template id="board">
+  <h2>Sizes · sm (16) · md (24) · lg (40)</h2>
+  <div class="row">
+    <div class="frame"><span class="spinner sm" data-dashes></span><span class="label">sm</span></div>
+    <div class="frame"><span class="spinner md" data-dashes></span><span class="label">md</span></div>
+    <div class="frame"><span class="spinner lg" data-dashes></span><span class="label">lg</span></div>
+  </div>
+  <h2>Busy buttons (after 300 ms)</h2>
+  <div class="row">
+    <div class="frame">
+      <button class="log" type="button" disabled style="opacity:1"><span class="disc"><span class="spinner sm" data-dashes></span></span>Logged 2:00</button>
+      <span class="label">Today · Log time (the disc keeps its size)</span>
+    </div>
+    <div class="frame">
+      <button class="btn" type="button" disabled><span class="spinner sm" data-dashes></span>Saving…</button>
+      <span class="label">Entry edit · Save</span>
+    </div>
+    <div class="frame">
+      <button class="doc" type="button" disabled><span class="tile"><span class="spinner md" data-dashes></span></span><span><b>Creating…</b><small>and download the PDF</small></span></button>
+      <span class="label">New invoice · Create invoice</span>
+    </div>
+    <div class="frame">
+      <button class="btn tint" type="button" disabled><span class="spinner sm" data-dashes></span>Exporting…</button>
+      <span class="label">Export Excel (a tint button)</span>
+    </div>
+  </div>
+</template>
+
+<div class="theme light" data-board></div>
+<div class="theme dark" data-board></div>
+
+<script>
+  const board = document.getElementById("board");
+  for (const theme of document.querySelectorAll("[data-board]")) theme.append(board.content.cloneNode(true));
+  for (const spinner of document.querySelectorAll("[data-dashes]")) {
+    for (let i = 0; i < 12; i++) {
+      const arm = document.createElement("span");
+      arm.className = "arm";
+      arm.style.transform = `rotate(${i * 30}deg)`;
+      const dash = document.createElement("span");
+      dash.className = "dash";
+      const phase = ((12 - i) % 12) / 12;
+      dash.style.opacity = String(1 - 0.75 * phase); // the still picture under reduced motion
+      dash.style.animationDelay = `-${phase.toFixed(3)}s`;
+      arm.append(dash);
+      spinner.append(arm);
+    }
+  }
+</script>
+</body>
+</html>

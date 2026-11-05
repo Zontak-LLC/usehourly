@@ -366,8 +366,15 @@ export function EntryRow({
               <Button variant="ghost" onClick={() => setEditing(false)} className="max-sm:flex-1">
                 Cancel
               </Button>
-              <Button variant="primary" onClick={save} disabled={update.isPending} className="max-sm:flex-1">
-                <Check /> Save
+              <Button
+                variant="primary"
+                onClick={save}
+                busy={update.isPending}
+                busyLabel="Saving"
+                className="max-sm:flex-1"
+              >
+                {!update.isPending && <Check />}
+                {update.isPending ? "Saving…" : "Save"}
               </Button>
             </div>
           </div>

@@ -1,7 +1,11 @@
+"use client";
+
 import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "cn";
-import { Loader2 } from "lucide-react";
+
+import { Spinner } from "@/components/ui/spinner";
+import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 
 /**
  * A big two-line action with an icon disc, for the few actions that make a document: create an invoice, download the
@@ -14,6 +18,7 @@ export function DocButton({
   label,
   tone = "ink",
   busy = false,
+  busyLabel,
   className,
   ...props
 }: Omit<ComponentProps<"button">, "title"> & {
@@ -23,8 +28,11 @@ export function DocButton({
   /** The button's accessible name (the visible words are split over two lines). */
   label: string;
   tone?: "amber" | "ink";
+  /** Working: after SPINNER_DELAY_MS the icon disc shows the spinner, named `busyLabel` ("Creating"). */
   busy?: boolean;
+  busyLabel?: string;
 }) {
+  const showSpinner = useDelayedFlag(busy);
   return (
     <button
       type="button"
@@ -40,7 +48,7 @@ export function DocButton({
       )}
     >
       <span
-        aria-hidden
+        aria-hidden={!showSpinner || undefined}
         className={cn(
           "grid size-10 shrink-0 place-items-center rounded-xl transition-transform duration-500 [&_svg]:size-5",
           // The ink button's tile is ink too: amber is kept for the main action (drawing audit, 2026-10-23).
@@ -49,7 +57,7 @@ export function DocButton({
             : "bg-foreground text-background",
         )}
       >
-        {busy ? <Loader2 className="animate-spin" /> : icon}
+        {showSpinner ? <Spinner size="md" label={busyLabel} /> : icon}
       </span>
       <span aria-hidden className="flex flex-col leading-tight">
         <span className="font-display font-extrabold text-base">{title}</span>

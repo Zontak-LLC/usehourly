@@ -142,7 +142,7 @@ export function AskQuestion({ signedIn }: { signedIn: boolean }) {
             </p>
           )}
           <div className="flex gap-2">
-            <Button type="submit" variant="primary" disabled={!text.trim() || ask.isPending}>
+            <Button type="submit" variant="primary" disabled={!text.trim()} busy={ask.isPending} busyLabel="Sending">
               {ask.isPending ? "Sending…" : "Send"}
             </Button>
             <Button type="button" variant="ghost" onClick={close}>

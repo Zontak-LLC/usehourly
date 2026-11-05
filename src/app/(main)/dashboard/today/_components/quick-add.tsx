@@ -16,7 +16,9 @@ import { TIMER_STARTED_EVENT } from "@/components/timer-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { Spinner } from "@/components/ui/spinner";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
+import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { formatDate, monthBounds } from "@/lib/dates";
 import { addChipTime, formatDuration, parseDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
@@ -365,7 +367,12 @@ export function QuickAdd({
         {/* After the quick times in the source, so on a phone it sits right under them and is in view when Today opens
             (2026-10-25: at the foot it was under the bottom menu, and floating over the form it hid the projects). On a
             wide screen the grid still puts it beside the time box (`sm:col-start-2 sm:row-start-1`). */}
-        <LogTimeButton logged={logged} disabled={create.isPending || parsed === null} iconRef={logIconRef} />
+        <LogTimeButton
+          logged={logged}
+          disabled={create.isPending || parsed === null}
+          busy={create.isPending}
+          iconRef={logIconRef}
+        />
 
         <div className="flex min-w-0 items-start gap-2 sm:col-span-2">
           <span id={projectLabel} className="mt-2 shrink-0 text-muted-foreground text-sm">
@@ -497,16 +504,21 @@ function NoteBox({
 function LogTimeButton({
   logged,
   disabled,
+  busy,
   iconRef,
 }: {
   logged: string | null;
   disabled: boolean;
+  /** The save is still open. The form is already clear by then (the entry shows at once), so this, not `disabled`, says so. */
+  busy: boolean;
   iconRef: React.RefObject<HTMLSpanElement | null>;
 }) {
+  const showSpinner = useDelayedFlag(busy);
   return (
     <button
       type="submit"
       disabled={disabled}
+      aria-busy={busy || undefined}
       // The main event: a calm amber fill with a clock-plus disc (time going in); no glow or lift since 2026-10-23. While no time is typed
       // it is a plain grey "not ready yet" button with readable words and a thin edge (2026-10-26: the pale accent looked like a
       // normal button in light mode and almost vanished in dark), and it comes alive when there
@@ -519,7 +531,10 @@ function LogTimeButton({
         ref={iconRef}
         className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 sm:size-6 dark:bg-background/25 dark:text-background dark:group-disabled:bg-foreground/10 dark:group-disabled:text-muted-foreground"
       >
-        {logged ? (
+        {/* Only the disc's child changes, so `spin()` on the disc and its size stay as they are. */}
+        {showSpinner ? (
+          <Spinner size="sm" label="Saving" />
+        ) : logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
         ) : (
           <ClockPlus className="size-4" strokeWidth={2.5} aria-hidden />
