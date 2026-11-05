@@ -12,7 +12,7 @@ import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
 import { flyIn, glowEntry, haloColour, spin, useRoll } from "@/components/time-reward";
-import { TIMER_STARTED_EVENT } from "@/components/timer-control";
+import { TIMER_STARTED_EVENT, type TimerContext } from "@/components/timer-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -71,8 +71,9 @@ export function QuickAdd({
   showDate?: boolean;
   /** Without its own card and header: the Week page puts the form inside the day's card. */
   bare?: boolean;
-  /** Today's timer lives in this card: it starts for the project and description picked here (the one picker). */
-  onTimerContext?: (context: { projectId: string; projectName: string; note: string }) => void;
+  /** Today's timer lives in this card: it starts for the project and description picked here (the one picker), and
+   * not while a time is typed (issue 431). */
+  onTimerContext?: (context: TimerContext) => void;
   /** Today only (issue 218): the running timer or the saved ticket, shown at the top of this card. Others pass nothing. */
   timerTop?: React.ReactNode;
   /** Today only: the quiet "or Start timer on ..." line at the foot of this card. */
@@ -241,11 +242,12 @@ export function QuickAdd({
   }
 
   // Tell the page's timer what it would start for, and clear the description once a timer has started with it.
-  // The follow-up note belongs to the entry already logged, never to a timer started next.
+  // The follow-up note belongs to the entry already logged, never to a timer started next. A typed time keeps the
+  // timer off until it is logged or cleared (issue 431).
   const timerNote = followUp ? "" : note;
   useEffect(() => {
-    onTimerContext?.({ projectId, projectName: pickedName, note: timerNote });
-  }, [onTimerContext, projectId, pickedName, timerNote]);
+    onTimerContext?.({ projectId, projectName: pickedName, note: timerNote, typedMinutes: parsed });
+  }, [onTimerContext, projectId, pickedName, timerNote, parsed]);
   // Another day or another project: the box is the next entry's again.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the day or the project changes
   useEffect(() => setFollowUp(null), [date, projectId]);
@@ -365,7 +367,12 @@ export function QuickAdd({
         {/* After the quick times in the source, so on a phone it sits right under them and is in view when Today opens
             (2026-10-25: at the foot it was under the bottom menu, and floating over the form it hid the projects). On a
             wide screen the grid still puts it beside the time box (`sm:col-start-2 sm:row-start-1`). */}
-        <LogTimeButton logged={logged} disabled={create.isPending || parsed === null} iconRef={logIconRef} />
+        <LogTimeButton
+          logged={logged}
+          typed={parsed === null ? null : formatDuration(parsed)}
+          disabled={create.isPending || parsed === null}
+          iconRef={logIconRef}
+        />
 
         <div className="flex min-w-0 items-start gap-2 sm:col-span-2">
           <span id={projectLabel} className="mt-2 shrink-0 text-muted-foreground text-sm">
@@ -493,13 +500,19 @@ function NoteBox({
   );
 }
 
-/** The main button: amber with a clock-plus disc; just after a save it says what went in ("Logged 2:00") with a check. */
+/**
+ * The main button: amber with a clock-plus disc. With a time typed it says what it will save ("Log 2:00", issue 431:
+ * the typed hours are the button's job, never the timer's); just after a save it says what went in ("Logged 2:00").
+ */
 function LogTimeButton({
   logged,
+  typed,
   disabled,
   iconRef,
 }: {
   logged: string | null;
+  /** The typed time as h:mm (the final value, not the rolling figure), or null when the box is empty or unreadable. */
+  typed: string | null;
   disabled: boolean;
   iconRef: React.RefObject<HTMLSpanElement | null>;
 }) {
@@ -525,9 +538,9 @@ function LogTimeButton({
           <ClockPlus className="size-4" strokeWidth={2.5} aria-hidden />
         )}
       </span>
-      {/* The name stays "Log time" for screen readers and tests; the eyes see what was logged for a moment. */}
+      {/* The name stays "Log time" for screen readers and tests; the eyes see what it will log, or what was logged for a moment. */}
       <span className="sr-only">Log time</span>
-      <span aria-hidden="true">{logged ? `Logged ${logged}` : "Log time"}</span>
+      <span aria-hidden="true">{logged ? `Logged ${logged}` : typed ? `Log ${typed}` : "Log time"}</span>
       <Kbd className="hidden bg-[#12151b]/15 text-inherit lg:inline-flex">↵</Kbd>
     </button>
   );
