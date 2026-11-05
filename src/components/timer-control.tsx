@@ -37,6 +37,12 @@ const EARLY_CHOICES = [
 ] as const;
 
 export type TodayTimer = ReturnType<typeof useTodayTimer>;
+/**
+ * What the Log time card tells Today's timer: the picked project, the description, and the time typed in the box
+ * (`typedMinutes`, null when the box is empty or unreadable). A typed time blocks the start (issue 431): Start timer
+ * once took the description and dropped the typed 2:00, so a first invoice showed only the timer's 0.08 h.
+ */
+export type TimerContext = { projectId: string; projectName: string; note: string; typedMinutes: number | null };
 type TimerProject = { id: string; name: string; clientName: string; color: string };
 
 /** The timer's description while it runs: shown at once, saved a moment after the last key (and before a stop). */
@@ -94,17 +100,7 @@ function useRunningNote(entry: { id: string; note: string } | null) {
  * stay until the person picks one (the time is already saved, so leaving the page keeps it). Every press locks the
  * buttons for a moment, so a double click cannot start and then stop (found 2026-10-23).
  */
-export function useTodayTimer({
-  projectId,
-  projectName,
-  date,
-  note,
-}: {
-  projectId: string;
-  projectName: string;
-  date: string;
-  note: string;
-}) {
+export function useTodayTimer({ projectId, projectName, date, note, typedMinutes }: TimerContext & { date: string }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
   const running = trpc.entry.running.useQuery();
@@ -168,6 +164,8 @@ export function useTodayTimer({
 
   async function onStart() {
     if (locked() || start.isPending) return;
+    // Typed hours are logged with Log time, never replaced by a timer: the guard is here too, not only on the button.
+    if (typedMinutes !== null) return;
     if (!timerProjectId) return toast.error("Pick a project first.");
     lock();
     playClick("start");
@@ -267,6 +265,7 @@ export function useTodayTimer({
     text,
     projectName: timerProject?.name ?? projectName,
     timerProject,
+    typedMinutes,
     note: runningNote,
     earlyChoices,
     onStart,
@@ -475,36 +474,46 @@ export function TimerControls({ timer }: { timer: TodayTimer }) {
 
 /**
  * Idle, today only: one quiet line at the foot of the Log time card, "or ▶ Start timer on Client / Project". The project
- * is the one picked in the form above (there is no second picker). Log time stays the one solid button.
+ * is the one picked in the form above (there is no second picker). Log time stays the one solid button. While a time is
+ * typed in the box, it is off with one muted line that says why (issue 431).
  */
 export function TimerStartLine({ timer, online }: { timer: TodayTimer; online: boolean }) {
   if (timerIsActive(timer)) return null;
   const p = timer.timerProject;
+  const typedReason =
+    timer.typedMinutes === null
+      ? null
+      : `You typed ${formatDuration(timer.typedMinutes)}. Log it first, or clear the time to start a timer.`;
+  // Offline wins in the title: it is the reason that stays after the typed time is logged.
+  const title = !online ? "A timer needs a connection" : (typedReason ?? `Start timer${p ? ` on ${p.name}` : ""}`);
   return (
-    <section aria-label="Timer" className="flex min-w-0 items-center gap-1 text-sm">
-      <span className="text-muted-foreground">or</span>
-      <button
-        type="button"
-        title={online ? `Start timer${p ? ` on ${p.name}` : ""}` : "A timer needs a connection"}
-        onClick={timer.onStart}
-        disabled={timer.busy || !online || !p}
-        // Secondary to Log time: a quiet ghost button, not an outlined one that looks like the main action.
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2 font-semibold text-foreground/85 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-      >
-        <Play className="size-3.5" fill="currentColor" aria-hidden />
-        Start timer
-      </button>
-      {p && (
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="text-muted-foreground">on</span>
-          <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
-          <span className="min-w-0 truncate">
-            {/* On a phone the client gives way, so the project's own name always fits. */}
-            <span className="max-sm:hidden">{p.clientName} / </span>
-            {p.name}
+    <section aria-label="Timer" className="flex min-w-0 flex-col gap-0.5 text-sm">
+      <div className="flex min-w-0 items-center gap-1">
+        <span className="text-muted-foreground">or</span>
+        <button
+          type="button"
+          title={title}
+          onClick={timer.onStart}
+          disabled={timer.busy || !online || !p || typedReason !== null}
+          // Secondary to Log time: a quiet ghost button, not an outlined one that looks like the main action.
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2 font-semibold text-foreground/85 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          <Play className="size-3.5" fill="currentColor" aria-hidden />
+          Start timer
+        </button>
+        {p && (
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-muted-foreground">on</span>
+            <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
+            <span className="min-w-0 truncate">
+              {/* On a phone the client gives way, so the project's own name always fits. */}
+              <span className="max-sm:hidden">{p.clientName} / </span>
+              {p.name}
+            </span>
           </span>
-        </span>
-      )}
+        )}
+      </div>
+      {typedReason && <p className="pl-1 text-muted-foreground text-xs">{typedReason}</p>}
     </section>
   );
 }
