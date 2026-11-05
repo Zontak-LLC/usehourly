@@ -25,6 +25,11 @@ describe("known log noise (incident usehourly:b9180f8241326666)", () => {
     expect(section).toMatch(/Upstream: https:\/\/nextjs\.org\/\S+/);
   });
 
+  it("names both incident ids, production and staging (usehourly-staging:b9180f8241326666)", () => {
+    expect(section).toContain("usehourly:b9180f8241326666");
+    expect(section).toContain("usehourly-staging:b9180f8241326666");
+  });
+
   it("tells triage what to do", () => {
     expect(section).toContain("Night Watch triage: close as known noise");
   });

@@ -113,8 +113,12 @@ Events you may see (all `level: "error"`), and what they mean:
 
 Lines that are not ours and need no fix. Match the whole signature, not one frame.
 
-**Stale Server Action after a deploy** (incident `usehourly:b9180f8241326666`, 2026-10-25)
+**Stale Server Action after a deploy** (incidents `usehourly:b9180f8241326666`, 2026-10-25, and
+`usehourly-staging:b9180f8241326666`, 2026-11-05)
 
+- Sites: production and staging. The same signature appears on staging (`hourly-staging`,
+  https://staging.usehourly.app) after each staging deploy. Frame line numbers change between builds (e.g.
+  custom-worker.js:59701 vs 59740, `n2` at 71908 vs 71923); the frame names stay.
 - Signature: a multi-line `warn` whose frames are `at Object.get` (custom-worker.js), then `rD`, `r$`, `sg`, `sy`,
   `n2`, `p2`, `o8.handleResponse`, `v2`. Line numbers change with each deploy; the frame names stay.
 - Warning text (the first line, which Night Watch does not capture):
