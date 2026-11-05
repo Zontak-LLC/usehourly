@@ -335,6 +335,7 @@ export function NewInvoiceView() {
                   hint="and download the PDF"
                   label={create.isPending ? "Creating…" : "Create invoice & download PDF"}
                   busy={create.isPending}
+                  busyLabel="Creating"
                   disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
                 />
                 <Button type="button" variant="outline" asChild>

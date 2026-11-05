@@ -56,6 +56,14 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
   await card.getByRole("button", { name: "Save", exact: true }).click();
 }
 
+/** Holds every call to one tRPC procedure (e.g. "entry.create") back for `ms` before it goes on to the server. */
+export async function hold(page: Page, procedure: string, ms: number) {
+  await page.route(`**/api/trpc/${procedure}*`, async (route) => {
+    await new Promise((r) => setTimeout(r, ms));
+    await route.continue();
+  });
+}
+
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 /** A throwaway account. Every address starts with "e2e-" so teardown can find and delete them all. */
 export const newUser = () => ({ name: "Sam Freelancer", email: `e2e-${stamp()}@example.test`, password: PASSWORD });

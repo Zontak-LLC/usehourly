@@ -16,7 +16,9 @@ import { TIMER_STARTED_EVENT, type TimerContext } from "@/components/timer-contr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { Spinner } from "@/components/ui/spinner";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
+import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { formatDate, monthBounds } from "@/lib/dates";
 import { addChipTime, formatDuration, parseDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
@@ -371,6 +373,7 @@ export function QuickAdd({
           logged={logged}
           typed={parsed === null ? null : formatDuration(parsed)}
           disabled={create.isPending || parsed === null}
+          busy={create.isPending}
           iconRef={logIconRef}
         />
 
@@ -508,18 +511,23 @@ function LogTimeButton({
   logged,
   typed,
   disabled,
+  busy,
   iconRef,
 }: {
   logged: string | null;
   /** The typed time as h:mm (the final value, not the rolling figure), or null when the box is empty or unreadable. */
   typed: string | null;
   disabled: boolean;
+  /** The save is still open. The form is already clear by then (the entry shows at once), so this, not `disabled`, says so. */
+  busy: boolean;
   iconRef: React.RefObject<HTMLSpanElement | null>;
 }) {
+  const showSpinner = useDelayedFlag(busy);
   return (
     <button
       type="submit"
       disabled={disabled}
+      aria-busy={busy || undefined}
       // The main event: a calm amber fill with a clock-plus disc (time going in); no glow or lift since 2026-10-23. While no time is typed
       // it is a plain grey "not ready yet" button with readable words and a thin edge (2026-10-26: the pale accent looked like a
       // normal button in light mode and almost vanished in dark), and it comes alive when there
@@ -532,7 +540,10 @@ function LogTimeButton({
         ref={iconRef}
         className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 sm:size-6 dark:bg-background/25 dark:text-background dark:group-disabled:bg-foreground/10 dark:group-disabled:text-muted-foreground"
       >
-        {logged ? (
+        {/* Only the disc's child changes, so `spin()` on the disc and its size stay as they are. */}
+        {showSpinner ? (
+          <Spinner size="sm" label="Saving" />
+        ) : logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
         ) : (
           <ClockPlus className="size-4" strokeWidth={2.5} aria-hidden />

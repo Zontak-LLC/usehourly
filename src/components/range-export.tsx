@@ -128,8 +128,9 @@ export function RangeExport({
         {check.ok ? describeRange(from, to) : check.message}
       </p>
 
-      <Button onClick={exportRange} disabled={!check.ok || busy}>
-        <Download /> {busy ? "Exporting…" : "Export Excel"}
+      <Button onClick={exportRange} disabled={!check.ok} busy={busy} busyLabel="Exporting">
+        <Download />
+        {busy ? "Exporting…" : "Export Excel"}
       </Button>
 
       <div className="border-t pt-3">
