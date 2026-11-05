@@ -44,8 +44,12 @@ test("a typed 2:00 is logged as 2:00, and the timer never replaces it", async ({
     await expect(start).toBeDisabled();
     await expect(reason).toBeVisible();
     await expect(start).toHaveAttribute("title", "You typed 2:00. Log it first, or clear the time to start a timer.");
-    await start.click({ force: true }); // the tester's press: nothing starts
+    // The tester's press, sent to the button itself: a forced click lands on whatever is on top (on a phone, the bottom
+    // menu can cover the foot of the card and the click would open another page).
+    await start.dispatchEvent("click");
+    await page.waitForTimeout(500); // nothing to wait for: a timer started by the press would show by now
     await expect(card.getByRole("button", { name: "Stop timer" })).toHaveCount(0);
+    await expect(page).toHaveURL(/dashboard\/today/);
   });
 
   const entries = page.getByRole("region", { name: "Today's entries" });
