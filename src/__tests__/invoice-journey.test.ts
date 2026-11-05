@@ -633,7 +633,11 @@ describe("one account cannot use invoices to fill the shared database", () => {
     const c = asCaller(prisma, "u1");
     await expect(c.invoice.create({ ...input, from: "2025-01-01", to: "2026-10-31" })).rejects.toThrow(/up to a year/);
     await expect(c.invoice.create({ ...input, from: "2026-10-31", to: "2026-10-01" })).rejects.toThrow(/before/);
-    await expect(c.invoice.create({ ...input, from: "2026-02-30", to: "2026-03-31" })).rejects.toThrow(/real date/);
+    // Word for word: dateSchema moved to src/server/schemas/dates.ts (issue 425) and its messages must not change.
+    await expect(c.invoice.create({ ...input, from: "2026-02-30", to: "2026-03-31" })).rejects.toThrow(
+      "That is not a real date.",
+    );
+    await expect(c.invoice.create({ ...input, issueDate: "2026/10/01" })).rejects.toThrow("Use YYYY-MM-DD");
     expect(prisma.invoice.create).not.toHaveBeenCalled();
     // exactly a leap-sized year is fine
     await c.invoice.create({ ...input, from: "2026-01-01", to: "2027-01-01", number: "INV-2026-900" });

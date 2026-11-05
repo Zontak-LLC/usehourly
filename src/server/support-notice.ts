@@ -1,7 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { logError } from "@/lib/log";
-import { parseSupportNotice, SUPPORT_NOTICE_KEY, type SupportNotice } from "@/lib/support-notice";
+import { SUPPORT_NOTICE_KEY, type SupportNotice } from "@/lib/support-notice";
+
+import { parseSupportNotice } from "./schemas/support-notice";
 
 /**
  * The notice to show, or null when it is off. One primary-key read. It sits in the layout of every signed-in page, so a

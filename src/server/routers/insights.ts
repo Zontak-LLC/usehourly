@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
 
 import { buildInsights } from "@/lib/insights";
-import { supportNoticeInput } from "@/lib/support-notice";
 import { usageDay } from "@/lib/usage";
 
 import { isAdminAccount } from "../admin-access";
 import { accountActivity } from "../insights-activity";
+import { supportNoticeInput } from "../schemas/support-notice";
 import { readSupportNoticeSetting, writeSupportNotice } from "../support-notice";
 import { protectedProcedure, router } from "../trpc";
 

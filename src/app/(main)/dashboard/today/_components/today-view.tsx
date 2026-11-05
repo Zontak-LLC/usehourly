@@ -12,7 +12,7 @@ import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
-import { TimerControls, TimerStartLine, useTodayTimer } from "@/components/timer-control";
+import { type TimerContext, TimerControls, TimerStartLine, useTodayTimer } from "@/components/timer-control";
 import { TimerPanel } from "@/components/timer-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
@@ -48,7 +48,12 @@ export function TodayView() {
   const clients = trpc.clients.list.useQuery();
   const online = useOnline();
   // What the timer would start for: the project and description picked in the add form below.
-  const [timerContext, setTimerContext] = useState({ projectId: "", projectName: "", note: "" });
+  const [timerContext, setTimerContext] = useState<TimerContext>({
+    projectId: "",
+    projectName: "",
+    note: "",
+    typedMinutes: null,
+  });
   const todayTimer = useTodayTimer({ ...timerContext, date: date ?? "" });
   const running = trpc.entry.running.useQuery();
   // Whether the account has any entry yet, for the import hint (started here, in the first render: still one request).

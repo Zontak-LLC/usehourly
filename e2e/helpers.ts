@@ -8,10 +8,11 @@ import {
   type Page,
   type TestInfo,
 } from "@playwright/test";
+import JSZip from "jszip";
 
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { runSql } from "./local-db";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
@@ -541,4 +542,20 @@ export async function openAllEntries(page: Page) {
     await page.getByRole("button", { name: "Whole month", exact: true }).click();
   }
   await expect(page.getByRole("region", { name: /^All entries this (week|month)$/ })).toBeVisible();
+}
+
+/**
+ * Clicks "Download everything" inside `scope` and checks the zip the way a person would find it: named
+ * usehourly-export-<date>.zip, holding the README, the all-time workbook and the CSV of every entry. Returns that CSV.
+ * The zip code loads on the click (issue 425), so this also proves the lazy load works.
+ */
+export async function downloadEverything(page: Page, scope: Locator): Promise<string> {
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    scope.getByRole("button", { name: "Download everything" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^usehourly-export-\d{4}-\d{2}-\d{2}\.zip$/);
+  const zip = await JSZip.loadAsync(readFileSync(await download.path()));
+  expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(["README.txt", "all-time.xlsx", "all-entries.csv"]));
+  return (await zip.file("all-entries.csv")?.async("string")) ?? "";
 }

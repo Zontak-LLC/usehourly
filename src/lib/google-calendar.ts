@@ -7,10 +7,10 @@ import { type CalendarEvent, MAX_EVENTS } from "@/lib/calendar-events";
  * Google's own popup, the browser gets a short-lived read-only token and asks Google for the events; UseHourly's
  * servers never see the token or the calendar. The same rules as the file import apply: all-day events, events marked
  * free, cancelled ones and ones the person declined are left out, and only a title, a start and an end are kept.
+ * It checks Google's answer with zod, so it loads only when a calendar is read (`await import` in use-calendar.ts,
+ * issue 425); never import it statically from a component.
  */
 
-/** The narrowest permission that reads events: no editing, no calendar list, no contacts. */
-export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly";
 const API = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 const PAGE_SIZE = 250;
 export const MAX_PAGES = 12;

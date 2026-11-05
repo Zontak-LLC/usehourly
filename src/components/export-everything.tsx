@@ -9,7 +9,6 @@ import { useAccountCurrency } from "@/components/currency-provider";
 import { DocButton } from "@/components/doc-button";
 import { Button } from "@/components/ui/button";
 import { toISODate } from "@/lib/dates";
-import { downloadExportZip, planExport } from "@/lib/export-all";
 import { feature } from "@/lib/features";
 import { trpc } from "@/lib/trpc";
 
@@ -58,6 +57,16 @@ export function ExportEverything({
 
   async function run() {
     setBusy(true);
+    // The zip code loads on the first click, like exceljs and jspdf, so the pages with this button load less (issue 425).
+    let exportAll: typeof import("@/lib/export-all");
+    try {
+      exportAll = await import("@/lib/export-all");
+    } catch {
+      toast.error("Could not load the export. Please try again.");
+      setBusy(false);
+      return;
+    }
+    const { downloadExportZip, planExport } = exportAll;
     try {
       // Expenses are a hidden feature: with the switch off there is no request for them at all.
       const [entries, invoices, expenses] = await Promise.all([

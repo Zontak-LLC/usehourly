@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Log time card: typed hours are never lost (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 431, ticket 1 of 4. The Log time card on Today
+  (src/app/(main)/dashboard/today/_components/quick-add.tsx) with the timer line at its foot (TimerStartLine in
+  src/components/timer-control.tsx). Colours are the app's light tokens from src/app/globals.css: --foreground,
+  --card, --border, --band-2, --muted, --amber-fill (the main button). No new colour, no new box.
+-->
+<style>
+  :root {
+    --background: #eef2f7;
+    --foreground: #1c2434;
+    --card: #ffffff;
+    --border: #dbe2ec;
+    --muted: #eef1f5;
+    --amber: #2563c9;
+    --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+    --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
+    --muted-fg: color-mix(in oklab, var(--foreground) 62%, transparent);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; color: var(--muted-fg); max-width: 72ch; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: var(--muted-fg); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .desktop { width: 640px; max-width: 100%; }
+  .phone { width: 375px; }
+  .head { border-bottom: 1px solid var(--border); background: var(--band-2); padding: 12px 16px; font-weight: 600; font-size: 15px; }
+  .body { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .row { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) auto; }
+  .phone .row { grid-template-columns: 1fr; }
+  .field { height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; display: flex;
+    align-items: center; font-size: 16px; }
+  .field.empty { color: var(--muted-fg); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { height: 36px; border: 1px solid var(--border); border-radius: 999px; padding: 0 12px; display: inline-flex;
+    align-items: center; font-size: 14px; flex: 1 0 auto; }
+  .desktop .chip { flex: none; }
+  .chip.on { background: var(--muted); }
+  .help { color: var(--muted-fg); font-size: 12px; margin: -6px 0 0; }
+  .log { height: 44px; border-radius: 16px; padding: 0 24px; display: inline-flex; align-items: center;
+    justify-content: center; gap: 12px; font-weight: 700; color: #fff; background: var(--amber-fill); border: 0; font-size: 16px; }
+  .phone .log { height: 48px; font-size: 18px; }
+  .log.off { background: var(--muted); color: var(--muted-fg); box-shadow: inset 0 0 0 1px var(--border); }
+  .log .disc { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / .2); font-size: 12px; }
+  .log.off .disc { background: color-mix(in oklab, var(--foreground) 10%, transparent); }
+  .on-line { font-size: 14px; }
+  .on-line b { font-weight: 600; }
+  .desc { min-height: 64px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 16px; }
+  .desc.empty { color: var(--muted-fg); }
+  .timer-foot { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+  .timer-foot .line { display: flex; align-items: center; gap: 4px; }
+  .ghost { height: 36px; border-radius: 999px; padding: 0 8px; border: 0; background: none; font: inherit; font-weight: 600;
+    color: color-mix(in oklab, var(--foreground) 85%, transparent); }
+  .ghost.off { opacity: .5; }
+  .muted { color: var(--muted-fg); }
+  .reason { color: var(--muted-fg); font-size: 12px; margin: 0; padding-left: 4px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #3a8f6a; display: inline-block; }
+  .strip { border-radius: 12px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent); padding: 12px;
+    display: flex; flex-direction: column; gap: 12px; }
+  .strip .top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .red { width: 10px; height: 10px; border-radius: 50%; background: rgb(255 69 58); }
+  .clock { font: 600 24px ui-monospace, monospace; }
+  .stop { height: 40px; border-radius: 999px; padding: 0 16px; border: 0; background: var(--foreground); color: var(--card); font-weight: 600; }
+  .what { height: 40px; border-radius: 12px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 15%, transparent);
+    padding: 0 12px; display: flex; align-items: center; color: var(--muted-fg); }
+  .tag { font: 11px ui-monospace, monospace; color: var(--muted-fg); margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<h1>Log time card: typed hours are never lost</h1>
+<p class="note">One button, one job. With a time typed, the amber button says exactly what it saves
+("Log 2:00"; after "+ 30 min" it says "Log 2:30"). Its screen-reader name stays "Log time", the same as "Logged 2:00"
+today. Start timer stays a quiet ghost line at the foot; while a time is typed it is off, with one neutral muted line
+that says why. Log the time (or clear the box) and Start timer works again. No amber or red on the reason line.</p>
+
+<h2>Desktop</h2>
+<div class="frames">
+  <div>
+    <p class="tag">1 · Nothing typed</p>
+    <div class="card desktop">
+      <div class="head">Log time</div>
+      <div class="body">
+        <div class="row">
+          <div class="field empty">Time: 1.5, 1:30 or 90m</div>
+          <button class="log off" type="button"><span class="disc">⏱</span>Log time</button>
+        </div>
+        <div class="chips"><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+        <div class="on-line"><span class="muted">on</span> <b>Website</b> <span class="muted">· Acme</span></div>
+        <div class="desc empty">What did you work on? (optional, you can add it later)</div>
+        <div class="timer-foot"><div class="line"><span class="muted">or</span><button class="ghost" type="button">▶ Start timer</button><span class="muted">on</span> <span class="dot"></span> Acme / Website</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="tag">2 · "2h" typed: Log 2:00, Start timer off with its reason</p>
+    <div class="card desktop">
+      <div class="head">Log time</div>
+      <div class="body">
+        <div class="row">
+          <div class="field">2h</div>
+          <button class="log" type="button"><span class="disc">⏱</span>Log 2:00</button>
+        </div>
+        <div class="chips"><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip on">+ 2 hours</span></div>
+        <p class="help">Day total 0:00 → 2:00 h</p>
+        <div class="on-line"><span class="muted">on</span> <b>Website</b> <span class="muted">· Acme</span></div>
+        <div class="desc">Homepage design</div>
+        <div class="timer-foot">
+          <div class="line"><span class="muted">or</span><button class="ghost off" type="button" disabled>▶ Start timer</button><span class="muted">on</span> <span class="dot"></span> Acme / Website</div>
+          <p class="reason">You typed 2:00. Log it first, or clear the time to start a timer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="tag">3 · A timer running (started from an empty box)</p>
+    <div class="card desktop">
+      <div class="head">Log time</div>
+      <div class="body">
+        <div class="strip">
+          <div class="top"><span class="red"></span><span class="clock">0:05:12</span><span style="flex:1"><span class="dot"></span> Website <span class="muted">· Acme</span></span><button class="stop" type="button">■ Stop timer</button></div>
+          <div class="what">What are you working on?</div>
+        </div>
+        <div class="row">
+          <div class="field empty">Time: 1.5, 1:30 or 90m</div>
+          <button class="log off" type="button"><span class="disc">⏱</span>Log time</button>
+        </div>
+        <div class="chips"><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+        <div class="on-line"><span class="muted">on</span> <b>Website</b> <span class="muted">· Acme</span></div>
+        <div class="desc empty">What did you work on? (optional, you can add it later)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Phone (Log time under the chips)</h2>
+<div class="frames">
+  <div>
+    <p class="tag">1 · Nothing typed</p>
+    <div class="card phone">
+      <div class="head">Log time</div>
+      <div class="body">
+        <div class="field empty">Time: 1.5, 1:30 or 90m</div>
+        <div class="chips"><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+        <button class="log off" type="button"><span class="disc">⏱</span>Log time</button>
+        <div class="on-line"><span class="muted">on</span> <b>Website</b> <span class="muted">· Acme</span></div>
+        <div class="desc empty">What did you work on?</div>
+        <div class="timer-foot"><div class="line"><span class="muted">or</span><button class="ghost" type="button">▶ Start timer</button><span class="muted">on</span> <span class="dot"></span> Website</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="tag">2 · "2h" typed</p>
+    <div class="card phone">
+      <div class="head">Log time</div>
+      <div class="body">
+        <div class="field">2h</div>
+        <div class="chips"><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip on">+ 2h</span></div>
+        <p class="help">Day total 0:00 → 2:00 h</p>
+        <button class="log" type="button"><span class="disc">⏱</span>Log 2:00</button>
+        <div class="on-line"><span class="muted">on</span> <b>Website</b> <span class="muted">· Acme</span></div>
+        <div class="desc">Homepage design</div>
+        <div class="timer-foot">
+          <div class="line"><span class="muted">or</span><button class="ghost off" type="button" disabled>▶ Start timer</button><span class="muted">on</span> <span class="dot"></span> Website</div>
+          <p class="reason">You typed 2:00. Log it first, or clear the time to start a timer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="tag">3 · A timer running</p>
+    <div class="card phone">
+      <div class="head">Log time</div>
+      <div class="body">
+        <div class="strip">
+          <div class="top"><span class="red"></span><span class="clock">0:05:12</span><span style="flex:1"><span class="dot"></span> Website</span><button class="stop" type="button">■ Stop timer</button></div>
+          <div class="what">What are you working on?</div>
+        </div>
+        <div class="field empty">Time: 1.5, 1:30 or 90m</div>
+        <div class="chips"><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+        <button class="log off" type="button"><span class="disc">⏱</span>Log time</button>
+        <div class="on-line"><span class="muted">on</span> <b>Website</b> <span class="muted">· Acme</span></div>
+        <div class="desc empty">What did you work on?</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
