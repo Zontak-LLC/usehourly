@@ -46,6 +46,8 @@ function press(view: ReturnType<typeof saveButton>, ms: number, fails = false) {
 const status = /role="status" aria-label="Saving"/;
 /** The disabled attribute (the class list also holds the word "disabled", in `disabled:opacity-50`). */
 const off = 'disabled=""';
+/** The attribute the button sets while its spinner shows (the class list names data-busy too, in its CSS rule). */
+const busyAttr = 'data-busy="true"';
 
 describe("A busy button: off at once, a spinner only on a slow save (issue 430)", () => {
   beforeEach(() => vi.useFakeTimers());
@@ -102,6 +104,32 @@ describe("A busy button: off at once, a spinner only on a slow save (issue 430)"
     expect(view.value).not.toContain('role="status"');
     expect(view.value).not.toContain(off);
     expect(toast.error).toHaveBeenCalledWith("Couldn't reach the server.");
+  });
+
+  it("the caller's icon stays until the spinner shows, so a fast export never makes it vanish", async () => {
+    const view = mount(
+      (p: { pending: boolean }) =>
+        renderToStaticMarkup(
+          createElement(
+            Button,
+            { busy: p.pending, busyLabel: "Exporting" },
+            createElement("svg", { "data-icon": "download" }),
+            "Export Excel",
+          ),
+        ),
+      { pending: false },
+    );
+    view.rerender({ pending: true });
+    await vi.advanceTimersByTimeAsync(299);
+    expect(view.value).toContain('data-icon="download"');
+    expect(view.value).not.toContain(busyAttr);
+
+    // Once the spinner shows, the button hides its own icon (a CSS rule on data-busy), so the width stays the same.
+    await vi.advanceTimersByTimeAsync(1);
+    expect(view.value).toContain(busyAttr);
+    expect(view.value).toContain("[&amp;[data-busy]&gt;svg]:hidden");
+    view.rerender({ pending: false });
+    expect(view.value).not.toContain(busyAttr);
   });
 
   it("a link styled as a button (asChild) keeps its one child", () => {

@@ -72,21 +72,23 @@ function Button({
   // An icon-only button shows its name on hover (a native tooltip) unless the caller set its own title.
   const iconOnly = typeof size === "string" && size.startsWith("icon")
   const title = props.title ?? (iconOnly ? props["aria-label"] : undefined)
-  const showSpinner = useDelayedFlag(busy)
+  // A Slot takes exactly one child, so a link styled as a button never gets the spinner.
+  const showSpinner = useDelayedFlag(busy) && !asChild
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      data-busy={showSpinner || undefined}
+      // The caller's own icon stays until the spinner takes its place, so a fast action never flickers or jumps.
+      className={cn(buttonVariants({ variant, size, className }), "[&[data-busy]>svg]:hidden")}
       disabled={busy || disabled}
       aria-busy={busy || undefined}
       {...props}
       title={title}
     >
-      {/* A Slot takes exactly one child, so a link styled as a button never gets the spinner. */}
-      {showSpinner && !asChild ? (
+      {showSpinner ? (
         <>
           <Spinner size="sm" label={busyLabel} />
           {children}

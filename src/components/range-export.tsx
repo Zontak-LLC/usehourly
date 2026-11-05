@@ -129,7 +129,7 @@ export function RangeExport({
       </p>
 
       <Button onClick={exportRange} disabled={!check.ok} busy={busy} busyLabel="Exporting">
-        {!busy && <Download />}
+        <Download />
         {busy ? "Exporting…" : "Export Excel"}
       </Button>
 

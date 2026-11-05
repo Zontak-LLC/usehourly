@@ -63,7 +63,19 @@
 <p class="note">When a save, invoice, export or send is still open after 300 ms, the button you pressed shows this small
 spinner; a faster answer shows nothing, so nothing flickers. While it works the button is off and says what it is doing
 ("Saving…", "Creating…"). On Log time the spinner sits in the round disc instead of the clock icon; the words stay
-"Logged 2:00" for their moment, then "Log time". With reduced motion the spinner stands still.</p>
+"Logged 2:00" for their moment, then "Log time". With reduced motion the spinner stands still. A button's own icon
+(Download, Mail) stays until the spinner takes its place, so a fast export never makes it blink.</p>
+<p class="note"><b>For the owner to accept (a change from the spec):</b> the entry edit Save is not wired. Its
+<code>save()</code> closes the form (<code>setEditing(false)</code>) before the server is asked, so the Save button is
+gone while the save runs and has nothing to show. Help's Send is the second e2e target instead of entry-edit Save.
+The first e2e target is Today's Log time.</p>
+<p class="note"><b>Offline:</b> when the device knows it is offline, Log time stores the entry on the device and never
+asks the server, so the spinner never shows. When the connection drops during a save, the request fails with a network
+error (mutations use <code>networkMode: "always"</code>, so they are never paused), the spinner goes, and the entry is
+queued on the device. The spinner does not stay on while an entry waits in the queue.</p>
+<p class="note"><b>Busy buttons not moved yet (follow-up tickets):</b> setup-form, first-run, paid-panel,
+avatar-cropper, approve-form, reset and forgot password, month quick-create, send-invoice-panel, the timer note, and
+the entry edit Save (above).</p>
 
 <template id="board">
   <h2>Sizes · sm (16) · md (24) · lg (40)</h2>

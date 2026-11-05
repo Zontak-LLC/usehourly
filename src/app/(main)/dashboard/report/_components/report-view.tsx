@@ -143,7 +143,7 @@ export function ReportView() {
               busy={exporting}
               busyLabel="Exporting"
             >
-              {!exporting && <Download />}
+              <Download />
               {exporting ? "Exporting…" : "Export Excel"}
             </Button>
             {withEmail && (
@@ -155,7 +155,7 @@ export function ReportView() {
                 busy={emailIt.isPending}
                 busyLabel="Sending"
               >
-                {!emailIt.isPending && <Mail />}
+                <Mail />
                 {emailIt.isPending ? "Sending…" : "Email me this"}
               </Button>
             )}
