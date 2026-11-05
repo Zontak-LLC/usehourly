@@ -12,7 +12,8 @@ test("a typed 2:00 is logged as 2:00, and the timer never replaces it", async ({
   await page.reload();
   const card = page.getByRole("region", { name: /^Log time/ });
   const time = card.getByLabel("Time to add");
-  const log = card.getByRole("button", { name: "Log time", exact: true });
+  // A prefix, as in the other specs: on a wide screen the name ends in the Enter key hint ("Log time ↵").
+  const log = card.getByRole("button", { name: /^Log time/ });
   const timer = card.getByRole("region", { name: "Timer" });
   const start = timer.getByRole("button", { name: "Start timer" });
   const reason = timer.getByText("You typed 2:00. Log it first, or clear the time to start a timer.");
