@@ -17,7 +17,7 @@ vi.mock("react", async (real) => ({
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
-/** The entry edit's Save, written the way its callers write it: their own words, the shared busy state. */
+/** A busy Save, written the way callers write it: their own words, the shared busy state. */
 function saveButton() {
   return mount(
     (p: { pending: boolean }) =>

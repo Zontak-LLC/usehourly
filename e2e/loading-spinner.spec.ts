@@ -89,3 +89,24 @@ test("with reduced motion the spinner stands still; with motion its dashes run",
   await expect.poll(animation).toBe("none");
   await expect(spinner(page).locator("[data-spinner-dash]")).toHaveCount(12);
 });
+
+// The second main button. Not the entry edit's Save: it closes the form at once (optimistic, entry-row.tsx), so its
+// button is gone while the save is open. Help's Send stays on screen until the server answers.
+test("a slow send on Help shows the spinner on Send, and it goes when the server answers", async ({ page }) => {
+  await startFreshAccount(page);
+  await page.goto("/help");
+  const aside = page.getByRole("complementary", { name: "Still stuck?" });
+  await aside.getByRole("button", { name: "Ask a question" }).click();
+  await aside.getByRole("textbox").fill("The spinner test asks a question");
+
+  await hold(page, "help.ask", 2000);
+  const send = aside.getByRole("button", { name: /^Send/ });
+  await send.click();
+  await expect(send).toBeDisabled();
+  await expect(send).toHaveAttribute("aria-busy", "true");
+  await expect(send.getByRole("status", { name: "Sending" })).toBeVisible();
+  await expect(send).toContainText("Sending…");
+
+  await expect(aside.getByText("Thanks, we got it. We'll answer by email.")).toBeVisible({ timeout: 10_000 });
+  await expect(aside.getByRole("status", { name: "Sending" })).toHaveCount(0);
+});
