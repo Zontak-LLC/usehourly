@@ -24,7 +24,7 @@ Time is always logged on a project, and each project belongs to one client.`,
 - \`90m\` is ninety minutes
 - \`2h\` is two hours, and \`1h30\` is one hour thirty
 
-A plain number up to **12** means hours (\`4\` is four hours). A bigger plain number means minutes (\`45\` is forty-five minutes). The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
+A plain number up to 24 means hours (\`4\` is four hours). For minutes add m: \`45m\`. A comma works too: \`1,5\`. The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
   },
   {
     id: "add-note",

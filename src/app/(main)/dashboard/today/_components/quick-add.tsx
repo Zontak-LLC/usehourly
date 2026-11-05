@@ -20,7 +20,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { formatDate, monthBounds } from "@/lib/dates";
-import { addChipTime, formatDuration, parseDuration } from "@/lib/duration";
+import { addChipTime, formatDuration, readDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
@@ -143,9 +143,12 @@ export function QuickAdd({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const parsed = parseDuration(duration);
+  // Read from the text on every render, so a hint goes away on the next keystroke that makes a time (issue 435).
+  const read = readDuration(duration);
+  const parsed = "minutes" in read ? read.minutes : null;
   const pickedName = projects.find((p) => p.id === projectId)?.name ?? "";
-  const invalid = duration.trim() !== "" && parsed === null;
+  const durationError = duration.trim() !== "" && "error" in read ? read.error : null;
+  const invalid = durationError !== null;
 
   function remember(id: string) {
     setProjectId(id);
@@ -159,12 +162,14 @@ export function QuickAdd({
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!projectId) return toast.error("Pick a project first.");
-    if (parsed === null) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    // Never sends 0 or a bare "45" to the server: the toast says the same words as the line under the field.
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     setFollowUp(null);
     // One id for this entry, kept if the send has to be retried, so the server saves it once however many times it arrives.
     const clientId = crypto.randomUUID();
     const finish = () => {
-      setLogged(formatDuration(parsed));
+      setLogged(formatDuration(minutes));
       fieldRoll.stop();
       dayRoll.stop();
       setDuration("");
@@ -172,26 +177,26 @@ export function QuickAdd({
       durationRef.current?.focus();
     };
     // With the copy on this device switched on, the device itself takes the entry and sends it later (issue #95).
-    if (!online && !getActiveEngine()?.ready) return saveOnDevice(clientId, parsed, finish);
+    if (!online && !getActiveEngine()?.ready) return saveOnDevice(clientId, minutes, finish);
     // Show the entry in the list and clear the form NOW; the server's answer only confirms it (or takes it back).
     const owner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
     const row =
       owner && userId
-        ? pendingEntry({ clientId, userId, client: owner, projectId, date, minutes: parsed, note, nonBillable: false })
+        ? pendingEntry({ clientId, userId, client: owner, projectId, date, minutes, note, nonBillable: false })
         : null;
     const undo = row ? await optimistic.add(row) : null;
     const typed = { duration, note };
     // Logged with no description: the box offers to add one to this entry once the server has it (it has an id then).
     const noteLater: FollowUp | null = note.trim()
       ? null
-      : { id: clientId, minutes: parsed, project: pickedName, client: owner?.name ?? "" };
+      : { id: clientId, minutes, project: pickedName, client: owner?.name ?? "" };
     spin(logIconRef.current);
     if (row) {
       finish();
       glowEntry(clientId);
     }
     try {
-      await create.mutateAsync({ projectId, date, minutes: parsed, note, clientId });
+      await create.mutateAsync({ projectId, date, minutes, note, clientId });
       countLogged();
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       if (!row) finish();
@@ -200,7 +205,7 @@ export function QuickAdd({
       undo?.();
       setLogged(null); // it was not logged after all
       // No connection (or the server is unreachable): keep the entry on this device and send it later.
-      if (isNetworkError(err)) return saveOnDevice(clientId, parsed, finish);
+      if (isNetworkError(err)) return saveOnDevice(clientId, minutes, finish);
       if (row) {
         setDuration(typed.duration); // give back what was typed so nothing is lost
         setNote(typed.note);
@@ -285,13 +290,13 @@ export function QuickAdd({
   const onlyProject = projects.length === 1 ? projects[0] : null;
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
-  const help = invalid
-    ? "Try 1.5, 1:30 or 90m"
-    : parsed
-      ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayRoll.shown ?? dayMinutes + (parsed ?? 0))} h`
-      : loggedCount < HELP_UNTIL
-        ? "Type a time or tap one (tap again to add more), then add it."
-        : "";
+  const help = timeLine({
+    error: durationError,
+    minutes: parsed === null ? null : (fieldRoll.shown ?? parsed),
+    dayMinutes,
+    dayAfter: parsed === null ? null : (dayRoll.shown ?? dayMinutes + parsed),
+    firstUse: loggedCount < HELP_UNTIL,
+  });
   // One layout everywhere (Today, Week's day panel, the day dialog; 2026-10-23 redesign): the time first with Log time
   // beside it from 640px (at the foot on a phone, where the thumb is), the quick times, "on" and the project pills, then
   // the description.
@@ -311,7 +316,7 @@ export function QuickAdd({
               fieldRoll.stop();
               dayRoll.stop();
             }}
-            placeholder="Time: 1.5, 1:30 or 90m"
+            placeholder="Time: 2, 1,5, 1:30 or 90m"
             aria-label="Time to add"
             aria-invalid={invalid}
             inputMode="decimal"
@@ -442,6 +447,24 @@ export function QuickAdd({
       {body}
     </section>
   );
+}
+
+/**
+ * The one line under the quick times: the plain error while the text cannot be logged, otherwise what will be logged
+ * ("= 2:00 · Day total 0:00 → 2:00 h", issue 435: so nobody has to guess what "2" means), or the first-use hint.
+ * `minutes` and `dayAfter` are the rolling figures while a chip's reward plays.
+ */
+function timeLine(line: {
+  error: string | null;
+  minutes: number | null;
+  dayMinutes: number;
+  dayAfter: number | null;
+  firstUse: boolean;
+}): string {
+  if (line.error) return line.error;
+  if (line.minutes !== null && line.dayAfter !== null)
+    return `= ${formatDuration(line.minutes)} · Day total ${formatDuration(line.dayMinutes)} → ${formatDuration(line.dayAfter)} h`;
+  return line.firstUse ? "Type a time or tap one (tap again to add more), then add it." : "";
 }
 
 /** The entry the description box belongs to right after a log with no description. */

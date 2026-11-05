@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatDuration, parseDuration } from "@/lib/duration";
+import { formatDuration, readDuration } from "@/lib/duration";
 import type { SheetEntry } from "@/lib/timesheet";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -77,12 +77,15 @@ export function QuickCreate({
     return out;
   }, [entries]);
 
-  const minutes = parseDuration(duration);
-  const invalid = duration.trim() !== "" && minutes === null;
-  const canCreate = dates.length > 0 && !!projectId && minutes !== null && minutes >= 1;
+  const read = readDuration(duration);
+  const invalid = duration.trim() !== "" && "error" in read;
+  // Text that cannot be logged keeps the button on, so pressing it says why in plain words (issue 435).
+  const canCreate = dates.length > 0 && !!projectId && duration.trim() !== "";
 
   async function create() {
-    if (!canCreate || minutes === null) return;
+    if (!canCreate) return;
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     try {
       const res = await createMany.mutateAsync({ projectId, dates, minutes, note, skipExisting });
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
