@@ -15,7 +15,7 @@ export const durationText = z
   .string()
   .trim()
   .describe(
-    'Free-form duration: "1.5", "1:30", "90m", "2h", "1h30". A bare number up to 12 means hours, larger means minutes',
+    'Free-form duration: "1.5", "1:30", "90m", "2h", "1h30". A bare number up to 24 means hours; minutes need m ("45m")',
   );
 export const dollars = z
   .number()

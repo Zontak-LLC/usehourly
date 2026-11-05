@@ -55,7 +55,7 @@ test("a new freelancer's first day: start", async ({ page, shot, audit, a11y, is
 
   await test.step("log the first entry by typing a time", async () => {
     await page.getByLabel("Time to add").fill("1:30");
-    await expect(page.getByText("Day total 0:00 → 1:30 h")).toBeVisible(); // the live preview
+    await expect(page.getByText("= 1:30 · Day total 0:00 → 1:30 h")).toBeVisible(); // the live preview
     await page.getByLabel("Description").fill("Logo concepts for the homepage");
     await page.getByRole("button", { name: /Log time/ }).click();
     count("firstEntry", 3);

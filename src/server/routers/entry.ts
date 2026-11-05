@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
-import { parseDuration } from "@/lib/duration";
+import { entryMinutes } from "@/lib/duration";
 import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 import { assertWithinQuota } from "@/lib/quotas";
@@ -219,10 +219,9 @@ export const entryRouter = router({
         });
         if (already) return already;
       }
-      const minutes = input.minutes ?? parseDuration(input.duration ?? "");
-      if (!minutes || minutes < 1 || minutes > 24 * 60) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Couldn't read that duration. Try 1.5, 1:30 or 90m." });
-      }
+      const read = entryMinutes(input);
+      if ("error" in read) throw new TRPCError({ code: "BAD_REQUEST", message: read.error });
+      const { minutes } = read;
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
       try {
