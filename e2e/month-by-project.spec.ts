@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-import { openAllEntries, startDemo } from "./helpers";
+import { fullDemoMonth, openAllEntries, startDemo } from "./helpers";
 
 test("All entries: the project filter narrows the list, and it can be read by day or by project", async ({ page }) => {
   await startDemo(page);
-  await page.goto("/dashboard/month");
+  await page.goto(fullDemoMonth()); // not "this month": early in a month it has only a few sample entries
   await openAllEntries(page); // folded behind "All entries this month"
 
   const list = page.getByRole("region", { name: /^All entries this (week|month)$/ });
