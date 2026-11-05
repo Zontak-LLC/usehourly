@@ -42,7 +42,7 @@ Clients see the descriptions on your invoices, so a short note helps them. If yo
     id: "timer",
     question: "How does the timer work?",
     keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard", "undo"],
-    answer: `Pick the project in the **Log time** card on Today, then press **Start timer** at the foot of the card. The timer runs on that project. While it runs, it shows at the top of the same card, and the time counts up there and in your totals.
+    answer: `Pick the project in the **Log time** card on Today, then press **Start timer** at the foot of the card. The timer runs on that project. While it runs, it shows at the top of the same card, and the time counts up there and in your totals. If a time is typed in the box, log it first; the timer starts from an empty box.
 
 - **Stop timer** saves the time at once and says so ("Saved 0:42"). Use − or + 5 min to correct it, **Undo** to throw it away, **Resume timer** to carry on, or **Done**.
 - Forgot to start it? Just after you start, **Started earlier?** moves the start back by 15 min, 30 min or 1 hour. After 4 hours, **Still working?** lets you stop it at the time you really stopped.
