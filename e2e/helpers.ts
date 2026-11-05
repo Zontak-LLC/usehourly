@@ -517,6 +517,16 @@ export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("menuitem", { name: item }).click();
 }
 
+/**
+ * The Month page for a month the sample (demo) data fills well. The sample entries cover the 35 days up to yesterday,
+ * so in the first days of a month "this month" has only a few entries (on 5 November: 5). Before the 15th this is the
+ * month before, which is then nearly full; from the 15th it is this month, which has two weeks of entries by then.
+ */
+export function fullDemoMonth(now = new Date()) {
+  const month = now.getDate() < 15 ? new Date(now.getFullYear(), now.getMonth() - 1, 1) : now;
+  return `/dashboard/month?month=${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+}
+
 /** Shows the period's full list of entries ("All entries this week/month"): always open under the day on Week; on
  * Month it is the "Whole month" view of the switch beside the calendar. */
 export async function openAllEntries(page: Page) {
