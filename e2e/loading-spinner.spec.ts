@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 
+import { SPINNER_DELAY_MS } from "../src/lib/loading";
 import { expect, hold, startFreshAccount, test } from "./helpers";
 
 /**
@@ -53,26 +54,54 @@ test("the spinner fits the disc: the same box as the icon, and Log time keeps it
   expect(Math.abs(busyWidth - doneWidth)).toBeLessThanOrEqual(1);
 });
 
+// No wall time (R-152): a slow CI runner once made a real save take longer than the delay and turned a release red. The
+// page's clock stands still and the save is held at a gate, so "fast" means "answered before SPINNER_DELAY_MS of the
+// page's own clock", whatever the runner's speed.
 test("a fast save never shows the spinner, not even for a moment", async ({ page }) => {
-  await startFreshAccount(page);
-  await logEntry(page, "30m", "Warm up"); // the first save of a fresh app can be slower than a normal one
-  await expect(page.getByRole("listitem").filter({ hasText: "Warm up" })).not.toHaveAttribute("aria-busy", "true");
-  await expect(logButton(page)).not.toHaveAttribute("aria-busy", "true");
-
-  // Watches every change inside the button, so a spinner shown for a single frame is still seen.
-  await logButton(page).evaluate((button) => {
+  // Watches the whole page from the first load, so a "Saving" spinner shown for a single frame is still seen.
+  await page.addInitScript(() => {
     const seen = { spinner: false };
     (window as unknown as { spinnerSeen: typeof seen }).spinnerSeen = seen;
     new MutationObserver(() => {
-      if (button.querySelector('[role="status"]')) seen.spinner = true;
-    }).observe(button, { childList: true, subtree: true });
+      if (document.querySelector('[data-slot="spinner"][aria-label="Saving"]')) seen.spinner = true;
+    }).observe(document, { childList: true, subtree: true });
   });
-  await logEntry(page, "45m", "Fast save");
-  await expect(page.getByRole("listitem").filter({ hasText: "Fast save" })).not.toHaveAttribute("aria-busy", "true");
-  await expect(logButton(page)).not.toHaveAttribute("aria-busy", "true");
-  await page.waitForTimeout(500); // past the 300 ms a late spinner would need
+  await page.clock.install(); // the clock runs as normal until it is paused below
+  await startFreshAccount(page);
+  const now = await page.evaluate(() => Date.now());
+  await page.clock.pauseAt(now + 1000);
+
+  const save = await hold(page, "entry.create");
+  try {
+    await logEntry(page, "45m", "Fast save");
+    await page.clock.runFor(SPINNER_DELAY_MS - 1); // also runs the timers that send the call
+    await save.arrived;
+    await expect(logButton(page)).toHaveAttribute("aria-busy", "true"); // the save is still open...
+    await expect(spinner(page)).toHaveCount(0); // ...and 1 ms before the delay there is no spinner
+  } finally {
+    save.release();
+  }
+
+  // The answer is handled on timers of 0 ms: run only those, so the page's clock stays 1 ms short of the delay.
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(0);
+      return logButton(page).getAttribute("aria-busy");
+    })
+    .not.toBe("true");
+  // The saved row swaps in on the same 0 ms timers: keep running only those while waiting, or the paused clock holds it.
+  const row = page.getByRole("listitem").filter({ hasText: "Fast save" });
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(0);
+      return row.getAttribute("aria-busy");
+    })
+    .not.toBe("true");
+
+  await page.clock.runFor(SPINNER_DELAY_MS); // well past the delay: a late spinner would show now
+  await expect(spinner(page)).toHaveCount(0);
   const seen = await page.evaluate(() => (window as unknown as { spinnerSeen: { spinner: boolean } }).spinnerSeen);
-  expect(seen.spinner).toBe(false);
+  expect(seen.spinner, "a Saving spinner was on screen during the test").toBe(false);
 });
 
 test("with reduced motion the spinner stands still; with motion its dashes run", async ({ page }) => {
