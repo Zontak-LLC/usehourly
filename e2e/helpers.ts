@@ -161,7 +161,7 @@ export async function saveReviewedInvoice(page: Page): Promise<Download> {
   await expect(
     page.getByRole("heading", { name: "Check your invoice" }),
     "the invoice review step never showed",
-  ).toBeVisible({ timeout: 15_000 });
+  ).toBeVisible();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Save and download PDF" }).click(),

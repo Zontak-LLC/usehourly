@@ -88,7 +88,7 @@ test("a new freelancer's first day: start", async ({ page, shot, audit, a11y, is
     await expect(page.locator("[data-entry-id]")).toHaveCount(1); // the row shows at once
     await expect(savedLine(page)).toHaveCount(0); // but not the line: Undo would have nothing to delete yet
     await page.unroute("**/api/trpc/entry.create*");
-    await expect(savedLine(page)).toHaveText("Logged 2:00 on General · Acme Studio", { timeout: 15_000 });
+    await expect(savedLine(page)).toHaveText("Logged 2:00 on General · Acme Studio");
     await expect(undoButton(page)).toBeVisible();
     await expect(page.locator("[data-just-logged]")).toHaveCount(1); // the new row has a marked edge
     await expect(welcomeLine(page)).toHaveCount(0); // the one-time line ends with the first entry
@@ -256,8 +256,5 @@ test("half-done first run: pressing Add client again after the project failed ma
   await expect(page.getByLabel("Time to add")).toBeVisible();
   await page.goto("/dashboard/clients");
   await expect(clientRows(page, "Northwind Bakery")).toHaveCount(1);
-  await gotoClient(page, "Northwind Bakery");
-  await expect(
-    page.getByRole("region", { name: "Northwind Bakery", exact: true }).getByText("General", { exact: true }),
-  ).toHaveCount(1);
+  await expect(page.getByText(/1 client · 1 project/).first()).toBeVisible(); // the title line counts the account's all
 });
