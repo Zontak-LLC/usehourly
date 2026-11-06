@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New invoice while a timer runs: stop it and include it, or invoice without it (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 431, snag 3. New invoice (invoices/new): Create invoice stays amber while a timer runs on this
+  client's billable project in the period. A press opens one plain choice in the shared Dialog (components/ui/dialog.tsx).
+  Three cases, each on a desktop (the dialog is 24rem wide) and a Pixel 7 phone (412 px; the dialog sits at the top).
+  1. Other time to bill: "Stop it and include it" (amber) and "Leave it running and invoice without it" (outline).
+  2. The timer is the only time: one line more, and only "Stop it and include it".
+  3. The timer ran under a minute and is the only time: nothing to bill yet, only "Keep it running".
+  The buttons are stacked and full width on BOTH sizes: the second label is too long to sit beside the first in 24rem.
+  Each is 48 px tall. Escape or the × closes with nothing changed. Same tokens as first-day-rate-and-project.html.
+-->
+<style>
+  :root {
+    --background: #eef2f7;
+    --foreground: #1c2434;
+    --card: #ffffff;
+    --border: #dbe2ec;
+    --muted: #eef1f5;
+    --amber: #2563c9;
+    --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+    --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
+    --muted-fg: color-mix(in oklab, var(--foreground) 62%, transparent);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; color: var(--muted-fg); max-width: 72ch; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: var(--muted-fg); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .screen { position: relative; background: color-mix(in oklab, #000 10%, var(--background)); border-radius: 12px;
+    overflow: hidden; }
+  .desktop { width: 640px; height: 330px; display: grid; place-items: center; }
+  .phone { width: 412px; height: 420px; padding: 12px 16px; }
+  .dialog { position: relative; background: var(--card); border-radius: 12px; padding: 16px; width: 384px;
+    display: grid; gap: 16px; box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent); }
+  .phone .dialog { width: 100%; }
+  .x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center;
+    color: var(--muted-fg); }
+  .title { font-weight: 500; font-size: 16px; margin: 0; padding-right: 28px; }
+  .line { margin: 0; color: var(--muted-fg); }
+  .buttons { display: grid; gap: 8px; }
+  .btn { min-height: 48px; border-radius: 12px; padding: 8px 16px; display: flex; align-items: center;
+    justify-content: center; font-weight: 600; font-size: 15px; text-align: center; }
+  .btn.main { color: #fff; background: var(--amber-fill); }
+  .btn.outline { background: var(--card); box-shadow: inset 0 0 0 1px var(--border); font-weight: 500; }
+  .page { position: absolute; inset: 0; padding: 16px; opacity: .35; pointer-events: none; }
+  .doc { display: inline-flex; align-items: center; gap: 10px; border-radius: 16px; padding: 8px 20px 8px 8px;
+    background: var(--amber-fill); color: #fff; font-weight: 800; }
+  .doc i { width: 40px; height: 40px; border-radius: 12px; background: rgb(255 255 255 / .2); }
+</style>
+</head>
+<body>
+<h1>New invoice while a timer runs</h1>
+<p class="note">Create invoice is never grey because of a timer. Pressed while a timer runs on this invoice's time, it
+asks one plain question. With no running timer on this invoice it makes the invoice at once, as today. The preview
+shows only stopped time; its notice now reads "⚠ A timer is running. Its time is not on this invoice until you stop
+it." With no time and no timer the empty preview adds "Log time on Today, or pick another period."</p>
+
+<h2>Behind the dialog: the button stays amber</h2>
+<div class="frames">
+  <div class="screen desktop" style="background: var(--background)">
+    <span class="doc"><i></i><span>Create invoice<br><small style="font-weight:400;opacity:.75">and download the PDF</small></span></span>
+  </div>
+</div>
+
+<h2>1 · Other time to bill</h2>
+<div class="frames">
+  <div class="screen desktop">
+    <div class="dialog">
+      <span class="x">✕</span>
+      <p class="title">A timer is running (0:42 on Website)</p>
+      <p class="line">Stop it to bill its time now, or leave it running and bill the rest.</p>
+      <div class="buttons">
+        <span class="btn main">Stop it and include it</span>
+        <span class="btn outline">Leave it running and invoice without it</span>
+      </div>
+    </div>
+  </div>
+  <div class="screen phone">
+    <div class="dialog">
+      <span class="x">✕</span>
+      <p class="title">A timer is running (0:42 on Website)</p>
+      <p class="line">Stop it to bill its time now, or leave it running and bill the rest.</p>
+      <div class="buttons">
+        <span class="btn main">Stop it and include it</span>
+        <span class="btn outline">Leave it running and invoice without it</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>2 · The timer is the only time</h2>
+<div class="frames">
+  <div class="screen desktop">
+    <div class="dialog">
+      <span class="x">✕</span>
+      <p class="title">A timer is running (0:42 on Website)</p>
+      <p class="line">This timer is the only time to bill so far.</p>
+      <div class="buttons">
+        <span class="btn main">Stop it and include it</span>
+      </div>
+    </div>
+  </div>
+  <div class="screen phone">
+    <div class="dialog">
+      <span class="x">✕</span>
+      <p class="title">A timer is running (0:42 on Website)</p>
+      <p class="line">This timer is the only time to bill so far.</p>
+      <div class="buttons">
+        <span class="btn main">Stop it and include it</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>3 · Only time, under a minute</h2>
+<div class="frames">
+  <div class="screen desktop">
+    <div class="dialog">
+      <span class="x">✕</span>
+      <p class="title">A timer is running (0:00 on Website)</p>
+      <p class="line">This timer has run less than a minute. Nothing to bill yet.</p>
+      <div class="buttons">
+        <span class="btn main">Keep it running</span>
+      </div>
+    </div>
+  </div>
+  <div class="screen phone">
+    <div class="dialog">
+      <span class="x">✕</span>
+      <p class="title">A timer is running (0:00 on Website)</p>
+      <p class="line">This timer has run less than a minute. Nothing to bill yet.</p>
+      <div class="buttons">
+        <span class="btn main">Keep it running</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Busy</h2>
+<p class="note">While working, the pressed button reads "Stopping…" then "Creating…" (or "Creating…"), with the shared
+spinner after a moment, and both buttons are locked so a double tap cannot stop and create twice. If the stop fails,
+the error toast shows, no invoice is made and the buttons work again.</p>
+</body>
+</html>

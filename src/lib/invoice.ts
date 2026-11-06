@@ -54,8 +54,12 @@ export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_RO
       skippedMinutes += e.minutes;
       continue;
     }
-    if (e.started_at) runningTimers += 1;
-    // Zero-hour entries (e.g. a timer just started) add nothing to bill; keep them off the invoice.
+    // A running timer is billed only once stopped (the server reads `started_at: null`), so the preview leaves it off too,
+    // even when it already holds minutes from before a resume (issue 431).
+    if (e.started_at) {
+      runningTimers += 1;
+      continue;
+    }
     if (e.minutes <= 0) continue;
     const line = byProject.get(e.project_id) ?? {
       projectId: e.project_id,
