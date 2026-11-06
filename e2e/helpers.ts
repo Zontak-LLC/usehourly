@@ -57,12 +57,26 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
   await card.getByRole("button", { name: "Save", exact: true }).click();
 }
 
-/** Holds every call to one tRPC procedure (e.g. "entry.create") back for `ms` before it goes on to the server. */
-export async function hold(page: Page, procedure: string, ms: number) {
+/**
+ * Holds every call to one tRPC procedure (e.g. "entry.create") back before it goes on to the server: for `ms`, or, with
+ * no `ms`, until the test calls `release()` (a gate, so no wall time decides the test). `arrived` settles when the first
+ * call reaches the hold.
+ */
+export async function hold(page: Page, procedure: string, ms?: number) {
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let arrive!: () => void;
+  const arrived = new Promise<void>((resolve) => {
+    arrive = resolve;
+  });
   await page.route(`**/api/trpc/${procedure}*`, async (route) => {
-    await new Promise((r) => setTimeout(r, ms));
+    arrive();
+    await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
     await route.continue();
   });
+  return { arrived, release };
 }
 
 /**
