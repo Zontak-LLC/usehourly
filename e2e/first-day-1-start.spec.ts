@@ -81,7 +81,7 @@ test("a new freelancer's first day: start", async ({ page, shot, audit, a11y, is
   });
 
   await test.step("log 2:00: a plain line says it is saved, only once the server has it", async () => {
-    await hold(page, "entry.create", 2500);
+    await hold(page, "entry.create", 4000); // as long as instant-changes.spec.ts: a slow CI container still checks in time
     await page.getByLabel("Time to add").fill("2:00");
     await page.getByRole("button", { name: /Log time/ }).click();
     count("firstEntry", 2);
@@ -239,7 +239,7 @@ test("first run: an empty project box gives General, a typed one names the first
   await expect(page).toHaveURL(/\/dashboard\/clients\/[^/]+$/);
   const profile = page.getByRole("region", { name: "Northwind Bakery", exact: true });
   await expect(profile.getByRole("heading", { level: 2 })).toHaveText("Northwind Bakery");
-  await expect(profile.getByText("Website", { exact: true }).first()).toBeVisible();
+  await expect(profile.getByText("Website", { exact: true }).locator("visible=true").first()).toBeVisible();
   await page.goto("/dashboard/clients");
   await expect(clientRows(page, "Northwind Bakery")).toHaveCount(1);
 });
