@@ -55,6 +55,17 @@ export function InvoicePreviewCard({
       ) : totals.lines.length === 0 ? (
         <p className="px-4 py-8 text-center text-muted-foreground text-sm">
           No billable time for {clientName} in this period.
+          {/* A running timer has its own notice and choice below; with none, say where time comes from (issue 431). */}
+          {totals.runningTimers === 0 && (
+            <>
+              {" "}
+              Log time on{" "}
+              <Link href="/dashboard/today" className="inline-block py-1 font-medium text-foreground underline">
+                Today
+              </Link>
+              , or pick another period.
+            </>
+          )}
         </p>
       ) : (
         <table className="w-full text-sm">
@@ -143,7 +154,9 @@ export function InvoiceNotices({
               ))}
             </li>
           )}
-          {totals.runningTimers > 0 && <li>⚠ A timer is still running; only time logged so far is included.</li>}
+          {totals.runningTimers > 0 && (
+            <li>⚠ A timer is running. Its time is not on this invoice until you stop it.</li>
+          )}
           {totals.skippedMinutes > 0 && (
             <li>{formatDecimalHours(totals.skippedMinutes)} h on non-billable projects is left off.</li>
           )}

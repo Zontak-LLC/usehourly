@@ -559,6 +559,14 @@ describe("client invoice journey", () => {
         date: "2026-10-02",
         minutes: 30,
         note: "",
+        started_at: null,
+        project_id: "p9",
+        project: { name: "Unrated", hourly_rate: 0, billable: true },
+      },
+      {
+        date: "2026-10-02",
+        minutes: 0,
+        note: "",
         started_at: new Date(),
         project_id: "p9",
         project: { name: "Unrated", hourly_rate: 0, billable: true },
@@ -567,6 +575,18 @@ describe("client invoice journey", () => {
     expect(t.zeroRateProjects.map((p) => p.name)).toEqual(["Unrated"]);
     expect(t.runningTimers).toBe(1);
     expect(t.totalCents).toBe(0);
+  });
+
+  it("leaves a running timer off the lines, even one holding minutes, as the server does (issue 431)", () => {
+    const project = { name: "Website", hourly_rate: 6000, billable: true };
+    const t = buildInvoice([
+      { date: "2026-10-02", minutes: 60, note: "Stopped", started_at: null, project_id: "p1", project },
+      { date: "2026-10-02", minutes: 30, note: "Resumed", started_at: new Date(), project_id: "p1", project },
+    ]);
+    expect(t.lines).toEqual([{ projectId: "p1", project: "Website", minutes: 60, rateCents: 6000, amountCents: 6000 }]);
+    expect(t.detail.map((d) => d.note)).toEqual(["Stopped"]);
+    expect(t.runningTimers).toBe(1);
+    expect(t.totalCents).toBe(6000);
   });
 
   it("renders a real PDF from a stored snapshot (uncompressed so the text is checkable)", async () => {

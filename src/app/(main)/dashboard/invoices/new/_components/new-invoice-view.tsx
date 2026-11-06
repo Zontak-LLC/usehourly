@@ -28,6 +28,7 @@ import { invoicePeriodStart, type Unbilled } from "@/lib/unbilled";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
 import { InvoiceNotices, InvoicePreviewCard, TaxChoice } from "./invoice-preview";
+import { type RunningChoice, RunningTimerDialog } from "./running-timer-dialog";
 
 function MissingProfileNotice({ ein, address }: { ein?: string | null; address?: string | null }) {
   return (
@@ -197,20 +198,21 @@ export function NewInvoiceView() {
     }),
     [client?.round_step, client?.round_mode, client?.round_min],
   );
-  const totals = useMemo(
+  // Match by the project's client (not the active-project list) so archived projects count, exactly as the server does.
+  // Days marked non-billable are never invoiced, and time already on an invoice is left out unless asked for (the
+  // server does the same).
+  const billableEntries = useMemo(
     () =>
-      // Match by the project's client (not the active-project list) so archived projects count,
-      // exactly as the server does.
-      buildInvoice(
-        // Days marked non-billable are never invoiced, and time already on an invoice is left out unless asked for
-        // (the server does the same).
-        (entries.data ?? []).filter(
-          (e) => e.project.client_id === clientId && !e.non_billable && (includeInvoiced || !e.invoice_id),
-        ),
-        rounding,
+      (entries.data ?? []).filter(
+        (e) => e.project.client_id === clientId && !e.non_billable && (includeInvoiced || !e.invoice_id),
       ),
-    [entries.data, clientId, rounding, includeInvoiced],
+    [entries.data, clientId, includeInvoiced],
   );
+  const totals = useMemo(() => buildInvoice(billableEntries, rounding), [billableEntries, rounding]);
+  // The timer on THIS invoice's time (this client, this period, a billable project). It is billed only once stopped, so
+  // Create invoice asks about it first (issue 431); a timer anywhere else does not touch this invoice.
+  const runningEntry = billableEntries.find((e) => e.started_at && e.project.billable) ?? null;
+  const [runningChoice, setRunningChoice] = useState<RunningChoice | null>(null);
   const alreadyInvoiced = (entries.data ?? [])
     .filter((e) => e.project.client_id === clientId && e.invoice_id && e.project.billable && !e.non_billable)
     .reduce((a, e) => a + e.minutes, 0);
@@ -220,9 +222,18 @@ export function NewInvoiceView() {
   // A $0.00 invoice is never what anyone means: block it and say why.
   const nothingToBill = totals.lines.length > 0 && totals.totalCents === 0;
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!client || !today) return;
+    if (runningEntry) {
+      setRunningChoice({ entry: runningEntry, onlyTime: totals.lines.length === 0 });
+      return;
+    }
+    void createInvoice();
+  }
+
+  /** Makes the invoice from what the server holds now, downloads its PDF and goes to the list; true once it is made. */
+  async function createInvoice(): Promise<boolean> {
+    if (!client || !today) return false;
     const days = Number.parseInt(netDays, 10);
     try {
       const { snapshot } = await create.mutateAsync({
@@ -253,8 +264,10 @@ export function NewInvoiceView() {
       }
       toast.success(`Invoice ${snapshot.number} saved.`);
       router.push("/dashboard/invoices");
+      return true;
     } catch (err) {
       toastError(err, "Couldn't create the invoice.");
+      return false;
     }
   }
 
@@ -336,7 +349,10 @@ export function NewInvoiceView() {
                   label={create.isPending ? "Creating…" : "Create invoice & download PDF"}
                   busy={create.isPending}
                   busyLabel="Creating"
-                  disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
+                  // A running timer never leaves the button dead: pressed, it asks what to do with it (issue 431).
+                  disabled={
+                    create.isPending || !validRange || nothingToBill || (totals.lines.length === 0 && !runningEntry)
+                  }
                 />
                 <Button type="button" variant="outline" asChild>
                   <Link href="/dashboard/invoices">Cancel</Link>
@@ -345,6 +361,12 @@ export function NewInvoiceView() {
             </div>
           </div>
         )}
+        {/* Portalled out of the form, so its buttons never submit it. */}
+        <RunningTimerDialog
+          choice={runningChoice}
+          onClose={() => setRunningChoice(null)}
+          createInvoice={createInvoice}
+        />
       </PageShell>
     </form>
   );
