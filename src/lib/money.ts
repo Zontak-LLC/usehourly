@@ -64,6 +64,18 @@ export const currencySymbol = (currency: string = DEFAULT_CURRENCY) =>
     .formatToParts(0)
     .find((p) => p.type === "currency")?.value ?? DEFAULT_CURRENCY;
 
+/**
+ * A typed hourly rate ("60", "62.5") as cents an hour. Blank, unreadable or below zero is 0 (no rate yet). The one
+ * parser for every rate box: first run, Add a project, the project edit form and the invoice screen's fix.
+ */
+export function rateCents(typed: unknown): number {
+  const cents = Math.round(Number(typed || 0) * 100);
+  return Number.isFinite(cents) && cents > 0 ? cents : 0;
+}
+
+/** The hint under a rate box where a client or project is made (issue 431: testers' first invoices came out at $0). */
+export const RATE_HINT = "Optional. Invoices use it: hours × rate. You can set it later.";
+
 /** The Excel number format for an amount in this currency, e.g. `"$"#,##0.00` (quoted so any symbol is literal). */
 export const excelMoneyFormat = (currency: string = DEFAULT_CURRENCY) =>
   `"${currencySymbol(currency).replace(/"/g, "")}"#,##0.00`;

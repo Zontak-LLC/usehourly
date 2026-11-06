@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { parseBudgetInput } from "@/lib/budget";
 import { feature } from "@/lib/features";
 import { fileToLogo } from "@/lib/logo";
+import { rateCents } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -21,7 +22,6 @@ export function useProjectEditing() {
   async function saveProject(e: React.FormEvent<HTMLFormElement>, id: string) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const rate = Math.round(Number(fd.get("rate") || 0) * 100);
     // With budgets hidden the form has no budget fields, so nothing about the budget is sent and a stored one stays.
     const withBudget = feature("budgets");
     const unit = fd.get("budgetUnit") === "hours" ? "hours" : "dollars";
@@ -34,7 +34,7 @@ export function useProjectEditing() {
         id,
         name: String(fd.get("name")),
         clientId: String(fd.get("clientId")),
-        hourlyRate: Number.isFinite(rate) ? rate : 0,
+        hourlyRate: rateCents(fd.get("rate")),
         billable: fd.get("billable") === "on",
         ...(withBudget && {
           budgetAmount,

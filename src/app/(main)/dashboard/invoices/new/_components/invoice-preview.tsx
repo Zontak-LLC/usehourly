@@ -1,14 +1,23 @@
 "use client";
 
+import { useId, useState } from "react";
+
 import Link from "next/link";
 
-import { useMoney } from "@/components/currency-provider";
+import { toast } from "sonner";
+
+import { useCurrency, useMoney } from "@/components/currency-provider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimalHours } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import type { buildInvoice } from "@/lib/invoice";
+import { currencySymbol, rateCents } from "@/lib/money";
 import { describeRounding, isRounding, type Rounding } from "@/lib/rounding";
 import { formatTaxRate, type InvoiceTax, type TaxSetting, taxLabel, taxRowLabel } from "@/lib/tax";
+import { toastError } from "@/lib/toast-error";
+import { trpc } from "@/lib/trpc";
 
 export type InvoiceTotals = ReturnType<typeof buildInvoice>;
 
@@ -120,12 +129,18 @@ export function InvoiceNotices({
       {(totals.zeroRateProjects.length > 0 || totals.runningTimers > 0 || totals.skippedMinutes > 0) && (
         <ul className="flex flex-col gap-1 text-muted-foreground text-sm">
           {totals.zeroRateProjects.length > 0 && (
-            <li>
-              ⚠ No hourly rate set for {totals.zeroRateProjects.join(", ")} — billed at {money(0)}. Set it under{" "}
-              <Link href="/dashboard/clients" className="underline">
-                Clients
-              </Link>
-              .
+            <li className="flex flex-col gap-2">
+              <span>
+                ⚠ No hourly rate set for {totals.zeroRateProjects.map((p) => p.name).join(", ")} — billed at {money(0)}.
+                Set it here or under{" "}
+                <Link href="/dashboard/clients" className="underline">
+                  Clients
+                </Link>
+                .
+              </span>
+              {totals.zeroRateProjects.map((p) => (
+                <SetRate key={p.id} project={p} />
+              ))}
             </li>
           )}
           {totals.runningTimers > 0 && <li>⚠ A timer is still running; only time logged so far is included.</li>}
@@ -142,10 +157,80 @@ export function InvoiceNotices({
           <Link href="/dashboard/clients" className="font-medium underline">
             Clients
           </Link>{" "}
-          first, then come back.
+          first, then come back, or set it here.
         </p>
       )}
     </>
+  );
+}
+
+/**
+ * "General · Rate per hour [ ] Save" under the $0 warning (issue 431: testers' first invoice came out at $0 and the way
+ * out was another page). Saves through `project.update`, as the Clients edit form does; the preview re-prices from the
+ * refetched entries, so the row goes away once the rate is set. It sits inside the invoice form, so it is not a form of
+ * its own: Save is a plain button and Enter in the box saves the rate, never the invoice.
+ */
+function SetRate({ project }: { project: { id: string; name: string } }) {
+  const currency = useCurrency();
+  const money = useMoney();
+  const utils = trpc.useUtils();
+  const update = trpc.project.update.useMutation();
+  const [rate, setRate] = useState("");
+  const id = useId();
+
+  async function save() {
+    const hourlyRate = rateCents(rate);
+    if (hourlyRate === 0) return toast.error("Type the hourly rate, like 60.");
+    try {
+      await update.mutateAsync({ id: project.id, hourlyRate });
+      // Clients and the unbilled figures use the rate too; the invoice preview needs the entries again.
+      await Promise.all([
+        utils.entry.list.invalidate(),
+        utils.clients.list.invalidate(),
+        utils.invoice.unbilled.invalidate(),
+      ]);
+      toast.success(`${project.name} is now ${money(hourlyRate)}/h.`);
+    } catch (err) {
+      toastError(err, "Couldn't save that rate.");
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 pl-5 text-foreground">
+      <span className="font-medium">{project.name}</span>
+      <span aria-hidden>·</span>
+      <label htmlFor={id}>Rate per hour</label>
+      <span className="text-muted-foreground" aria-hidden>
+        {currencySymbol(currency)}
+      </span>
+      <Input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+        value={rate}
+        placeholder="0.00"
+        onChange={(e) => setRate(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          void save();
+        }}
+        aria-label={`Rate per hour for ${project.name}`}
+        className="h-9 w-28 font-mono"
+      />
+      <Button
+        type="button"
+        variant="outline"
+        className="h-9"
+        disabled={update.isPending}
+        aria-label={`Save the rate for ${project.name}`}
+        onClick={() => void save()}
+      >
+        {update.isPending ? "Saving…" : "Save"}
+      </Button>
+    </div>
   );
 }
 

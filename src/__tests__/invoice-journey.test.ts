@@ -564,7 +564,7 @@ describe("client invoice journey", () => {
         project: { name: "Unrated", hourly_rate: 0, billable: true },
       },
     ]);
-    expect(t.zeroRateProjects).toEqual(["Unrated"]);
+    expect(t.zeroRateProjects.map((p) => p.name)).toEqual(["Unrated"]);
     expect(t.runningTimers).toBe(1);
     expect(t.totalCents).toBe(0);
   });
