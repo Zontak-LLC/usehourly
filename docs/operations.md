@@ -94,6 +94,7 @@ Events you may see (all `level: "error"`), and what they mean:
 | `event` | Meaning | What to do |
 |---|---|---|
 | `trpc_internal_error` | A tRPC call failed with an unexpected error (`path`, `requestId`) | Find the `requestId`, read the `error`; reproduce with the path's scenario test |
+| `render_error` | A server render (page, layout or server component) threw (`path` without query, `routePath`, `routeType`, `digest`, `requestId`) | Find the `requestId`/`digest`, read `error.message`, and open the follow-up fix ticket from that path with a failing test first |
 | `health_check_failed` | The database did not answer | Check Cloudflare status; D1 dashboard |
 | `support_notice_read_failed` | The "chip in" setting could not be read (the layout shows no note instead of failing) | Usually migration 0033 not applied yet: run `npm run d1:migrate:remote` |
 | `invoice_email_failed`, `report_email_failed`, `approval_email_failed`, `verification_email_failed`, `password_reset_email_failed` | The email service refused or was unreachable; the user action itself still worked | Check Resend status and the API key; users can retry |
