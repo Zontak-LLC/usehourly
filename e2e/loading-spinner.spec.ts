@@ -89,7 +89,14 @@ test("a fast save never shows the spinner, not even for a moment", async ({ page
       return logButton(page).getAttribute("aria-busy");
     })
     .not.toBe("true");
-  await expect(page.getByRole("listitem").filter({ hasText: "Fast save" })).not.toHaveAttribute("aria-busy", "true");
+  // The saved row swaps in on the same 0 ms timers: keep running only those while waiting, or the paused clock holds it.
+  const row = page.getByRole("listitem").filter({ hasText: "Fast save" });
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(0);
+      return row.getAttribute("aria-busy");
+    })
+    .not.toBe("true");
 
   await page.clock.runFor(SPINNER_DELAY_MS); // well past the delay: a late spinner would show now
   await expect(spinner(page)).toHaveCount(0);
