@@ -25,6 +25,7 @@ import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
 import { pendingEntry } from "@/lib/optimistic-entries";
+import { browserStorage, readLastProject, rememberLastProject, startProject } from "@/lib/picked-project";
 import { pickableProjects } from "@/lib/project-shade";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
@@ -39,7 +40,6 @@ function chipText(minutes: number): string {
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
 }
 
-const LAST_PROJECT_KEY = "hourly:lastProject";
 /** How many entries this browser has logged: the help line under the time shows only for the first few. */
 const LOGGED_KEY = "hourly:loggedCount";
 const HELP_UNTIL = 3;
@@ -48,13 +48,6 @@ function readLogged(): number {
     return Number(localStorage.getItem(LOGGED_KEY)) || 0;
   } catch {
     return 0;
-  }
-}
-function readLast(): string {
-  try {
-    return localStorage.getItem(LAST_PROJECT_KEY) ?? "";
-  } catch {
-    return "";
   }
 }
 
@@ -118,11 +111,10 @@ export function QuickAdd({
   // The month of the day being logged: the budget for the project picked below, if it has one.
   const budgets = trpc.project.budgets.useQuery(monthBounds(date));
   const budget = budgets.data?.[projectId];
-  // Restore the last-used project, falling back to the first available one.
+  // Restore the last-used project (also set when a project is made on Clients), else start on the newest one.
   useEffect(() => {
     if (projectId || projects.length === 0) return;
-    const last = readLast();
-    setProjectId(projects.some((p) => p.id === last) ? last : projects[0].id);
+    setProjectId(startProject(projects, readLastProject(browserStorage())));
   }, [projects, projectId]);
 
   // Land in the time field on a computer (on a phone that would pop the keyboard before you asked).
@@ -152,11 +144,7 @@ export function QuickAdd({
 
   function remember(id: string) {
     setProjectId(id);
-    try {
-      localStorage.setItem(LAST_PROJECT_KEY, id);
-    } catch {
-      // Remembering the project is a convenience; ignore storage being unavailable.
-    }
+    rememberLastProject(browserStorage(), id);
   }
 
   async function submit(e?: React.FormEvent) {

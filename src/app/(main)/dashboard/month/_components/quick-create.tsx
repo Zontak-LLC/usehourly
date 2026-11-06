@@ -9,19 +9,10 @@ import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDuration, readDuration } from "@/lib/duration";
+import { browserStorage, readLastProject, startProject } from "@/lib/picked-project";
 import type { SheetEntry } from "@/lib/timesheet";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
-
-const LAST_PROJECT_KEY = "hourly:lastProject"; // written only by the Today add form; this panel just starts on it
-
-function readLast(): string {
-  try {
-    return localStorage.getItem(LAST_PROJECT_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
 
 const clip = (text: string, n: number) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
 
@@ -55,12 +46,15 @@ export function QuickCreate({
   const [note, setNote] = useState("");
   const [skipExisting, setSkipExisting] = useState(true);
 
-  // Default to the last project used anywhere in the app, else the first one.
+  // Start on the last project used anywhere in the app (this panel only reads it), else the newest one, as Log time does.
   useEffect(() => {
     if (projectId || !clients.data) return;
-    const all = clients.data.flatMap((c) => c.projects);
-    const last = readLast();
-    setProjectId(all.find((p) => p.id === last)?.id ?? all[0]?.id ?? "");
+    setProjectId(
+      startProject(
+        clients.data.flatMap((c) => c.projects),
+        readLastProject(browserStorage()),
+      ),
+    );
   }, [clients.data, projectId]);
 
   // Distinct (project, hours, note) combos already in the month, newest first.

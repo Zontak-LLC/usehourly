@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { toast } from "sonner";
 
 import { useCurrency } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { currencySymbol } from "@/lib/money";
+import { Label } from "@/components/ui/label";
+import { currencySymbol, RATE_HINT, rateCents } from "@/lib/money";
+import { browserStorage, rememberNewProject } from "@/lib/picked-project";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
@@ -32,6 +34,8 @@ export function SetupForm({
   const [pending, setPending] = useState(false);
   // Work you do not bill (admin, your own business): no rate, and it never shows "No hourly rate yet".
   const [unbilled, setUnbilled] = useState(false);
+  const rateId = useId();
+  const hintId = useId();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,13 +44,14 @@ export function SetupForm({
     setPending(true);
     try {
       const id = clientId ?? (await createClient.mutateAsync({ name: String(fd.get("client")) })).id;
-      const rate = Math.round(Number(fd.get("rate") || 0) * 100);
       const project = await createProject.mutateAsync({
         clientId: id,
         name: String(fd.get("project")),
-        hourlyRate: unbilled || !Number.isFinite(rate) ? 0 : rate,
+        hourlyRate: unbilled ? 0 : rateCents(fd.get("rate")),
         billable: !unbilled,
       });
+      // The project just made is the one Log time starts on (issue 431: testers logged to "General" without noticing).
+      rememberNewProject(browserStorage(), project.id);
       await utils.clients.list.invalidate();
       form.reset();
       setUnbilled(false);
@@ -67,7 +72,7 @@ export function SetupForm({
     <form
       method="post"
       onSubmit={onSubmit}
-      className={`flex flex-wrap items-end gap-2 ${bar ? "w-full max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto] sm:flex-nowrap" : ""}`}
+      className={`flex flex-wrap items-end gap-2 ${bar ? "w-full max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto]" : ""}`}
     >
       {!clientId && (
         <Input
@@ -88,18 +93,24 @@ export function SetupForm({
         onKeyDown={escapeToCancel}
         className={bar ? "max-sm:col-span-2 sm:min-w-0 sm:flex-1" : "w-44"}
       />
-      <Input
-        name="rate"
-        type="number"
-        inputMode="decimal"
-        min="0"
-        step="0.01"
-        aria-label={`Hourly rate in ${currency}`}
-        onKeyDown={escapeToCancel}
-        placeholder={`Rate ${currencySymbol(currency)}/h`}
-        disabled={unbilled}
-        className={bar ? "shrink-0 max-sm:w-full sm:w-32" : "w-32 shrink-0"}
-      />
+      {/* A real label, the same words as the edit form (issue 431: a placeholder alone left the rate unnoticed). */}
+      <div className={`grid gap-1 ${bar ? "shrink-0 max-sm:w-full sm:w-32" : "w-32 shrink-0"}`}>
+        <Label htmlFor={rateId} className="text-xs">
+          Rate per hour
+        </Label>
+        <Input
+          id={rateId}
+          name="rate"
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="0.01"
+          aria-describedby={hintId}
+          onKeyDown={escapeToCancel}
+          placeholder={`${currencySymbol(currency)} 0.00`}
+          disabled={unbilled}
+        />
+      </div>
       {bar && (
         <label className="flex min-h-10 items-center gap-1.5 text-sm max-sm:col-span-2">
           <input type="checkbox" checked={unbilled} onChange={(e) => setUnbilled(e.target.checked)} /> Not billable
@@ -108,6 +119,9 @@ export function SetupForm({
       <Button type="submit" disabled={pending} className={bar ? "px-6" : undefined}>
         {pending ? "Saving…" : "Add"}
       </Button>
+      <p id={hintId} className="basis-full text-muted-foreground text-xs max-sm:col-span-2">
+        {RATE_HINT}
+      </p>
     </form>
   );
 }

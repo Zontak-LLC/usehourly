@@ -2,30 +2,48 @@ import { FEATURES } from "../src/lib/features";
 import { clearMail, expect, gotoClient, linkIn, mailTo, seedFirstDay, test } from "./helpers";
 
 /**
- * A new freelancer's first day, part 2 of 4: with 3 hours logged and no rate yet, an invoice is blocked with the way out,
- * the rate (and a budget) is set on Clients, the email address is confirmed from the mail, and each page is named like
- * its menu entry. It starts from part 1's end state, made through the API (issue 331).
+ * A new freelancer's first day, part 2 of 4: with 3 hours logged and no rate yet, an invoice is blocked and the rate is
+ * set right there (issue 431), Clients shows it and its edit form keeps it (and sets a budget), the email address is
+ * confirmed from the mail, and each page is named like its menu entry. It starts from part 1's end state, made through
+ * the API (issue 331), but with the first-run rate left blank.
  */
 test("a new freelancer's first day: rate", async ({ page, shot, audit, isPhone }) => {
   const { user } = await seedFirstDay(page, { rate: 0, minutes: [120, 60] });
 
-  await test.step("an invoice at a $0 rate is blocked, with the way out", async () => {
+  await test.step("a first-run rate left blank shows on Clients as missing, not silent", async () => {
+    await gotoClient(page, "Acme Studio");
+    await expect(page.getByText("No hourly rate yet")).toBeVisible();
+    await shot("my-work-before");
+  });
+
+  await test.step("an invoice at a $0 rate is blocked, and the rate is set on the invoice screen", async () => {
     await page.goto("/dashboard/invoices/new");
     await expect(page.getByText(/would be \$0\.00/)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Create invoice/ })).toBeDisabled();
-    // The way out is the link inside the warning itself, not the Clients tab in the menu.
+    const create = page.getByRole("button", { name: /Create invoice/ });
+    await expect(create).toBeDisabled();
+    // The second way out stays: the link inside the warning itself, not the Clients tab in the menu.
     const wayOut = page.getByText(/would be \$0\.00/).getByRole("link", { name: "Clients" });
     await expect(wayOut).toHaveAttribute("href", "/dashboard/clients");
     await shot("invoice-blocked-at-zero");
+    await audit("invoice at a $0 rate");
+
+    await page.getByLabel("Rate per hour for General").fill("60");
+    await page.getByRole("button", { name: "Save the rate for General" }).click();
+    await expect(page.getByText("$180.00").first()).toBeVisible(); // 3 h × $60.00, without leaving the page
+    await expect(page.getByText(/would be \$0\.00/)).toHaveCount(0);
+    await expect(page.getByLabel("Rate per hour for General")).toHaveCount(0); // the row goes once the rate is set
+    await expect(create).toBeEnabled();
+    await expect(page).toHaveURL(/invoices\/new/);
+    await shot("invoice-rate-set-here");
   });
 
-  await test.step("set the project's hourly rate under Clients", async () => {
+  await test.step("Clients shows the rate set on the invoice screen, and its edit form keeps it", async () => {
     await gotoClient(page, "Acme Studio"); // the split view: on a phone the client is picked from the list first
     await expect(page.getByRole("heading", { name: "Clients", level: 1 })).toBeVisible();
-    await expect(page.getByText("No hourly rate yet")).toBeVisible(); // a missing rate is visible, not silent
-    await shot("my-work-before");
+    await expect(page.getByText("$60.00/h").first()).toBeVisible();
+    await expect(page.getByText("No hourly rate yet")).toHaveCount(0);
     await page.getByRole("button", { name: "Edit General" }).click();
-    await page.getByLabel("Rate per hour").fill("60");
+    await expect(page.getByLabel("Rate per hour")).toHaveValue("60.00");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("$60.00/h").first()).toBeVisible();
     await audit("my work");

@@ -96,12 +96,13 @@ test("the several-days panel does not change which project Today starts on (#183
   const thisMonth = toISODate(new Date()).slice(0, 7);
   await page.getByRole("button", { name: new RegExp(`^${thisMonth}-10`) }).click();
   await page.getByLabel("Hours per day").fill("1");
-  await page.locator("select").filter({ hasText: "Zeta" }).first().selectOption({ label: "Zeta" });
+  // Zeta, made last, is the project Today starts on (issue 431); the panel logs to General and must not change that.
+  await page.locator("select").filter({ hasText: "General" }).first().selectOption({ label: "General" });
   await page.getByRole("button", { name: /^Create 1 entr/ }).click();
   await expect(page.getByText(/Created 1 entr/)).toBeVisible();
 
   await page.goto("/dashboard/today");
-  await expect(page.getByRole("radio", { name: /General/ })).toBeChecked();
+  await expect(page.getByRole("radio", { name: /Zeta/ })).toBeChecked();
 });
 
 test("the Month toolbar and calendar fit a 1,030px window (#184)", async ({ page }, info) => {
@@ -135,7 +136,7 @@ test("a project can be added as not billable, with no rate and no red warning (#
   await page.getByRole("button", { name: "Add a project for Acme" }).first().click();
   await page.getByLabel("Project name").fill("Admin and invoicing");
   await page.getByLabel("Not billable").check();
-  await expect(page.getByLabel(/Hourly rate/)).toBeDisabled();
+  await expect(page.getByLabel("Rate per hour")).toBeDisabled();
   await page.keyboard.press("Enter");
   const row = page.getByRole("listitem").filter({ hasText: "Admin and invoicing" });
   await expect(row.getByText("non-billable")).toBeVisible();

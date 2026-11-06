@@ -30,8 +30,8 @@ export type InvoiceTotals = {
   /** Minutes actually logged; differs from totalMinutes only when a rounding rule applies. */
   loggedMinutes: number;
   totalCents: number;
-  /** Billable projects included at a $0 rate — almost certainly a missing rate. */
-  zeroRateProjects: string[];
+  /** Billable projects included at a $0 rate — almost certainly a missing rate. The id lets the screen set it there. */
+  zeroRateProjects: { id: string; name: string }[];
   /** Minutes on non-billable projects, left off the invoice. */
   skippedMinutes: number;
   runningTimers: number;
@@ -82,7 +82,7 @@ export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_RO
     totalMinutes: lines.reduce((a, l) => a + l.minutes, 0),
     loggedMinutes,
     totalCents: lines.reduce((a, l) => a + l.amountCents, 0),
-    zeroRateProjects: lines.filter((l) => l.rateCents === 0).map((l) => l.project),
+    zeroRateProjects: lines.filter((l) => l.rateCents === 0).map((l) => ({ id: l.projectId, name: l.project })),
     skippedMinutes,
     runningTimers,
   };
