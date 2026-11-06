@@ -1,5 +1,5 @@
 import { FEATURES } from "../src/lib/features";
-import { expect, menuAction, startFreshAccount, test } from "./helpers";
+import { expect, makeInvoice, menuAction, startFreshAccount, test } from "./helpers";
 
 test.skip(!FEATURES.clientCurrency, "A per-client currency is hidden in this release (src/lib/features.ts)");
 
@@ -34,7 +34,7 @@ test("a client can be billed in euros while the account is in dollars, until it 
     await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
     await page.goto("/dashboard/invoices/new");
     await expect(page.getByText("€170.00").first()).toBeVisible(); // the preview already speaks euros
-    await page.getByRole("button", { name: "Create invoice" }).click();
+    await makeInvoice(page);
     await expect(page.getByText("€170.00").first()).toBeVisible();
     await expect(page.getByText("$170.00")).toHaveCount(0);
   });

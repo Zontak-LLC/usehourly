@@ -1,5 +1,15 @@
 import { toISODate as iso } from "../src/lib/dates";
-import { expect, gotoClient, invoiceRows, menuAction, openInvoice, sql, startFreshAccount, test } from "./helpers";
+import {
+  expect,
+  gotoClient,
+  invoiceRows,
+  makeInvoice,
+  menuAction,
+  openInvoice,
+  sql,
+  startFreshAccount,
+  test,
+} from "./helpers";
 
 /*
  * Get paid without chasing (issue 100): Acme is invoiced every month, so once a month is over and its time is not billed,
@@ -59,7 +69,7 @@ test("a monthly client: the due prompt, the invoice from it, and a reminder once
       new RegExp(`/dashboard/invoices/new\\?client=[^&]+&from=${iso(lastMonthFirst)}&to=${iso(lastMonthLast)}$`),
     );
     await expect(page.getByText("$250.00").first()).toBeVisible();
-    await page.getByRole("button", { name: /Create invoice/ }).click();
+    await makeInvoice(page);
     await expect(page).toHaveURL(/\/dashboard\/invoices$/);
     await expect(invoiceRows(page)).toHaveCount(1);
     await expect(page.getByTestId("invoice-due")).toHaveCount(0); // invoiced: the prompt is gone

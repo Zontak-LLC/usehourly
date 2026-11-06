@@ -8,32 +8,45 @@ import { useCurrency } from "@/components/currency-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { currencySymbol, RATE_HINT, rateCents } from "@/lib/money";
-import { firstRunNames } from "@/lib/quick-start";
+import { firstRunNames, saveFirstRun } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
+/** What the first run made, for the one-time line on the Log time card ("Northwind Bakery is your first client, …"). */
+export type FirstClient = { clientId: string; client: string; project: string };
+
 /**
- * The very first screen: one question, an optional rate, one button. The client and a default project (at that rate)
- * are created behind the scenes; extra projects live on the "Clients" page, where the rate can also be set later.
+ * The very first screen: the first client, an optional first project ("General" when empty), an optional rate, one
+ * button. More clients and projects live on the "Clients" page, where the rate can also be set later.
  */
-export function FirstRun() {
+export function FirstRun({ onSaved }: { onSaved: (made: FirstClient) => void }) {
   const utils = trpc.useUtils();
   const currency = useCurrency();
   const createClient = trpc.clients.create.useMutation();
   const createProject = trpc.project.create.useMutation();
   const [answer, setAnswer] = useState("");
+  const [project, setProject] = useState("");
   const [rate, setRate] = useState("");
   const [pending, setPending] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const names = firstRunNames(answer);
-    if (!names) return toast.error("Type who you work for, like a company or a person.");
+    const names = firstRunNames(answer, project);
+    if (!names) return toast.error("Type the name of your first client, like a company or a person.");
     setPending(true);
     try {
-      const client = await createClient.mutateAsync({ name: names.client });
       // Asked here so the first invoice is not $0 (issue 431); blank stays 0 and Clients shows "No hourly rate yet".
-      await createProject.mutateAsync({ clientId: client.id, name: names.project, hourlyRate: rateCents(rate) });
+      const { clientId } = await saveFirstRun(
+        {
+          // Fresh, so a client saved by a try whose project failed is found and reused (never a second client).
+          listClients: () => utils.clients.list.fetch(undefined, { staleTime: 0 }),
+          createClient: (name) => createClient.mutateAsync({ name }),
+          createProject: (input) => createProject.mutateAsync(input),
+        },
+        names,
+        rateCents(rate),
+      );
+      onSaved({ clientId, ...names });
       await utils.clients.list.invalidate();
     } catch (err) {
       toastError(err, "Couldn't save that. Please try again.");
@@ -51,22 +64,37 @@ export function FirstRun() {
     >
       <div>
         <h2 className="font-semibold text-xl">Welcome! Let's get your first hours logged.</h2>
-        <p className="mt-1 text-base text-muted-foreground">
-          First, tell us who you do the work for. You can add more later.
-        </p>
+        <p className="mt-1 text-base text-muted-foreground">Add your first client, then log time for them.</p>
       </div>
       <div className="flex flex-col gap-2">
         <label htmlFor="first-run-client" className="font-medium text-base">
-          Who do you work for?
+          Your first client
         </label>
         <Input
           id="first-run-client"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          placeholder="A company or a person, like Acme"
+          placeholder="Like Northwind Bakery"
+          aria-describedby="first-run-client-hint"
           className="h-12 text-base"
           maxLength={80}
           autoFocus
+        />
+        <p id="first-run-client-hint" className="text-muted-foreground text-sm">
+          Who you do the work for: a company or a person. You can add more on Clients.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="first-run-project" className="font-medium text-base">
+          First project (optional)
+        </label>
+        <Input
+          id="first-run-project"
+          value={project}
+          onChange={(e) => setProject(e.target.value)}
+          placeholder="Like Website"
+          className="h-12 text-base"
+          maxLength={80}
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -97,8 +125,8 @@ export function FirstRun() {
           {RATE_HINT}
         </p>
       </div>
-      <Button type="submit" size="lg" variant="primary" className="h-12 text-base" disabled={pending}>
-        {pending ? "Saving…" : "Continue"}
+      <Button type="submit" size="lg" variant="primary" className="h-12 w-full text-base" disabled={pending}>
+        {pending ? "Saving…" : "Add client"}
       </Button>
     </form>
   );

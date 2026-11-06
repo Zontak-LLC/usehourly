@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_PROJECT_NAME, DURATION_CHIPS, firstRunNames } from "@/lib/quick-start";
+import {
+  DEFAULT_PROJECT_NAME,
+  DURATION_CHIPS,
+  type FirstRunApi,
+  firstRunNames,
+  pickFirstRunClient,
+  saveFirstRun,
+} from "@/lib/quick-start";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -92,5 +99,47 @@ describe("brand-new user: one question, then one tap logs time", () => {
   it("rejects an empty client name and does not create anything", async () => {
     await expect(asCaller(prisma, "u1").clients.create({ name: "   " })).rejects.toThrow();
     expect(prisma.client.create).not.toHaveBeenCalled();
+  });
+});
+
+// A first run that half worked (the client saved, its project refused) must not make a second client on the retry.
+describe("half-done first run: Add client again reuses the client left without a project", () => {
+  const at = (day: number) => new Date(`2026-11-0${day}T10:00:00Z`);
+
+  it("matches by name in any case and spacing, skips clients with projects, picks the oldest, else null", () => {
+    const empty = { id: "a", name: "Northwind Bakery", created_at: at(2), projects: [] };
+    expect(pickFirstRunClient([empty], "northwind  bakery")).toBe("a");
+    expect(pickFirstRunClient([{ ...empty, projects: [{ id: "p" }] }], "Northwind Bakery")).toBeNull();
+    const older = { ...empty, id: "b", created_at: at(1) };
+    expect(pickFirstRunClient([empty, older], "Northwind Bakery")).toBe("b");
+    expect(pickFirstRunClient([empty], "Acme")).toBeNull();
+    expect(pickFirstRunClient([], "Northwind Bakery")).toBeNull();
+  });
+
+  it("one failed project.create, then a retry: one client and one project", async () => {
+    const clients: { id: string; name: string; created_at: Date; projects: { name: string }[] }[] = [];
+    let failNext = true;
+    const api: FirstRunApi = {
+      listClients: async () => clients,
+      createClient: async (name) => {
+        // The real `clients.create` refuses a name already used, so a second client could only come from a bug here.
+        const client = { id: `c${clients.length + 1}`, name, created_at: at(clients.length + 1), projects: [] };
+        clients.push(client);
+        return client;
+      },
+      createProject: async ({ clientId, name }) => {
+        if (failNext) {
+          failNext = false;
+          throw new Error("Couldn't save that project.");
+        }
+        clients.find((c) => c.id === clientId)?.projects.push({ name });
+      },
+    };
+    const names = firstRunNames("Northwind Bakery");
+    if (!names) throw new Error("expected names");
+    await expect(saveFirstRun(api, names, 0)).rejects.toThrow("Couldn't save that project.");
+    await expect(saveFirstRun(api, names, 0)).resolves.toEqual({ clientId: "c1" });
+    expect(clients).toHaveLength(1);
+    expect(clients[0].projects).toEqual([{ name: DEFAULT_PROJECT_NAME }]);
   });
 });

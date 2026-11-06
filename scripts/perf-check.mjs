@@ -338,9 +338,12 @@ async function person(browser, account, step, stopAt) {
   ];
   const makeInvoice = async () => {
     await page.goto(`${base}/dashboard/invoices/new`);
-    const create = page.getByRole("button", { name: /Create invoice/ }).first();
+    const preview = page.getByRole("button", { name: "Preview invoice" }).first();
+    await preview.waitFor();
+    if (await preview.isDisabled()) return; // nothing left to bill on this client: a normal state, not a failure
+    await preview.click();
+    const create = page.getByRole("button", { name: "Save and download PDF" });
     await create.waitFor();
-    if (await create.isDisabled()) return; // nothing left to bill on this client: a normal state, not a failure
     const download = page.waitForEvent("download").catch(() => null);
     await Promise.all([page.waitForResponse((r) => r.url().includes("invoice.create")), create.click()]);
     await (await download)?.delete();

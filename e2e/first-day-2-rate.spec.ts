@@ -19,7 +19,7 @@ test("a new freelancer's first day: rate", async ({ page, shot, audit, isPhone }
   await test.step("an invoice at a $0 rate is blocked, and the rate is set on the invoice screen", async () => {
     await page.goto("/dashboard/invoices/new");
     await expect(page.getByText(/would be \$0\.00/)).toBeVisible();
-    const create = page.getByRole("button", { name: /Create invoice/ });
+    const create = page.getByRole("button", { name: "Preview invoice" });
     await expect(create).toBeDisabled();
     // The second way out stays: the link inside the warning itself, not the Clients tab in the menu.
     const wayOut = page.getByText(/would be \$0\.00/).getByRole("link", { name: "Clients" });
