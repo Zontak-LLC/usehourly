@@ -905,6 +905,11 @@ describe("an assistant tracks a day of work", () => {
   it("helps with durations", async () => {
     expect((await s.call("parse_duration", { text: "1h30" })).data).toEqual({ minutes: 90, hours: 1.5 });
     expect((await s.call("parse_duration", { text: "banana" })).data).toMatchObject({ minutes: null });
+    // Issue 435: a bare number over 24 is not guessed as minutes; the caller is told how to say minutes.
+    expect((await s.call("parse_duration", { text: "45" })).data).toEqual({
+      minutes: null,
+      error: "Did you mean 45 minutes? Type 45m",
+    });
   });
 
   it("reviews clients and the year, then tidies up clients, projects and an invoice", async () => {

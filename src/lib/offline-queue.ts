@@ -1,7 +1,6 @@
-import { z } from "zod";
-
 import { DATE_RE } from "@/lib/dates";
 import { NOTE_MAX } from "@/lib/notes";
+import { isFields, isNumber, isText, isWholeIn } from "@/lib/stored-guards";
 
 /**
  * Entries typed while there is no connection. Each one waits in this browser (localStorage, under the account that
@@ -13,22 +12,37 @@ export const PENDING_KEY = "hourly:pendingEntries";
 /** How many entries can wait on one device. Far more than a day offline needs; stops a runaway queue. */
 export const MAX_PENDING = 200;
 
-const pendingSchema = z.object({
-  clientId: z.string().uuid(),
-  userId: z.string().min(1),
-  projectId: z.string().min(1),
-  date: z.string().regex(DATE_RE),
-  minutes: z
-    .number()
-    .int()
-    .min(1)
-    .max(24 * 60),
-  note: z.string().max(NOTE_MAX),
-  createdAt: z.number(),
+export type PendingEntry = {
+  clientId: string;
+  userId: string;
+  projectId: string;
+  date: string;
+  minutes: number;
+  note: string;
+  createdAt: number;
   /** Set when the server refused the entry (for example its project was deleted); it stays until the person discards it. */
-  error: z.string().optional(),
-});
-export type PendingEntry = z.infer<typeof pendingSchema>;
+  error?: string;
+};
+
+/** The pattern `z.string().uuid()` accepts: an RFC 9562 UUID (versions 1 to 8), or the nil or max UUID. */
+const UUID_RE =
+  /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
+
+/**
+ * One stored entry, checked by hand (no zod in the browser, issue 425) with the rules the zod schema had. Returns only
+ * the known fields, as zod did, or null when any rule fails.
+ */
+function parsePendingEntry(item: unknown): PendingEntry | null {
+  if (!isFields(item)) return null;
+  const { clientId, userId, projectId, date, minutes, note, createdAt, error } = item;
+  if (!isText(clientId) || !UUID_RE.test(clientId)) return null;
+  if (!isText(userId, 1) || !isText(projectId, 1)) return null;
+  if (!isText(date) || !DATE_RE.test(date)) return null;
+  if (!isWholeIn(minutes, 1, 24 * 60) || !isText(note, 0, NOTE_MAX) || !isNumber(createdAt)) return null;
+  if (error !== undefined && !isText(error)) return null;
+  const entry: PendingEntry = { clientId, userId, projectId, date, minutes, note, createdAt };
+  return error === undefined ? entry : { ...entry, error };
+}
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
@@ -38,8 +52,8 @@ export function readPending(storage: StorageLike): PendingEntry[] {
     const raw: unknown = JSON.parse(storage.getItem(PENDING_KEY) ?? "[]");
     if (!Array.isArray(raw)) return [];
     return raw.flatMap((item) => {
-      const ok = pendingSchema.safeParse(item);
-      return ok.success ? [ok.data] : [];
+      const entry = parsePendingEntry(item);
+      return entry ? [entry] : [];
     });
   } catch {
     return [];

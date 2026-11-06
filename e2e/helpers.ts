@@ -8,10 +8,11 @@ import {
   type Page,
   type TestInfo,
 } from "@playwright/test";
+import JSZip from "jszip";
 
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { runSql } from "./local-db";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
 export const MAIL = process.env.E2E_MAIL_URL ?? "http://127.0.0.1:8899";
@@ -53,6 +54,14 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
   }
   await card.getByLabel("Day").fill(date ?? "");
   await card.getByRole("button", { name: "Save", exact: true }).click();
+}
+
+/** Holds every call to one tRPC procedure (e.g. "entry.create") back for `ms` before it goes on to the server. */
+export async function hold(page: Page, procedure: string, ms: number) {
+  await page.route(`**/api/trpc/${procedure}*`, async (route) => {
+    await new Promise((r) => setTimeout(r, ms));
+    await route.continue();
+  });
 }
 
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -516,6 +525,16 @@ export async function menuAction(page: Page, button: string, item: string) {
   await page.getByRole("menuitem", { name: item }).click();
 }
 
+/**
+ * The Month page for a month the sample (demo) data fills well. The sample entries cover the 35 days up to yesterday,
+ * so in the first days of a month "this month" has only a few entries (on 5 November: 5). Before the 15th this is the
+ * month before, which is then nearly full; from the 15th it is this month, which has two weeks of entries by then.
+ */
+export function fullDemoMonth(now = new Date()) {
+  const month = now.getDate() < 15 ? new Date(now.getFullYear(), now.getMonth() - 1, 1) : now;
+  return `/dashboard/month?month=${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+}
+
 /** Shows the period's full list of entries ("All entries this week/month"): always open under the day on Week; on
  * Month it is the "Whole month" view of the switch beside the calendar. */
 export async function openAllEntries(page: Page) {
@@ -523,4 +542,20 @@ export async function openAllEntries(page: Page) {
     await page.getByRole("button", { name: "Whole month", exact: true }).click();
   }
   await expect(page.getByRole("region", { name: /^All entries this (week|month)$/ })).toBeVisible();
+}
+
+/**
+ * Clicks "Download everything" inside `scope` and checks the zip the way a person would find it: named
+ * usehourly-export-<date>.zip, holding the README, the all-time workbook and the CSV of every entry. Returns that CSV.
+ * The zip code loads on the click (issue 425), so this also proves the lazy load works.
+ */
+export async function downloadEverything(page: Page, scope: Locator): Promise<string> {
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    scope.getByRole("button", { name: "Download everything" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^usehourly-export-\d{4}-\d{2}-\d{2}\.zip$/);
+  const zip = await JSZip.loadAsync(readFileSync(await download.path()));
+  expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(["README.txt", "all-time.xlsx", "all-entries.csv"]));
+  return (await zip.file("all-entries.csv")?.async("string")) ?? "";
 }

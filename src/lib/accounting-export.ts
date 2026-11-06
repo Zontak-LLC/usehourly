@@ -1,4 +1,4 @@
-import { toCsv } from "@/lib/export-all";
+import { toCsv } from "@/lib/csv";
 
 /**
  * Invoices as files an accounting app can import: Xero's sales-invoice template, QuickBooks Online's invoice import,

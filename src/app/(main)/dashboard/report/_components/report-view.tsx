@@ -139,18 +139,24 @@ export function ReportView() {
               variant="outline"
               className="h-10 w-full sm:order-first sm:w-auto"
               onClick={exportXlsx}
-              disabled={!data || exporting}
+              disabled={!data}
+              busy={exporting}
+              busyLabel="Exporting"
             >
-              <Download /> {exporting ? "Exporting…" : "Export Excel"}
+              <Download />
+              {exporting ? "Exporting…" : "Export Excel"}
             </Button>
             {withEmail && (
               <Button
                 variant="outline"
                 className="h-10 w-full sm:order-first sm:w-auto"
                 onClick={sendByEmail}
-                disabled={!data || emailIt.isPending}
+                disabled={!data}
+                busy={emailIt.isPending}
+                busyLabel="Sending"
               >
-                <Mail /> {emailIt.isPending ? "Sending…" : "Email me this"}
+                <Mail />
+                {emailIt.isPending ? "Sending…" : "Email me this"}
               </Button>
             )}
           </div>

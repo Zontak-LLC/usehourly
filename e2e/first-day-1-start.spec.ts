@@ -1,4 +1,4 @@
-import { expect, newUser, seen, test } from "./helpers";
+import { expect, gotoClient, newUser, seen, test } from "./helpers";
 
 /**
  * A new freelancer's first day, part 1 of 4: sign up, say who you work for, log time, fix a mistake, look at the week
@@ -47,15 +47,18 @@ test("a new freelancer's first day: start", async ({ page, shot, audit, a11y, is
     await shot("first-run");
     await audit("first run");
     await page.getByPlaceholder(/company or a person/i).fill("Acme Studio");
+    // The rate is asked here, optional, so the first invoice is not $0 (issue 431).
+    await expect(page.getByText("Optional. Invoices use it: hours × rate. You can set it later.")).toBeVisible();
+    await page.getByLabel("Your hourly rate").fill("60");
     await page.getByRole("button", { name: "Continue" }).click();
-    count("firstEntry", 2);
+    count("firstEntry", 3);
     await expect(page.getByLabel("Time to add")).toBeVisible();
     await expect(page.locator("form").getByText("General · Acme Studio")).toBeVisible(); // "on General · Acme Studio": the only project
   });
 
   await test.step("log the first entry by typing a time", async () => {
     await page.getByLabel("Time to add").fill("1:30");
-    await expect(page.getByText("Day total 0:00 → 1:30 h")).toBeVisible(); // the live preview
+    await expect(page.getByText("= 1:30 · Day total 0:00 → 1:30 h")).toBeVisible(); // the live preview
     await page.getByLabel("Description").fill("Logo concepts for the homepage");
     await page.getByRole("button", { name: /Log time/ }).click();
     count("firstEntry", 3);
@@ -105,6 +108,30 @@ test("a new freelancer's first day: start", async ({ page, shot, audit, a11y, is
     await expect(seen(page, "3:00")).toBeVisible();
     await shot("month");
     await audit("month");
+  });
+
+  await test.step("the first-run rate is on Clients, and a project added there gets its own rate", async () => {
+    await gotoClient(page, "Acme Studio");
+    await expect(page.getByText("$60.00/h").first()).toBeVisible();
+    await expect(page.getByText("No hourly rate yet")).toHaveCount(0);
+    await page.getByRole("button", { name: "Add a project for Acme Studio" }).first().click();
+    await page.getByLabel("Project name").fill("Website");
+    await expect(page.getByText("Optional. Invoices use it: hours × rate. You can set it later.")).toBeVisible();
+    await page.getByRole("spinbutton", { name: "Rate per hour", exact: true }).fill("75");
+    await shot("add-project-with-rate");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "Website" }).getByText("$75.00/h")).toBeVisible();
+  });
+
+  await test.step("Log time starts on the project just made, and the time goes there", async () => {
+    await page.goto("/dashboard/today");
+    await expect(page.getByRole("radio", { name: /Website/ })).toBeChecked();
+    await page.getByLabel("Time to add").fill("1:00");
+    await page.getByRole("button", { name: /Log time/ }).click();
+    const entry = page.getByRole("listitem").filter({ hasText: "Website" }).filter({ hasText: "1:00" });
+    await expect(entry.first()).toBeVisible();
+    await expect(seen(page, "4:00")).toBeVisible(); // 3:00 on General + 1:00 on Website
+    await shot("logged-on-new-project");
   });
 
   // The effort budget: how many actions each job took. Printed every run; the limits catch a job getting harder.

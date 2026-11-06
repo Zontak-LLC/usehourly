@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>First day: ask for the rate, fix $0 on the invoice, pick the right project (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 431, snags 2 and 4. Three screens:
+  1. Today, first run (today/_components/first-run.tsx): a second, optional field "Your hourly rate" with one hint line.
+  2. Clients > client > Projects > Add a project (SetupForm bar): the rate box gets a visible label and the same hint.
+  3. New invoice (invoices/new/_components/invoice-preview.tsx): one "Set rate" row per $0 project, under the warning.
+  The Log time card gets no new controls: the picked pill is the project just made (or the newest one on first load).
+  Same tokens as docs/design/time-field-preview.html. No new colour.
+-->
+<style>
+  :root {
+    --background: #eef2f7;
+    --foreground: #1c2434;
+    --card: #ffffff;
+    --border: #dbe2ec;
+    --muted: #eef1f5;
+    --amber: #2563c9;
+    --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+    --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
+    --muted-fg: color-mix(in oklab, var(--foreground) 62%, transparent);
+    --destructive: #d4342c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; color: var(--muted-fg); max-width: 72ch; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: var(--muted-fg); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .desktop { width: 560px; max-width: 100%; }
+  .phone { width: 375px; }
+  .head { border-bottom: 1px solid var(--border); background: var(--band-2); padding: 12px 16px; font-weight: 600; font-size: 15px; }
+  .body { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
+  .muted { color: var(--muted-fg); }
+  .label { font-weight: 500; font-size: 15px; margin-bottom: 6px; display: block; }
+  .field { height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; display: flex;
+    align-items: center; font-size: 16px; }
+  .field.small { height: 36px; font-size: 14px; }
+  .field.empty { color: var(--muted-fg); }
+  .money { display: flex; align-items: center; gap: 6px; }
+  .money > span { color: var(--muted-fg); }
+  .hint { color: var(--muted-fg); font-size: 12px; margin: 4px 0 0; }
+  .btn { height: 44px; border-radius: 8px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; color: #fff; background: var(--amber-fill); border: 0; font-size: 15px; }
+  .btn.small { height: 36px; font-size: 14px; padding: 0 14px; }
+  .btn.outline { background: var(--card); color: var(--foreground); box-shadow: inset 0 0 0 1px var(--border); }
+  .btn.off { background: var(--muted); color: var(--muted-fg); box-shadow: inset 0 0 0 1px var(--border); }
+  .bar { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; background: var(--muted); padding: 14px; border-radius: 8px; }
+  .bar .grow { flex: 1 1 160px; }
+  .warn { margin: 0; font-size: 14px; color: var(--muted-fg); }
+  .fix { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; padding-left: 18px; }
+  .block { border: 1px solid color-mix(in oklab, var(--destructive) 40%, transparent); color: var(--destructive);
+    border-radius: 8px; padding: 12px; font-size: 14px; margin: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 8px 16px; border-bottom: 1px solid var(--border); }
+  td.r { text-align: right; font-family: ui-monospace, monospace; }
+  tr.total td { background: color-mix(in oklab, var(--muted) 60%, transparent); font-weight: 700; border: 0; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .pill { height: 36px; border: 1px solid var(--border); border-radius: 999px; padding: 0 14px; display: inline-flex;
+    align-items: center; gap: 8px; }
+  .pill.on { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber);
+    background: color-mix(in oklab, var(--amber) 14%, var(--card)); font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--amber); }
+  .tag { font: 11px ui-monospace, monospace; color: var(--muted-fg); margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<h1>First day: a real rate on the first invoice, and time on the right project</h1>
+<p class="note">Two testers out of two got a $0 invoice and logged time on "General" instead of the project they had just
+made. The rate is asked where the client or project is made (optional, one hint line, the same words everywhere). If
+an invoice would still be $0, the invoice screen offers the fix in place. A project made under Clients becomes the
+picked pill on Log time, and with nothing remembered Log time starts on the newest project.</p>
+
+<h2>1 · Today, first run</h2>
+<div class="frames">
+  <div>
+    <p class="tag">Desktop: the rate is the second, optional field</p>
+    <div class="card desktop"><div class="body">
+      <div>
+        <div style="font-weight:600;font-size:20px">Welcome! Let's get your first hours logged.</div>
+        <p class="muted" style="margin:4px 0 0">First, tell us who you do the work for. You can add more later.</p>
+      </div>
+      <div><span class="label">Who do you work for?</span><div class="field">Acme Studio</div></div>
+      <div>
+        <span class="label">Your hourly rate</span>
+        <div class="money"><span>$</span><div class="field" style="width:140px">60</div><span>/h</span></div>
+        <p class="hint">Optional. Invoices use it: hours × rate. You can set it later.</p>
+      </div>
+      <button class="btn" type="button">Continue</button>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">Phone, 375px</p>
+    <div class="card phone"><div class="body">
+      <div style="font-weight:600;font-size:20px">Welcome! Let's get your first hours logged.</div>
+      <div><span class="label">Who do you work for?</span><div class="field">Acme Studio</div></div>
+      <div>
+        <span class="label">Your hourly rate</span>
+        <div class="money"><span>$</span><div class="field empty" style="width:140px">0.00</div><span>/h</span></div>
+        <p class="hint">Optional. Invoices use it: hours × rate. You can set it later.</p>
+      </div>
+      <button class="btn" type="button">Continue</button>
+    </div></div>
+  </div>
+</div>
+
+<h2>2 · Clients &gt; Acme Studio &gt; Projects &gt; Add a project</h2>
+<div class="frames">
+  <div>
+    <p class="tag">Desktop: a real label over the rate box, the same hint under the row</p>
+    <div class="card desktop"><div class="body">
+      <div class="bar">
+        <div class="grow"><span class="label" style="font-size:13px">Project name</span><div class="field small">Website</div></div>
+        <div><span class="label" style="font-size:13px">Rate per hour</span><div class="field small" style="width:120px">75</div></div>
+        <label style="display:flex;gap:6px;align-items:center;height:36px"><input type="checkbox"> Not billable</label>
+        <button class="btn small" type="button">Add</button>
+        <p class="hint" style="flex-basis:100%">Optional. Invoices use it: hours × rate. You can set it later.</p>
+      </div>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">Then on Today: the new project is the picked pill</p>
+    <div class="card phone"><div class="head">Log time</div><div class="body">
+      <div class="field empty">Time: 2, 1,5, 1:30 or 90m</div>
+      <div class="pills"><span class="muted">on</span>
+        <span class="pill"><span class="dot"></span>General</span>
+        <span class="pill on"><span class="dot"></span>Website ✓</span>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<h2>3 · New invoice, 3 h on a $0 project</h2>
+<div class="frames">
+  <div>
+    <p class="tag">Before: the warning, a "Set rate" row per $0 project, Create invoice off</p>
+    <div class="card desktop">
+      <div class="head">Preview</div>
+      <table>
+        <tr><td>General</td><td class="r">3 h × $0.00</td><td class="r">$0.00</td></tr>
+        <tr class="total"><td>Total</td><td class="r">3 h</td><td class="r">$0.00</td></tr>
+      </table>
+      <div class="body">
+        <p class="warn">⚠ No hourly rate set for General — billed at $0.00. Set it here or under <u>Clients</u>.</p>
+        <div class="fix">
+          <strong>General</strong><span class="muted">·</span> Rate per hour
+          <div class="money"><span>$</span><div class="field small" style="width:100px">60</div></div>
+          <button class="btn small outline" type="button">Save</button>
+        </div>
+        <p class="block">Every project in this period has a $0.00 rate, so this invoice would be $0.00. Set the hourly rates under
+          <u>Clients</u> first, then come back, or set it here.</p>
+        <div><button class="btn off" type="button">Create invoice</button></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="tag">After Save: the row and the warnings go, the total is real, Create invoice is on</p>
+    <div class="card desktop">
+      <div class="head">Preview</div>
+      <table>
+        <tr><td>General</td><td class="r">3 h × $60.00</td><td class="r">$180.00</td></tr>
+        <tr class="total"><td>Total</td><td class="r">3 h</td><td class="r">$180.00</td></tr>
+      </table>
+      <div class="body">
+        <div><button class="btn" type="button">Create invoice</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

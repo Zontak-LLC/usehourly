@@ -30,8 +30,8 @@ export type InvoiceTotals = {
   /** Minutes actually logged; differs from totalMinutes only when a rounding rule applies. */
   loggedMinutes: number;
   totalCents: number;
-  /** Billable projects included at a $0 rate — almost certainly a missing rate. */
-  zeroRateProjects: string[];
+  /** Billable projects included at a $0 rate — almost certainly a missing rate. The id lets the screen set it there. */
+  zeroRateProjects: { id: string; name: string }[];
   /** Minutes on non-billable projects, left off the invoice. */
   skippedMinutes: number;
   runningTimers: number;
@@ -54,8 +54,12 @@ export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_RO
       skippedMinutes += e.minutes;
       continue;
     }
-    if (e.started_at) runningTimers += 1;
-    // Zero-hour entries (e.g. a timer just started) add nothing to bill; keep them off the invoice.
+    // A running timer is billed only once stopped (the server reads `started_at: null`), so the preview leaves it off too,
+    // even when it already holds minutes from before a resume (issue 431).
+    if (e.started_at) {
+      runningTimers += 1;
+      continue;
+    }
     if (e.minutes <= 0) continue;
     const line = byProject.get(e.project_id) ?? {
       projectId: e.project_id,
@@ -82,7 +86,7 @@ export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_RO
     totalMinutes: lines.reduce((a, l) => a + l.minutes, 0),
     loggedMinutes,
     totalCents: lines.reduce((a, l) => a + l.amountCents, 0),
-    zeroRateProjects: lines.filter((l) => l.rateCents === 0).map((l) => l.project),
+    zeroRateProjects: lines.filter((l) => l.rateCents === 0).map((l) => ({ id: l.projectId, name: l.project })),
     skippedMinutes,
     runningTimers,
   };

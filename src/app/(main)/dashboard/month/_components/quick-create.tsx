@@ -8,20 +8,11 @@ import { toast } from "sonner";
 import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatDuration, parseDuration } from "@/lib/duration";
+import { formatDuration, readDuration } from "@/lib/duration";
+import { browserStorage, readLastProject, startProject } from "@/lib/picked-project";
 import type { SheetEntry } from "@/lib/timesheet";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
-
-const LAST_PROJECT_KEY = "hourly:lastProject"; // written only by the Today add form; this panel just starts on it
-
-function readLast(): string {
-  try {
-    return localStorage.getItem(LAST_PROJECT_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
 
 const clip = (text: string, n: number) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
 
@@ -55,12 +46,15 @@ export function QuickCreate({
   const [note, setNote] = useState("");
   const [skipExisting, setSkipExisting] = useState(true);
 
-  // Default to the last project used anywhere in the app, else the first one.
+  // Start on the last project used anywhere in the app (this panel only reads it), else the newest one, as Log time does.
   useEffect(() => {
     if (projectId || !clients.data) return;
-    const all = clients.data.flatMap((c) => c.projects);
-    const last = readLast();
-    setProjectId(all.find((p) => p.id === last)?.id ?? all[0]?.id ?? "");
+    setProjectId(
+      startProject(
+        clients.data.flatMap((c) => c.projects),
+        readLastProject(browserStorage()),
+      ),
+    );
   }, [clients.data, projectId]);
 
   // Distinct (project, hours, note) combos already in the month, newest first.
@@ -77,12 +71,15 @@ export function QuickCreate({
     return out;
   }, [entries]);
 
-  const minutes = parseDuration(duration);
-  const invalid = duration.trim() !== "" && minutes === null;
-  const canCreate = dates.length > 0 && !!projectId && minutes !== null && minutes >= 1;
+  const read = readDuration(duration);
+  const invalid = duration.trim() !== "" && "error" in read;
+  // Text that cannot be logged keeps the button on, so pressing it says why in plain words (issue 435).
+  const canCreate = dates.length > 0 && !!projectId && duration.trim() !== "";
 
   async function create() {
-    if (!canCreate || minutes === null) return;
+    if (!canCreate) return;
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     try {
       const res = await createMany.mutateAsync({ projectId, dates, minutes, note, skipExisting });
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);

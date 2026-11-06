@@ -73,6 +73,8 @@ the pipeline line instead.
   anything but a timeout means it is up). A monitor should alert a phone, not just an inbox.
 - A 200 also says how long the database took: `{"ok":true,"db":{"selectMs":4,"probeMs":6}}` (`SELECT 1`, then one
   indexed read that touches no one's data). Night Watch's Database monitor compares them with their own 7-day normal.
+  Its limits live in Night Watch, not here. Staging's probe sits near 50 ms since 2026-10-27 with no errors: see
+  `docs/incidents/2026-10-27-staging-database-probe.md` (no app change; the fix is a Night Watch ticket).
 - After every deploy CircleCI's job finishes green only if the deploy command succeeded; it does not call the health
   endpoint. Check it yourself after a release: `curl -s -o /dev/null -w "%{http_code}\n" https://usehourly.app/api/health`.
 
@@ -111,8 +113,12 @@ Events you may see (all `level: "error"`), and what they mean:
 
 Lines that are not ours and need no fix. Match the whole signature, not one frame.
 
-**Stale Server Action after a deploy** (incident `usehourly:b9180f8241326666`, 2026-10-25)
+**Stale Server Action after a deploy** (incidents `usehourly:b9180f8241326666`, 2026-10-25, and
+`usehourly-staging:b9180f8241326666`, 2026-11-05)
 
+- Sites: production and staging. The same signature appears on staging (`hourly-staging`,
+  https://staging.usehourly.app) after each staging deploy. Frame line numbers change between builds (e.g.
+  custom-worker.js:59701 vs 59740, `n2` at 71908 vs 71923); the frame names stay.
 - Signature: a multi-line `warn` whose frames are `at Object.get` (custom-worker.js), then `rD`, `r$`, `sg`, `sy`,
   `n2`, `p2`, `o8.handleResponse`, `v2`. Line numbers change with each deploy; the frame names stay.
 - Warning text (the first line, which Night Watch does not capture):
@@ -132,7 +138,8 @@ Lines that are not ours and need no fix. Match the whole signature, not one fram
 Pushing to `main` is the release: CircleCI runs `npm run ci` (Biome, types, tests with the coverage floor), applies
 D1 migrations (`wrangler d1 migrations apply DB --remote`), then deploys. Run `npm run ci` before every push. Two more
 workflows run on GitHub: the same `npm run ci` for pull requests, a weekly dependency audit and CodeQL, and a nightly
-browser-test run (`e2e.yml`).
+browser-test run (`e2e.yml`). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
+`summary.md` in the `e2e-report` artifact.
 
 ## Staging and daily releases (2026-10-21)
 

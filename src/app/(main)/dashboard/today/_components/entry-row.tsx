@@ -16,7 +16,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { useRunningMinutes } from "@/components/use-running-minutes";
 import { DATE_RE, fromISODate } from "@/lib/dates";
-import { formatDuration, parseDuration } from "@/lib/duration";
+import { formatDuration, parseDuration, readDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { QUIET_BELOW_MINUTES, ROW_FIGURE, ROW_FIGURE_QUIET } from "@/lib/figures";
 import { needsNote } from "@/lib/note-later";
@@ -105,8 +105,9 @@ export function EntryRow({
   const runningNow = useRunningMinutes(entry.started_at);
 
   async function save() {
-    const minutes = parseDuration(duration);
-    if (minutes === null || minutes < 1) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    const read = readDuration(duration);
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     if (!DATE_RE.test(date)) return toast.error("Pick a day for this entry.");
     const moved = date !== entry.date;
     // Show the change and close the form at once; the server's answer confirms it, or the form opens again.

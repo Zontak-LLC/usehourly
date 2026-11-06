@@ -97,6 +97,25 @@ describe("daily time entry journey", () => {
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();
   });
 
+  // Issue 435: a bare "45" once logged 45 minutes and "0" came back as raw zod text.
+  it("refuses a bare '45' and '0' in plain words, and saves a bare '13' as 13 hours", async () => {
+    const c = asCaller(prisma, "u1");
+    prisma.project.findFirst.mockResolvedValue({ id: "p1" });
+    await expect(c.entry.create({ projectId: "p1", date: "2026-10-09", duration: "45" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Did you mean 45 minutes? Type 45m",
+    });
+    await expect(c.entry.create({ projectId: "p1", date: "2026-10-09", duration: "0" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Enter more than 0, like 1:30",
+    });
+    expect(prisma.timeEntry.create).not.toHaveBeenCalled();
+    await c.entry.create({ projectId: "p1", date: "2026-10-09", duration: "13" });
+    expect(prisma.timeEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ minutes: 780 }) }),
+    );
+  });
+
   it("lists only the caller's entries within the week range", async () => {
     await asCaller(prisma, "u1").entry.list({ from: "2026-10-05", to: "2026-10-11" });
     expect(prisma.timeEntry.findMany).toHaveBeenCalledWith(

@@ -559,14 +559,34 @@ describe("client invoice journey", () => {
         date: "2026-10-02",
         minutes: 30,
         note: "",
+        started_at: null,
+        project_id: "p9",
+        project: { name: "Unrated", hourly_rate: 0, billable: true },
+      },
+      {
+        date: "2026-10-02",
+        minutes: 0,
+        note: "",
         started_at: new Date(),
         project_id: "p9",
         project: { name: "Unrated", hourly_rate: 0, billable: true },
       },
     ]);
-    expect(t.zeroRateProjects).toEqual(["Unrated"]);
+    expect(t.zeroRateProjects.map((p) => p.name)).toEqual(["Unrated"]);
     expect(t.runningTimers).toBe(1);
     expect(t.totalCents).toBe(0);
+  });
+
+  it("leaves a running timer off the lines, even one holding minutes, as the server does (issue 431)", () => {
+    const project = { name: "Website", hourly_rate: 6000, billable: true };
+    const t = buildInvoice([
+      { date: "2026-10-02", minutes: 60, note: "Stopped", started_at: null, project_id: "p1", project },
+      { date: "2026-10-02", minutes: 30, note: "Resumed", started_at: new Date(), project_id: "p1", project },
+    ]);
+    expect(t.lines).toEqual([{ projectId: "p1", project: "Website", minutes: 60, rateCents: 6000, amountCents: 6000 }]);
+    expect(t.detail.map((d) => d.note)).toEqual(["Stopped"]);
+    expect(t.runningTimers).toBe(1);
+    expect(t.totalCents).toBe(6000);
   });
 
   it("renders a real PDF from a stored snapshot (uncompressed so the text is checkable)", async () => {
@@ -633,7 +653,11 @@ describe("one account cannot use invoices to fill the shared database", () => {
     const c = asCaller(prisma, "u1");
     await expect(c.invoice.create({ ...input, from: "2025-01-01", to: "2026-10-31" })).rejects.toThrow(/up to a year/);
     await expect(c.invoice.create({ ...input, from: "2026-10-31", to: "2026-10-01" })).rejects.toThrow(/before/);
-    await expect(c.invoice.create({ ...input, from: "2026-02-30", to: "2026-03-31" })).rejects.toThrow(/real date/);
+    // Word for word: dateSchema moved to src/server/schemas/dates.ts (issue 425) and its messages must not change.
+    await expect(c.invoice.create({ ...input, from: "2026-02-30", to: "2026-03-31" })).rejects.toThrow(
+      "That is not a real date.",
+    );
+    await expect(c.invoice.create({ ...input, issueDate: "2026/10/01" })).rejects.toThrow("Use YYYY-MM-DD");
     expect(prisma.invoice.create).not.toHaveBeenCalled();
     // exactly a leap-sized year is fine
     await c.invoice.create({ ...input, from: "2026-01-01", to: "2027-01-01", number: "INV-2026-900" });
