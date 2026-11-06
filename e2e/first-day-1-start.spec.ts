@@ -81,13 +81,13 @@ test("a new freelancer's first day: start", async ({ page, shot, audit, a11y, is
   });
 
   await test.step("log 2:00: a plain line says it is saved, only once the server has it", async () => {
-    await hold(page, "entry.create", 4000); // as long as instant-changes.spec.ts: a slow CI container still checks in time
+    const save = await hold(page, "entry.create"); // held until released below, so a slow CI container still checks in time
     await page.getByLabel("Time to add").fill("2:00");
     await page.getByRole("button", { name: /Log time/ }).click();
     count("firstEntry", 2);
     await expect(page.locator("[data-entry-id]")).toHaveCount(1); // the row shows at once
     await expect(savedLine(page)).toHaveCount(0); // but not the line: Undo would have nothing to delete yet
-    await page.unroute("**/api/trpc/entry.create*");
+    save.release(); // let the held save through (unrouting instead races the hold and handles the route twice)
     await expect(savedLine(page)).toHaveText("Logged 2:00 on General · Acme Studio");
     await expect(undoButton(page)).toBeVisible();
     await expect(page.locator("[data-just-logged]")).toHaveCount(1); // the new row has a marked edge
