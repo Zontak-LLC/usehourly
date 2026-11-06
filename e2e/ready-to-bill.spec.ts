@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, makeInvoice, startFreshAccount, test } from "./helpers";
 
 // Money right (issue #178, 2026-10-23): a client shows what is not invoiced yet, Make invoice bills exactly that, and
 // the same hours are never billed twice without asking.
@@ -24,7 +24,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
     await card.getByRole("link", { name: "Make an invoice for Acme" }).click();
     await expect(page).toHaveURL(/\/dashboard\/invoices\/new\?client=/);
     await expect(page.getByText("$200.00").first()).toBeVisible();
-    await page.getByRole("button", { name: /Create invoice/ }).click();
+    await makeInvoice(page);
     await expect(page).toHaveURL(/\/dashboard\/invoices$/);
   });
 
@@ -41,7 +41,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
     await page.goto("/dashboard/invoices/new");
     // the same decimal hours as the preview, h:mm in brackets (one form on the screen, 2026-10-26)
     await expect(page.getByText(/2.00 h \(2:00\) of this client.s time in this period is already on/)).toBeVisible();
-    const create = page.getByRole("button", { name: /Create invoice/ });
+    const create = page.getByRole("button", { name: "Preview invoice" });
     await expect(create).toBeDisabled();
     await page.getByLabel("Bill it again anyway").check();
     await expect(page.getByText("$200.00").first()).toBeVisible();

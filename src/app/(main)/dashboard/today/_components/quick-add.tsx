@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Check, ClockPlus, Plus } from "lucide-react";
+import { Check, ClockPlus, Plus, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -11,13 +11,14 @@ import { useSaveNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
-import { flyIn, glowEntry, haloColour, spin, useRoll } from "@/components/time-reward";
+import { flyIn, glowEntry, haloColour, markJustLogged, spin, useRoll } from "@/components/time-reward";
 import { TIMER_STARTED_EVENT, type TimerContext } from "@/components/timer-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
+import { UNDONE_TEXT, useUndoEntry } from "@/components/use-undo-entry";
 import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { formatDate, monthBounds } from "@/lib/dates";
 import { addChipTime, formatDuration, readDuration } from "@/lib/duration";
@@ -59,6 +60,7 @@ export function QuickAdd({
   onTimerContext,
   timerTop,
   timerFoot,
+  welcome,
 }: {
   date: string;
   dayMinutes: number;
@@ -73,6 +75,8 @@ export function QuickAdd({
   timerTop?: React.ReactNode;
   /** Today only: the quiet "or Start timer on ..." line at the foot of this card. */
   timerFoot?: React.ReactNode;
+  /** Today only: the one-time line after first run ("Northwind Bakery is your first client, …"), at the card's top. */
+  welcome?: React.ReactNode;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -88,6 +92,10 @@ export function QuickAdd({
   // to THAT entry for a moment ("Add a note to the 1:30 you just logged"); Enter or leaving the box saves it there.
   const [followUp, setFollowUp] = useState<FollowUp | null>(null);
   const saveNote = useSaveNote();
+  // The plain "Logged 2:00 on General · Acme" line under Log time, with Undo (2026-11-06: testers were not sure their
+  // hours were saved). Shown once the server has the entry; the next time typed or tapped ends it.
+  const [saved, setSaved] = useState<(JustSaved & { undone: boolean }) | null>(null);
+  const { undo, undoing } = useUndoEntry();
   const followUpDone = useRef<string | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
   const logIconRef = useRef<HTMLSpanElement>(null);
@@ -154,6 +162,7 @@ export function QuickAdd({
     if ("error" in read) return toast.error(read.error);
     const { minutes } = read;
     setFollowUp(null);
+    setSaved(null);
     // One id for this entry, kept if the send has to be retried, so the server saves it once however many times it arrives.
     const clientId = crypto.randomUUID();
     const finish = () => {
@@ -175,9 +184,8 @@ export function QuickAdd({
     const undo = row ? await optimistic.add(row) : null;
     const typed = { duration, note };
     // Logged with no description: the box offers to add one to this entry once the server has it (it has an id then).
-    const noteLater: FollowUp | null = note.trim()
-      ? null
-      : { id: clientId, minutes, project: pickedName, client: owner?.name ?? "" };
+    const justSaved: JustSaved = { id: clientId, minutes, project: pickedName, client: owner?.name ?? "" };
+    const noteLater: FollowUp | null = note.trim() ? null : justSaved;
     spin(logIconRef.current);
     if (row) {
       finish();
@@ -189,6 +197,8 @@ export function QuickAdd({
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       if (!row) finish();
       if (noteLater) setFollowUp(noteLater);
+      // Only now, with the server's yes: an Undo pressed before it would have nothing to delete.
+      setSaved({ ...justSaved, undone: false });
     } catch (err) {
       undo?.();
       setLogged(null); // it was not logged after all
@@ -245,7 +255,16 @@ export function QuickAdd({
   }, [onTimerContext, projectId, pickedName, timerNote, parsed]);
   // Another day or another project: the box is the next entry's again.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the day or the project changes
-  useEffect(() => setFollowUp(null), [date, projectId]);
+  useEffect(() => {
+    setFollowUp(null);
+    setSaved(null);
+  }, [date, projectId]);
+  // The row of the entry the saved-time line names keeps a marked edge while the line shows.
+  const markedId = saved && !saved.undone ? saved.id : null;
+  useEffect(() => {
+    markJustLogged(markedId);
+    return () => markJustLogged(null);
+  }, [markedId]);
   useEffect(() => {
     const clear = () => {
       setNote("");
@@ -290,6 +309,7 @@ export function QuickAdd({
   // the description.
   const body = (
     <div className={bare ? "flex flex-col gap-3" : "flex flex-col gap-3 p-3 sm:p-4"}>
+      {welcome}
       {timerTop}
       <form method="post" onSubmit={submit} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="relative sm:col-start-1 sm:row-start-1">
@@ -301,6 +321,7 @@ export function QuickAdd({
               setDuration(e.target.value);
               if (!note.trim()) setFollowUp(null); // the next time is on its way: the box is for it now
               setLogged(null);
+              setSaved(null);
               fieldRoll.stop();
               dayRoll.stop();
             }}
@@ -336,6 +357,7 @@ export function QuickAdd({
                   const { from, to } = addChipTime(duration, c.minutes);
                   if (!note.trim()) setFollowUp(null);
                   setLogged(null);
+                  setSaved(null);
                   setDuration(chipText(to));
                   fieldRoll.roll(from, to);
                   dayRoll.roll(dayMinutes + from, dayMinutes + to);
@@ -369,6 +391,22 @@ export function QuickAdd({
           busy={create.isPending}
           iconRef={logIconRef}
         />
+        {saved && (
+          <SavedLine
+            saved={saved}
+            undoing={undoing}
+            onUndo={async () => {
+              if (await undo(saved.id)) {
+                // The note box was offering a note for the entry that is gone now.
+                if (followUp?.id === saved.id) {
+                  setFollowUp(null);
+                  setNote("");
+                }
+                setSaved({ ...saved, undone: true });
+              }
+            }}
+          />
+        )}
 
         <div className="flex min-w-0 items-start gap-2 sm:col-span-2">
           <span id={projectLabel} className="mt-2 shrink-0 text-muted-foreground text-sm">
@@ -455,13 +493,55 @@ function timeLine(line: {
   return line.firstUse ? "Type a time or tap one (tap again to add more), then add it." : "";
 }
 
+/** The entry just saved: what the saved-time line names and what the follow-up note box belongs to. */
+type JustSaved = { id: string; minutes: number; project: string; client: string };
 /** The entry the description box belongs to right after a log with no description. */
-type FollowUp = { id: string; minutes: number; project: string; client: string };
+type FollowUp = JustSaved;
+
+/** "Website · Acme": where an entry went. */
+const whereLogged = (e: JustSaved) => [e.project, e.client].filter(Boolean).join(" · ");
 
 /** "Add a note to the 1:30 you just logged (Website · Acme)": the follow-up box's label and accessible name. */
 function followUpLabel(f: FollowUp): string {
-  const where = [f.project, f.client].filter(Boolean).join(" · ");
+  const where = whereLogged(f);
   return `Add a note to the ${formatDuration(f.minutes)} you just logged${where ? ` (${where})` : ""}`;
+}
+
+/**
+ * "✓ Logged 2:00 on General · Acme Studio  ↶ Undo" under Log time: neutral ink on the muted tint (amber stays on the
+ * main button). Undo works like the timer's: the row goes when the server confirms the delete; on a refusal the error
+ * toast shows and Undo stays for another try. After a good Undo it says so, with no button.
+ */
+function SavedLine({
+  saved,
+  undoing,
+  onUndo,
+}: {
+  saved: JustSaved & { undone: boolean };
+  undoing: boolean;
+  onUndo: () => void;
+}) {
+  const where = whereLogged(saved);
+  return (
+    <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-2 rounded-lg bg-muted py-1 pr-1 pl-3 text-foreground text-sm sm:col-span-2">
+      <p role="status" className="flex min-w-0 items-center gap-2">
+        {!saved.undone && <Check className="size-4 shrink-0" strokeWidth={3} aria-hidden />}
+        <span>
+          {saved.undone ? UNDONE_TEXT : `Logged ${formatDuration(saved.minutes)}${where ? ` on ${where}` : ""}`}
+        </span>
+      </p>
+      {!saved.undone && (
+        <button
+          type="button"
+          onClick={onUndo}
+          disabled={undoing}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 font-medium text-sm hover:bg-background disabled:opacity-50 sm:min-h-9"
+        >
+          <Undo2 className="size-3.5" aria-hidden /> Undo
+        </button>
+      )}
+    </div>
+  );
 }
 
 /**

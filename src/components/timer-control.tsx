@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useProjectShade } from "@/components/project-logo";
 import { TimeTicket } from "@/components/time-ticket";
 import { STOPPED_EVENT, type Stopped, TIMER_LOCK_MS, timerParts, useStopTimer } from "@/components/timer-panel";
+import { UNDONE_TEXT, useUndoEntry } from "@/components/use-undo-entry";
 import { playClick } from "@/lib/click-sound";
 import { formatDuration } from "@/lib/duration";
 import { NOTE_MAX } from "@/lib/notes";
@@ -105,7 +106,7 @@ export function useTodayTimer({ projectId, projectName, date, note, typedMinutes
   const clients = trpc.clients.list.useQuery();
   const running = trpc.entry.running.useQuery();
   const start = trpc.entry.start.useMutation();
-  const discard = trpc.entry.delete.useMutation();
+  const { undo, undoing } = useUndoEntry();
   const resume = trpc.entry.resume.useMutation();
   const shift = trpc.entry.shiftStart.useMutation();
   const { stopTimer, stopping } = useStopTimer();
@@ -189,14 +190,9 @@ export function useTodayTimer({ projectId, projectName, date, note, typedMinutes
   async function onDiscard() {
     if (!stopped || locked()) return;
     await nudges.current;
-    try {
-      await discard.mutateAsync({ id: stopped.id });
-      await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
-      setStopped(null);
-      toast.success("Undone. Nothing was saved.");
-    } catch (err) {
-      toastError(err, "Couldn't undo that time.");
-    }
+    if (!(await undo(stopped.id))) return;
+    setStopped(null);
+    toast.success(UNDONE_TEXT);
   }
 
   async function onResume() {
@@ -278,7 +274,7 @@ export function useTodayTimer({ projectId, projectName, date, note, typedMinutes
     shifting: shift.isPending,
     resuming: resume.isPending,
     busy: start.isPending || stopping || resume.isPending,
-    discarding: discard.isPending,
+    discarding: undoing,
   };
 }
 

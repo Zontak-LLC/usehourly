@@ -10,6 +10,7 @@ import { FoldedNote } from "@/components/folded-note";
 import { InlineNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
+import { useJustLogged } from "@/components/time-reward";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -82,6 +83,7 @@ export function EntryRow({
   const optimistic = useOptimisticEntries();
   // An entry shown before the server has confirmed it cannot be changed yet (it has no real id to change).
   const unconfirmed = isPendingId(entry.id);
+  const justLogged = useJustLogged(entry.id);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditingState] = useState(initialEditing);
   const setEditing = (on: boolean) => {
@@ -179,8 +181,10 @@ export function EntryRow({
   return (
     <li
       data-entry-id={entry.id}
+      data-just-logged={justLogged || undefined}
       aria-busy={unconfirmed || undefined}
-      className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""}`}
+      // The entry the "Logged 2:00 on …" line names keeps an ink edge on its left while the line shows.
+      className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""} data-just-logged:shadow-[inset_4px_0_0_var(--foreground)]`}
     >
       {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
       <header

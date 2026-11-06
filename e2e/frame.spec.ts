@@ -114,7 +114,7 @@ test("the demo banner is one line on a phone, and Start fresh clears the sample 
   await card.getByRole("button", { name: "Create my account" }).locator("visible=true").click();
   await expect(page).toHaveURL(/\/dashboard\/today/, { timeout: 20_000 });
   // no reload: the sample clients are gone from the screen, so the first-run question shows
-  await expect(page.getByPlaceholder(/company or a person/i)).toBeVisible();
+  await expect(page.getByLabel("Your first client")).toBeVisible();
   await expect(page.getByTestId("demo-banner")).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem("hourly:lastProject"))).toBeNull();
 });

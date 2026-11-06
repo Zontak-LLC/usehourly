@@ -130,7 +130,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - **A visible label above each field**, not only a placeholder (placeholders vanish and fail contrast) **[checked: every control has a name]**. Required fields are obvious; optional ones say "(optional)".
 - **Ask for the least**; sensible defaults; accept messy input and normalise it (`1.5`, `1:30`, `90m` all work).
 - **Validate where the person is looking:** an error sits next to its field in plain words that say how to fix it ("Pick a project first", not "Invalid input"); keep what they typed; never clear a form on error.
-- **Enter submits**, Escape cancels, focus goes to the first field on open and back to the trigger on close. The submit button names the result ("Log time", "Create invoice"), never "Submit" or "OK".
+- **Enter submits**, Escape cancels, focus goes to the first field on open and back to the trigger on close. The submit button names the result ("Log time", "Preview invoice", "Save and download PDF"), never "Submit" or "OK". A form that makes a document shows it first (New invoice: Preview invoice, then the review step "Check your invoice"). After a save, a plain neutral line says what was saved, with Undo when it can be taken back ("Logged 2:00 on General · Acme Studio").
 - A form opens **in place of the thing it edits** (not a pop-up) unless it is tiny or a chooser (project picker, avatar cropper).
 
 ### Feedback and states

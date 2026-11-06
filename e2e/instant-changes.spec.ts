@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { entryAction, expect, hold, openEntryEdit, startFreshAccount, test } from "./helpers";
+import { entryAction, expect, hold, openEntryEdit, refuse, startFreshAccount, test } from "./helpers";
 
 /**
  * Adding, editing and deleting an entry show on screen at once; the server's answer only confirms them. Each test
@@ -42,16 +42,7 @@ test("a new entry is in the list and the form is clear before the server has ans
 test("when the server refuses a new entry, it disappears and what was typed comes back", async ({ page }) => {
   await startFreshAccount(page);
   await page.goto("/dashboard/today");
-  // A refusal the app handles (a 200 carrying an error answer, so the browser does not log a failed request).
-  await page.route("**/api/trpc/entry.create*", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        { error: { message: "Refused on purpose.", code: -32600, data: { code: "BAD_REQUEST", httpStatus: 400 } } },
-      ]),
-    }),
-  );
+  await refuse(page, "entry.create", "Refused on purpose.");
   await addEntry(page, "2h", "Will be refused");
   await expect(page.getByText("Refused on purpose.")).toBeVisible();
   await expect(page.getByText("Will be refused", { exact: true }).first()).toBeVisible(); // given back in the form

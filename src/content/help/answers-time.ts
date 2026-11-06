@@ -6,7 +6,7 @@ export const TIME_ANSWERS: Answer[] = [
     id: "clients-projects",
     question: "How do I add a client or a project?",
     keywords: ["new client", "add client", "new project", "add project", "customer", "general", "setup", "start"],
-    answer: `Your first visit asks "Who do you work for?". The answer becomes your first client, with a project called **General**, so you can log time at once.
+    answer: `Your first visit asks for **Your first client** and, if you like, its **First project**. Leave the project empty and it is called **General**, so you can log time at once.
 
 - **Another client:** open **Clients** and press **+** (New client) at the top.
 - **Another project:** press **Add project** on the client's card. Set its hourly rate there, or tick **Not billable**.

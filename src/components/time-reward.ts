@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { PALETTE } from "@/lib/palette";
 
@@ -110,6 +110,39 @@ export function glowEntry(id: string) {
     if (performance.now() - started < 2000) requestAnimationFrame(look);
   };
   requestAnimationFrame(look);
+}
+
+/*
+ * The entry the "Logged 2:00 on …" line under Log time talks about (2026-11-06): its row keeps a marked edge
+ * (`data-just-logged`) while the line shows, so people can see where their time went. One at a time, any list.
+ */
+let justLogged: string | null = null;
+const justLoggedListeners = new Set<() => void>();
+function onJustLogged(listener: () => void) {
+  justLoggedListeners.add(listener);
+  return () => justLoggedListeners.delete(listener);
+}
+
+/** Marks the row of entry `id` (null clears it) and brings it into view when it is off screen. */
+export function markJustLogged(id: string | null) {
+  if (justLogged === id) return;
+  justLogged = id;
+  for (const listener of justLoggedListeners) listener();
+  if (!id) return;
+  requestAnimationFrame(() =>
+    document
+      .querySelector(`[data-entry-id="${CSS.escape(id)}"]`)
+      ?.scrollIntoView({ block: "nearest", behavior: lessMotion() ? "auto" : "smooth" }),
+  );
+}
+
+/** True while entry `id` is the one the saved-time line names. */
+export function useJustLogged(id: string): boolean {
+  return useSyncExternalStore(
+    onJustLogged,
+    () => justLogged === id,
+    () => false,
+  );
 }
 
 /**
