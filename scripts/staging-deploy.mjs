@@ -103,6 +103,8 @@ try {
   }
   const env = { NEXT_PUBLIC_APP_URL: APP_URL, NEXT_PUBLIC_APP_ENV: "staging" };
   await run("npx", ["opennextjs-cloudflare", "build", "--config", CONFIG], env);
+  // The landing page as a static file, from this same build and with the same env (its origin check needs the URL).
+  await run("npm", ["run", "landing:static"], env);
 
   // The static assets are public files; secrets can only be inside the server bundle, so that is what is searched.
   const assets = join(root, ".open-next", "assets");

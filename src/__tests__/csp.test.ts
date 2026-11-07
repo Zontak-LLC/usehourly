@@ -36,6 +36,15 @@ describe("content security policy", () => {
     );
   });
 
+  it("takes a list of script hashes instead of a nonce (the static landing page), the rest unchanged", () => {
+    const hashes = ["'sha256-AAA='", "'sha256-BBB='"];
+    const csp = buildCsp(hashes, true);
+    expect(directive(csp, "script-src")).toBe(
+      "script-src 'self' 'sha256-AAA=' 'sha256-BBB=' https://static.cloudflareinsights.com https://challenges.cloudflare.com https://accounts.google.com",
+    );
+    expect(csp.replace("'sha256-AAA=' 'sha256-BBB='", "'nonce-n'")).toBe(buildCsp("n", true));
+  });
+
   it("makes a new unguessable nonce every time", () => {
     const seen = new Set(Array.from({ length: 50 }, () => newNonce()));
     expect(seen.size).toBe(50);

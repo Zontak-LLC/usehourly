@@ -1,6 +1,6 @@
 "use client";
 
-import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
+import { EntryRow } from "@/app/(app)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
 import { useProjectShade } from "@/components/project-logo";
 import { SegmentedSwitch } from "@/components/segmented-switch";

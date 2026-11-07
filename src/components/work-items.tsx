@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 
-import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
+import { EntryRow } from "@/app/(app)/dashboard/today/_components/entry-row";
 import { HoursChip } from "@/components/hours-chip";
 import { ListSearch } from "@/components/list-search";
 import { NoDollar } from "@/components/no-dollar-icon";

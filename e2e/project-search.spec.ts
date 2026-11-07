@@ -1,13 +1,8 @@
-import { addProjects, expect, test } from "./helpers";
+import { addProjects, expect, startDemo, test } from "./helpers";
 
 /** The project picker on Today: from six projects, "More…" opens a search (a drop-down on a computer, a dialog on a phone). */
 async function demoToday(page: import("@playwright/test").Page) {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: /try the demo/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/dashboard/);
+  await startDemo(page); // waits until the static landing page can take the click
   await addProjects(page, ["Extra one", "Extra two"]); // the sample has four; "More…" starts at six
   await page.goto("/dashboard/today");
   await expect(page.getByLabel("Time to add")).toBeVisible();

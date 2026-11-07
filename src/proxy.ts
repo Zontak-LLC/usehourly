@@ -29,6 +29,8 @@ export default auth((req) => {
   return res;
 });
 
+// `.+`, not `.*`: the bare `/` is left out. The landing page is a static file Cloudflare serves before the Worker runs
+// (no cold start); it carries its own CSP by hash (scripts/landing-static.mjs) and sends a signed-in visitor on itself.
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|webp|svg|txt|xml|ico)$).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|webp|svg|txt|xml|ico)$).+)"],
 };
