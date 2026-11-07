@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import { parseBudgetInput } from "@/lib/budget";
 import { feature } from "@/lib/features";
 import { fileToLogo } from "@/lib/logo";
+import { rateCents } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { parseWebsite } from "@/lib/web-address";
 
 /** Which project is being edited (one at a time across all clients), its logo draft, and the save. */
 export function useProjectEditing() {
@@ -21,7 +23,6 @@ export function useProjectEditing() {
   async function saveProject(e: React.FormEvent<HTMLFormElement>, id: string) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const rate = Math.round(Number(fd.get("rate") || 0) * 100);
     // With budgets hidden the form has no budget fields, so nothing about the budget is sent and a stored one stays.
     const withBudget = feature("budgets");
     const unit = fd.get("budgetUnit") === "hours" ? "hours" : "dollars";
@@ -29,12 +30,14 @@ export function useProjectEditing() {
     if (withBudget && budgetAmount === undefined) {
       return toast.error("Couldn't read that budget. Try 1000 for dollars or 22.5 for hours, or leave it blank.");
     }
+    const website = parseWebsite(String(fd.get("website") ?? ""));
+    if (!website.ok) return toast.error(website.message); // nothing is sent and the form stays open
     try {
       await updateProject.mutateAsync({
         id,
         name: String(fd.get("name")),
         clientId: String(fd.get("clientId")),
-        hourlyRate: Number.isFinite(rate) ? rate : 0,
+        hourlyRate: rateCents(fd.get("rate")),
         billable: fd.get("billable") === "on",
         ...(withBudget && {
           budgetAmount,
@@ -42,6 +45,7 @@ export function useProjectEditing() {
           budgetPeriod: fd.get("budgetPeriod") === "total" ? "total" : "month",
         }),
         logo: logoDraft,
+        website: website.url,
       });
       await Promise.all([
         utils.clients.list.invalidate(),

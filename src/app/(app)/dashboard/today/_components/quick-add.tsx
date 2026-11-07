@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Check, ClockPlus, Plus } from "lucide-react";
+import { Check, ClockPlus, Plus, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
@@ -11,18 +11,22 @@ import { useSaveNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
 import { ProjectPicker } from "@/components/project-picker";
-import { flyIn, glowEntry, haloColour, spin, useRoll } from "@/components/time-reward";
-import { TIMER_STARTED_EVENT } from "@/components/timer-control";
+import { flyIn, glowEntry, haloColour, markJustLogged, spin, useRoll } from "@/components/time-reward";
+import { TIMER_STARTED_EVENT, type TimerContext } from "@/components/timer-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { Spinner } from "@/components/ui/spinner";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
+import { UNDONE_TEXT, useUndoEntry } from "@/components/use-undo-entry";
+import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { formatDate, monthBounds } from "@/lib/dates";
-import { addChipTime, formatDuration, parseDuration } from "@/lib/duration";
+import { addChipTime, formatDuration, readDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
 import { pendingEntry } from "@/lib/optimistic-entries";
+import { browserStorage, readLastProject, rememberLastProject, startProject } from "@/lib/picked-project";
 import { pickableProjects } from "@/lib/project-shade";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
@@ -37,7 +41,6 @@ function chipText(minutes: number): string {
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
 }
 
-const LAST_PROJECT_KEY = "hourly:lastProject";
 /** How many entries this browser has logged: the help line under the time shows only for the first few. */
 const LOGGED_KEY = "hourly:loggedCount";
 const HELP_UNTIL = 3;
@@ -46,13 +49,6 @@ function readLogged(): number {
     return Number(localStorage.getItem(LOGGED_KEY)) || 0;
   } catch {
     return 0;
-  }
-}
-function readLast(): string {
-  try {
-    return localStorage.getItem(LAST_PROJECT_KEY) ?? "";
-  } catch {
-    return "";
   }
 }
 
@@ -64,6 +60,7 @@ export function QuickAdd({
   onTimerContext,
   timerTop,
   timerFoot,
+  welcome,
 }: {
   date: string;
   dayMinutes: number;
@@ -71,12 +68,15 @@ export function QuickAdd({
   showDate?: boolean;
   /** Without its own card and header: the Week page puts the form inside the day's card. */
   bare?: boolean;
-  /** Today's timer lives in this card: it starts for the project and description picked here (the one picker). */
-  onTimerContext?: (context: { projectId: string; projectName: string; note: string }) => void;
+  /** Today's timer lives in this card: it starts for the project and description picked here (the one picker), and
+   * not while a time is typed (issue 431). */
+  onTimerContext?: (context: TimerContext) => void;
   /** Today only (issue 218): the running timer or the saved ticket, shown at the top of this card. Others pass nothing. */
   timerTop?: React.ReactNode;
   /** Today only: the quiet "or Start timer on ..." line at the foot of this card. */
   timerFoot?: React.ReactNode;
+  /** Today only: the one-time line after first run ("Northwind Bakery is your first client, …"), at the card's top. */
+  welcome?: React.ReactNode;
 }) {
   const utils = trpc.useUtils();
   const clients = trpc.clients.list.useQuery();
@@ -92,6 +92,10 @@ export function QuickAdd({
   // to THAT entry for a moment ("Add a note to the 1:30 you just logged"); Enter or leaving the box saves it there.
   const [followUp, setFollowUp] = useState<FollowUp | null>(null);
   const saveNote = useSaveNote();
+  // The plain "Logged 2:00 on General · Acme" line under Log time, with Undo (2026-11-06: testers were not sure their
+  // hours were saved). Shown once the server has the entry; the next time typed or tapped ends it.
+  const [saved, setSaved] = useState<(JustSaved & { undone: boolean }) | null>(null);
+  const { undo, undoing } = useUndoEntry();
   const followUpDone = useRef<string | null>(null);
   const durationRef = useRef<HTMLInputElement>(null);
   const logIconRef = useRef<HTMLSpanElement>(null);
@@ -115,11 +119,10 @@ export function QuickAdd({
   // The month of the day being logged: the budget for the project picked below, if it has one.
   const budgets = trpc.project.budgets.useQuery(monthBounds(date));
   const budget = budgets.data?.[projectId];
-  // Restore the last-used project, falling back to the first available one.
+  // Restore the last-used project (also set when a project is made on Clients), else start on the newest one.
   useEffect(() => {
     if (projectId || projects.length === 0) return;
-    const last = readLast();
-    setProjectId(projects.some((p) => p.id === last) ? last : projects[0].id);
+    setProjectId(startProject(projects, readLastProject(browserStorage())));
   }, [projects, projectId]);
 
   // Land in the time field on a computer (on a phone that would pop the keyboard before you asked).
@@ -140,28 +143,30 @@ export function QuickAdd({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const parsed = parseDuration(duration);
+  // Read from the text on every render, so a hint goes away on the next keystroke that makes a time (issue 435).
+  const read = readDuration(duration);
+  const parsed = "minutes" in read ? read.minutes : null;
   const pickedName = projects.find((p) => p.id === projectId)?.name ?? "";
-  const invalid = duration.trim() !== "" && parsed === null;
+  const durationError = duration.trim() !== "" && "error" in read ? read.error : null;
+  const invalid = durationError !== null;
 
   function remember(id: string) {
     setProjectId(id);
-    try {
-      localStorage.setItem(LAST_PROJECT_KEY, id);
-    } catch {
-      // Remembering the project is a convenience; ignore storage being unavailable.
-    }
+    rememberLastProject(browserStorage(), id);
   }
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!projectId) return toast.error("Pick a project first.");
-    if (parsed === null) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    // Never sends 0 or a bare "45" to the server: the toast says the same words as the line under the field.
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     setFollowUp(null);
+    setSaved(null);
     // One id for this entry, kept if the send has to be retried, so the server saves it once however many times it arrives.
     const clientId = crypto.randomUUID();
     const finish = () => {
-      setLogged(formatDuration(parsed));
+      setLogged(formatDuration(minutes));
       fieldRoll.stop();
       dayRoll.stop();
       setDuration("");
@@ -169,35 +174,36 @@ export function QuickAdd({
       durationRef.current?.focus();
     };
     // With the copy on this device switched on, the device itself takes the entry and sends it later (issue #95).
-    if (!online && !getActiveEngine()?.ready) return saveOnDevice(clientId, parsed, finish);
+    if (!online && !getActiveEngine()?.ready) return saveOnDevice(clientId, minutes, finish);
     // Show the entry in the list and clear the form NOW; the server's answer only confirms it (or takes it back).
     const owner = clients.data?.find((c) => c.projects.some((p) => p.id === projectId));
     const row =
       owner && userId
-        ? pendingEntry({ clientId, userId, client: owner, projectId, date, minutes: parsed, note, nonBillable: false })
+        ? pendingEntry({ clientId, userId, client: owner, projectId, date, minutes, note, nonBillable: false })
         : null;
     const undo = row ? await optimistic.add(row) : null;
     const typed = { duration, note };
     // Logged with no description: the box offers to add one to this entry once the server has it (it has an id then).
-    const noteLater: FollowUp | null = note.trim()
-      ? null
-      : { id: clientId, minutes: parsed, project: pickedName, client: owner?.name ?? "" };
+    const justSaved: JustSaved = { id: clientId, minutes, project: pickedName, client: owner?.name ?? "" };
+    const noteLater: FollowUp | null = note.trim() ? null : justSaved;
     spin(logIconRef.current);
     if (row) {
       finish();
       glowEntry(clientId);
     }
     try {
-      await create.mutateAsync({ projectId, date, minutes: parsed, note, clientId });
+      await create.mutateAsync({ projectId, date, minutes, note, clientId });
       countLogged();
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       if (!row) finish();
       if (noteLater) setFollowUp(noteLater);
+      // Only now, with the server's yes: an Undo pressed before it would have nothing to delete.
+      setSaved({ ...justSaved, undone: false });
     } catch (err) {
       undo?.();
       setLogged(null); // it was not logged after all
       // No connection (or the server is unreachable): keep the entry on this device and send it later.
-      if (isNetworkError(err)) return saveOnDevice(clientId, parsed, finish);
+      if (isNetworkError(err)) return saveOnDevice(clientId, minutes, finish);
       if (row) {
         setDuration(typed.duration); // give back what was typed so nothing is lost
         setNote(typed.note);
@@ -241,14 +247,24 @@ export function QuickAdd({
   }
 
   // Tell the page's timer what it would start for, and clear the description once a timer has started with it.
-  // The follow-up note belongs to the entry already logged, never to a timer started next.
+  // The follow-up note belongs to the entry already logged, never to a timer started next. A typed time keeps the
+  // timer off until it is logged or cleared (issue 431).
   const timerNote = followUp ? "" : note;
   useEffect(() => {
-    onTimerContext?.({ projectId, projectName: pickedName, note: timerNote });
-  }, [onTimerContext, projectId, pickedName, timerNote]);
+    onTimerContext?.({ projectId, projectName: pickedName, note: timerNote, typedMinutes: parsed });
+  }, [onTimerContext, projectId, pickedName, timerNote, parsed]);
   // Another day or another project: the box is the next entry's again.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the day or the project changes
-  useEffect(() => setFollowUp(null), [date, projectId]);
+  useEffect(() => {
+    setFollowUp(null);
+    setSaved(null);
+  }, [date, projectId]);
+  // The row of the entry the saved-time line names keeps a marked edge while the line shows.
+  const markedId = saved && !saved.undone ? saved.id : null;
+  useEffect(() => {
+    markJustLogged(markedId);
+    return () => markJustLogged(null);
+  }, [markedId]);
   useEffect(() => {
     const clear = () => {
       setNote("");
@@ -281,18 +297,19 @@ export function QuickAdd({
   const onlyProject = projects.length === 1 ? projects[0] : null;
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
-  const help = invalid
-    ? "Try 1.5, 1:30 or 90m"
-    : parsed
-      ? `Day total ${formatDuration(dayMinutes)} → ${formatDuration(dayRoll.shown ?? dayMinutes + (parsed ?? 0))} h`
-      : loggedCount < HELP_UNTIL
-        ? "Type a time or tap one (tap again to add more), then add it."
-        : "";
+  const help = timeLine({
+    error: durationError,
+    minutes: parsed === null ? null : (fieldRoll.shown ?? parsed),
+    dayMinutes,
+    dayAfter: parsed === null ? null : (dayRoll.shown ?? dayMinutes + parsed),
+    firstUse: loggedCount < HELP_UNTIL,
+  });
   // One layout everywhere (Today, Week's day panel, the day dialog; 2026-10-23 redesign): the time first with Log time
   // beside it from 640px (at the foot on a phone, where the thumb is), the quick times, "on" and the project pills, then
   // the description.
   const body = (
     <div className={bare ? "flex flex-col gap-3" : "flex flex-col gap-3 p-3 sm:p-4"}>
+      {welcome}
       {timerTop}
       <form method="post" onSubmit={submit} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="relative sm:col-start-1 sm:row-start-1">
@@ -304,10 +321,11 @@ export function QuickAdd({
               setDuration(e.target.value);
               if (!note.trim()) setFollowUp(null); // the next time is on its way: the box is for it now
               setLogged(null);
+              setSaved(null);
               fieldRoll.stop();
               dayRoll.stop();
             }}
-            placeholder="Time: 1.5, 1:30 or 90m"
+            placeholder="Time: 2, 1,5, 1:30 or 90m"
             aria-label="Time to add"
             aria-invalid={invalid}
             inputMode="decimal"
@@ -339,6 +357,7 @@ export function QuickAdd({
                   const { from, to } = addChipTime(duration, c.minutes);
                   if (!note.trim()) setFollowUp(null);
                   setLogged(null);
+                  setSaved(null);
                   setDuration(chipText(to));
                   fieldRoll.roll(from, to);
                   dayRoll.roll(dayMinutes + from, dayMinutes + to);
@@ -365,7 +384,29 @@ export function QuickAdd({
         {/* After the quick times in the source, so on a phone it sits right under them and is in view when Today opens
             (2026-10-25: at the foot it was under the bottom menu, and floating over the form it hid the projects). On a
             wide screen the grid still puts it beside the time box (`sm:col-start-2 sm:row-start-1`). */}
-        <LogTimeButton logged={logged} disabled={create.isPending || parsed === null} iconRef={logIconRef} />
+        <LogTimeButton
+          logged={logged}
+          typed={parsed === null ? null : formatDuration(parsed)}
+          disabled={create.isPending || parsed === null}
+          busy={create.isPending}
+          iconRef={logIconRef}
+        />
+        {saved && (
+          <SavedLine
+            saved={saved}
+            undoing={undoing}
+            onUndo={async () => {
+              if (await undo(saved.id)) {
+                // The note box was offering a note for the entry that is gone now.
+                if (followUp?.id === saved.id) {
+                  setFollowUp(null);
+                  setNote("");
+                }
+                setSaved({ ...saved, undone: true });
+              }
+            }}
+          />
+        )}
 
         <div className="flex min-w-0 items-start gap-2 sm:col-span-2">
           <span id={projectLabel} className="mt-2 shrink-0 text-muted-foreground text-sm">
@@ -434,13 +475,73 @@ export function QuickAdd({
   );
 }
 
+/**
+ * The one line under the quick times: the plain error while the text cannot be logged, otherwise what will be logged
+ * ("= 2:00 · Day total 0:00 → 2:00 h", issue 435: so nobody has to guess what "2" means), or the first-use hint.
+ * `minutes` and `dayAfter` are the rolling figures while a chip's reward plays.
+ */
+function timeLine(line: {
+  error: string | null;
+  minutes: number | null;
+  dayMinutes: number;
+  dayAfter: number | null;
+  firstUse: boolean;
+}): string {
+  if (line.error) return line.error;
+  if (line.minutes !== null && line.dayAfter !== null)
+    return `= ${formatDuration(line.minutes)} · Day total ${formatDuration(line.dayMinutes)} → ${formatDuration(line.dayAfter)} h`;
+  return line.firstUse ? "Type a time or tap one (tap again to add more), then add it." : "";
+}
+
+/** The entry just saved: what the saved-time line names and what the follow-up note box belongs to. */
+type JustSaved = { id: string; minutes: number; project: string; client: string };
 /** The entry the description box belongs to right after a log with no description. */
-type FollowUp = { id: string; minutes: number; project: string; client: string };
+type FollowUp = JustSaved;
+
+/** "Website · Acme": where an entry went. */
+const whereLogged = (e: JustSaved) => [e.project, e.client].filter(Boolean).join(" · ");
 
 /** "Add a note to the 1:30 you just logged (Website · Acme)": the follow-up box's label and accessible name. */
 function followUpLabel(f: FollowUp): string {
-  const where = [f.project, f.client].filter(Boolean).join(" · ");
+  const where = whereLogged(f);
   return `Add a note to the ${formatDuration(f.minutes)} you just logged${where ? ` (${where})` : ""}`;
+}
+
+/**
+ * "✓ Logged 2:00 on General · Acme Studio  ↶ Undo" under Log time: neutral ink on the muted tint (amber stays on the
+ * main button). Undo works like the timer's: the row goes when the server confirms the delete; on a refusal the error
+ * toast shows and Undo stays for another try. After a good Undo it says so, with no button.
+ */
+function SavedLine({
+  saved,
+  undoing,
+  onUndo,
+}: {
+  saved: JustSaved & { undone: boolean };
+  undoing: boolean;
+  onUndo: () => void;
+}) {
+  const where = whereLogged(saved);
+  return (
+    <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-2 rounded-lg bg-muted py-1 pr-1 pl-3 text-foreground text-sm sm:col-span-2">
+      <p role="status" className="flex min-w-0 items-center gap-2">
+        {!saved.undone && <Check className="size-4 shrink-0" strokeWidth={3} aria-hidden />}
+        <span>
+          {saved.undone ? UNDONE_TEXT : `Logged ${formatDuration(saved.minutes)}${where ? ` on ${where}` : ""}`}
+        </span>
+      </p>
+      {!saved.undone && (
+        <button
+          type="button"
+          onClick={onUndo}
+          disabled={undoing}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 font-medium text-sm hover:bg-background disabled:opacity-50 sm:min-h-9"
+        >
+          <Undo2 className="size-3.5" aria-hidden /> Undo
+        </button>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -493,20 +594,31 @@ function NoteBox({
   );
 }
 
-/** The main button: amber with a clock-plus disc; just after a save it says what went in ("Logged 2:00") with a check. */
+/**
+ * The main button: amber with a clock-plus disc. With a time typed it says what it will save ("Log 2:00", issue 431:
+ * the typed hours are the button's job, never the timer's); just after a save it says what went in ("Logged 2:00").
+ */
 function LogTimeButton({
   logged,
+  typed,
   disabled,
+  busy,
   iconRef,
 }: {
   logged: string | null;
+  /** The typed time as h:mm (the final value, not the rolling figure), or null when the box is empty or unreadable. */
+  typed: string | null;
   disabled: boolean;
+  /** The save is still open. The form is already clear by then (the entry shows at once), so this, not `disabled`, says so. */
+  busy: boolean;
   iconRef: React.RefObject<HTMLSpanElement | null>;
 }) {
+  const showSpinner = useDelayedFlag(busy);
   return (
     <button
       type="submit"
       disabled={disabled}
+      aria-busy={busy || undefined}
       // The main event: a calm amber fill with a clock-plus disc (time going in); no glow or lift since 2026-10-23. While no time is typed
       // it is a plain grey "not ready yet" button with readable words and a thin edge (2026-10-26: the pale accent looked like a
       // normal button in light mode and almost vanished in dark), and it comes alive when there
@@ -519,15 +631,18 @@ function LogTimeButton({
         ref={iconRef}
         className="grid size-7 place-items-center rounded-full bg-white/20 text-white transition-transform group-hover:-rotate-12 group-disabled:bg-foreground/10 group-disabled:text-foreground/60 sm:size-6 dark:bg-background/25 dark:text-background dark:group-disabled:bg-foreground/10 dark:group-disabled:text-muted-foreground"
       >
-        {logged ? (
+        {/* Only the disc's child changes, so `spin()` on the disc and its size stay as they are. */}
+        {showSpinner ? (
+          <Spinner size="sm" label="Saving" />
+        ) : logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
         ) : (
           <ClockPlus className="size-4" strokeWidth={2.5} aria-hidden />
         )}
       </span>
-      {/* The name stays "Log time" for screen readers and tests; the eyes see what was logged for a moment. */}
+      {/* The name stays "Log time" for screen readers and tests; the eyes see what it will log, or what was logged for a moment. */}
       <span className="sr-only">Log time</span>
-      <span aria-hidden="true">{logged ? `Logged ${logged}` : "Log time"}</span>
+      <span aria-hidden="true">{logged ? `Logged ${logged}` : typed ? `Log ${typed}` : "Log time"}</span>
       <Kbd className="hidden bg-[#12151b]/15 text-inherit lg:inline-flex">↵</Kbd>
     </button>
   );

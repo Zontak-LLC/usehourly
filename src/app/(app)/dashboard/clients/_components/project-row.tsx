@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Archive, Pencil } from "lucide-react";
+import { Archive, ExternalLink, Pencil } from "lucide-react";
 
 import { BudgetBar } from "@/components/budget-bar";
 import { useCurrency, useMoney } from "@/components/currency-provider";
@@ -62,7 +62,23 @@ export function ProjectLine({
       <div className="min-w-0 max-sm:col-start-1 max-sm:row-start-1">
         <div className="flex min-w-0 items-center gap-2">
           <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: clientColor }} />
-          <h3 className="truncate font-medium">{p.name}</h3>
+          <h3 className="truncate font-medium">
+            {p.website ? (
+              // The href is only ever an address the server's parseWebsite stored (never raw input).
+              <a
+                href={p.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-sm underline-offset-4 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {p.name}
+                <ExternalLink aria-hidden className="ml-1 inline size-3 align-baseline" />
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            ) : (
+              p.name
+            )}
+          </h3>
           {!p.billable && (
             <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-foreground/70 text-xs">non-billable</span>
           )}
@@ -172,6 +188,18 @@ export function ProjectEditCard({
                 <span className="block text-foreground/70 text-xs">Counts on invoices</span>
               </span>
             </label>
+            <div className="grid gap-1.5 sm:col-start-1">
+              <Label htmlFor={`pw-${p.id}`}>Website (optional)</Label>
+              {/* Not type="url": the browser would refuse a bare magsmith.com, which parseWebsite completes. */}
+              <Input
+                id={`pw-${p.id}`}
+                name="website"
+                inputMode="url"
+                autoComplete="url"
+                placeholder="magsmith.com"
+                defaultValue={p.website ?? ""}
+              />
+            </div>
           </div>
         </FormStep>
 

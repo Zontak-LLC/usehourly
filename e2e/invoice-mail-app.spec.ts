@@ -1,6 +1,16 @@
 import type { Page } from "@playwright/test";
 
-import { anonymous, expect, menuAction, openInvoice, sql, startDemo, startFreshAccount, test } from "./helpers";
+import {
+  anonymous,
+  expect,
+  makeInvoice,
+  menuAction,
+  openInvoice,
+  sql,
+  startDemo,
+  startFreshAccount,
+  test,
+} from "./helpers";
 
 /*
  * Issue 227: the freelancer sends an invoice from their OWN mail app. The Send panel writes the email (To from the
@@ -26,7 +36,7 @@ async function invoiceForAcme(page: Page) {
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Client updated.")).toBeVisible();
   await page.goto("/dashboard/invoices/new");
-  await page.getByRole("button", { name: /Create invoice/ }).click();
+  await makeInvoice(page);
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
   const { number } = await openInvoice(page, 0); // the only invoice
   return { user, number };

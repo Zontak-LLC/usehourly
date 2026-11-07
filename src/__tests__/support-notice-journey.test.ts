@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  parseSupportNotice,
-  SUPPORT_NOTICE_KEY,
-  supportNoticeDismissKey,
-  supportNoticeText,
-} from "@/lib/support-notice";
+import { SUPPORT_NOTICE_KEY, supportNoticeDismissKey, supportNoticeText } from "@/lib/support-notice";
 import { appRouter } from "@/server/routers/_app";
+import { parseSupportNotice } from "@/server/schemas/support-notice";
 import { readSupportNotice } from "@/server/support-notice";
 import { createCallerFactory } from "@/server/trpc";
 

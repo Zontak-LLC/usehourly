@@ -1,4 +1,5 @@
-import { GOOGLE_CALENDAR_SCOPE } from "@/lib/google-calendar";
+/** The narrowest permission that reads events: no editing, no calendar list, no contacts. */
+const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly";
 
 /**
  * Google's own sign-in popup (Google Identity Services), loaded only when the person presses Connect. It hands back a

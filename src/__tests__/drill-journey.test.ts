@@ -215,6 +215,20 @@ describe("a drill breaks only its own path, then undoes itself", () => {
     expect(down.headers.get("cache-control")).toBe("no-store");
   });
 
+  it("health-503: never tried again, and the log line says the drill did it", async () => {
+    useStaging();
+    await start("health-503");
+    expect((await health()).status).toBe(503);
+    expect(events()).not.toContain("health_check_retry");
+    const line = JSON.parse(logs.find((l) => l.includes('"event":"health_check_failed"')) ?? "{}");
+    expect(line).toMatchObject({ step: "drill", drilled: true, attempt: 1, timedOut: false });
+    expect(Number.isInteger(line.ms)).toBe(true);
+    for (const l of logs) {
+      expect(l).not.toContain(TOKEN);
+      expect(l).not.toContain("health-probe");
+    }
+  });
+
   it("no X-Drill header without a drill, and none on a real database failure", async () => {
     useStaging();
     const up = await health();
@@ -222,7 +236,8 @@ describe("a drill breaks only its own path, then undoes itself", () => {
     expect(await up.json()).toMatchObject({ ok: true });
     expect(up.headers.get("x-drill")).toBeNull();
 
-    db.$queryRaw.mockRejectedValueOnce(new Error("D1 unavailable"));
+    // Twice: one quick failure is now tried again (and would answer 200).
+    db.$queryRaw.mockRejectedValueOnce(new Error("D1 unavailable")).mockRejectedValueOnce(new Error("D1 unavailable"));
     const down = await health();
     expect(down.status).toBe(503);
     expect(await down.json()).toEqual({ ok: false });

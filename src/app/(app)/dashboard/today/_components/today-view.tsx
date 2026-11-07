@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -12,7 +12,7 @@ import { MergeEntriesBar } from "@/components/merge-entries-bar";
 import { Notice } from "@/components/notice";
 import { PageShell } from "@/components/page-shell";
 import { useProjectLogos } from "@/components/project-logo";
-import { TimerControls, TimerStartLine, useTodayTimer } from "@/components/timer-control";
+import { type TimerContext, TimerControls, TimerStartLine, useTodayTimer } from "@/components/timer-control";
 import { TimerPanel } from "@/components/timer-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSavedCalendar } from "@/components/use-calendar";
@@ -25,7 +25,8 @@ import { useOnline } from "@/lib/use-offline";
 import { useToday } from "@/lib/use-today";
 
 import { DayCard } from "./day-card";
-import { FirstRun } from "./first-run";
+import { FirstClientLine } from "./first-client-line";
+import { type FirstClient, FirstRun } from "./first-run";
 import { ImportHint } from "./import-hint";
 import { MissedDays } from "./missed-days";
 import { NoteReminder } from "./note-reminder";
@@ -48,7 +49,13 @@ export function TodayView() {
   const clients = trpc.clients.list.useQuery();
   const online = useOnline();
   // What the timer would start for: the project and description picked in the add form below.
-  const [timerContext, setTimerContext] = useState({ projectId: "", projectName: "", note: "" });
+  const [timerContext, setTimerContext] = useState<TimerContext>({
+    projectId: "",
+    projectName: "",
+    note: "",
+    typedMinutes: null,
+  });
+  const [firstClient, setFirstClient] = useState<FirstClient | null>(null);
   const todayTimer = useTodayTimer({ ...timerContext, date: date ?? "" });
   const running = trpc.entry.running.useQuery();
   // Whether the account has any entry yet, for the import hint (started here, in the first render: still one request).
@@ -72,6 +79,13 @@ export function TodayView() {
   const lookback = { from: today ? addDays(today, -MISSED_LOOKBACK_DAYS) : "", to: today ? addDays(today, -1) : "" };
   const recent = trpc.entry.list.useQuery(lookback, { enabled: !!today });
   const recentNonBillable = trpc.entry.nonBillableDays.useQuery(lookback, { enabled: !!today });
+
+  // The one-time "… is your first client" line ends for good with the first entry logged (or "Got it").
+  const loggedAny = (week.data?.length ?? 0) > 0;
+  useEffect(() => {
+    if (loggedAny) setFirstClient(null);
+  }, [loggedAny]);
+  const welcome = loggedAny ? null : firstClient;
 
   if (!date) return <Skeleton className="h-64 w-full max-w-5xl" />;
 
@@ -118,7 +132,7 @@ export function TodayView() {
       {clients.isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : !hasProjects ? (
-        <FirstRun />
+        <FirstRun onSaved={setFirstClient} />
       ) : (
         <TodayLayout
           pills={
@@ -150,6 +164,7 @@ export function TodayView() {
               showDate={false}
               dayMinutes={sum(dayEntries)}
               onTimerContext={setTimerContext}
+              welcome={welcome && <FirstClientLine made={welcome} onDismiss={() => setFirstClient(null)} />}
               // One project picker on Today (issue 218): the timer runs inside the Log time card, on today only.
               timerTop={date === today ? <TimerControls timer={todayTimer} /> : null}
               timerFoot={date === today ? <TimerStartLine timer={todayTimer} online={online} /> : null}

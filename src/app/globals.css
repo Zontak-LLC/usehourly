@@ -403,6 +403,17 @@ textarea,
   }
 }
 
+/* The spinner (components/ui/spinner.tsx): each of its 12 dashes fades from full to faint, 1/12 s after the one before,
+   so a wave of brightness runs round still dashes. Only under motion-safe; reduced motion keeps a still picture. */
+@keyframes spinner-dash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+
 /* Home page: the colour glows drift slowly, and a gradient band shifts across its colours. */
 @keyframes drift {
   0%,

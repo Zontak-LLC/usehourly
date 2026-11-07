@@ -12,6 +12,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { PopoverContent } from "@/components/ui/popover";
 import {
+  browserStorage,
+  PINNED_PROJECTS_KEY,
+  RECENT_PROJECTS_KEY,
+  readProjectIds,
+  writeProjectIds,
+} from "@/lib/picked-project";
+import {
   ALL_AS_CHIPS,
   chipProjects,
   type PickerProject,
@@ -20,25 +27,8 @@ import {
   togglePinnedId,
 } from "@/lib/project-picker";
 
-const RECENT_KEY = "hourly:recentProjects";
-const PINNED_KEY = "hourly:pinnedProjects";
-
-function readIds(key: string): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(key) ?? "[]");
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeIds(key: string, ids: string[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(ids));
-  } catch {
-    // Remembering is a convenience; ignore storage being unavailable.
-  }
-}
+const readIds = (key: string) => readProjectIds(browserStorage(), key);
+const writeIds = (key: string, ids: string[]) => writeProjectIds(browserStorage(), key, ids);
 
 /** A phone has an on-screen keyboard that would cover a list under the field, so there the search opens at the top. */
 function useIsPhone() {
@@ -78,8 +68,8 @@ export function ProjectPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const [recent, setRecent] = useState<string[]>(() => (typeof window === "undefined" ? [] : readIds(RECENT_KEY)));
-  const [pins, setPins] = useState<string[]>(() => (typeof window === "undefined" ? [] : readIds(PINNED_KEY)));
+  const [recent, setRecent] = useState<string[]>(() => readIds(RECENT_PROJECTS_KEY));
+  const [pins, setPins] = useState<string[]>(() => readIds(PINNED_PROJECTS_KEY));
   // A pick from the search hands the focus to the time box once the search has closed (not back to "More…").
   const pickedFromSearch = useRef(false);
   const pillsRef = useRef<HTMLDivElement>(null);
@@ -103,7 +93,7 @@ export function ProjectPicker({
     // Remembered for the search list now and for the pills on the next visit (they never move during this one).
     const next = pushRecentId(recent, id);
     setRecent(next);
-    writeIds(RECENT_KEY, next);
+    writeIds(RECENT_PROJECTS_KEY, next);
     setOpen(false);
     setQuery("");
     setActive(0);
@@ -132,7 +122,7 @@ export function ProjectPicker({
   function togglePin(id: string) {
     const next = togglePinnedId(pins, id);
     setPins(next);
-    writeIds(PINNED_KEY, next);
+    writeIds(PINNED_PROJECTS_KEY, next);
   }
 
   function onKeyDown(e: React.KeyboardEvent) {

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Log time field: live "= 2:00" preview and plain error words (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 435. The time field of the Log time card
+  (src/app/(app)/dashboard/today/_components/quick-add.tsx) and the one line under the chips that already holds the
+  first-use hint and the "Day total" preview. Same tokens as docs/design/log-typed-hours.html; the error uses the app's
+  existing invalid style (text-destructive on the line, the field's aria-invalid ring). No new box, no new colour.
+-->
+<style>
+  :root {
+    --background: #eef2f7;
+    --foreground: #1c2434;
+    --card: #ffffff;
+    --border: #dbe2ec;
+    --muted: #eef1f5;
+    --amber: #2563c9;
+    --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+    --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
+    --muted-fg: color-mix(in oklab, var(--foreground) 62%, transparent);
+    --destructive: #d4342c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; color: var(--muted-fg); max-width: 72ch; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: var(--muted-fg); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .desktop { width: 560px; max-width: 100%; }
+  .phone { width: 375px; }
+  .head { border-bottom: 1px solid var(--border); background: var(--band-2); padding: 12px 16px; font-weight: 600; font-size: 15px; }
+  .body { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .row { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) auto; }
+  .field { height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; display: flex;
+    align-items: center; font-size: 16px; }
+  .field.empty { color: var(--muted-fg); }
+  .field.bad { border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { height: 36px; border: 1px solid var(--border); border-radius: 999px; padding: 0 12px; display: inline-flex;
+    align-items: center; font-size: 14px; flex: 1 0 auto; }
+  .desktop .chip { flex: none; }
+  .help { color: var(--muted-fg); font-size: 12px; margin: -6px 0 0; }
+  .help.bad { color: var(--destructive); }
+  .log { height: 44px; border-radius: 16px; padding: 0 24px; display: inline-flex; align-items: center;
+    justify-content: center; gap: 12px; font-weight: 700; color: #fff; background: var(--amber-fill); border: 0; font-size: 16px; }
+  .phone .log { height: 48px; font-size: 18px; }
+  .log.off { background: var(--muted); color: var(--muted-fg); box-shadow: inset 0 0 0 1px var(--border); }
+  .tag { font: 11px ui-monospace, monospace; color: var(--muted-fg); margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<h1>Log time field: say what will be logged</h1>
+<p class="note">The line under the chips is the one place the field talks. Empty: the first-use hint (unchanged).
+A time it can read: "= 2:00 · Day total 0:00 → 2:00 h", updated on every key. A time it cannot log: plain words in the
+invalid style, worked out again on every key, so the next key that makes a time clears it. Log time stays off while
+there is an error; Enter shows the same words in a toast. A bare number up to 24 is hours; minutes need "m".</p>
+
+<h2>Desktop</h2>
+<div class="frames">
+  <div>
+    <p class="tag">1 · Empty: the first-use hint</p>
+    <div class="card desktop"><div class="head">Log time</div><div class="body">
+      <div class="row"><div class="field empty">Time: 2, 1,5, 1:30 or 90m</div><button class="log off" type="button">Log time</button></div>
+      <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+      <p class="help">Type a time or tap one (tap again to add more), then add it.</p>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">2 · "2" typed: two hours, shown before Log</p>
+    <div class="card desktop"><div class="head">Log time</div><div class="body">
+      <div class="row"><div class="field">2</div><button class="log" type="button">Log 2:00</button></div>
+      <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+      <p class="help">= 2:00 · Day total 0:00 → 2:00 h</p>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">3 · "0" typed: ask for more than 0</p>
+    <div class="card desktop"><div class="head">Log time</div><div class="body">
+      <div class="row"><div class="field bad">0</div><button class="log off" type="button">Log time</button></div>
+      <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+      <p class="help bad">Enter more than 0, like 1:30</p>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">4 · "25" typed: too many hours, so suggest minutes</p>
+    <div class="card desktop"><div class="head">Log time</div><div class="body">
+      <div class="row"><div class="field bad">25</div><button class="log off" type="button">Log time</button></div>
+      <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+      <p class="help bad">Did you mean 25 minutes? Type 25m</p>
+    </div></div>
+  </div>
+</div>
+
+<h2>Phone, 375px (Log time under the line: one line of text, so the button does not move further)</h2>
+<div class="frames">
+  <div>
+    <p class="tag">1 · Empty</p>
+    <div class="card phone"><div class="head">Log time</div><div class="body">
+      <div class="field empty">Time: 2, 1,5, 1:30 or 90m</div>
+      <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+      <p class="help">Type a time or tap one (tap again to add more), then add it.</p>
+      <button class="log off" type="button">Log time</button>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">2 · "2"</p>
+    <div class="card phone"><div class="head">Log time</div><div class="body">
+      <div class="field">2</div>
+      <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+      <p class="help">= 2:00 · Day total 0:00 → 2:00 h</p>
+      <button class="log" type="button">Log 2:00</button>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">3 · "0"</p>
+    <div class="card phone"><div class="head">Log time</div><div class="body">
+      <div class="field bad">0</div>
+      <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+      <p class="help bad">Enter more than 0, like 1:30</p>
+      <button class="log off" type="button">Log time</button>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">4 · "25"</p>
+    <div class="card phone"><div class="head">Log time</div><div class="body">
+      <div class="field bad">25</div>
+      <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+      <p class="help bad">Did you mean 25 minutes? Type 25m</p>
+      <button class="log off" type="button">Log time</button>
+    </div></div>
+  </div>
+</div>
+</body>
+</html>

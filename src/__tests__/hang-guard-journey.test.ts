@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { newApiToken } from "@/lib/api-token";
+import { OPEN_MS, QUERY_MS, RETRY_MAX_ELAPSED_MS, RETRY_WAIT_MS } from "@/lib/health";
 import { forgetDrillCache } from "@/server/drill";
 import { handleMcpHttp } from "@/server/mcp/http";
 
@@ -65,6 +66,9 @@ function workingDb() {
 
 let logs: string[];
 const events = () => logs.map((l) => (JSON.parse(l) as { event: string }).event);
+type FailedLine = { step: string; ms: number; attempt: number; timedOut: boolean; drilled: boolean };
+const failedLine = () =>
+  JSON.parse(logs.find((l) => l.includes('"event":"health_check_failed"')) ?? "{}") as FailedLine;
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
@@ -107,16 +111,19 @@ describe("the health check answers when the database stalls", () => {
     expect((await res).status).toBe(503);
   });
 
-  it("A2: SELECT 1 never finishes: 503 { ok: false } within 2 + 3 s", async () => {
+  it("A2: SELECT 1 never finishes: 503 { ok: false } within 2 + 3 s, and a timeout is never tried again", async () => {
     const db = workingDb();
     db.$queryRaw.mockImplementation(never);
     prismaMock.mockResolvedValue(db);
     const res = GET();
-    expect(await answersWithin(res, 3000)).toBe("settled");
+    expect(await answersWithin(res, OPEN_MS + QUERY_MS)).toBe("settled");
     expect((await res).status).toBe(503);
     expect((await res).headers.get("cache-control")).toBe("no-store");
     expect(await (await res).json()).toEqual({ ok: false });
     expect(logs.find((l) => l.includes("health_check_failed"))).toContain("health queries");
+    expect(prismaMock).toHaveBeenCalledTimes(1);
+    expect(events()).not.toContain("health_check_retry");
+    expect(failedLine()).toMatchObject({ step: "select", attempt: 1, timedOut: true, drilled: false });
   });
 
   it("with a working database it still answers 200 with both timings", async () => {
@@ -124,6 +131,72 @@ describe("the health check answers when the database stalls", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, db: { selectMs: expect.any(Number) } });
+  });
+});
+
+describe("the health check's one retry stays inside Night Watch's 10 s", () => {
+  // The route times the whole check with performance.now(), so the fake clock drives it too.
+  beforeEach(() => vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] }));
+
+  const D1_DROP = "D1_ERROR: Network connection lost.";
+  /** Runs `then` once the clock reaches `ms`: its value or its throw is the answer. */
+  const later = <T>(ms: number, then: () => T) =>
+    new Promise<Awaited<T>>((resolve, reject) =>
+      setTimeout(async () => {
+        try {
+          resolve(await then());
+        } catch (err) {
+          reject(err);
+        }
+      }, ms),
+    );
+  const fail = () => {
+    throw new Error(D1_DROP);
+  };
+
+  it("ms covers the whole check: a quick first failure, the wait and a slow second failure", async () => {
+    const db = workingDb();
+    db.$queryRaw.mockImplementationOnce(async () => fail()).mockImplementationOnce(() => later(800, fail));
+    prismaMock.mockResolvedValue(db);
+    const res = GET();
+    expect(await answersWithin(res, RETRY_WAIT_MS + 800)).toBe("settled");
+    expect((await res).status).toBe(503);
+    const line = failedLine();
+    expect(line).toMatchObject({ step: "select", attempt: 2, timedOut: false });
+    expect(Number.isInteger(line.ms)).toBe(true);
+    expect(line.ms).toBeGreaterThanOrEqual(RETRY_WAIT_MS + 800);
+  });
+
+  it("a slow failure (no timeout) is not tried again: 503 at once with attempt 1", async () => {
+    const db = workingDb();
+    db.$queryRaw.mockImplementation(() => later(1000, fail));
+    prismaMock.mockImplementation(() => later(1900, () => db));
+    const res = GET();
+    expect(await answersWithin(res, 2900)).toBe("settled");
+    expect((await res).status).toBe(503);
+    expect(prismaMock).toHaveBeenCalledTimes(1);
+    expect(events()).not.toContain("health_check_retry");
+    const line = failedLine();
+    expect(line).toMatchObject({ step: "select", attempt: 1, timedOut: false });
+    expect(line.ms).toBeGreaterThanOrEqual(2900);
+    expect(line.ms).toBeLessThan(10_000);
+  });
+
+  it("worst case with a retry: first try fails just under the limit, the second stalls to both limits, under 10 s", async () => {
+    const worst = RETRY_MAX_ELAPSED_MS + RETRY_WAIT_MS + OPEN_MS + QUERY_MS;
+    expect(worst).toBe(6750);
+    const stalled = workingDb();
+    stalled.$queryRaw.mockImplementation(never);
+    prismaMock
+      .mockImplementationOnce(() => later(RETRY_MAX_ELAPSED_MS - 1, fail))
+      .mockImplementationOnce(() => later(OPEN_MS - 1, () => stalled));
+    const res = GET();
+    expect(await answersWithin(res, worst)).toBe("settled");
+    expect((await res).status).toBe(503);
+    expect(prismaMock).toHaveBeenCalledTimes(2);
+    expect(failedLine()).toMatchObject({ step: "select", attempt: 2, timedOut: true });
+    expect(failedLine().ms).toBeLessThanOrEqual(worst);
+    expect(worst).toBeLessThan(10_000);
   });
 });
 

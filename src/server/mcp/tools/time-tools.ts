@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { parseDuration } from "@/lib/duration";
+import { readDuration } from "@/lib/duration";
 
 import { defineTool, type McpTool } from "./core";
 import { type EntryRow, minutesFromArgs, needsDuration, shapeEntry } from "./entry-shape";
@@ -17,8 +17,10 @@ export const TIME_TOOLS: McpTool[] = [
     idempotent: true,
     input: z.object({ text: durationText.describe("The duration text to read, e.g. 1h30") }),
     run: async (_c, a) => {
-      const m = parseDuration(a.text);
-      return m ? { minutes: m, hours: hours(m) } : { minutes: null, error: "Couldn't read that duration." };
+      const read = readDuration(a.text);
+      return "error" in read
+        ? { minutes: null, error: read.error }
+        : { minutes: read.minutes, hours: hours(read.minutes) };
     },
   }),
 

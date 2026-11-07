@@ -1,7 +1,12 @@
+"use client"
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 import { Slot } from "radix-ui"
+
+import { Spinner } from "@/components/ui/spinner"
+import { useDelayedFlag } from "@/hooks/use-delayed-flag"
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all duration-200 outline-none select-none motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0 motion-safe:active:scale-[0.97] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -50,25 +55,48 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  busy = false,
+  busyLabel,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    /** Working (a save, an export): the button is off at once, and after SPINNER_DELAY_MS it shows the spinner. */
+    busy?: boolean
+    /** The spinner's name for a screen reader, e.g. "Saving". The caller keeps its own words ("Saving…"). */
+    busyLabel?: string
   }) {
   const Comp = asChild ? Slot.Root : "button"
   // An icon-only button shows its name on hover (a native tooltip) unless the caller set its own title.
   const iconOnly = typeof size === "string" && size.startsWith("icon")
   const title = props.title ?? (iconOnly ? props["aria-label"] : undefined)
+  // A Slot takes exactly one child, so a link styled as a button never gets the spinner.
+  const showSpinner = useDelayedFlag(busy) && !asChild
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      data-busy={showSpinner || undefined}
+      // The caller's own icon stays until the spinner takes its place, so a fast action never flickers or jumps.
+      className={cn(buttonVariants({ variant, size, className }), "[&[data-busy]>svg]:hidden")}
+      disabled={busy || disabled}
+      aria-busy={busy || undefined}
       {...props}
       title={title}
-    />
+    >
+      {showSpinner ? (
+        <>
+          <Spinner size="sm" label={busyLabel} />
+          {children}
+        </>
+      ) : (
+        children
+      )}
+    </Comp>
   )
 }
 

@@ -33,9 +33,13 @@ export function useStopTimer() {
   const utils = trpc.useUtils();
   const stop = trpc.entry.stop.useMutation();
   const busy = useRef(false);
-  /** `minutesAgo` stops the timer at an earlier moment ("Still working?"); left out, it stops now. */
+  /**
+   * `minutesAgo` stops the timer at an earlier moment ("Still working?"); left out, it stops now. Gives back the stopped
+   * entry, or null when a stop is already under way or it failed (the toast has said why), so a caller can go on only
+   * once the time is saved (New invoice's "Stop it and include it").
+   */
   async function stopTimer(minutesAgo?: number) {
-    if (busy.current) return;
+    if (busy.current) return null;
     busy.current = true;
     try {
       const e = await stop.mutateAsync(minutesAgo ? { minutesAgo } : undefined);
@@ -52,8 +56,10 @@ export function useStopTimer() {
         projectId: e.project_id,
       };
       window.dispatchEvent(new CustomEvent<Stopped>(STOPPED_EVENT, { detail }));
+      return e;
     } catch (err) {
       toastError(err, "Couldn't stop the timer.");
+      return null;
     } finally {
       busy.current = false;
     }

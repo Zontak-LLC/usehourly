@@ -6,7 +6,7 @@ export const TIME_ANSWERS: Answer[] = [
     id: "clients-projects",
     question: "How do I add a client or a project?",
     keywords: ["new client", "add client", "new project", "add project", "customer", "general", "setup", "start"],
-    answer: `Your first visit asks "Who do you work for?". The answer becomes your first client, with a project called **General**, so you can log time at once.
+    answer: `Your first visit asks for **Your first client** and, if you like, its **First project**. Leave the project empty and it is called **General**, so you can log time at once.
 
 - **Another client:** open **Clients** and press **+** (New client) at the top.
 - **Another project:** press **Add project** on the client's card. Set its hourly rate there, or tick **Not billable**.
@@ -24,7 +24,7 @@ Time is always logged on a project, and each project belongs to one client.`,
 - \`90m\` is ninety minutes
 - \`2h\` is two hours, and \`1h30\` is one hour thirty
 
-A plain number up to **12** means hours (\`4\` is four hours). A bigger plain number means minutes (\`45\` is forty-five minutes). The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
+A plain number up to 24 means hours (\`4\` is four hours). For minutes add m: \`45m\`. A comma works too: \`1,5\`. The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
   },
   {
     id: "add-note",
@@ -42,7 +42,7 @@ Clients see the descriptions on your invoices, so a short note helps them. If yo
     id: "timer",
     question: "How does the timer work?",
     keywords: ["start", "stop", "running", "stopwatch", "track live", "resume", "forgot", "discard", "undo"],
-    answer: `Pick the project in the **Log time** card on Today, then press **Start timer** at the foot of the card. The timer runs on that project. While it runs, it shows at the top of the same card, and the time counts up there and in your totals.
+    answer: `Pick the project in the **Log time** card on Today, then press **Start timer** at the foot of the card. The timer runs on that project. While it runs, it shows at the top of the same card, and the time counts up there and in your totals. If a time is typed in the box, log it first; the timer starts from an empty box.
 
 - **Stop timer** saves the time at once and says so ("Saved 0:42"). Use − or + 5 min to correct it, **Undo** to throw it away, **Resume timer** to carry on, or **Done**.
 - Forgot to start it? Just after you start, **Started earlier?** moves the start back by 15 min, 30 min or 1 hour. After 4 hours, **Still working?** lets you stop it at the time you really stopped.

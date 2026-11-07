@@ -10,13 +10,14 @@ import { FoldedNote } from "@/components/folded-note";
 import { InlineNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { ProjectMark, useProjectLogos } from "@/components/project-logo";
+import { useJustLogged } from "@/components/time-reward";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { useRunningMinutes } from "@/components/use-running-minutes";
 import { DATE_RE, fromISODate } from "@/lib/dates";
-import { formatDuration, parseDuration } from "@/lib/duration";
+import { formatDuration, parseDuration, readDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { QUIET_BELOW_MINUTES, ROW_FIGURE, ROW_FIGURE_QUIET } from "@/lib/figures";
 import { needsNote } from "@/lib/note-later";
@@ -82,6 +83,7 @@ export function EntryRow({
   const optimistic = useOptimisticEntries();
   // An entry shown before the server has confirmed it cannot be changed yet (it has no real id to change).
   const unconfirmed = isPendingId(entry.id);
+  const justLogged = useJustLogged(entry.id);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditingState] = useState(initialEditing);
   const setEditing = (on: boolean) => {
@@ -105,8 +107,9 @@ export function EntryRow({
   const runningNow = useRunningMinutes(entry.started_at);
 
   async function save() {
-    const minutes = parseDuration(duration);
-    if (minutes === null || minutes < 1) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    const read = readDuration(duration);
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     if (!DATE_RE.test(date)) return toast.error("Pick a day for this entry.");
     const moved = date !== entry.date;
     // Show the change and close the form at once; the server's answer confirms it, or the form opens again.
@@ -178,8 +181,10 @@ export function EntryRow({
   return (
     <li
       data-entry-id={entry.id}
+      data-just-logged={justLogged || undefined}
       aria-busy={unconfirmed || undefined}
-      className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""}`}
+      // The entry the "Logged 2:00 on …" line names keeps an ink edge on its left while the line shows.
+      className={`${bare ? "bg-card" : "overflow-hidden rounded-xl border bg-card"} ${unconfirmed ? "opacity-70" : ""} data-just-logged:shadow-[inset_4px_0_0_var(--foreground)]`}
     >
       {/* One row while reading (project, description, hours, controls); the tinted header returns while editing. */}
       <header

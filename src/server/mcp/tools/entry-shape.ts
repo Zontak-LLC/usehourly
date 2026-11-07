@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
-import { parseDuration } from "@/lib/duration";
+import { entryMinutes } from "@/lib/duration";
 
 import { hours } from "./format";
 
@@ -51,11 +51,9 @@ export function summarize(entries: EntryRow[]) {
 export function minutesFromArgs(a: { minutes?: number; duration?: string }): number | undefined {
   if (a.minutes !== undefined) return a.minutes;
   if (a.duration === undefined) return undefined;
-  const m = parseDuration(a.duration);
-  if (!m || m < 1 || m > 1440) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Couldn't read that duration. Try 1.5, 1:30 or 90m." });
-  }
-  return m;
+  const read = entryMinutes({ duration: a.duration });
+  if ("error" in read) throw new TRPCError({ code: "BAD_REQUEST", message: read.error });
+  return read.minutes;
 }
 
 export const needsDuration = (v: { minutes?: number; duration?: string }) =>

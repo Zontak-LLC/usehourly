@@ -3,4 +3,9 @@
 set -e
 node packages/quality-gates/bin/quality-gates.mjs rules
 npx biome check --staged --no-errors-on-unmatched
+# A staged schema change needs a fresh Prisma client, or tsc checks against the old model types
+# (a worktree's node_modules was generated before the change). 2026-11-06, R-156.
+if git diff --cached --name-only | grep -qx 'prisma/schema.prisma'; then
+  npx prisma generate
+fi
 npx tsc --noEmit

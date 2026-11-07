@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { AlertTriangle, FileCheck2 } from "lucide-react";
+import { AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 import { ClientCurrency } from "@/components/currency-provider";
@@ -18,7 +18,7 @@ import { useUnbilled } from "@/components/use-unbilled";
 import { addDays, isRealDate, MAX_QUERY_DAYS, spanDays, toISODate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
-import { buildInvoice } from "@/lib/invoice";
+import { buildInvoice, type InvoiceSnapshot } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import type { Rounding } from "@/lib/rounding";
 import { invoiceTax } from "@/lib/tax";
@@ -28,6 +28,8 @@ import { invoicePeriodStart, type Unbilled } from "@/lib/unbilled";
 
 import { InvoiceDetailsCard } from "./invoice-details-card";
 import { InvoiceNotices, InvoicePreviewCard, TaxChoice } from "./invoice-preview";
+import { InvoiceReview } from "./invoice-review";
+import { type RunningChoice, RunningTimerDialog } from "./running-timer-dialog";
 
 function MissingProfileNotice({ ein, address }: { ein?: string | null; address?: string | null }) {
   return (
@@ -197,20 +199,24 @@ export function NewInvoiceView() {
     }),
     [client?.round_step, client?.round_mode, client?.round_min],
   );
-  const totals = useMemo(
+  // Match by the project's client (not the active-project list) so archived projects count, exactly as the server does.
+  // Days marked non-billable are never invoiced, and time already on an invoice is left out unless asked for (the
+  // server does the same).
+  const billableEntries = useMemo(
     () =>
-      // Match by the project's client (not the active-project list) so archived projects count,
-      // exactly as the server does.
-      buildInvoice(
-        // Days marked non-billable are never invoiced, and time already on an invoice is left out unless asked for
-        // (the server does the same).
-        (entries.data ?? []).filter(
-          (e) => e.project.client_id === clientId && !e.non_billable && (includeInvoiced || !e.invoice_id),
-        ),
-        rounding,
+      (entries.data ?? []).filter(
+        (e) => e.project.client_id === clientId && !e.non_billable && (includeInvoiced || !e.invoice_id),
       ),
-    [entries.data, clientId, rounding, includeInvoiced],
+    [entries.data, clientId, includeInvoiced],
   );
+  const totals = useMemo(() => buildInvoice(billableEntries, rounding), [billableEntries, rounding]);
+  // The timer on THIS invoice's time (this client, this period, a billable project). It is billed only once stopped, so
+  // Create invoice asks about it first (issue 431); a timer anywhere else does not touch this invoice.
+  const runningEntry = billableEntries.find((e) => e.started_at && e.project.billable) ?? null;
+  const [runningChoice, setRunningChoice] = useState<RunningChoice | null>(null);
+  // The review step (2026-11-06): Preview invoice shows the invoice first; only Save and download PDF makes it.
+  const [review, setReview] = useState<InvoiceSnapshot | null>(null);
+  const [previewing, setPreviewing] = useState(false);
   const alreadyInvoiced = (entries.data ?? [])
     .filter((e) => e.project.client_id === clientId && e.invoice_id && e.project.billable && !e.non_billable)
     .reduce((a, e) => a + e.minutes, 0);
@@ -220,24 +226,59 @@ export function NewInvoiceView() {
   // A $0.00 invoice is never what anyone means: block it and say why.
   const nothingToBill = totals.lines.length > 0 && totals.totalCents === 0;
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!client || !today) return;
+    if (runningEntry) {
+      setRunningChoice({ entry: runningEntry, onlyTime: totals.lines.length === 0 });
+      return;
+    }
+    void openPreview();
+  }
+
+  /** The invoice as the form describes it: what the preview shows and what Save makes. */
+  function invoiceRequest() {
+    if (!client || !today) return null;
     const days = Number.parseInt(netDays, 10);
+    return {
+      clientId: client.id,
+      from,
+      to,
+      number,
+      issueDate: today,
+      dueDate: Number.isFinite(days) && days >= 0 ? addDays(today, days) : null,
+      notes,
+      includeDetail,
+      compactNotes,
+      includeInvoiced,
+      addTax: !!taxSetting && addTax,
+    };
+  }
+
+  /** Asks the server for the invoice Save would make (nothing is saved) and shows the review step; true once shown. */
+  async function openPreview(): Promise<boolean> {
+    const request = invoiceRequest();
+    if (!request || previewing) return false;
+    setPreviewing(true);
     try {
-      const { snapshot } = await create.mutateAsync({
-        clientId: client.id,
-        from,
-        to,
-        number,
-        issueDate: today,
-        dueDate: Number.isFinite(days) && days >= 0 ? addDays(today, days) : null,
-        notes,
-        includeDetail,
-        compactNotes,
-        includeInvoiced,
-        addTax: !!taxSetting && addTax,
-      });
+      // Straight from the server every time, never a cached answer: the time may have changed since.
+      const { snapshot } = await utils.client.invoice.preview.query(request);
+      setReview(snapshot);
+      setRunningChoice(null);
+      return true;
+    } catch (err) {
+      toastError(err, "Couldn't show the invoice.");
+      return false;
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  /** Makes the invoice from what the server holds now, downloads its PDF and goes to the list; true once it is made. */
+  async function createInvoice(): Promise<boolean> {
+    const request = invoiceRequest();
+    if (!request) return false;
+    try {
+      const { snapshot } = await create.mutateAsync(request);
       await Promise.all([
         utils.invoice.list.invalidate(),
         utils.invoice.unbilled.invalidate(),
@@ -253,8 +294,10 @@ export function NewInvoiceView() {
       }
       toast.success(`Invoice ${snapshot.number} saved.`);
       router.push("/dashboard/invoices");
+      return true;
     } catch (err) {
       toastError(err, "Couldn't create the invoice.");
+      return false;
     }
   }
 
@@ -285,65 +328,89 @@ export function NewInvoiceView() {
         {!hasClients ? (
           <EmptyState>Add a client and project first, then log some time to invoice.</EmptyState>
         ) : (
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-            <InvoiceDetailsCard
-              clients={clients.data ?? []}
-              today={today}
-              values={{ clientId, number, from, to, netDays, notes, includeDetail, compactNotes }}
-              onClientId={setClientId}
-              onNumber={(v) => {
-                setNumber(v);
-                setNumberTouched(true);
-              }}
-              onFrom={(v) => {
-                setFrom(v);
-                setRangeTouched(true);
-              }}
-              onTo={(v) => {
-                setTo(v);
-                setRangeTouched(true);
-              }}
-              onNetDays={setNetDays}
-              onNotes={setNotes}
-              onIncludeDetail={setIncludeDetail}
-              onCompactNotes={setCompactNotes}
-            />
+          <>
+            {review && (
+              <InvoiceReview
+                snapshot={review}
+                saving={create.isPending}
+                onSave={() => void createInvoice()}
+                onBack={() => setReview(null)}
+              />
+            )}
+            {/* Hidden, not removed, during the review: Back to edit finds every field (and "More options") as it was. */}
+            <div
+              hidden={review !== null}
+              className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]"
+            >
+              <InvoiceDetailsCard
+                clients={clients.data ?? []}
+                today={today}
+                values={{ clientId, number, from, to, netDays, notes, includeDetail, compactNotes }}
+                onClientId={setClientId}
+                onNumber={(v) => {
+                  setNumber(v);
+                  setNumberTouched(true);
+                }}
+                onFrom={(v) => {
+                  setFrom(v);
+                  setRangeTouched(true);
+                }}
+                onTo={(v) => {
+                  setTo(v);
+                  setRangeTouched(true);
+                }}
+                onNetDays={setNetDays}
+                onNotes={setNotes}
+                onIncludeDetail={setIncludeDetail}
+                onCompactNotes={setCompactNotes}
+              />
 
-            {/* The paper preview and the main action stay in view while the form scrolls. */}
-            <div className="flex flex-col gap-4 lg:sticky lg:top-32">
-              <ClientCurrency currency={client?.currency}>
-                <InvoicePreviewCard
-                  validRange={validRange}
-                  loading={entriesLoading}
-                  error={entries.error?.message ?? null}
-                  totals={totals}
-                  clientName={client?.name}
-                  tax={tax}
-                />
-                {taxSetting && <TaxChoice tax={taxSetting} add={addTax} onAdd={setAddTax} />}
+              {/* The paper preview and the main action stay in view while the form scrolls. */}
+              <div className="flex flex-col gap-4 lg:sticky lg:top-32">
+                <ClientCurrency currency={client?.currency}>
+                  <InvoicePreviewCard
+                    validRange={validRange}
+                    loading={entriesLoading}
+                    error={entries.error?.message ?? null}
+                    totals={totals}
+                    clientName={client?.name}
+                    tax={tax}
+                  />
+                  {taxSetting && <TaxChoice tax={taxSetting} add={addTax} onAdd={setAddTax} />}
 
-                <AlreadyInvoiced minutes={alreadyInvoiced} include={includeInvoiced} onInclude={setIncludeInvoiced} />
-                <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
-              </ClientCurrency>
+                  <AlreadyInvoiced minutes={alreadyInvoiced} include={includeInvoiced} onInclude={setIncludeInvoiced} />
+                  <InvoiceNotices totals={totals} rounding={rounding} nothingToBill={nothingToBill} />
+                </ClientCurrency>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <DocButton
-                  type="submit"
-                  tone="amber"
-                  icon={<FileCheck2 />}
-                  title={create.isPending ? "Creating…" : "Create invoice"}
-                  hint="and download the PDF"
-                  label={create.isPending ? "Creating…" : "Create invoice & download PDF"}
-                  busy={create.isPending}
-                  disabled={create.isPending || !validRange || totals.lines.length === 0 || nothingToBill}
-                />
-                <Button type="button" variant="outline" asChild>
-                  <Link href="/dashboard/invoices">Cancel</Link>
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <DocButton
+                    type="submit"
+                    tone="amber"
+                    icon={<Eye />}
+                    title={previewing ? "Opening…" : "Preview invoice"}
+                    hint="nothing is saved yet"
+                    label={previewing ? "Opening…" : "Preview invoice"}
+                    busy={previewing}
+                    busyLabel="Opening the preview"
+                    // A running timer never leaves the button dead: pressed, it asks what to do with it (issue 431).
+                    disabled={
+                      previewing ||
+                      create.isPending ||
+                      !validRange ||
+                      nothingToBill ||
+                      (totals.lines.length === 0 && !runningEntry)
+                    }
+                  />
+                  <Button type="button" variant="outline" asChild>
+                    <Link href="/dashboard/invoices">Cancel</Link>
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
+        {/* Portalled out of the form, so its buttons never submit it. */}
+        <RunningTimerDialog choice={runningChoice} onClose={() => setRunningChoice(null)} onContinue={openPreview} />
       </PageShell>
     </form>
   );

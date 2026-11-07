@@ -9,7 +9,7 @@ import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDuration, parseDuration } from "@/lib/duration";
+import { formatDuration, readDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
@@ -55,8 +55,9 @@ function TeamLog({ team }: { team: Team }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!today) return;
-    const minutes = parseDuration(duration);
-    if (minutes === null || minutes < 1) return toast.error("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
+    const read = readDuration(duration);
+    if ("error" in read) return toast.error(read.error);
+    const { minutes } = read;
     try {
       await log.mutateAsync({ teamId: team.id, projectId, date: today, minutes, note, clientId: crypto.randomUUID() });
       setDuration("");

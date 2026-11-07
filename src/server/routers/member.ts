@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
-import { parseDuration } from "@/lib/duration";
+import { entryMinutes } from "@/lib/duration";
 import { hashToken } from "@/lib/email-token";
 import { NOTE_MAX } from "@/lib/notes";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
@@ -115,10 +115,9 @@ export const memberRouter = router({
         const already = await ctx.prisma.timeEntry.findFirst({ where: { id: input.clientId, ...mine } });
         if (already) return already;
       }
-      const minutes = input.minutes ?? parseDuration(input.duration ?? "");
-      if (!minutes || minutes < 1 || minutes > 1440) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Couldn't read that duration. Try 1.5, 1:30 or 90m." });
-      }
+      const read = entryMinutes(input);
+      if ("error" in read) throw new TRPCError({ code: "BAD_REQUEST", message: read.error });
+      const { minutes } = read;
       const project = await ctx.prisma.project.findFirst({
         where: { id: input.projectId, user_id: team.ownerId, archived: false, client_id: { in: team.clientIds } },
       });

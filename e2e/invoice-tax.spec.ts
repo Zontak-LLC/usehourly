@@ -1,5 +1,5 @@
 import { FEATURES } from "../src/lib/features";
-import { expect, gotoClient, openInvoice, startFreshAccount, test } from "./helpers";
+import { expect, gotoClient, makeInvoice, openInvoice, startFreshAccount, test } from "./helpers";
 
 test.skip(!FEATURES.invoiceTax, "Tax on invoices is hidden in this release (src/lib/features.ts)");
 
@@ -54,7 +54,7 @@ test("a freelancer who charges VAT sets it once, and invoices add it on top and 
   });
 
   await test.step("the saved invoice owes the total with VAT and prints the VAT number", async () => {
-    await page.getByRole("button", { name: "Create invoice" }).click();
+    await makeInvoice(page);
     await expect(page).toHaveURL(/\/dashboard\/invoices$/);
     await expect(page.getByText("$240.00").first()).toBeVisible();
     const { detail } = await openInvoice(page, 0);

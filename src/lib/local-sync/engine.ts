@@ -1,5 +1,5 @@
 import { DATE_RE, isRealDate } from "@/lib/dates";
-import { parseDuration } from "@/lib/duration";
+import { entryMinutes } from "@/lib/duration";
 import { needsFullResync } from "@/lib/entry-sync";
 import { NOTE_MAX } from "@/lib/notes";
 
@@ -140,10 +140,9 @@ export class SyncEngine {
   // ---- writes ---------------------------------------------------------------------------------------------------
 
   create(input: CreateInput) {
-    const minutes = input.minutes ?? parseDuration(input.duration ?? "");
-    if (!minutes || minutes < 1 || minutes > 24 * 60) {
-      throw new LocalRefusal("Couldn't read that duration. Try 1.5, 1:30 or 90m.", "BAD_REQUEST");
-    }
+    const read = entryMinutes(input);
+    if ("error" in read) throw new LocalRefusal(read.error, "BAD_REQUEST");
+    const { minutes } = read;
     this.checkDate(input.date);
     const note = this.cleanNote(input.note ?? "");
     this.requireProject(input.projectId);
@@ -174,9 +173,8 @@ export class SyncEngine {
       patch.date = input.date;
     }
     if (input.minutes) {
-      if (!Number.isInteger(input.minutes) || input.minutes < 1 || input.minutes > 24 * 60) {
-        throw new LocalRefusal("Couldn't read that duration. Try 1.5, 1:30 or 90m.", "BAD_REQUEST");
-      }
+      const read = entryMinutes({ minutes: input.minutes });
+      if ("error" in read) throw new LocalRefusal(read.error, "BAD_REQUEST");
       patch.minutes = input.minutes;
     }
     if (input.note !== undefined) patch.note = this.cleanNote(input.note);
