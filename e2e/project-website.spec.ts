@@ -46,7 +46,16 @@ test("the project name links to its website once one is saved, and is plain agai
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).toHaveAttribute("rel", /noopener/);
   await expect(link).toHaveAttribute("rel", /noreferrer/);
-  expect((await link.innerText()).trim()).toBe("General");
+  // The text you see is the name alone. innerText would also hold the sr-only " (opens in a new tab)" (it is rendered,
+  // just clipped), which failed this check in CI on build 2; so read the link's own text, without its child elements.
+  const shownText = await link.evaluate((el) =>
+    [...el.childNodes]
+      .filter((n) => n.nodeType === Node.TEXT_NODE)
+      .map((n) => n.textContent)
+      .join("")
+      .trim(),
+  );
+  expect(shownText).toBe("General");
   await expect(row(page, "General").getByRole("link", { name: "magsmith.com" })).toHaveCount(0);
   await expect(row(page, "General").getByRole("link")).toHaveCount(1);
 
@@ -85,7 +94,7 @@ test("a long linked name truncates on a phone and the pencil stays in the row", 
   await accountWithProject(page, long, "magsmith.com");
   const h3 = heading(page, long);
   await expect(h3.getByRole("link")).toHaveAttribute("href", "https://magsmith.com/");
-  expect(await h3.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  await expect.poll(() => h3.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
   const line = row(page, long);
   const pencil = line.getByRole("button", { name: `Edit ${long}`, exact: true });
   await expect(pencil).toBeVisible();
