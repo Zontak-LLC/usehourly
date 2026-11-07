@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Projects: an optional website; the project name links to it (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for "Project website" (2026-11-06, migration 0041). The client's Projects tab
+  (clients/_components/project-row.tsx ProjectLine), its edit form (ProjectEditCard, step 1) and the new-project bar
+  (today/_components/setup-form.tsx with bar). Same tokens as docs/design/time-field-preview.html. No new colour: the
+  link is the name in the text colour, underlined on hover; keyboard focus adds the ring.
+-->
+<style>
+  :root {
+    --background: #eef2f7;
+    --foreground: #1c2434;
+    --card: #ffffff;
+    --border: #dbe2ec;
+    --muted: #eef1f5;
+    --amber: #2563c9;
+    --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+    --ring: color-mix(in oklab, var(--foreground) 45%, transparent);
+    --muted-fg: color-mix(in oklab, var(--foreground) 62%, transparent);
+    --destructive: #d4342c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; color: var(--muted-fg); max-width: 72ch; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: var(--muted-fg); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .desktop { width: 720px; max-width: 100%; }
+  .phone { width: 390px; }
+  .tag { font: 11px ui-monospace, monospace; color: var(--muted-fg); margin: 0 0 6px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li.p { display: grid; grid-template-columns: minmax(0, 1fr) 7rem 6rem 6rem 2.75rem; gap: 4px 12px; align-items: center;
+    padding: 10px 12px; border-top: 1px solid var(--border); }
+  li.p:first-child { border-top: 0; }
+  .phone li.p { grid-template-columns: minmax(0, 1fr) auto; }
+  .name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .dot { width: 10px; height: 10px; border-radius: 999px; background: #2563c9; flex: none; }
+  h3 { margin: 0; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  h3 a { color: inherit; text-decoration: none; border-radius: 2px; text-underline-offset: 4px; }
+  h3 a:hover, h3 a.hover { text-decoration: underline; }
+  h3 a.focus { text-decoration: underline; box-shadow: 0 0 0 2px var(--ring); }
+  .ext { display: inline-block; width: 12px; height: 12px; margin-left: 4px; vertical-align: baseline; }
+  .tagnb { flex: none; border-radius: 999px; background: var(--muted); padding: 2px 8px; font-size: 12px; color: var(--muted-fg); }
+  .r { text-align: right; } .mono { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .pen { width: 36px; height: 36px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+    justify-self: end; border: 1px solid var(--border); }
+  .sub { color: var(--muted-fg); font-size: 12px; grid-column: 1; }
+  .phone .month { grid-column: 2; grid-row: 1; } .phone .pen { grid-column: 2; grid-row: 2; }
+  .form { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .step { font-weight: 600; } .step span { display: inline-flex; width: 22px; height: 22px; border-radius: 999px;
+    background: var(--foreground); color: #fff; font-size: 12px; align-items: center; justify-content: center; margin-right: 8px; }
+  .grid3 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(0, 14rem) auto; align-items: end; }
+  .phone .grid3 { grid-template-columns: 1fr; }
+  .l { display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
+  .l.small { font-size: 12px; gap: 4px; }
+  .field { height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; display: flex;
+    align-items: center; font-weight: 400; }
+  .field.empty { color: var(--muted-fg); }
+  .check { min-height: 44px; display: flex; align-items: center; gap: 10px; background: var(--muted); border-radius: 12px; padding: 0 16px; }
+  .btns { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
+  .btn { height: 40px; padding: 0 16px; border-radius: 10px; display: inline-flex; align-items: center; font-weight: 600; }
+  .btn.primary { background: var(--amber-fill); color: #fff; }
+  .bar { padding: 12px; background: var(--muted); border-radius: 8px; margin: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+  .phone .bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .phone .span2 { grid-column: span 2; }
+  .toast { display: inline-flex; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; box-shadow: 0 8px 24px -12px rgb(0 0 0 / .35); }
+  .toast b { color: var(--destructive); }
+</style>
+</head>
+<body>
+<h1>Projects: the project name links to its website</h1>
+<p class="note">A project with a website: its name is the link, with a small external-link icon right after it. Hover
+underlines it; keyboard focus adds a ring. It opens in a new tab ("(opens in a new tab)" for screen readers). No website:
+the plain name, exactly as today. Nothing else in the row moves. No separate "magsmith.com" label.</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+  </symbol>
+  <symbol id="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>
+  </symbol>
+</svg>
+
+<h2>Projects tab · desktop</h2>
+<div class="card desktop">
+  <ul>
+    <li class="p">
+      <div class="name"><span class="dot"></span><h3><a href="https://magsmith.com/" target="_blank" rel="noopener noreferrer">MAGSMITH<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></h3></div>
+      <span class="r">$95.00/h</span><span class="r mono">12:30</span><span class="r mono">48:15</span>
+      <span class="pen"><svg width="16" height="16" aria-hidden="true"><use href="#pen"/></svg></span>
+    </li>
+    <li class="p">
+      <div class="name"><span class="dot"></span><h3><a class="hover" href="https://magsmith.com/" target="_blank" rel="noopener noreferrer">Shop<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></h3></div>
+      <span class="r">$80.00/h</span><span class="r mono">3:00</span><span class="r mono">9:45</span>
+      <span class="pen"><svg width="16" height="16" aria-hidden="true"><use href="#pen"/></svg></span>
+    </li>
+    <li class="p">
+      <div class="name"><span class="dot"></span><h3><a class="focus" href="https://magsmith.com/" target="_blank" rel="noopener noreferrer">Landing page<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></h3></div>
+      <span class="r">$80.00/h</span><span class="r mono">0:00</span><span class="r mono">2:00</span>
+      <span class="pen"><svg width="16" height="16" aria-hidden="true"><use href="#pen"/></svg></span>
+    </li>
+    <li class="p">
+      <div class="name"><span class="dot"></span><h3>Admin</h3><span class="tagnb">non-billable</span></div>
+      <span class="r" style="color:var(--muted-fg)">–</span><span class="r mono">1:15</span><span class="r mono">6:00</span>
+      <span class="pen"><svg width="16" height="16" aria-hidden="true"><use href="#pen"/></svg></span>
+    </li>
+  </ul>
+</div>
+<p class="tag">Rows: linked · on hover · keyboard focus · no website (plain name, as now)</p>
+
+<h2>Projects tab · phone 390 px · long name</h2>
+<div class="frames">
+  <div class="card phone">
+    <ul>
+      <li class="p">
+        <div class="name"><span class="dot"></span><h3><a href="https://magsmith.com/" target="_blank" rel="noopener noreferrer">Website redesign and the new online shop for the spring collection<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></h3></div>
+        <span class="r mono month">12:30</span>
+        <span class="sub">$95.00/h · all time 48:15</span>
+        <span class="pen"><svg width="16" height="16" aria-hidden="true"><use href="#pen"/></svg></span>
+      </li>
+      <li class="p">
+        <div class="name"><span class="dot"></span><h3>General</h3></div>
+        <span class="r mono month">0:00</span>
+        <span class="sub">No hourly rate yet · all time 0:00</span>
+        <span class="pen"><svg width="16" height="16" aria-hidden="true"><use href="#pen"/></svg></span>
+      </li>
+    </ul>
+  </div>
+</div>
+<p class="tag">The h3 truncates with an ellipsis (the icon may be cut off; accepted). The month figure and the pencil stay.</p>
+
+<h2>Edit project · step 1 "What is it?"</h2>
+<div class="card desktop">
+  <div class="form">
+    <div class="step"><span>1</span>What is it?</div>
+    <div class="grid3">
+      <div class="l">Project name<span class="field">MAGSMITH</span></div>
+      <div class="l">Client<span class="field">Acme Studio ▾</span></div>
+      <span class="check">☑ <span><b>Billable</b><br><small style="color:var(--muted-fg)">Counts on invoices</small></span></span>
+      <div class="l">Website (optional)<span class="field">https://magsmith.com/</span></div>
+    </div>
+    <div class="btns"><span class="btn" style="margin-right:auto;color:var(--destructive)">Archive project</span><span class="btn">Cancel</span><span class="btn primary">Save</span></div>
+  </div>
+</div>
+<p class="tag">Under the name, same width. Placeholder "magsmith.com". Empty + Save removes the website.</p>
+
+<h2>New project bar · desktop and phone</h2>
+<div class="frames">
+  <div class="card desktop">
+    <div class="bar">
+      <span class="field empty" style="flex:1">Project (e.g. Website)</span>
+      <div class="l small" style="width:8rem">Rate per hour<span class="field empty">$ 0.00</span></div>
+      <div class="l small" style="width:14rem">Website (optional)<span class="field empty">magsmith.com</span></div>
+      <span style="min-height:40px;display:flex;align-items:center">☐ Not billable</span>
+      <span class="btn primary">Add</span>
+    </div>
+  </div>
+  <div class="card phone">
+    <div class="bar">
+      <span class="field empty span2">Project (e.g. Website)</span>
+      <div class="l small span2">Rate per hour<span class="field empty">$ 0.00</span></div>
+      <div class="l small span2">Website (optional)<span class="field empty">magsmith.com</span></div>
+      <span class="span2">☐ Not billable</span>
+      <span class="btn primary">Add</span>
+    </div>
+  </div>
+</div>
+<p class="tag">Only on the Clients page. The first-run form on Today has no Website box.</p>
+
+<h2>Error toast</h2>
+<div class="toast"><b>✕</b> That doesn't look like a web address. Try magsmith.com.</div>
+<p class="tag">The form stays open with what was typed; nothing is sent, so no client or project is made.</p>
+</body>
+</html>

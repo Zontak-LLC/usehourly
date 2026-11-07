@@ -12,6 +12,7 @@ import { currencySymbol, RATE_HINT, rateCents } from "@/lib/money";
 import { browserStorage, rememberNewProject } from "@/lib/picked-project";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { parseWebsite } from "@/lib/web-address";
 
 /** Inline "client + project" creator. Shown on first run and reused on the Clients page. */
 export function SetupForm({
@@ -36,11 +37,18 @@ export function SetupForm({
   const [unbilled, setUnbilled] = useState(false);
   const rateId = useId();
   const hintId = useId();
+  const websiteId = useId();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
+    // Checked before any create, so a bad address makes no client and no project. Only the Clients bar has the box.
+    const website = parseWebsite(String(fd.get("website") ?? ""));
+    if (!website.ok) {
+      toast.error(website.message);
+      return;
+    }
     setPending(true);
     try {
       const id = clientId ?? (await createClient.mutateAsync({ name: String(fd.get("client")) })).id;
@@ -49,6 +57,7 @@ export function SetupForm({
         name: String(fd.get("project")),
         hourlyRate: unbilled ? 0 : rateCents(fd.get("rate")),
         billable: !unbilled,
+        ...(bar && { website: website.url }),
       });
       // The project just made is the one Log time starts on (issue 431: testers logged to "General" without noticing).
       rememberNewProject(browserStorage(), project.id);
@@ -111,6 +120,22 @@ export function SetupForm({
           disabled={unbilled}
         />
       </div>
+      {bar && (
+        <div className="grid gap-1 max-sm:col-span-2 sm:w-56">
+          <Label htmlFor={websiteId} className="text-xs">
+            Website (optional)
+          </Label>
+          {/* Not type="url": the browser would refuse a bare magsmith.com, which parseWebsite completes. */}
+          <Input
+            id={websiteId}
+            name="website"
+            inputMode="url"
+            autoComplete="url"
+            placeholder="magsmith.com"
+            onKeyDown={escapeToCancel}
+          />
+        </div>
+      )}
       {bar && (
         <label className="flex min-h-10 items-center gap-1.5 text-sm max-sm:col-span-2">
           <input type="checkbox" checked={unbilled} onChange={(e) => setUnbilled(e.target.checked)} /> Not billable
