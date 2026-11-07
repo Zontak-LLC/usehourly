@@ -10,6 +10,7 @@ import { fileToLogo } from "@/lib/logo";
 import { rateCents } from "@/lib/money";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { parseWebsite } from "@/lib/web-address";
 
 /** Which project is being edited (one at a time across all clients), its logo draft, and the save. */
 export function useProjectEditing() {
@@ -29,6 +30,8 @@ export function useProjectEditing() {
     if (withBudget && budgetAmount === undefined) {
       return toast.error("Couldn't read that budget. Try 1000 for dollars or 22.5 for hours, or leave it blank.");
     }
+    const website = parseWebsite(String(fd.get("website") ?? ""));
+    if (!website.ok) return toast.error(website.message); // nothing is sent and the form stays open
     try {
       await updateProject.mutateAsync({
         id,
@@ -42,6 +45,7 @@ export function useProjectEditing() {
           budgetPeriod: fd.get("budgetPeriod") === "total" ? "total" : "month",
         }),
         logo: logoDraft,
+        website: website.url,
       });
       await Promise.all([
         utils.clients.list.invalidate(),

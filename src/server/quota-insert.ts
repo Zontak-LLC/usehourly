@@ -8,7 +8,7 @@ import { type QuotaKind, quotaError, quotaLimit } from "@/lib/quotas";
  */
 export const QUOTA_TABLES = {
   clients: ["id", "user_id", "name", "color", "created_at"],
-  projects: ["id", "user_id", "client_id", "name", "hourly_rate", "billable", "created_at"],
+  projects: ["id", "user_id", "client_id", "name", "hourly_rate", "billable", "website", "created_at"],
   time_entries: [
     "id",
     "user_id",
