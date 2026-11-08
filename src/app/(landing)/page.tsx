@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { ThemeSwitcher } from "@/app/(app)/dashboard/_components/header/theme-switcher";
 import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos";
 import { AssistantTerminal } from "@/components/assistant-terminal";
+import { DayRuler } from "@/components/day-ruler";
 import { LandingShowcase } from "@/components/landing-showcase";
 import { LogoMark } from "@/components/logo";
 import { Reveal } from "@/components/reveal";
@@ -72,31 +73,20 @@ const PROMISES: Pledge[] = [
 ];
 
 const secondary =
-  "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border bg-background/60 px-6 font-medium text-base backdrop-blur transition-colors hover:bg-muted";
+  "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border bg-card px-6 font-medium text-base transition-colors hover:bg-muted max-sm:w-full";
 
 export default function LandingPage() {
   return (
     <div className="landing relative isolate min-h-dvh overflow-x-clip bg-[var(--landing-page)] text-foreground">
       <SignedInRedirect />
-      {/* Behind the hero: a faint timesheet grid that fades out, and one soft purple glow behind the headline (2026-10-24:
-          it replaced three blurred colour blobs, which made the page look muddy). Both come from the theme's tokens. */}
-      <div aria-hidden className="landing-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[46rem]" />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-28 left-1/2 -z-10 h-[26rem] w-[52rem] max-w-full -translate-x-1/2 rounded-full bg-[var(--landing-glow)] blur-3xl"
-      />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5 max-sm:px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold text-base sm:text-lg">
           <LogoMark className="size-7 sm:size-8" aria-hidden />
           {APP_CONFIG.name}
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
-          {/* On a phone the header has no room for it: the button sits in the footer there. */}
-          <span className="max-sm:hidden">
-            <ThemeSwitcher />
-          </span>
           <Link href="/help" className="rounded-lg px-4 py-2 font-medium text-sm hover:bg-muted max-sm:hidden">
             Help
           </Link>
@@ -108,34 +98,36 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/auth/v2/register"
-            className="whitespace-nowrap rounded-lg border border-tint-edge bg-tint px-3 py-2 font-medium text-foreground text-sm hover:bg-tint-hover sm:px-4"
+            className="whitespace-nowrap rounded-lg border border-tint-edge bg-tint px-3 py-2 font-medium text-foreground text-sm hover:bg-tint-hover max-sm:hidden sm:px-4"
           >
             Create account
           </Link>
+          {/* The light/dark switch sits top right, where people look for it, on a phone too (2026-11-08). */}
+          <ThemeSwitcher />
         </nav>
       </header>
 
       <main>
-        <section className="mx-auto max-w-6xl px-6 pt-8 pb-16 md:pt-14 md:pb-20">
-          <div className="flex flex-col items-center">
-            <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+        <section className="mx-auto max-w-6xl px-6 pt-6 pb-16 md:pt-12 md:pb-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+            <div className="flex flex-col items-start">
               <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 font-medium text-sm">
                 <Bot className="size-4" aria-hidden />
                 Free, open source, built for AI assistants
               </p>
               {/* The headline (chosen by the owner 2026-10-23): what it is and what makes it different, then the price.
                   The line under it proves "intuitive" at once. */}
-              <h1 className="mt-5 max-w-4xl text-balance font-extrabold text-5xl leading-[1.02] tracking-tight md:text-7xl">
+              <h1 className="mt-6 text-balance font-extrabold text-5xl leading-[1.02] tracking-tight md:text-6xl xl:text-7xl">
                 Intuitive time tracking. <span className="text-amber">Free.</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground md:text-xl">
+              <p className="mt-6 max-w-xl text-pretty text-lg text-muted-foreground md:text-xl">
                 Type <strong className="text-foreground">1.5</strong>, press Enter, done. Your hours become timesheets,
                 invoices and a tax summary. No paywall, no ads.
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/auth/v2/register"
-                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-amber-fill px-6 font-semibold text-white text-base shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-all hover:-translate-y-0.5 hover:brightness-110 dark:text-[var(--background)]"
+                  className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl bg-amber-fill px-6 font-semibold text-base text-white transition-[filter] hover:brightness-110 max-sm:w-full dark:text-[var(--background)]"
                 >
                   Create a free account
                 </Link>
@@ -148,11 +140,12 @@ export default function LandingPage() {
                 </a>
               </p>
             </div>
+            <DayRuler />
           </div>
         </section>
 
         {/* Bands alternate (page colour, band colour) so each section has a clear start and end. */}
-        <section aria-label="Your AI assistant" className="border-foreground/[0.06] border-y bg-[var(--landing-band)]">
+        <section aria-label="Your AI assistant" className="border-y bg-[var(--landing-band)]">
           <div className="mx-auto flex max-w-6xl flex-col items-center px-6 py-16 md:py-20">
             <div id="ai-assistants" className="w-full max-w-4xl scroll-mt-6">
               {/* The AI connection is a main reason to pick UseHourly, so it is said in words, not only shown. */}
@@ -217,10 +210,7 @@ export default function LandingPage() {
 
         {/* The promises in one row (2026-10-24, the owner: "this page does not need to be long"). The feature grid that
             was here repeated the screens deck above, so it went; "Free. Open. Honest." and the small promises are one band. */}
-        <section
-          aria-labelledby="promises-heading"
-          className="border-foreground/[0.06] border-y bg-[var(--landing-band)]"
-        >
+        <section aria-labelledby="promises-heading" className="border-y bg-[var(--landing-band)]">
           <div className="mx-auto max-w-6xl px-6 py-16 md:py-20">
             <h2
               id="promises-heading"
@@ -230,10 +220,7 @@ export default function LandingPage() {
             </h2>
             <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {PROMISES.map(({ Icon, title, body, link }) => (
-                <li
-                  key={title}
-                  className="flex flex-col gap-2 rounded-3xl bg-card p-5 shadow-[var(--shadow-sheet)] ring-1 ring-foreground/10"
-                >
+                <li key={title} className="flex flex-col gap-2 rounded-2xl border bg-card p-5">
                   <span
                     aria-hidden
                     className="grid size-10 place-items-center rounded-xl bg-foreground/[0.06] text-foreground"
@@ -260,7 +247,7 @@ export default function LandingPage() {
         <Supporters />
 
         <section aria-labelledby="start-heading" className="mx-auto max-w-6xl px-6 py-16 md:py-20">
-          <Reveal className="relative isolate overflow-hidden rounded-3xl bg-amber-soft px-6 py-12 text-center text-foreground ring-1 ring-amber/15 md:py-16 dark:bg-card dark:ring-foreground/10">
+          <Reveal className="relative isolate overflow-hidden rounded-2xl border bg-card px-6 py-12 text-center text-foreground md:py-16">
             <p className="font-mono text-xs uppercase tracking-[0.3em] opacity-70">Ready when you are</p>
             <h2 id="start-heading" className="mt-3 font-display font-extrabold text-4xl tracking-tight md:text-6xl">
               Start tracking today.
@@ -288,9 +275,6 @@ export default function LandingPage() {
 
       <footer className="mx-auto flex max-w-6xl flex-col gap-3 border-foreground/10 border-t px-6 py-8 text-muted-foreground text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <span>{APP_CONFIG.copyright} · Proudly created with AI</span>
-        <span className="sm:hidden">
-          <ThemeSwitcher />
-        </span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
           {donateUrl() && (
             <a

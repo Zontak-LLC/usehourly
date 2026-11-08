@@ -21,6 +21,7 @@ Live at **https://usehourly.app** (Worker `hourly`, Cloudflare account Zontak LL
 Secrets: `AUTH_SECRET`, `AUTH_URL` in `.env.local` and `.dev.vars` (keep in sync); production secret via `wrangler secret put AUTH_SECRET`.
 
 ## Design decisions
+- **Look v5 (2026-11-08, Daylight and Night Shift):** tokens in `globals.css` (warm-grey paper, hairline-edged sheets, the same ocean-blue accent; dark = the Lens board's night palette), flat underline tabs (`mobile-nav.tsx`), the home page hero drawing `components/day-ruler.tsx`. Details and colours: the top note of `docs/ui-spec.md`.
 - Duration is integer **minutes**; `TimeEntry.date` is a local `YYYY-MM-DD` string (Workers run in UTC — "today" is computed in the browser, never on the server).
 - `src/lib/duration.ts` parses `1.5`, `1,5`, `1:30`, `90m`, `2h`, `1h30`; a bare number up to 24 = hours, minutes need `m` (issue 435). `readDuration` says why it cannot read text in plain words (`DURATION_*`, `minutesHint`: a bare `25` gives "Did you mean 25 minutes? Type 25m", `0` gives "Enter more than 0, like 1:30"); `parseDuration` wraps it; `entryMinutes` adds the 1-minute-to-24-hours limit for the routers, local sync and MCP. Shared by client preview and server validation.
 - Running timer = a `TimeEntry` with `started_at` set. `entry.start` stops any running timer first; stop rounds elapsed up to ≥1 min.
