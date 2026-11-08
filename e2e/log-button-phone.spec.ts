@@ -47,5 +47,5 @@ test("on a phone Today's Log time button is in view at load, under the quick tim
   // it still works: a quick time, then Log time
   await page.getByRole("button", { name: "1 hour", exact: true }).click();
   await log.click();
-  await expect(page.getByText("Logged 1:00")).toBeVisible();
+  await expect(log.getByText("Logged 1:00")).toBeVisible(); // the button's words (the line under it says it too)
 });

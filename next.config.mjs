@@ -1,5 +1,7 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+import { securityHeaders } from "./src/lib/security-headers.mjs";
+
 /** Where usehourly.app/nightshift sends people (the Claude Night Shift board). */
 export const NIGHT_SHIFT_URL = "https://claude.ai/artifact/W2bbs2n4KaQDUtxo831tV7";
 
@@ -14,6 +16,7 @@ if (process.env.NODE_ENV === "development" || process.env.E2E_SERVE === "1") {
 }
 
 // The Content-Security-Policy is built per request (a fresh nonce for scripts) in src/proxy.ts; see src/lib/csp.ts.
+// The static landing page `/` gets its policy and these headers from `_headers` (scripts/landing-static.mjs).
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -35,25 +38,12 @@ const nextConfig = {
     return [
       // The service worker script is always re-checked, so a new version reaches people promptly.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
-      {
-        source: "/(.*)",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-          // The staging copy (npm run staging:deploy) must never be indexed.
-          ...(process.env.NEXT_PUBLIC_APP_ENV === "staging"
-            ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
-            : []),
-        ],
-      },
+      { source: "/(.*)", headers: securityHeaders(process.env.NEXT_PUBLIC_APP_ENV) },
     ];
   },
   async redirects() {
     return [
-      // "/" is the public landing page; src/proxy.ts sends signed-in users on to their day.
+      // "/" is the public landing page (a static file); its SignedInRedirect sends signed-in users on to their day.
       { source: "/dashboard", destination: "/dashboard/today", permanent: false },
       // Claude Night Shift: the live board of the overnight ticket run (a private claude.ai page; its Share setting decides
       // who can open it). Temporary on purpose, so the address can point elsewhere later.

@@ -1,1 +1,0 @@
-UseHourly: your timesheet, run by your AI assistant. A free, open source time tracker with a built-in MCP server for Claude, ChatGPT and Cursor.

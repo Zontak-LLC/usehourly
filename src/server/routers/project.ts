@@ -5,6 +5,7 @@ import { z } from "zod";
 import { type BudgetPeriod, type BudgetUnit, budgetStatus, usedAmount } from "@/lib/budget";
 import { DATE_RE, isRealDate } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
+import { parseWebsite } from "@/lib/web-address";
 
 import { projectLogoSchema } from "../logo-schema";
 import { nonBillableDates } from "../non-billable";
@@ -35,6 +36,16 @@ async function entriesOnDays(
   return rows.flat();
 }
 
+// The text as typed: parseWebsite (on the server too, since the browser's check can be skipped) gives the plain error.
+const websiteInput = z.string().max(2000).nullable().optional();
+
+/** The address to store (null = none), or BAD_REQUEST with the plain error. Only this ever becomes a link's href. */
+function storedWebsite(typed: string | null): string | null {
+  const check = parseWebsite(typed);
+  if (!check.ok) throw new TRPCError({ code: "BAD_REQUEST", message: check.message });
+  return check.url;
+}
+
 export const projectRouter = router({
   create: protectedProcedure
     .input(
@@ -43,9 +54,11 @@ export const projectRouter = router({
         name: z.string().trim().min(1).max(80),
         hourlyRate: z.number().int().min(0).max(10_000_00).default(0),
         billable: z.boolean().default(true),
+        website: websiteInput,
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const website = storedWebsite(input.website ?? null);
       const client = await ctx.prisma.client.findFirst({ where: { id: input.clientId, user_id: ctx.userId } });
       if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
       const taken = () =>
@@ -63,6 +76,7 @@ export const projectRouter = router({
             name: input.name,
             hourly_rate: input.hourlyRate,
             billable: input.billable,
+            ...(website !== null && { website }), // left out = NULL, the column's default
           },
           accountQuota("projects", "projects", ctx.userId, isDemoSession(ctx.session)),
         );
@@ -97,12 +111,15 @@ export const projectRouter = router({
           budgetAmount: z.number().int().min(1).max(100_000_000).nullable().optional(),
           budgetUnit: z.enum(["hours", "dollars"]).optional(),
           budgetPeriod: z.enum(["month", "total"]).optional(),
+          // undefined = leave as is; "" or null = remove the website.
+          website: websiteInput,
         })
         .refine((v) => v.budgetAmount == null || v.budgetUnit !== undefined, {
           message: "Say whether the budget is in hours or dollars.",
         }),
     )
     .mutation(async ({ ctx, input }) => {
+      const website = input.website === undefined ? undefined : storedWebsite(input.website);
       const project = await ctx.prisma.project.findFirst({ where: { id: input.id, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
 
@@ -127,6 +144,7 @@ export const projectRouter = router({
           ...(input.hourlyRate !== undefined && { hourly_rate: input.hourlyRate }),
           ...(input.billable !== undefined && { billable: input.billable }),
           ...(input.logo !== undefined && { logo: input.logo }),
+          ...(website !== undefined && { website }),
           ...(input.budgetAmount !== undefined && {
             budget_amount: input.budgetAmount,
             budget_unit: input.budgetAmount === null ? null : (input.budgetUnit ?? null),

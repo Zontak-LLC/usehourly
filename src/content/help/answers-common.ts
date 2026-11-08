@@ -116,7 +116,8 @@ The maker counts page views per day, with no names and no cookies, to learn whic
 
 1. Check the client and the dates. The builder starts on the time that is not invoiced yet.
 2. Pick when it is due (On receipt, Net 15, Net 30 and so on). The invoice number is under **More options**.
-3. Press **Create invoice**. It is saved and the PDF downloads.
+3. Press **Preview invoice** and check it. Nothing is saved yet; **Back to edit** changes it.
+4. Press **Save and download PDF**. It is saved and the PDF downloads.
 
 **To send it**, press **Send** (the envelope) on the Invoices list. You get an email to your client, ready to edit, with a private link to the invoice. Press **Open in my email app**, check it and press Send there (see [Sending an invoice](/help?a=invoice-link)).
 

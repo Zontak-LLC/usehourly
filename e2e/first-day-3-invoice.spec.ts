@@ -1,5 +1,5 @@
 import { FEATURES } from "../src/lib/features";
-import { anonymous, expect, openInvoice, seedFirstDay, seen, test, today, trpc } from "./helpers";
+import { anonymous, expect, makeInvoice, openInvoice, savedInvoices, seedFirstDay, seen, test, today } from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -10,15 +10,52 @@ import { readFileSync } from "node:fs";
  * `actions` counts what the person has to do to make the invoice, held to a budget (see part 1).
  */
 test("a new freelancer's first day: invoice", async ({ page, browser, shot, audit, a11y }, info) => {
-  const { projectId, date } = await seedFirstDay(page, { rate: 6000, minutes: [120, 60] });
+  await seedFirstDay(page, { rate: 6000, minutes: [120, 60] });
   const actions = { invoice: 0 };
   const count = (job: keyof typeof actions, n = 1) => {
     actions[job] += n;
   };
 
-  await test.step("make an invoice from the logged time, with a timer still running", async () => {
-    // A first-day tester still had a timer running and found the button grey (issue 431, snag 3).
-    const timer = await trpc<{ id: string }>(page, "entry.start", { projectId, date, note: "" });
+  const number = `INV-${new Date().getFullYear()}-001`;
+  await test.step("Preview invoice shows the invoice and saves nothing; Back to edit keeps every field", async () => {
+    // Testers expected to stop at a preview before anything was saved (Userbrain, 2026-11-05). A check, not part of
+    // the counted path below. A timer running meanwhile is covered by invoice-running-timer.spec.ts.
+    await page.goto("/dashboard/invoices/new");
+    await expect(seen(page, "$180.00")).toBeVisible(); // 3 h at $60
+    await expect(page.getByRole("button", { name: /Create invoice/ })).toHaveCount(0);
+    await page.getByLabel("Notes").fill("Thank you!");
+    const fields = {
+      client: await page.getByLabel("Client", { exact: true }).inputValue(),
+      from: await page.getByLabel("From", { exact: true }).inputValue(),
+      to: await page.getByLabel("To", { exact: true }).inputValue(),
+      number: await page.getByLabel("Invoice number").inputValue(),
+    };
+    expect(fields.number).toBe(number);
+    let downloads = 0;
+    page.on("download", () => {
+      downloads += 1;
+    });
+    await page.getByRole("button", { name: "Preview invoice" }).click();
+    await expect(page.getByRole("heading", { name: "Check your invoice" })).toBeVisible();
+    await expect(page.getByText("Nothing is saved yet.")).toBeVisible();
+    const paper = page.locator(".paper");
+    await expect(paper.getByText("Acme Studio").first()).toBeVisible();
+    await expect(paper.getByText(number).first()).toBeVisible();
+    await expect(seen(page, "$180.00")).toBeVisible();
+    await shot("invoice-review");
+    await audit("invoice review");
+    expect(await savedInvoices(page)).toEqual([]); // nothing saved
+    await page.getByRole("button", { name: "Back to edit" }).click();
+    await expect(page.getByRole("button", { name: "Preview invoice" })).toBeVisible();
+    expect(await page.getByLabel("Client", { exact: true }).inputValue()).toBe(fields.client);
+    expect(await page.getByLabel("From", { exact: true }).inputValue()).toBe(fields.from);
+    expect(await page.getByLabel("To", { exact: true }).inputValue()).toBe(fields.to);
+    expect(await page.getByLabel("Invoice number").inputValue()).toBe(fields.number);
+    await expect(page.getByLabel("Notes")).toHaveValue("Thank you!");
+    expect(downloads, "Preview invoice must not download anything").toBe(0);
+  });
+
+  await test.step("make an invoice from the logged time: Preview invoice, then Save and download PDF", async () => {
     await page.goto("/dashboard/invoices");
     await expect(page.getByLabel("Search invoices")).toBeHidden(); // nothing to search yet
     await shot("invoices-empty");
@@ -28,22 +65,15 @@ test("a new freelancer's first day: invoice", async ({ page, browser, shot, audi
       .first()
       .click();
     count("invoice");
-    await expect(seen(page, "$180.00")).toBeVisible(); // 3 h at $60
+    await expect(seen(page, "$180.00")).toBeVisible();
     await shot("invoice-builder");
     await audit("invoice builder");
-    await page.getByRole("button", { name: /Create invoice/ }).click();
-    count("invoice");
-    const leave = page.getByRole("dialog").getByRole("button", { name: "Leave it running and invoice without it" });
-    await expect(leave).toBeVisible();
-    await shot("invoice-timer-choice");
-    const [download] = await Promise.all([page.waitForEvent("download"), leave.click()]);
-    count("invoice");
+    const download = await makeInvoice(page);
+    count("invoice", 2); // Preview invoice, Save and download PDF
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
-    await expect(page.getByText(/INV-\d{4}-001/).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard\/invoices$/);
+    await expect(page.getByText(number).first()).toBeVisible();
     await shot("invoice-made");
-    // The timer was left off the $180.00 invoice; stop it and remove its entry so the later steps still see 3 hours.
-    await trpc(page, "entry.stop", {});
-    await trpc(page, "entry.delete", { id: timer.id });
   });
 
   await test.step("mark it paid", async () => {

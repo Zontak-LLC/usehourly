@@ -1,4 +1,4 @@
-import { expect, startFreshAccount, test } from "./helpers";
+import { expect, makeInvoice, startFreshAccount, test } from "./helpers";
 
 /** Localisation step 1: a freelancer picks a currency once, and rates, invoices and totals follow it. */
 test("choosing euros on Account changes how rates and invoices are written, and an invoice then locks it", async ({
@@ -33,7 +33,7 @@ test("choosing euros on Account changes how rates and invoices are written, and 
     await page.getByRole("button", { name: /Log time/ }).click();
     await expect(page.getByText("2:00", { exact: true }).locator("visible=true").first()).toBeVisible();
     await page.goto("/dashboard/invoices/new");
-    await page.getByRole("button", { name: "Create invoice" }).click();
+    await makeInvoice(page);
     await expect(page.getByText("€170.00").first()).toBeVisible(); // 2 hours at €85
 
     await page.goto("/dashboard/account#invoices");

@@ -61,7 +61,7 @@ export function DocButton({
       </span>
       <span aria-hidden className="flex flex-col leading-tight">
         <span className="font-display font-extrabold text-base">{title}</span>
-        <span className="text-xs opacity-75">{hint}</span>
+        <span className="text-xs">{hint}</span>
       </span>
     </button>
   );

@@ -118,6 +118,8 @@ model Project {
   budget_amount Int?
   budget_unit   String?
   budget_period String   @default("month")
+  // The project's website, a full http(s) address from parseWebsite (lib/web-address.ts); null = none. Migration 0041.
+  website       String?
 
   user    AuthUser    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   client  Client      @relation(fields: [client_id], references: [id], onDelete: Cascade)

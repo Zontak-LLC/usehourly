@@ -19,7 +19,7 @@ test("a new account is pointed to the import on Today until it dismisses it or h
 
   await test.step("no projects yet: the note sits above the first-run question", async () => {
     await expect(note).toContainText("Coming from Toggl, Clockify or Harvest?");
-    const question = page.getByText("Who do you work for?");
+    const question = page.getByText("Your first client", { exact: true });
     await expect(question).toBeVisible();
     const [noteBox, questionBox] = [await note.boundingBox(), await question.boundingBox()];
     expect(noteBox && questionBox && noteBox.y < questionBox.y).toBe(true);
@@ -35,8 +35,8 @@ test("a new account is pointed to the import on Today until it dismisses it or h
 
   await test.step("projects but no entries: the note sits above the day card", async () => {
     await page.goto("/dashboard/today");
-    await page.getByPlaceholder(/company or a person/i).fill("Acme");
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Your first client").fill("Acme");
+    await page.getByRole("button", { name: "Add client" }).click();
     await expect(page.getByLabel("Time to add")).toBeVisible();
     await expect(note).toBeVisible();
     const days = page.getByRole("navigation", { name: "Days" });
@@ -56,8 +56,8 @@ test("a new account is pointed to the import on Today until it dismisses it or h
   await test.step("a second account on the same browser still sees it, and it goes after the first entry", async () => {
     await signUpByApi(page);
     await page.goto("/dashboard/today");
-    await page.getByPlaceholder(/company or a person/i).fill("Beta Co");
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Your first client").fill("Beta Co");
+    await page.getByRole("button", { name: "Add client" }).click();
     await expect(page.getByLabel("Time to add")).toBeVisible();
     await expect(note).toBeVisible();
     await page.getByLabel("Time to add").fill("1h");

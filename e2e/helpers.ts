@@ -3,6 +3,7 @@ import {
   type Browser,
   type BrowserContext,
   test as base,
+  type Download,
   expect,
   type Locator,
   type Page,
@@ -56,12 +57,43 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
   await card.getByRole("button", { name: "Save", exact: true }).click();
 }
 
-/** Holds every call to one tRPC procedure (e.g. "entry.create") back for `ms` before it goes on to the server. */
-export async function hold(page: Page, procedure: string, ms: number) {
+/**
+ * Holds every call to one tRPC procedure (e.g. "entry.create") back before it goes on to the server: for `ms`, or, with
+ * no `ms`, until the test calls `release()` (a gate, so no wall time decides the test). `arrived` settles when the first
+ * call reaches the hold.
+ */
+export async function hold(page: Page, procedure: string, ms?: number) {
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let arrive!: () => void;
+  const arrived = new Promise<void>((resolve) => {
+    arrive = resolve;
+  });
   await page.route(`**/api/trpc/${procedure}*`, async (route) => {
-    await new Promise((r) => setTimeout(r, ms));
+    arrive();
+    await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
     await route.continue();
   });
+  return { arrived, release };
+}
+
+/**
+ * Makes one tRPC procedure refuse with `message` (all calls, or only the next `times`): a 200 carrying an error answer,
+ * the way the app handles a refusal, so the browser does not log a failed request.
+ */
+export async function refuse(page: Page, procedure: string, message: string, times?: number) {
+  await page.route(
+    `**/api/trpc/${procedure}*`,
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([{ error: { message, code: -32600, data: { code: "BAD_REQUEST", httpStatus: 400 } } }]),
+      }),
+    times ? { times } : undefined,
+  );
 }
 
 export const stamp = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -114,10 +146,41 @@ export async function startFreshAccount(page: Page, clientName = "Offline Co") {
   const user = await signUpByApi(page);
   await page.goto("/dashboard/today");
   await expect(page).toHaveURL(/dashboard\/today/);
-  await page.getByPlaceholder(/company or a person/i).fill(clientName);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByLabel("Your first client").fill(clientName);
+  await page.getByRole("button", { name: "Add client" }).click();
   await expect(page.getByLabel("Time to add")).toBeVisible();
   return user;
+}
+
+/**
+ * Makes the invoice New invoice describes, the way a person does (2026-11-06): Preview invoice, wait for "Check your
+ * invoice", then Save and download PDF. Returns the PDF download. Fails with a clear message when the review step never
+ * shows (the preview was refused: its toast says why).
+ */
+export async function makeInvoice(page: Page): Promise<Download> {
+  await page.getByRole("button", { name: "Preview invoice" }).click();
+  return saveReviewedInvoice(page);
+}
+
+/** The invoices the signed-in account has saved (newest first), read from the server. */
+export async function savedInvoices(page: Page) {
+  const res = await page.request.get("/api/trpc/invoice.list");
+  expect(res.ok(), `invoice.list answered ${res.status()}`).toBe(true);
+  type Row = { number: string; total_cents: number; total_minutes: number };
+  return ((await res.json()) as { result: { data: Row[] } }).result.data;
+}
+
+/** The second half of `makeInvoice`, for a preview opened another way (the running-timer choice). */
+export async function saveReviewedInvoice(page: Page): Promise<Download> {
+  await expect(
+    page.getByRole("heading", { name: "Check your invoice" }),
+    "the invoice review step never showed",
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Save and download PDF" }).click(),
+  ]);
+  return download;
 }
 
 /** Switches the page to light or dark the way the sun/moon switch does (the `dark` class on <html>). */

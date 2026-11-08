@@ -1,4 +1,6 @@
-import { expect, test } from "./helpers";
+import { test as plainTest } from "@playwright/test";
+
+import { expect, signUpByApi, test } from "./helpers";
 
 /** What a stranger can reach without signing in: it must load cleanly, read well on a phone, and not leak or break. */
 const PUBLIC_PAGES: [string, string][] = [
@@ -23,6 +25,50 @@ test.describe("public pages", () => {
       await a11y(name);
     });
   }
+
+  // The landing page is a static file now (issue 424): no proxy runs on /, so the page itself sends a signed-in visitor
+  // on after it paints (SignedInRedirect asks /api/auth/session).
+  test("signed out, the landing page shows its headline and stays on /", async ({ page }) => {
+    const sessionAsked = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/auth/session");
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "Intuitive time tracking. Free." })).toBeVisible();
+    await sessionAsked;
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Intuitive time tracking. Free." })).toBeVisible();
+  });
+
+  test("signed in, the landing page ends on Today", async ({ page }) => {
+    await signUpByApi(page);
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/dashboard\/today$/);
+  });
+
+  // The plain Playwright test: the shared page check fails a test on any console error, and the browser logs this
+  // page's own 404 answer as one ("the server responded with a status of 404"), which is the point of the test.
+  plainTest(
+    "an unknown address shows the 404 page with a nonce policy, and its link works (the page hydrated)",
+    async ({ page }) => {
+      await signUpByApi(page); // signed out, the proxy sends an unknown address to log in instead
+      const res = await page.goto("/nope");
+      expect(res?.status()).toBe(404);
+      expect(res?.headers()["content-security-policy"]).toContain("'nonce-");
+      await expect(page.getByRole("heading", { name: "Page not found." })).toBeVisible();
+      const link = page.getByRole("link", { name: "Go to Today" });
+      // React attaches its props to the element only once the page has hydrated; without the nonce it never would.
+      await expect
+        .poll(() =>
+          link.evaluate((el) =>
+            Object.entries(el).some(
+              ([key, props]) => key.startsWith("__reactProps$") && typeof props?.onClick === "function",
+            ),
+          ),
+        )
+        .toBe(true);
+      await link.click();
+      await expect(page).toHaveURL(/\/dashboard\/today$/);
+    },
+  );
 
   test("the landing page links to Help at the top", async ({ page, isMobile }) => {
     test.skip(isMobile, "the header link is hidden on a phone to save room");

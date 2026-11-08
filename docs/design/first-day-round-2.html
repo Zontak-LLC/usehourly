@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>First day, round 2: saved time, invoice review, first client</title>
+<!--
+  Mockup for the 2026-11-05 Userbrain first-day sessions (three snags). Each frame is shown on a desktop width and on a
+  390 px phone. Neutral ink on the muted tint for the new lines; amber only on the main button (drawing audit).
+-->
+<style>
+  :root { --ink:#18181b; --muted:#f4f4f5; --line:#e4e4e7; --soft:#71717a; --amber:#d97706; --card:#fff; --page:#fafafa; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:32px; font:15px/1.45 system-ui, sans-serif; color:var(--ink); background:var(--page); }
+  h1 { font-size:20px; margin:0 0 8px; } h2 { font-size:16px; margin:32px 0 8px; }
+  .note { color:var(--soft); max-width:70ch; margin:0 0 12px; }
+  .row { display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; }
+  .tag { font-size:12px; color:var(--soft); margin:0 0 6px; }
+  .desk { width:720px; } .phone { width:390px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .band { padding:12px 16px; border-bottom:1px solid var(--line); font-weight:600; }
+  .body { padding:16px; display:grid; gap:12px; }
+  .field { height:44px; border:1px solid var(--line); border-radius:8px; padding:0 12px; display:flex; align-items:center; color:var(--soft); }
+  .label { font-weight:500; } .hint { font-size:13px; color:var(--soft); }
+  .btn { height:48px; border-radius:16px; background:var(--amber); color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 24px; border:0; }
+  .btn.off { background:var(--muted); color:var(--soft); box-shadow:inset 0 0 0 1px var(--line); }
+  .outline { height:48px; border-radius:10px; border:1px solid var(--line); background:#fff; padding:0 16px; display:flex; align-items:center; }
+  .chips { display:flex; gap:8px; } .chip { height:36px; border:1px solid var(--line); border-radius:99px; padding:0 12px; display:flex; align-items:center; font-size:13px; }
+  .status { background:var(--muted); border-radius:8px; min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 4px 4px 12px; font-size:14px; }
+  .status button { min-height:44px; border:0; background:none; font:inherit; font-weight:500; padding:0 12px; border-radius:99px; }
+  .entry { border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; }
+  .entry.marked { box-shadow:inset 4px 0 0 var(--ink); }
+  .paper { border:1px solid var(--line); border-radius:12px; padding:16px; background:#fff; display:grid; gap:8px; }
+  .tabbar { height:56px; border-top:1px solid var(--line); background:#fff; display:flex; justify-content:space-around; align-items:center; font-size:12px; color:var(--soft); }
+</style>
+</head>
+<body>
+<h1>First day, round 2</h1>
+<p class="note">Three snags from the 2026-11-05 sessions: people were not sure their hours were saved, Create invoice saved and downloaded at once, and "Who do you work for?" was not read as adding a client.</p>
+
+<h2>1 · The saved-time line under Log time (Today, Week, day dialog, Month day panel)</h2>
+<p class="note">Shows only after the server has the entry. Undo deletes it when the server confirms (never before); a refusal keeps the row, the toast says "Couldn't undo that time." and Undo stays. The new row keeps an ink edge while the line shows. Typing a time, a chip, logging again or another day/project ends the line.</p>
+<div class="row">
+  <div class="desk"><p class="tag">Desktop</p>
+    <div class="card"><div class="band">Log time</div><div class="body">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px"><div class="field">Time: 2, 1,5, 1:30 or 90m</div><button class="btn off" type="button">Log time</button></div>
+      <div class="chips"><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+      <div class="status"><span>✓ Logged 2:00 on General · Acme Studio</span><button type="button">↶ Undo</button></div>
+      <div class="hint">on <b>General</b> · Acme Studio</div>
+      <div class="field" style="height:64px">Add a note to the 2:00 you just logged (General · Acme Studio)</div>
+    </div></div>
+    <p class="tag" style="margin-top:12px">Today's entries</p>
+    <div class="entry marked"><span><b>General</b> · Acme Studio</span><span>2:00</span></div>
+  </div>
+  <div class="phone"><p class="tag">Phone, 390 px</p>
+    <div class="card"><div class="band">Log time</div><div class="body">
+      <div class="field">Time: 2, 1,5, 1:30 or 90m</div>
+      <div class="chips"><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+      <button class="btn off" type="button">Log time</button>
+      <div class="status"><span>✓ Logged 2:00 on General · Acme Studio</span><button type="button">↶ Undo</button></div>
+      <div class="hint">on <b>General</b> · Acme Studio</div>
+    </div></div>
+    <p class="tag" style="margin-top:12px">After Undo</p>
+    <div class="status"><span>Undone. Nothing was saved.</span></div>
+    <div class="tabbar" style="margin-top:12px">Today · Week · Month · Invoices · Clients</div>
+  </div>
+</div>
+
+<h2>2 · New invoice: Preview invoice, then the review step</h2>
+<p class="note">The main button becomes "Preview invoice · nothing is saved yet" (same disabled rules). The review replaces the form with one column; "Save and download PDF" is the second, deliberate click. "Back to edit" keeps every field.</p>
+<div class="row">
+  <div class="desk"><p class="tag">Desktop · review step</p>
+    <div class="card"><div class="body">
+      <div><b style="font-size:20px">Check your invoice</b><div class="hint" style="font-size:15px">Nothing is saved yet.</div></div>
+      <div class="paper"><b>Invoice INV-2026-001</b><span>Bill to: Acme Studio</span><span>General · 3.00 h × $60.00 = $180.00</span><b>Total $180.00</b></div>
+      <div style="display:flex;gap:12px"><button class="btn" type="button">Save and download PDF</button><span class="outline">Back to edit</span></div>
+    </div></div>
+  </div>
+  <div class="phone"><p class="tag">Phone, 390 px · opens at its top, buttons above the tab bar</p>
+    <div class="card"><div class="body">
+      <div><b style="font-size:20px">Check your invoice</b><div class="hint" style="font-size:15px">Nothing is saved yet.</div></div>
+      <div class="paper"><b>Invoice INV-2026-001</b><span>Acme Studio</span><b>Total $180.00</b></div>
+      <button class="btn" type="button">Save and download PDF</button><span class="outline">Back to edit</span>
+    </div></div>
+    <div class="tabbar">Today · Week · Month · Invoices · Clients</div>
+  </div>
+</div>
+
+<h2>3 · The first-run card: your first client, an optional first project</h2>
+<p class="note">Empty project box = "General". The rate box from issue 431 stays below it. After Add client, a one-time line at the top of the Log time card says what was made and links to the client's profile.</p>
+<div class="row">
+  <div class="desk"><p class="tag">Desktop</p>
+    <div class="card"><div class="body">
+      <b style="font-size:20px">Welcome! Let's get your first hours logged.</b>
+      <span class="label">Your first client</span><div class="field">Like Northwind Bakery</div>
+      <span class="hint">Who you do the work for: a company or a person. You can add more on Clients.</span>
+      <span class="label">First project (optional)</span><div class="field">Like Website</div>
+      <span class="label">Your hourly rate</span><div class="field" style="width:160px">0.00</div>
+      <button class="btn" type="button">Add client</button>
+    </div></div>
+    <p class="tag" style="margin-top:12px">Then, on the Log time card</p>
+    <div class="status"><span>Northwind Bakery is your first client, with the project Website. Set a rate or add projects on <u>Clients</u>.</span><button type="button">Got it</button></div>
+  </div>
+  <div class="phone"><p class="tag">Phone, 390 px · Add client full width, above the tab bar</p>
+    <div class="card"><div class="body">
+      <b style="font-size:18px">Welcome! Let's get your first hours logged.</b>
+      <span class="label">Your first client</span><div class="field">Like Northwind Bakery</div>
+      <span class="label">First project (optional)</span><div class="field">Like Website</div>
+      <button class="btn" type="button">Add client</button>
+    </div></div>
+    <div class="tabbar">Today · Week · Month · Invoices · Clients</div>
+  </div>
+</div>
+</body>
+</html>

@@ -28,10 +28,11 @@ test("the Log time form: layout, the Logged moment, the help line fading out, an
     await expect(help).toBeVisible();
     await page.getByRole("button", { name: "1 hour", exact: true }).click();
     await log.click();
-    await expect(page.getByText("Logged 1:00")).toBeVisible();
+    // The button's own words; the saved-time line under it ("Logged 1:00 on General · Acme") says it too.
+    await expect(log.getByText("Logged 1:00")).toBeVisible();
     await expect(log).toHaveCount(1);
     await time.fill("30m"); // typing a new time ends the moment at once
-    await expect(page.getByText("Logged 1:00")).toHaveCount(0);
+    await expect(page.getByText(/^Logged 1:00/)).toHaveCount(0);
     await log.click();
   });
 

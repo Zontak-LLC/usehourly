@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { expect, seedFirstDay, seen, test, today, trpc } from "./helpers";
+import { expect, savedInvoices, saveReviewedInvoice, seedFirstDay, seen, test, today, trpc } from "./helpers";
 
 /**
  * New invoice while a timer runs (issue 431, snag 3). A first-day tester's only time was a running timer, so Create
@@ -9,21 +9,15 @@ import { expect, seedFirstDay, seen, test, today, trpc } from "./helpers";
  */
 
 type Running = { id: string } | null;
-type InvoiceRow = { number: string; total_cents: number; total_minutes: number };
 
 const running = async (page: Page) => {
   const res = await page.request.get("/api/trpc/entry.running");
   expect(res.ok(), `entry.running answered ${res.status()}`).toBe(true);
   return ((await res.json()) as { result: { data: Running } }).result.data;
 };
-const invoices = async (page: Page) => {
-  const res = await page.request.get("/api/trpc/invoice.list");
-  expect(res.ok(), `invoice.list answered ${res.status()}`).toBe(true);
-  return ((await res.json()) as { result: { data: InvoiceRow[] } }).result.data;
-};
 const startTimer = (page: Page, projectId: string) => trpc(page, "entry.start", { projectId, date: today(), note: "" });
 
-const createButton = (page: Page) => page.getByRole("button", { name: /Create invoice/ });
+const createButton = (page: Page) => page.getByRole("button", { name: "Preview invoice" });
 const choice = (page: Page) => page.getByRole("dialog");
 const stopAndInclude = (page: Page) => choice(page).getByRole("button", { name: "Stop it and include it" });
 const leaveRunning = (page: Page) =>
@@ -67,12 +61,13 @@ test("case 1: the timer is the only time, so Stop it and include it makes the in
   await shot("only-time");
   await audit("new invoice, timer is the only time");
 
-  const [download] = await Promise.all([page.waitForEvent("download"), stopAndInclude(page).click()]);
+  await stopAndInclude(page).click();
+  const download = await saveReviewedInvoice(page);
   expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
   await expect(page.getByText(`INV-${new Date().getFullYear()}-001`).first()).toBeVisible();
   expect(await running(page)).toBeNull();
-  const [made] = await invoices(page);
+  const [made] = await savedInvoices(page);
   expect(made.total_minutes).toBeGreaterThanOrEqual(30);
 });
 
@@ -86,10 +81,11 @@ test("case 2: Leave it running bills the stopped hour and keeps the timer", asyn
   await expect(stopAndInclude(page)).toBeVisible();
   await shot("other-time");
 
-  const [download] = await Promise.all([page.waitForEvent("download"), leaveRunning(page).click()]);
+  await leaveRunning(page).click();
+  const download = await saveReviewedInvoice(page);
   expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
-  const [made] = await invoices(page);
+  const [made] = await savedInvoices(page);
   expect(made.total_cents).toBe(6000);
   expect(await running(page)).not.toBeNull();
 });
@@ -100,14 +96,15 @@ test("case 3: Escape changes nothing; then Stop it and include it bills the time
   await expect(stopAndInclude(page)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(choice(page)).toBeHidden();
-  expect(await invoices(page)).toEqual([]);
+  expect(await savedInvoices(page)).toEqual([]);
   expect(await running(page)).not.toBeNull();
 
   await createButton(page).click();
-  const [download] = await Promise.all([page.waitForEvent("download"), stopAndInclude(page).click()]);
+  await stopAndInclude(page).click();
+  const download = await saveReviewedInvoice(page);
   expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   await expect(page).toHaveURL(/\/dashboard\/invoices$/);
-  const [made] = await invoices(page);
+  const [made] = await savedInvoices(page);
   expect(made.total_cents).toBeGreaterThan(6000); // the stopped timer adds at least a minute
   expect(made.total_minutes).toBeGreaterThan(60);
   expect(await running(page)).toBeNull();
@@ -131,7 +128,7 @@ test("case 4: the stop fails, so no invoice is made and the choice stays open", 
   await expect(stopAndInclude(page)).toBeEnabled();
   await expect(leaveRunning(page)).toBeEnabled();
   await expect(page).toHaveURL(/\/dashboard\/invoices\/new/);
-  expect(await invoices(page)).toEqual([]);
+  expect(await savedInvoices(page)).toEqual([]);
 });
 
 test("case 5: a timer under a minute has nothing to bill yet", async ({ page, shot }) => {
@@ -146,7 +143,7 @@ test("case 5: a timer under a minute has nothing to bill yet", async ({ page, sh
 
   await choice(page).getByRole("button", { name: "Keep it running" }).click();
   await expect(choice(page)).toBeHidden();
-  expect(await invoices(page)).toEqual([]);
+  expect(await savedInvoices(page)).toEqual([]);
   expect(await running(page)).not.toBeNull();
 });
 

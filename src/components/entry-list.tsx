@@ -1,4 +1,4 @@
-import { EntryRow } from "@/app/(main)/dashboard/today/_components/entry-row";
+import { EntryRow } from "@/app/(app)/dashboard/today/_components/entry-row";
 import { HeaderCard } from "@/components/header-card";
 import { useRunningMinutes } from "@/components/use-running-minutes";
 import { fromISODate } from "@/lib/dates";
