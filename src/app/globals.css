@@ -63,57 +63,60 @@
 
 /* Theme styles: one palette, light and dark (the colour presets were removed on 2026-10-22). */
 :root {
-  /* Calm (v4, 2026-10-23): a cool mist page, white sheets, slate ink, and ONE soft periwinkle accent (the hour hand) that
-     does the pointing; progress lines run from sky to ocean blue. Green only for good news, red only for problems. The
-     token is still called "amber" so every screen follows without renaming: it is the accent, whatever its hue. */
-  --radius: 0.875rem;
-  --background: #eef2f7;
-  --foreground: #1c2434;
-  --card: #ffffff;
-  --card-foreground: #1c2434;
-  --popover: #ffffff;
-  --popover-foreground: #1c2434;
-  --primary: #1c2434;
-  --primary-foreground: #eef2f7;
-  --secondary: #e8edf4;
-  --secondary-foreground: #1c2434;
-  --muted: #e8edf4;
-  --muted-foreground: #586377; /* 5.5:1 on white, 4.9:1 on the mist page */
-  --accent: #e8edf4;
-  --accent-foreground: #1c2434;
-  --destructive: #d04a3a;
+  /* Daylight (v5, 2026-11-08, Vela's redesign): a soft warm-grey paper page (no white glare), near-white sheets drawn
+     with ONE hairline edge instead of a floating shadow, graphite ink, and the same ONE ocean-blue accent (the hour
+     hand, the owner's choice of 2026-10-24). Lines are thin and close to the panel colour; colour stays rare. Green only
+     for good news, red only for problems. The token is still called "amber" so every screen follows without renaming:
+     it is the accent, whatever its hue. */
+  --radius: 0.75rem;
+  --background: #f4f3ef;
+  --foreground: #15181f;
+  --card: #fcfbf8;
+  --card-foreground: #15181f;
+  --popover: #fdfcfa;
+  --popover-foreground: #15181f;
+  --primary: #15181f;
+  --primary-foreground: #f4f3ef;
+  --secondary: #ecebe5;
+  --secondary-foreground: #15181f;
+  --muted: #ecebe5;
+  --muted-foreground: #585d66; /* 6.2:1 on the sheet, 5.2:1 on muted */
+  --accent: #ecebe5;
+  --accent-foreground: #15181f;
+  --destructive: #c8442f;
   --amber: #2563c9;
-  --amber-soft: #e7effd;
+  --amber-soft: #e8eefa;
   /* Big accent surfaces (the main button, the latest month bar) and small marks (today's date, a dot) share one hue. */
-  --amber-fill: color-mix(in oklab, var(--amber) 92%, var(--background));
+  --amber-fill: color-mix(in oklab, var(--amber) 94%, var(--background));
   /* Success is Bright Optimistic Green #50B83C. On white it is only 2.5:1, too pale for words, so it is used for icons,
      bars and fills (--success-bright) and the same hue, darker, writes the words (--success, 7:1). */
   --success-bright: #50b83c;
   --success: oklch(0.45 0.13 141);
   --success-soft: oklch(0.955 0.05 141);
-  --border: #dbe2ec;
-  --input: #d5dce7;
+  --border: #dcd9d1;
+  --input: #d6d4cc;
   --ring: #2563c9;
-  --chart-1: #1c2434;
+  --chart-1: #15181f;
   --chart-2: #6aa9d8;
   --chart-3: #2563c9;
   --chart-4: #1fa971;
-  --chart-5: #586377;
-  --sidebar: #eef2f7;
-  --sidebar-foreground: #1c2434;
-  --sidebar-primary: #1c2434;
-  --sidebar-primary-foreground: #eef2f7;
-  --sidebar-accent: #e8edf4;
-  --sidebar-accent-foreground: #1c2434;
-  --sidebar-border: #dbe2ec;
+  --chart-5: #585d66;
+  --sidebar: #f4f3ef;
+  --sidebar-foreground: #15181f;
+  --sidebar-primary: #15181f;
+  --sidebar-primary-foreground: #f4f3ef;
+  --sidebar-accent: #ecebe5;
+  --sidebar-accent-foreground: #15181f;
+  --sidebar-border: #dcd9d1;
   --sidebar-ring: #2563c9;
-  --shadow-sheet: 0 1px 0 rgb(28 36 52 / 0.03), 0 18px 40px -26px rgb(40 52 90 / 0.28);
+  /* Sheets lie flat on the page: a hairline edge does the work, the shadow is only a breath under it. */
+  --shadow-sheet: 0 1px 2px rgb(27 31 39 / 0.04), 0 8px 24px -18px rgb(27 31 39 / 0.12);
 
   /* Header shades. A card's header is a light tint of its text colour over the card colour (2026-10-21: white headers
      made a project tile's header look like its body). Subtle on purpose (the 8-12% greys looked heavy). One place. */
-  --band-1: color-mix(in oklab, var(--foreground) 4%, var(--card));
-  --band-2: color-mix(in oklab, var(--foreground) 4%, var(--card));
-  --band-3: color-mix(in oklab, var(--foreground) 5%, var(--card));
+  --band-1: color-mix(in oklab, var(--foreground) 3%, var(--card));
+  --band-2: color-mix(in oklab, var(--foreground) 3%, var(--card));
+  --band-3: color-mix(in oklab, var(--foreground) 4%, var(--card));
 
   /* A soft tint of the accent (default buttons, a selected day or chip). A coloured accent can carry a strong tint; a
      near-black or black one turns it heavy grey, so the neutral palettes use a much weaker mix (set just below). */
@@ -143,45 +146,47 @@
 }
 
 .dark {
-  /* Dark is a deep blue slate, not black: calm at night, and the accent stays soft. */
-  --background: #131a26;
-  --foreground: #e6ebf3;
-  --card: #1a2232;
-  --card-foreground: #e6ebf3;
-  --popover: #1a2232;
-  --popover-foreground: #e6ebf3;
-  --primary: #e6ebf3;
-  --primary-foreground: #131a26;
-  --secondary: #222b3d;
-  --secondary-foreground: #e6ebf3;
-  --muted: #222b3d;
-  --muted-foreground: #9ba7ba;
-  --accent: #222b3d;
-  --accent-foreground: #e6ebf3;
+  /* Night Shift (v5, 2026-11-08): the owner's own night palette (the Lens board): a blue-grey page, never black,
+     panels one step up, thin lines close to the panel, a soft blue accent, and bright white text that lights up the
+     dark (not a dim grey). */
+  --background: #16181d;
+  --foreground: #f2f4f8;
+  --card: #1b1e24;
+  --card-foreground: #f2f4f8;
+  --popover: #1e2128;
+  --popover-foreground: #f2f4f8;
+  --primary: #f2f4f8;
+  --primary-foreground: #16181d;
+  --secondary: #23272e;
+  --secondary-foreground: #f2f4f8;
+  --muted: #23272e;
+  --muted-foreground: #a7afbc; /* 7.6:1 on the panel */
+  --accent: #23272e;
+  --accent-foreground: #f2f4f8;
   --destructive: #ff7d6b;
-  --amber: #6ea8ff;
-  --amber-soft: #1b2a44;
-  --amber-fill: color-mix(in oklab, var(--amber) 88%, var(--background));
+  --amber: #7aa2f7;
+  --amber-soft: #1d2433;
+  --amber-fill: color-mix(in oklab, var(--amber) 92%, var(--background));
   --success-bright: #50b83c;
   --success: oklch(0.8 0.17 141);
   --success-soft: oklch(0.3 0.07 141);
-  --border: #2a3447;
-  --input: #313c52;
-  --ring: #6ea8ff;
-  --chart-1: #e6ebf3;
+  --border: #2e333c;
+  --input: #333843;
+  --ring: #7aa2f7;
+  --chart-1: #f2f4f8;
   --chart-2: #7fb8e4;
-  --chart-3: #6ea8ff;
-  --chart-4: #3ddc97;
-  --chart-5: #9ba7ba;
-  --sidebar: #161d2b;
-  --sidebar-foreground: #e6ebf3;
-  --sidebar-primary: #e6ebf3;
-  --sidebar-primary-foreground: #131a26;
-  --sidebar-accent: #222b3d;
-  --sidebar-accent-foreground: #e6ebf3;
-  --sidebar-border: #2a3447;
-  --sidebar-ring: #6ea8ff;
-  --shadow-sheet: 0 18px 40px -24px rgb(0 0 0 / 0.6);
+  --chart-3: #7aa2f7;
+  --chart-4: #8cc89b;
+  --chart-5: #a7afbc;
+  --sidebar: #16181d;
+  --sidebar-foreground: #f2f4f8;
+  --sidebar-primary: #f2f4f8;
+  --sidebar-primary-foreground: #16181d;
+  --sidebar-accent: #23272e;
+  --sidebar-accent-foreground: #f2f4f8;
+  --sidebar-border: #2e333c;
+  --sidebar-ring: #7aa2f7;
+  --shadow-sheet: 0 1px 2px rgb(0 0 0 / 0.25);
 }
 
 /* The side column's scrolling list (components/side-column.tsx, an experiment the owner may drop: remove this block with
@@ -259,13 +264,6 @@
 
   body {
     @apply bg-background text-foreground;
-    background-image: linear-gradient(
-      175deg,
-      color-mix(in oklab, var(--chart-2) 9%, var(--background)) 0%,
-      var(--background) 40%,
-      color-mix(in oklab, var(--amber) 7%, var(--background)) 100%
-    );
-    background-attachment: fixed;
     font-family: var(--font-sans);
   }
   html {
@@ -364,16 +362,17 @@ textarea,
 /* An invoice is white paper in every theme: the client gets a white page, so the preview of "what your client sees"
    stays light in dark mode too (walkthrough 2026-10-25). These are the light theme's values. */
 .paper {
-  --background: #eef2f7;
-  --foreground: #1c2434;
+  --background: #f4f3ef;
+  --foreground: #15181f;
   --card: #ffffff;
-  --card-foreground: #1c2434;
-  --muted: #e8edf4;
-  --muted-foreground: #586377;
-  --border: #dbe2ec;
-  --destructive: #d04a3a;
+  --card-foreground: #15181f;
+  --muted: #f1f0eb;
+  --muted-foreground: #585d66;
+  --border: #dcd9d1;
+  --destructive: #c8442f;
   --success: oklch(0.45 0.13 141);
   --success-soft: oklch(0.955 0.05 141);
+  --shadow-sheet: 0 1px 2px rgb(27 31 39 / 0.04);
   color: var(--foreground);
   color-scheme: light;
 }
@@ -434,37 +433,25 @@ textarea,
   }
 }
 
-/* v4 calm surfaces: every bordered white card floats on the mist with a soft shadow and a lighter edge, instead of
-   reading as an outlined box. One rule, so all the cards drawn as "border bg-card" follow without each file changing.
+/* v5 surfaces (2026-11-08): every bordered card lies flat on the paper, drawn by one hairline edge in the line colour
+   and only a breath of shadow (v4 floated them on a soft shadow with a faded edge). One rule, so all the cards drawn as "border bg-card" follow without each file changing.
    Low specificity (:where), so a card that sets its own shadow or ring still wins. */
 @layer components {
   :where(.bg-card.border):where(.rounded-xl, .rounded-2xl, .rounded-3xl) {
-    border-color: color-mix(in oklab, var(--border) 65%, transparent);
+    border-color: var(--border);
     box-shadow: var(--shadow-sheet);
   }
 }
 
-/* The home page's own surfaces (2026-10-24, the owner: "a nice background, align everything"). Mixed only from the
-   theme's tokens, so light and dark both follow and no new colour enters the palette. The page is a clean near-white;
-   bands alternate with the app's own page colour so each section has a clear start and end; behind the hero sits a
-   faint timesheet grid that fades out, with one soft purple glow behind the headline. */
+/* The home page's own surfaces (2026-11-08, v5). Mixed only from the theme's tokens, so light and dark both follow and
+   no new colour enters the palette: the page is the paper, and the bands between sections are one step lighter (a step
+   up in the dark), each drawn with a hairline edge. The hero's picture is a drawing (components/day-ruler.tsx); the
+   faint grid and the glow behind the headline were removed. */
 .landing {
-  --landing-page: color-mix(in oklab, var(--card) 85%, var(--background));
-  --landing-band: var(--background);
-  --landing-grid: color-mix(in oklab, var(--foreground) 7%, transparent);
-  --landing-glow: color-mix(in oklab, var(--amber) 18%, transparent);
+  --landing-page: var(--background);
+  --landing-band: color-mix(in oklab, var(--card) 70%, var(--background));
 }
 .dark .landing {
   --landing-page: var(--background);
-  --landing-band: color-mix(in oklab, var(--card) 55%, var(--background));
-  --landing-grid: color-mix(in oklab, var(--foreground) 6%, transparent);
-  --landing-glow: color-mix(in oklab, var(--amber) 16%, transparent);
-}
-.landing-grid {
-  background-image:
-    linear-gradient(var(--landing-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--landing-grid) 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-position: center top;
-  mask-image: radial-gradient(ellipse 75% 65% at 50% 25%, black 35%, transparent 100%);
+  --landing-band: color-mix(in oklab, var(--card) 60%, var(--background));
 }

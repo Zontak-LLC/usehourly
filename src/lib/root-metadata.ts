@@ -37,7 +37,7 @@ export const ROOT_VIEWPORT: Viewport = {
   // When the on-screen keyboard opens, resize the page (Chrome on Android) instead of covering it, so a dialog stays in view.
   interactiveWidget: "resizes-content",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fffdf7" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1712" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f3ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#16181d" },
   ],
 };
