@@ -15,12 +15,13 @@ import { SIDE_CARD, SideColumn, SideScroll } from "@/components/side-column";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkItems } from "@/components/work-items";
-import { addDays, addMonths, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
+import { addDays, addMonths, fromISODate, monthBounds, startOfWeek } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { defaultMonthDay, type MonthMode, readMonthAddress } from "@/lib/month-address";
 import { buildSheet, dateRange } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
 
 import { EntryGrip } from "./entry-grip";
 import { MonthCalendar } from "./month-calendar";
@@ -60,7 +61,7 @@ function writeAddress(changes: Record<string, string | null>, how: "push" | "rep
  */
 export function MonthView({ initialProject }: { initialProject?: string }) {
   const params = useSearchParams();
-  const [today, setToday] = useState<string | null>(null);
+  const today = useToday();
   const [projectId, setProjectId] = useProjectFilter(initialProject);
   const dayRef = useRef<HTMLDivElement>(null);
   // Bumped when a day is picked, so the right side is brought into view (on a phone it sits under the calendar).
@@ -70,7 +71,6 @@ export function MonthView({ initialProject }: { initialProject?: string }) {
   }, [picks]);
   // Quick-add mode: clicking day cells selects them instead of opening the day.
   const [selectMode, setSelectMode] = useState(false);
-  useEffect(() => setToday(toISODate(new Date())), []);
   const address = today ? readMonthAddress(params, today) : null;
   const first = address?.first ?? null;
   const selection = useDaySelection(first, setSelectMode);
