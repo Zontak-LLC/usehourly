@@ -98,6 +98,58 @@ describe("money right: the same hours are never billed twice", () => {
     expect(entries.find((e) => e.id === "e2")?.invoice_id).toBe("other"); // the other invoice keeps its time
   });
 
+  /** Makes the `nth` marking call (an `updateMany` with an id list) throw a D1 network error; clean-up calls still run. */
+  const failMarking = (prisma: ReturnType<typeof memoryDb>["prisma"], nth: number) => {
+    const real = prisma.timeEntry.updateMany.getMockImplementation() as (args: {
+      where: Where;
+      data: { invoice_id: string | null };
+    }) => Promise<{ count: number }>;
+    let markingCalls = 0;
+    prisma.timeEntry.updateMany.mockImplementation(async (args) => {
+      if (args.where.id && ++markingCalls === nth) throw new Error("D1_ERROR: Network connection lost.");
+      return real(args);
+    });
+    return () => prisma.timeEntry.updateMany.mockImplementation(real);
+  };
+
+  it("if marking its time fails part way, the invoice is taken back, all its time is free, and the same number works again", async () => {
+    const { prisma, entries, invoices, entry } = memoryDb();
+    const day = (i: number) => `2026-10-${String((i % 28) + 1).padStart(2, "0")}`;
+    entries.splice(
+      0,
+      entries.length,
+      ...Array.from({ length: 200 }, (_, i) => entry(`b${i + 1}`, "u1", "p1", day(i), 30, `task ${i + 1}`)),
+    );
+    const restore = failMarking(prisma, 2); // group 1 (80) is marked, group 2 (entries 81-160) fails
+    const c = caller(prisma);
+
+    await expect(c.invoice.create({ ...october, number: "INV-2026-001" })).rejects.toThrow(
+      "D1_ERROR: Network connection lost.",
+    );
+    expect(invoices).toEqual([]); // no half-saved invoice left
+    expect(entries.filter((e) => e.invoice_id !== null)).toEqual([]); // all 200 free, not only the failed group
+    expect(entries).toHaveLength(200);
+
+    restore();
+    const retry = await c.invoice.create({ ...october, number: "INV-2026-001" });
+    expect(invoices.map((i) => i.number)).toEqual(["INV-2026-001"]);
+    expect(entries.every((e) => e.invoice_id === retry.id)).toBe(true);
+  });
+
+  it("billing again on purpose: a failed save keeps the time on its first invoice", async () => {
+    const { prisma, entries, invoices } = memoryDb();
+    const c = caller(prisma);
+    await c.invoice.create({ ...october, number: "INV-2026-001" });
+    failMarking(prisma, 1);
+
+    await expect(c.invoice.create({ ...october, number: "INV-2026-002", includeInvoiced: true })).rejects.toThrow(
+      "D1_ERROR: Network connection lost.",
+    );
+    expect(invoices.map((i) => i.id)).toEqual(["inv1"]); // no second invoice
+    expect(entries.find((e) => e.id === "e1")?.invoice_id).toBe("inv1");
+    expect(entries.find((e) => e.id === "e2")?.invoice_id).toBe("inv1");
+  });
+
   it("deleting an invoice frees its time to be billed again", async () => {
     const { prisma } = memoryDb();
     const c = caller(prisma);
