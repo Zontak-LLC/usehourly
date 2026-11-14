@@ -60,7 +60,7 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
 /**
  * Holds every call to one tRPC procedure (e.g. "entry.create") back before it goes on to the server: for `ms`, or, with
  * no `ms`, until the test calls `release()` (a gate, so no wall time decides the test). `arrived` settles when the first
- * call reaches the hold.
+ * call reaches the hold; `hasArrived()` says the same without waiting, for a poll.
  */
 export async function hold(page: Page, procedure: string, ms?: number) {
   let release!: () => void;
@@ -68,15 +68,53 @@ export async function hold(page: Page, procedure: string, ms?: number) {
     release = resolve;
   });
   let arrive!: () => void;
+  let hasArrived = false;
   const arrived = new Promise<void>((resolve) => {
     arrive = resolve;
   });
   await page.route(`**/api/trpc/${procedure}*`, async (route) => {
+    hasArrived = true;
     arrive();
     await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
     await route.continue();
   });
-  return { arrived, release };
+  return { arrived, hasArrived: () => hasArrived, release };
+}
+
+/**
+ * Polls `read` with the page's clock paused, running only the timers that are due now (0 ms: React Query's notices,
+ * tRPC's batch) before each read, so the page's own clock never moves. For a page whose next step may start a moment
+ * later than the test's last action: a slow runner then only makes the poll take longer, never moves the page's time.
+ */
+export function pollPausedClock<T>(page: Page, read: () => T | Promise<T>) {
+  return expect.poll(async () => {
+    await page.clock.runFor(0);
+    return read();
+  });
+}
+
+/**
+ * Watches the page from its first load for an element matching `selector`, so one shown for a single frame is still
+ * seen (a look at one moment would miss it). Call before the first `goto`; `seen()` says whether it was ever there.
+ */
+export async function watchForElement(page: Page, selector: string) {
+  await page.addInitScript((watched) => {
+    const flag = { seen: false };
+    (window as unknown as { e2eSeen: Record<string, typeof flag> }).e2eSeen ??= {};
+    (window as unknown as { e2eSeen: Record<string, typeof flag> }).e2eSeen[watched] = flag;
+    const look = () => {
+      if (document.querySelector(watched)) flag.seen = true;
+    };
+    new MutationObserver(look).observe(document, { childList: true, subtree: true });
+  }, selector);
+  return {
+    seen: () =>
+      page.evaluate(
+        (watched) =>
+          (window as unknown as { e2eSeen: Record<string, { seen: boolean }> }).e2eSeen[watched]?.seen === true,
+        selector,
+      ),
+  };
 }
 
 /**
