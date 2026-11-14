@@ -1,4 +1,5 @@
 import { InvoiceDocActions } from "@/components/invoice-doc-actions";
+import { InvoiceOverdueNote } from "@/components/invoice-overdue-note";
 import { formatDate } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { formatMoney, type InvoiceSnapshot } from "@/lib/invoice";
@@ -35,8 +36,6 @@ export function InvoiceDocument({
 }) {
   const Title = preview ? "h3" : inApp ? "h2" : "h1";
   const Sub = preview ? "h4" : "h2";
-  const today = new Date().toISOString().slice(0, 10);
-  const overdue = !paidDate && s.dueDate !== null && s.dueDate < today;
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -69,11 +68,9 @@ export function InvoiceDocument({
         <p className="rounded-xl border border-success-bright/60 bg-success-soft p-3 font-medium text-sm text-success">
           Paid on {formatDate(paidDate, "day")}. Thank you.
         </p>
-      ) : overdue ? (
-        <p className="rounded-xl border border-destructive/40 p-3 font-medium text-destructive text-sm">
-          This invoice was due on {formatDate(s.dueDate as string, "day")}.
-        </p>
-      ) : null}
+      ) : (
+        <InvoiceOverdueNote dueDate={s.dueDate} paidDate={paidDate} />
+      )}
 
       <section className="relative rounded-xl border bg-card p-4">
         {paidDate && (

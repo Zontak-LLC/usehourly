@@ -1,4 +1,5 @@
 import { expect, invoiceRows, openInvoice, sql, startDemo, test } from "./helpers";
+import { createHash, randomBytes } from "node:crypto";
 
 const numbersOf = (rows: ReturnType<typeof invoiceRows>) =>
   rows.evaluateAll((els) => els.map((r) => r.getAttribute("data-number")));
@@ -86,6 +87,107 @@ test("each invoice says its state in words, unpaid ones have Mark paid, and the 
   await page.goto("/dashboard/invoices");
   await expect(page.getByRole("button", { name: "Filters" })).toHaveCount(0);
   await expect(page.getByRole("searchbox", { name: "Search invoices" })).toBeVisible();
+});
+
+test.describe("overdue uses the viewer's own date, not the UTC date (issue 452)", () => {
+  test.use({ timezoneId: "America/New_York" });
+
+  const ZONE = "America/New_York";
+  /** The instant it is `hh`:00 in New York on `date` (the offset is -05:00 or -04:00 with summer time). */
+  const newYorkAt = (date: string, hh: number) => {
+    const name = new Intl.DateTimeFormat("en-US", { timeZone: ZONE, timeZoneName: "longOffset" })
+      .formatToParts(new Date(`${date}T12:00:00Z`))
+      .find((p) => p.type === "timeZoneName")?.value;
+    const offset = (name ?? "GMT-05:00").replace("GMT", "");
+    return new Date(`${date}T${String(hh).padStart(2, "0")}:00:00${offset}`);
+  };
+  const nextDay = (date: string) => new Date(Date.parse(`${date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
+  test("on the evening of the due date it is not overdue; the next morning it is, on every page", async ({ page }) => {
+    // D is today in New York, so the browser's clock stays within a day of the server's.
+    const due = new Intl.DateTimeFormat("en-CA", { timeZone: ZONE }).format(new Date());
+    await page.clock.setFixedTime(newYorkAt(due, 20)); // 20:00 in New York = 01:00 UTC on D+1
+    await startDemo(page);
+    const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
+    const userId = session.user?.id ?? "";
+    expect(userId).toMatch(/^[0-9a-f-]{20,}$/);
+
+    // The sample data's unpaid and paid invoices, both due on D, with numbers this test knows, and a private link to each.
+    const unpaid = "INV-2099-452";
+    const paid = "INV-2099-453";
+    const unpaidToken = `e2e-overdue-${randomBytes(16).toString("hex")}`;
+    const paidToken = `e2e-overdue-${randomBytes(16).toString("hex")}`;
+    const hash = (t: string) => createHash("sha256").update(t).digest("hex");
+    const pick = (paidClause: string) =>
+      `(SELECT id FROM invoices WHERE user_id = '${userId}' AND paid_date ${paidClause} ORDER BY id LIMIT 1)`;
+    const prepare = (number: string, paidClause: string, token: string) =>
+      `UPDATE invoices SET number = '${number}', due_date = '${due}',
+        snapshot = json_set(snapshot, '$.number', '${number}', '$.dueDate', '${due}') WHERE id = ${pick(paidClause)};
+      INSERT INTO invoice_links (id, user_id, invoice_id, token_hash, token_prefix, expires_at, revoked_at, created_at)
+        VALUES (lower(hex(randomblob(16))), '${userId}', ${pick(paidClause)}, '${hash(token)}', '${token.slice(0, 6)}',
+        ${Math.floor(Date.now() / 1000) + 30 * 86_400}, NULL, strftime('%Y-%m-%dT%H:%M:%f+00:00', 'now'));`;
+    sql(`${prepare(unpaid, "IS NULL", unpaidToken)} ${prepare(paid, "IS NOT NULL", paidToken)}`.replace(/\s+/g, " "));
+
+    const note = page.getByText("This invoice was due on");
+    const row = (number: string) => invoiceRows(page).and(page.locator(`[data-number="${number}"]`));
+    const tabs = page.getByRole("tablist", { name: "Show invoices" });
+    const showOverdue = async () => {
+      await page.goto("/dashboard/invoices");
+      await tabs.getByRole("tab", { name: /^Overdue/ }).click();
+      await expect(tabs.getByRole("tab", { name: /^Overdue/ })).toHaveAttribute("aria-selected", "true");
+    };
+    const openFromList = async (number: string) => {
+      await page.goto("/dashboard/invoices");
+      await openInvoice(page, row(number));
+      return page.url();
+    };
+
+    await test.step("20:00 in New York on D: due today, not overdue, on the list, the invoice page and the link", async () => {
+      await page.goto("/dashboard/invoices");
+      await expect(row(unpaid)).toContainText("Due today"); // the page has the browser's date by now
+      const unpaidPage = await openFromList(unpaid);
+      await page.goto(unpaidPage);
+      await expect(page.getByRole("heading", { level: 2, name: unpaid, exact: true })).toBeVisible();
+      await expect(note).toHaveCount(0);
+      await showOverdue();
+      await expect(row(unpaid)).toHaveCount(0);
+      await page.goto(`/invoice/${unpaidToken}`);
+      await expect(page.getByRole("heading", { level: 1, name: `Invoice ${unpaid}` })).toBeVisible();
+      await page.waitForLoadState("networkidle");
+      await expect(note).toHaveCount(0);
+    });
+
+    await test.step("09:00 in New York on D+1: overdue everywhere", async () => {
+      await page.clock.setFixedTime(newYorkAt(nextDay(due), 9));
+      const unpaidPage = await openFromList(unpaid);
+      await page.goto(unpaidPage);
+      const shown = new Intl.DateTimeFormat("en-US", {
+        timeZone: "UTC",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      const dueText = shown.format(new Date(`${due}T12:00:00Z`));
+      await expect(note).toBeVisible();
+      await expect(note).toContainText(dueText);
+      await page.goto(`/invoice/${unpaidToken}`);
+      await expect(note).toBeVisible();
+      await showOverdue();
+      await expect(row(unpaid)).toHaveCount(1);
+    });
+
+    await test.step("a paid invoice says Paid on and never the overdue note, at either clock", async () => {
+      for (const at of [newYorkAt(due, 20), newYorkAt(nextDay(due), 9)]) {
+        await page.clock.setFixedTime(at);
+        await page.goto(await openFromList(paid));
+        await expect(page.getByText(/^Paid on .+ Thank you\.$/).first()).toBeVisible();
+        await page.goto(`/invoice/${paidToken}`);
+        await expect(page.getByText(/^Paid on .+ Thank you\.$/)).toBeVisible();
+        await page.waitForLoadState("networkidle");
+        await expect(note).toHaveCount(0);
+      }
+    });
+  });
 });
 
 test("Open full size shows the invoice alone with Download PDF and Print; the download icon downloads too", async ({
