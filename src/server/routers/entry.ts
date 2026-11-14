@@ -6,6 +6,8 @@ import { z } from "zod";
 import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { entryMinutes } from "@/lib/duration";
+import { ENTRY_GONE } from "@/lib/entry-gone";
+import { errorCode } from "@/lib/error-code";
 import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 import { assertWithinQuota } from "@/lib/quotas";
@@ -310,7 +312,7 @@ export const entryRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.prisma.timeEntry.findFirst({ where: { id: input.id, user_id: ctx.userId } });
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: ENTRY_GONE });
       // An entry on an invoice keeps its minutes and its client (issue 448); the same minutes sent back by an edit
       // form, a new date or note, or another project of the same client are fine.
       const locked = await billedLockMessage(ctx, existing);
@@ -327,16 +329,22 @@ export const entryRouter = router({
           if (p.client_id !== oldProject?.client_id) throw new TRPCError({ code: "BAD_REQUEST", message: locked });
         }
       }
-      return ctx.prisma.timeEntry.update({
-        where: { id: input.id, user_id: ctx.userId },
-        data: {
-          ...(input.projectId && { project_id: input.projectId }),
-          ...(input.date && { date: input.date }),
-          ...(input.minutes && { minutes: input.minutes }),
-          ...(input.note !== undefined && { note: input.note }),
-        },
-        include: withProject,
-      });
+      try {
+        return await ctx.prisma.timeEntry.update({
+          where: { id: input.id, user_id: ctx.userId },
+          data: {
+            ...(input.projectId && { project_id: input.projectId }),
+            ...(input.date && { date: input.date }),
+            ...(input.minutes && { minutes: input.minutes }),
+            ...(input.note !== undefined && { note: input.note }),
+          },
+          include: withProject,
+        });
+      } catch (e) {
+        // Deleted in another tab or on another device after the read above (Sentinel, 2026-11-08: a 500).
+        if (errorCode(e) === "P2025") throw new TRPCError({ code: "NOT_FOUND", message: ENTRY_GONE });
+        throw e;
+      }
     }),
 
   /**
@@ -487,7 +495,7 @@ export const entryRouter = router({
 
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
     const { count } = await ctx.prisma.timeEntry.deleteMany({ where: { id: input.id, user_id: ctx.userId } });
-    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: ENTRY_GONE });
     return { ok: true };
   }),
 
@@ -628,7 +636,7 @@ export const entryRouter = router({
           include: withProject,
         });
       } catch (e) {
-        if ((e as { code?: string } | null)?.code === "P2025") {
+        if (errorCode(e) === "P2025") {
           throw new TRPCError({ code: "CONFLICT", message: "The timer changed. Please try again." });
         }
         throw e;

@@ -3,6 +3,7 @@ import {
   type Browser,
   type BrowserContext,
   test as base,
+  type ConsoleMessage,
   type Download,
   expect,
   type Locator,
@@ -510,6 +511,13 @@ const IGNORED = [
   /\[Fast Refresh\]/i,
 ];
 
+/**
+ * A 404 from a tRPC call is the server's NOT_FOUND on purpose (an entry deleted in another tab, issue 458), so it is not
+ * a problem. A 404 for a page, script or picture still fails: Chromium logs the missing file's address as the location.
+ */
+const isDeliberateNotFound = (m: ConsoleMessage) =>
+  /status of 404/i.test(m.text()) && m.location().url.includes("/api/trpc/");
+
 type Fixtures = {
   /** Save a full-page screenshot, numbered, under e2e/report/screens/<device>/. */
   shot: (name: string) => Promise<void>;
@@ -533,7 +541,7 @@ export const test = base.extend<Fixtures>({
     const problems: string[] = [];
     page.on("pageerror", (e) => problems.push(`uncaught error: ${e.message}`));
     page.on("console", (m) => {
-      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())))
+      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())) && !isDeliberateNotFound(m))
         problems.push(`console error: ${m.text().slice(0, 3500)}`);
     });
     page.on("response", (r) => {

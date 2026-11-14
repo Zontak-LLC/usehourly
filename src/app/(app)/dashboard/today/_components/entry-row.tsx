@@ -22,7 +22,7 @@ import { feature } from "@/lib/features";
 import { QUIET_BELOW_MINUTES, ROW_FIGURE, ROW_FIGURE_QUIET } from "@/lib/figures";
 import { needsNote } from "@/lib/note-later";
 import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
-import { toastError } from "@/lib/toast-error";
+import { isNotFound, toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 export type EntryData = {
@@ -133,9 +133,11 @@ export function EntryRow({
         });
       }
     } catch (err) {
+      toastError(err, "Couldn't save changes.");
+      // Deleted elsewhere: the refresh takes the row away; putting it back or reopening the form would bring it back.
+      if (isNotFound(err)) return void (await refresh());
       undo();
       setEditing(true);
-      toastError(err, "Couldn't save changes.");
     }
   }
 
@@ -149,9 +151,10 @@ export function EntryRow({
       await refresh();
       toast.success(`Moved back to ${movedDate.format(fromISODate(from))}.`);
     } catch (err) {
+      toastError(err, "Couldn't move that entry back.");
+      if (isNotFound(err)) return void (await refresh());
       undo();
       setDate(to);
-      toastError(err, "Couldn't move that entry back.");
     }
   }
 

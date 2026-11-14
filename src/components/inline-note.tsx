@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { NOTE_MAX } from "@/lib/notes";
-import { toastError } from "@/lib/toast-error";
+import { isNotFound, toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** Asks the list row of entry `id` to open its note box (the day card's "Add notes" uses it). */
@@ -34,8 +34,10 @@ export function useSaveNote() {
       await utils.entry.list.invalidate();
       return true;
     } catch (err) {
-      undo();
       toastError(err, "Couldn't save that note.");
+      // Deleted elsewhere: refresh so the row leaves, rather than putting it back.
+      if (isNotFound(err)) await utils.entry.list.invalidate();
+      else undo();
       return false;
     }
   };
