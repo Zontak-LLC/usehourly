@@ -731,6 +731,22 @@ describe("an assistant tracks a day of work", () => {
     expect((await s.call("set_day_totals", { project: "p1", cells: [] })).isError).toBe(true);
   });
 
+  it("keeps time on an invoice as billed: set_day_totals skips the day, update_entry refuses new minutes", async () => {
+    // Issue 448: extra time on a billed entry would never be billed.
+    const billed = entryRow({ date: "2026-10-03", minutes: 120, invoice_id: "inv1" });
+    s.prisma.timeEntry.findMany.mockResolvedValue([billed]);
+    const set = await s.call("set_day_totals", { project: "p1", cells: [{ date: "2026-10-03", minutes: 180 }] });
+    expect(set.data).toMatchObject({ created: 0, updated: 0, deleted: 0, skipped: ["2026-10-03"] });
+    expect(s.prisma.timeEntry.update).not.toHaveBeenCalled();
+
+    s.prisma.timeEntry.findFirst.mockResolvedValue(billed);
+    s.prisma.invoice.findFirst.mockResolvedValueOnce({ number: "INV-2026-004" } as never);
+    const edit = await s.call("update_entry", { id: "e1", minutes: 180 });
+    expect(edit.isError).toBe(true);
+    expect(edit.text).toContain("This entry is on invoice INV-2026-004. Add a new entry for the extra time.");
+    expect(s.prisma.timeEntry.update).not.toHaveBeenCalled();
+  });
+
   it("manages clients and projects, converting dollars to cents", async () => {
     s.prisma.client.findFirst.mockResolvedValueOnce(null as never);
     await s.call("create_client", { name: "Initech" });

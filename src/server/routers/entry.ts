@@ -31,11 +31,10 @@ const noteSchema = z.string().trim().max(NOTE_MAX).default("");
 /** "Started earlier?" moves a start back at most this far (and never to more than this long ago). */
 const MAX_SHIFT_MINUTES = 12 * 60;
 
+type EntryCtx = { prisma: PrismaClient; userId: string; session: Session | null };
+
 /** Refuses a write that would take the account past its entry limit (see lib/quotas.ts). */
-async function assertEntryQuota(
-  ctx: { prisma: PrismaClient; userId: string; session: Session | null },
-  adding: number,
-) {
+async function assertEntryQuota(ctx: EntryCtx, adding: number) {
   assertWithinQuota(
     await ctx.prisma.timeEntry.count({ where: { user_id: ctx.userId } }),
     adding,
@@ -47,6 +46,53 @@ async function assertEntryQuota(
 /** The account's entries against its limit, for a one-statement guarded insert (server/quota-insert.ts). */
 function entryQuota(ctx: { userId: string; session: Session | null }) {
   return accountQuota("time_entries", "entries", ctx.userId, isDemoSession(ctx.session));
+}
+
+/**
+ * Why an entry may not gain or lose minutes or change client: it is on an invoice (issue 448). Billing takes only
+ * unbilled rows, so time added to a billed row would never be billed. Null when the entry is not on an invoice.
+ */
+async function billedLockMessage(ctx: EntryCtx, entry: { invoice_id?: string | null }): Promise<string | null> {
+  if (!entry.invoice_id) return null;
+  const invoice = await ctx.prisma.invoice.findFirst({
+    where: { id: entry.invoice_id, user_id: ctx.userId },
+    select: { number: true },
+  });
+  return `This entry is on invoice ${invoice?.number ?? "an invoice"}. Add a new entry for the extra time.`;
+}
+
+/**
+ * Starts a new running entry. Any already-running timer is stopped first, so only one runs at a time. The quota check
+ * refuses early without stopping anything; the one-statement guarded insert decides a race.
+ */
+async function startTimerEntry(ctx: EntryCtx, input: { projectId: string; date: string; note: string }) {
+  await assertEntryQuota(ctx, 1);
+  const now = new Date();
+  const running = await ctx.prisma.timeEntry.findFirst({
+    where: { user_id: ctx.userId, started_at: { not: null } },
+  });
+  if (running?.started_at) {
+    await ctx.prisma.timeEntry.update({
+      where: { id: running.id, user_id: ctx.userId },
+      data: { minutes: stoppedMinutes(running.minutes, running.started_at, now), started_at: null },
+    });
+  }
+  try {
+    // Losing a race at exactly the limit leaves the old timer stopped with its minutes saved, and shows the limit message.
+    const id = await insertWithinQuota(
+      ctx.prisma,
+      "time_entries",
+      { user_id: ctx.userId, project_id: input.projectId, date: input.date, note: input.note, started_at: now },
+      entryQuota(ctx),
+    );
+    return await ctx.prisma.timeEntry.findUniqueOrThrow({ where: { id }, include: withProject });
+  } catch (e) {
+    // A parallel start got there first: the database allows one running timer per account (migration 0024).
+    if (e instanceof QuotaInsertDuplicate) {
+      throw new TRPCError({ code: "CONFLICT", message: "A timer is already running. Stop it first." });
+    }
+    throw e;
+  }
 }
 
 // Logos are large; they travel separately (project.logos / clients.get), never with entries.
@@ -265,9 +311,21 @@ export const entryRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.prisma.timeEntry.findFirst({ where: { id: input.id, user_id: ctx.userId } });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+      // An entry on an invoice keeps its minutes and its client (issue 448); the same minutes sent back by an edit
+      // form, a new date or note, or another project of the same client are fine.
+      const locked = await billedLockMessage(ctx, existing);
+      if (locked && input.minutes !== undefined && input.minutes !== existing.minutes) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: locked });
+      }
       if (input.projectId) {
         const p = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
         if (!p) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
+        if (locked && p.id !== existing.project_id) {
+          const oldProject = await ctx.prisma.project.findFirst({
+            where: { id: existing.project_id, user_id: ctx.userId },
+          });
+          if (p.client_id !== oldProject?.client_id) throw new TRPCError({ code: "BAD_REQUEST", message: locked });
+        }
       }
       return ctx.prisma.timeEntry.update({
         where: { id: input.id, user_id: ctx.userId },
@@ -284,7 +342,8 @@ export const entryRouter = router({
   /**
    * Set one project's total for several days at once (grid cell edit and multi-day fill).
    * minutes > 0 creates or updates the day's single entry; 0 clears it. Days that hold
-   * several entries or a running timer are skipped and reported — never silently merged.
+   * several entries or a running timer are skipped and reported — never silently merged. A day whose single entry is on
+   * an invoice is skipped too when its minutes would change (issue 448); a new note alone still goes through.
    */
   bulkSet: protectedProcedure
     .input(
@@ -337,6 +396,11 @@ export const entryRouter = router({
           await ctx.prisma.timeEntry.deleteMany({ where: { id: rows[0].id, user_id: ctx.userId } });
           result.deleted++;
         } else if (rows[0].minutes !== minutes || (note !== undefined && rows[0].note !== note)) {
+          // Billed minutes stay as billed (issue 448): the day is reported, the caller adds a new entry instead.
+          if (rows[0].invoice_id && rows[0].minutes !== minutes) {
+            result.skipped.push(date);
+            continue;
+          }
           await ctx.prisma.timeEntry.update({
             where: { id: rows[0].id, user_id: ctx.userId },
             data: { minutes, ...(note && { note }) },
@@ -447,43 +511,20 @@ export const entryRouter = router({
     .mutation(async ({ ctx, input }) => {
       const project = await ctx.prisma.project.findFirst({ where: { id: input.projectId, user_id: ctx.userId } });
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
-      await assertEntryQuota(ctx, 1);
-      const now = new Date();
-      const running = await ctx.prisma.timeEntry.findFirst({
-        where: { user_id: ctx.userId, started_at: { not: null } },
-      });
-      if (running?.started_at) {
-        await ctx.prisma.timeEntry.update({
-          where: { id: running.id, user_id: ctx.userId },
-          data: { minutes: stoppedMinutes(running.minutes, running.started_at, now), started_at: null },
-        });
-      }
-      try {
-        // The check above refuses early without stopping anything; this one-statement guard decides a race. Losing one
-        // at exactly the limit leaves the old timer stopped with its minutes saved, and shows the limit message.
-        const id = await insertWithinQuota(
-          ctx.prisma,
-          "time_entries",
-          { user_id: ctx.userId, project_id: project.id, date: input.date, note: input.note, started_at: now },
-          entryQuota(ctx),
-        );
-        return await ctx.prisma.timeEntry.findUniqueOrThrow({ where: { id }, include: withProject });
-      } catch (e) {
-        // A parallel "start" got there first: the database allows one running timer per account (migration 0024).
-        if (e instanceof QuotaInsertDuplicate) {
-          throw new TRPCError({ code: "CONFLICT", message: "A timer is already running. Stop it first." });
-        }
-        throw e;
-      }
+      return startTimerEntry(ctx, { projectId: project.id, date: input.date, note: input.note });
     }),
 
   /**
    * Resume a stopped entry: its timer runs again and the next stop adds the new time to what it already holds. Any other
-   * running timer is stopped first (one timer at a time). Used by Today's "Resume" after a stop.
+   * running timer is stopped first (one timer at a time). Used by Today's "Resume" after a stop. A billed entry is not
+   * restarted; a new entry starts (same project, date and note), so the extra time can be billed (issue 448).
    */
   resume: protectedProcedure.input(z.object({ id: z.string().min(1).max(64) })).mutation(async ({ ctx, input }) => {
     const entry = await ctx.prisma.timeEntry.findFirst({ where: { id: input.id, user_id: ctx.userId } });
     if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
+    if (entry.invoice_id) {
+      return startTimerEntry(ctx, { projectId: entry.project_id, date: entry.date, note: entry.note });
+    }
     if (entry.minutes >= MAX_ENTRY_MINUTES) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "This entry already holds a full day." });
     }
