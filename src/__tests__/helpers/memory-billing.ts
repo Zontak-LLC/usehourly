@@ -28,14 +28,26 @@ export type Client = {
   invoice_every: string | null;
   invoice_anchor: string | null;
 };
-type Invoice = {
+export type Invoice = {
   id: string;
   user_id: string;
   number: string;
   client_id: string;
   period_from: string;
   period_to: string;
-};
+} & Partial<{
+  /** What the list, the totals and the Overdue tab read (issue 451); left out by the invoice-making journeys. */
+  client_name: string;
+  issue_date: string;
+  due_date: string | null;
+  paid_date: string | null;
+  total_minutes: number;
+  total_cents: number;
+  currency: string;
+  notes: string;
+  summary: string;
+  created_at: Date;
+}>;
 export type Where = {
   user_id: string;
   project?: { client_id: string | { in: string[] } };
@@ -49,7 +61,26 @@ type InvoiceWhere = {
   number?: { startsWith: string };
   client_id?: { in: string[] };
   period_to?: { gte: string };
+  paid_date?: null | { not: null };
+  due_date?: { not: null; lt?: string; lte?: string };
 };
+type InvoiceOrder = Partial<Record<keyof Invoice, "asc" | "desc">>[];
+
+/** Prisma's `orderBy` over the invoice rows: each key in turn, dates by time, missing values first. */
+function byOrder(order: InvoiceOrder) {
+  const value = (i: Invoice, k: keyof Invoice) => {
+    const v = i[k];
+    return v instanceof Date ? v.getTime() : (v ?? "");
+  };
+  return (a: Invoice, b: Invoice) => {
+    for (const o of order) {
+      const [k, dir] = Object.entries(o)[0] as [keyof Invoice, "asc" | "desc"];
+      const [x, y] = [value(a, k), value(b, k)];
+      if (x !== y) return (x < y ? -1 : 1) * (dir === "asc" ? 1 : -1);
+    }
+    return 0;
+  };
+}
 
 const entry = (
   id: string,
@@ -100,7 +131,12 @@ export function memoryBillingDb() {
     i.user_id === w.user_id &&
     (!w.number || i.number.startsWith(w.number.startsWith)) &&
     (!w.client_id || w.client_id.in.includes(i.client_id)) &&
-    (!w.period_to || i.period_to >= w.period_to.gte);
+    (!w.period_to || i.period_to >= w.period_to.gte) &&
+    (!("paid_date" in w) || (w.paid_date === null ? !i.paid_date : !!i.paid_date)) &&
+    (!w.due_date ||
+      (!!i.due_date &&
+        (w.due_date.lt === undefined || i.due_date < w.due_date.lt) &&
+        (w.due_date.lte === undefined || i.due_date <= w.due_date.lte)));
   const prisma = {
     ...memoryInvoiceLogos(),
     ...memoryNonBillableDays(),
@@ -165,7 +201,37 @@ export function memoryBillingDb() {
         async ({ where }: { where: { user_id: string; number: string } }) =>
           invoices.find((i) => i.user_id === where.user_id && i.number === where.number) ?? null,
       ),
-      findMany: vi.fn(async ({ where }: { where: InvoiceWhere }) => invoices.filter((i) => invoiceMatches(i, where))),
+      findMany: vi.fn(
+        async ({
+          where,
+          orderBy,
+          take,
+          cursor,
+        }: {
+          where: InvoiceWhere;
+          orderBy?: InvoiceOrder;
+          take?: number;
+          cursor?: { id: string };
+        }) => {
+          const found = invoices.filter((i) => invoiceMatches(i, where));
+          if (orderBy) found.sort(byOrder(orderBy));
+          // A cursor starts AT its row (the callers pass skip: 0); an unknown cursor finds nothing, as in Prisma.
+          const from = cursor ? found.findIndex((i) => i.id === cursor.id) : 0;
+          if (from < 0) return [];
+          return found.slice(from, take === undefined ? undefined : from + take);
+        },
+      ),
+      groupBy: vi.fn(async ({ where }: { by: ["currency"]; where: InvoiceWhere }) => {
+        const out = new Map<string, { currency: string; _sum: { total_cents: number }; _count: { _all: number } }>();
+        for (const i of invoices.filter((x) => invoiceMatches(x, where))) {
+          const currency = i.currency ?? "USD";
+          const g = out.get(currency) ?? { currency, _sum: { total_cents: 0 }, _count: { _all: 0 } };
+          g._sum.total_cents += i.total_cents ?? 0;
+          g._count._all++;
+          out.set(currency, g);
+        }
+        return [...out.values()];
+      }),
       create: vi.fn(async ({ data }: { data: Omit<Invoice, "id"> }) => {
         const row = {
           id: `inv${invoices.length + 1}`,

@@ -21,12 +21,15 @@ export function WarmPages() {
     let idle: number | undefined;
     const timer = window.setTimeout(() => {
       const run = () => {
-        const { week, month } = warmRanges(toISODate(new Date()));
+        const today = toISODate(new Date()); // the same browser date `useToday` gives the pages
+        const { week, month } = warmRanges(today);
         for (const range of [week, month]) {
           void utils.entry.list.prefetch(range);
           void utils.entry.nonBillableDays.prefetch(range);
         }
         void utils.invoice.list.prefetch(); // no input, as on Invoices and Clients
+        void utils.invoice.totals.prefetch({ today });
+        void utils.invoice.overdue.prefetch({ today });
         void utils.clients.list.prefetch();
       };
       idle = "requestIdleCallback" in window ? window.requestIdleCallback(run, { timeout: 2000 }) : undefined;

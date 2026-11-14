@@ -281,6 +281,8 @@ export function NewInvoiceView() {
       const { snapshot } = await create.mutateAsync(request);
       await Promise.all([
         utils.invoice.list.invalidate(),
+        utils.invoice.totals.invalidate(),
+        utils.invoice.overdue.invalidate(),
         utils.invoice.unbilled.invalidate(),
         utils.entry.list.invalidate(),
       ]);

@@ -104,6 +104,44 @@ export function moneyLines(invoices: ListInvoice[], today: string | null): Money
   return [...lines.values()];
 }
 
+/** One row of the server's `groupBy` over currency: the sum and the number of invoices. */
+export type CurrencySum = { currency: string; _sum: { total_cents: number | null }; _count: { _all: number } };
+
+export type InvoiceTotals = { money: MoneyLine[]; counts: Record<InvoiceTab, number> };
+
+/**
+ * The money line and the tab counts from the three server sums (paid, unpaid with late included, late), so they cover
+ * every invoice, not only the list's newest 200 (issue 451). Groups that read as the same currency (an empty one is the
+ * default) share a line; two currencies are never added. Waiting = unpaid minus late, as `tabCounts` counts it.
+ */
+export function invoiceTotals(sums: {
+  paid: CurrencySum[];
+  unpaid: CurrencySum[];
+  late: CurrencySum[];
+}): InvoiceTotals {
+  const lines = new Map<string, MoneyLine>();
+  const counts = { all: 0, waiting: 0, overdue: 0, paid: 0 };
+  const add = (rows: CurrencySum[], field: "paid" | "unpaid" | "late") => {
+    let n = 0;
+    for (const row of rows) {
+      const currency = currencyOrDefault(row.currency);
+      const line = lines.get(currency) ?? { currency, paid: 0, unpaid: 0, late: 0 };
+      line[field] += row._sum.total_cents ?? 0;
+      lines.set(currency, line);
+      n += row._count._all;
+    }
+    return n;
+  };
+  const paid = add(sums.paid, "paid");
+  const unpaid = add(sums.unpaid, "unpaid");
+  const late = add(sums.late, "late");
+  counts.all = paid + unpaid;
+  counts.paid = paid;
+  counts.overdue = late;
+  counts.waiting = unpaid - late;
+  return { money: [...lines.values()].sort((a, b) => a.currency.localeCompare(b.currency)), counts };
+}
+
 /** The header of an invoice the list does not hold (older than the newest 200): read from its frozen copy. */
 export function invoiceFromSnapshot(id: string, s: InvoiceSnapshot, paidDate: string | null): ListInvoice {
   return {

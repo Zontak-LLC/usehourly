@@ -13,6 +13,7 @@ import JSZip from "jszip";
 
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { runSql } from "./local-db";
+import { today as localToday } from "./today";
 import { mkdirSync, readFileSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
@@ -613,12 +614,18 @@ export async function openAllEntries(page: Page) {
  * The zip code loads on the click (issue 425), so this also proves the lazy load works.
  */
 export async function downloadEverything(page: Page, scope: Locator): Promise<string> {
+  const zip = await downloadEverythingZip(page, scope);
+  return (await zip.file("all-entries.csv")?.async("string")) ?? "";
+}
+
+/** The same click and checks as `downloadEverything`, returning the whole zip (to read invoices.csv, for example). */
+export async function downloadEverythingZip(page: Page, scope: Locator): Promise<JSZip> {
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     scope.getByRole("button", { name: "Download everything" }).click(),
   ]);
-  expect(download.suggestedFilename()).toMatch(/^usehourly-export-\d{4}-\d{2}-\d{2}\.zip$/);
+  expect(download.suggestedFilename()).toBe(`usehourly-export-${localToday()}.zip`);
   const zip = await JSZip.loadAsync(readFileSync(await download.path()));
   expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(["README.txt", "all-time.xlsx", "all-entries.csv"]));
-  return (await zip.file("all-entries.csv")?.async("string")) ?? "";
+  return zip;
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
+import { invoiceTotals } from "@/lib/invoice-list";
 import { summarizeInvoice } from "@/lib/invoice-summary";
 import { logError } from "@/lib/log";
 import { assertWithinQuota } from "@/lib/quotas";
@@ -57,6 +58,37 @@ const summary = {
   summary: true,
   created_at: true,
 } as const;
+
+/** Invoices per page of `listAll` (at most 4 pages at the 2,000 quota). */
+export const INVOICE_LIST_ALL_PAGE = 500;
+
+/** The list's order: newest issue date first, then newest made. */
+const NEWEST_FIRST = [{ issue_date: "desc" }, { created_at: "desc" }] as const;
+
+/** Late = unpaid with a due date before today: the same rule as `daysLate` in lib/invoice-mail.ts. */
+const lateWhere = (today: string) => ({ paid_date: null, due_date: { not: null, lt: today } });
+
+type SummaryRow = { id: string; summary: string | null };
+
+/**
+ * Invoices made before summaries existed have an empty one: work it out once from the frozen snapshot and keep it (a
+ * few rows at most, the first time the history is opened). Shared by `list`, `listAll` and `overdue`.
+ */
+function withSummaries<T extends SummaryRow>(ctx: Pick<Context, "prisma"> & { userId: string }, rows: T[]) {
+  return Promise.all(
+    rows.map(async (r) => {
+      if (r.summary) return r;
+      const row = await ctx.prisma.invoice.findFirst({
+        where: { id: r.id, user_id: ctx.userId },
+        select: { snapshot: true },
+      });
+      if (!row) return r;
+      const text = summarizeInvoice(JSON.parse(row.snapshot) as InvoiceSnapshot);
+      if (text) await ctx.prisma.invoice.update({ where: { id: r.id, user_id: ctx.userId }, data: { summary: text } });
+      return { ...r, summary: text };
+    }),
+  );
+}
 
 type StoredInvoice = { id: string; client_id: string | null; snapshot: string; paid_date: string | null };
 
@@ -146,26 +178,58 @@ export const invoiceRouter = router({
               ? [{ total_cents: "desc" }, { issue_date: "desc" }]
               : input?.sort === "lowest"
                 ? [{ total_cents: "asc" }, { issue_date: "desc" }]
-                : [{ issue_date: "desc" }, { created_at: "desc" }],
+                : [...NEWEST_FIRST],
         take: 200,
       });
-      // Invoices made before summaries existed have an empty one: work it out once from the frozen
-      // snapshot and keep it (a few rows at most, the first time the history is opened).
-      return Promise.all(
-        rows.map(async (r) => {
-          if (r.summary) return r;
-          const row = await ctx.prisma.invoice.findFirst({
-            where: { id: r.id, user_id: ctx.userId },
-            select: { snapshot: true },
-          });
-          if (!row) return r;
-          const text = summarizeInvoice(JSON.parse(row.snapshot) as InvoiceSnapshot);
-          if (text)
-            await ctx.prisma.invoice.update({ where: { id: r.id, user_id: ctx.userId }, data: { summary: text } });
-          return { ...r, summary: text };
-        }),
-      );
+      return withSummaries(ctx, rows);
     }),
+
+  /** Every invoice, a page at a time like `entry.listAll` ("Download everything"; `list` stops at the newest 200). */
+  listAll: protectedProcedure
+    .input(z.object({ cursor: z.string().max(100).nullish() }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.prisma.invoice.findMany({
+        where: { user_id: ctx.userId },
+        select: summary,
+        orderBy: [...NEWEST_FIRST, { id: "asc" }],
+        take: INVOICE_LIST_ALL_PAGE + 1,
+        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 0 } : {}),
+      });
+      const more = rows.length > INVOICE_LIST_ALL_PAGE;
+      const items = await withSummaries(ctx, more ? rows.slice(0, INVOICE_LIST_ALL_PAGE) : rows);
+      return { items, nextCursor: more ? rows[INVOICE_LIST_ALL_PAGE].id : null };
+    }),
+
+  /**
+   * The money line and the tab counts over EVERY invoice (issue 451: worked out in the browser they stopped at the
+   * newest 200). Amounts per currency, never added across currencies; unpaid includes late, as `moneyLines` does.
+   * `today` is the browser's date (the Worker runs in UTC).
+   */
+  totals: protectedProcedure.input(z.object({ today: dateSchema })).query(async ({ ctx, input }) => {
+    const sums = (where: object) =>
+      ctx.prisma.invoice.groupBy({
+        by: ["currency"],
+        where: { user_id: ctx.userId, ...where },
+        _sum: { total_cents: true },
+        _count: { _all: true },
+      });
+    const [paid, unpaid, late] = await Promise.all([
+      sums({ paid_date: { not: null } }),
+      sums({ paid_date: null }),
+      sums(lateWhere(input.today)),
+    ]);
+    return invoiceTotals({ paid, unpaid, late });
+  }),
+
+  /** Every late, unpaid invoice, newest first (the Overdue tab). No cap: the invoice quota (2,000) bounds it. */
+  overdue: protectedProcedure.input(z.object({ today: dateSchema })).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.invoice.findMany({
+      where: { user_id: ctx.userId, ...lateWhere(input.today) },
+      select: summary,
+      orderBy: [...NEWEST_FIRST],
+    });
+    return withSummaries(ctx, rows);
+  }),
 
   /** The frozen snapshot the PDF is rendered from. */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {

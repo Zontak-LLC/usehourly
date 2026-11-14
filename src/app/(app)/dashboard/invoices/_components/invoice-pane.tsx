@@ -103,6 +103,8 @@ export function InvoicePane({
         utils.invoice.list.invalidate(),
         utils.invoice.get.invalidate({ id }),
         utils.invoice.latest.invalidate(),
+        utils.invoice.totals.invalidate(),
+        utils.invoice.overdue.invalidate(),
         utils.report.annual.invalidate(),
       ]);
       toast.success(paidDate ? `Invoice ${number} marked paid.` : `Invoice ${number} marked unpaid.`);

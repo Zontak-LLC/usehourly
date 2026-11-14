@@ -35,6 +35,27 @@ export type InvoiceRow = {
 
 export type ExportFile = { path: string; content: string | Uint8Array };
 
+/** At most this many pages per list, so a server that keeps sending a cursor cannot loop forever. */
+const MAX_PAGES = 200;
+
+/**
+ * Every row of a cursor-paged list (`entry.listAll`, `expense.listAll`, `invoice.listAll`), fetched a page at a time so
+ * no single response is huge.
+ */
+export async function fetchAllPages<T>(
+  fetchPage: (cursor: string | null) => Promise<{ items: T[]; nextCursor: string | null }>,
+): Promise<T[]> {
+  const all: T[] = [];
+  let cursor: string | null = null;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const res = await fetchPage(cursor);
+    all.push(...res.items);
+    if (!res.nextCursor) break;
+    cursor = res.nextCursor;
+  }
+  return all;
+}
+
 const hours = (m: number) => Math.round((m / 60) * 100) / 100;
 
 /** A safe, readable file name from a client's name; unique within `taken`. */
@@ -217,11 +238,7 @@ export async function planExport(opts: {
     "What is in this zip:",
     "  all-time.xlsx      Every entry in one workbook: a grid of hours by project and week, and the entry list.",
     "  all-entries.csv    Every entry, one row each. Opens in any spreadsheet or can be imported elsewhere.",
-    ...(opts.invoices.length
-      ? [
-          `  invoices.csv       Your invoice history (${opts.invoices.length}${opts.invoices.length >= 200 ? ", the 200 most recent" : ""}).`,
-        ]
-      : []),
+    ...(opts.invoices.length ? [`  invoices.csv       Your invoice history (${opts.invoices.length}).`] : []),
     ...(expenses.length ? [`  expenses.csv       Your expenses and mileage trips (${expenses.length}).`] : []),
     ...(clients.length ? ["  by-client/         One workbook per client, with the same two sheets."] : []),
     "",

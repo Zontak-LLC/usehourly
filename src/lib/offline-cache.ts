@@ -22,6 +22,8 @@ export const PERSISTED_QUERIES = [
   "project.totals",
   "project.budgets",
   "invoice.list",
+  "invoice.totals",
+  "invoice.overdue",
   "report.annual",
 ] as const;
 
