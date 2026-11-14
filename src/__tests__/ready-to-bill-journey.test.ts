@@ -1,9 +1,12 @@
+import { PrismaD1 } from "@prisma/adapter-d1";
+import { PrismaClient } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import { nextInvoiceNumber } from "@/lib/unbilled";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { fakeD1 } from "./helpers/fake-d1";
 import { type Entry, memoryBillingDb, type Where } from "./helpers/memory-billing";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -171,6 +174,138 @@ describe("money right: the same hours are never billed twice", () => {
     expect(nextInvoiceNumber(2026, [])).toBe("INV-2026-001");
     expect(nextInvoiceNumber(2026, ["INV-2026-001", "INV-2026-003"])).toBe("INV-2026-004");
     expect(nextInvoiceNumber(2026, ["INV-2025-009", "INV-2026-002", "INV-2026-custom"])).toBe("INV-2026-003");
+  });
+});
+
+/**
+ * Issue 448: time added to an entry already on an invoice was never billed (`invoice.unbilled` and `invoice.create`
+ * skip billed rows), yet it counted in the Year summary. Entries on an invoice are now locked: their minutes and client
+ * stay as billed, Resume starts a new entry, and `bulkSet` skips such a day.
+ */
+describe("billed entries are locked", () => {
+  const LOCKED = /This entry is on invoice INV-2026-004\. Add a new entry for the extra time\./;
+
+  /** Acme's 2:00 on 2026-10-03 (e2), billed on INV-2026-004; Beta (c2) is a second client with project p3. */
+  async function billedDay() {
+    const db = memoryDb();
+    const keep = db.entries.filter((e) => e.id === "e2" || e.user_id !== "u1");
+    db.entries.splice(0, db.entries.length, ...keep);
+    (db.entries.find((e) => e.id === "e2") as Entry).minutes = 120;
+    db.clients.push({
+      id: "c2",
+      user_id: "u1",
+      name: "Beta",
+      archived: false,
+      invoice_every: null,
+      invoice_anchor: null,
+    });
+    db.projects.push(
+      { id: "p3", user_id: "u1", client_id: "c2", name: "Beta site", hourly_rate: 5000, billable: true },
+      { id: "p4", user_id: "u1", client_id: "c1", name: "Acme app", hourly_rate: 10000, billable: true },
+    );
+    const c = caller(db.prisma);
+    await c.invoice.create({ ...october, from: "2026-10-03", to: "2026-10-03", number: "INV-2026-004" });
+    const billed = db.entries.find((e) => e.id === "e2") as Entry;
+    expect(billed.invoice_id).toBe("inv1");
+    return { ...db, c, billed };
+  }
+
+  it("extra minutes on a billed entry are never lost: billed plus not-invoiced-yet is what the day holds", async () => {
+    const { c, entries } = await billedDay();
+    await c.entry.update({ id: "e2", minutes: 180 }).catch(() => undefined);
+    const stored = entries
+      .filter((e) => e.user_id === "u1" && e.date === "2026-10-03")
+      .reduce((n, e) => n + e.minutes, 0);
+    const unbilled = (await c.invoice.unbilled()).find((u) => u.clientId === "c1")?.minutes ?? 0;
+    expect(stored).toBe(120 + unbilled);
+  });
+
+  it("refuses more or fewer minutes on a billed entry, naming the invoice, and leaves the row as billed", async () => {
+    const { c, billed } = await billedDay();
+    await expect(c.entry.update({ id: "e2", minutes: 180 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringMatching(LOCKED),
+    });
+    await expect(c.entry.update({ id: "e2", minutes: 60 })).rejects.toThrow(LOCKED);
+    expect(billed).toMatchObject({ minutes: 120, invoice_id: "inv1" });
+  });
+
+  it("refuses a move to another client's project, but allows the same client's project, a note and a date", async () => {
+    const { c, billed } = await billedDay();
+    await expect(c.entry.update({ id: "e2", projectId: "p3" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringMatching(LOCKED),
+    });
+    expect(billed).toMatchObject({ project_id: "p1", invoice_id: "inv1" });
+
+    await c.entry.update({ id: "e2", projectId: "p4" });
+    await c.entry.update({ id: "e2", note: "header" });
+    await c.entry.update({ id: "e2", date: "2026-10-04" });
+    await c.entry.update({ id: "e2", minutes: 120, note: "x" }); // edit forms send the minutes back unchanged
+    expect(billed).toMatchObject({ project_id: "p4", note: "x", date: "2026-10-04", minutes: 120, invoice_id: "inv1" });
+  });
+
+  /** The same billed day on the real Prisma client over a migrated SQLite (Resume and bulkSet insert with raw SQL). */
+  function sqliteWorld(billedMinutes = 120) {
+    const { db, DB } = fakeD1();
+    const prisma = new PrismaClient({ adapter: new PrismaD1(DB as never) });
+    db.exec(
+      `INSERT INTO auth_users (id, name, email, password_hash) VALUES ('u1', 'Jo', 'jo@x.invalid', 'x');
+       INSERT INTO clients (id, user_id, name) VALUES ('c1', 'u1', 'Acme');
+       INSERT INTO projects (id, user_id, client_id, name, hourly_rate, billable) VALUES ('p1', 'u1', 'c1', 'Website', 10000, 1);
+       INSERT INTO invoices (id, user_id, client_id, client_name, number, issue_date, period_from, period_to,
+         total_minutes, total_cents, snapshot, search_text)
+         VALUES ('inv1', 'u1', 'c1', 'Acme', 'INV-2026-004', '2026-11-01', '2026-10-03', '2026-10-03', ${billedMinutes}, 20000, '{}', '');
+       INSERT INTO time_entries (id, user_id, project_id, date, minutes, note, invoice_id, created_at, updated_at)
+         VALUES ('e2', 'u1', 'p1', '2026-10-03', ${billedMinutes}, 'nav', 'inv1', '2026-10-03T10:00:00.000Z', '2026-10-03T10:00:00.000Z');`,
+    );
+    const c = createCallerFactory(appRouter)({ prisma, session: { user: { id: "u1" }, expires: "" } } as never);
+    const row = (id = "e2") => prisma.timeEntry.findUniqueOrThrow({ where: { id } });
+    return { db, prisma, c, row };
+  }
+
+  it("Resume on a billed entry starts a new, unbilled entry; the billed row stays as it was", async () => {
+    const w = sqliteWorld();
+    const running = await w.c.entry.resume({ id: "e2" });
+    expect(running.id).not.toBe("e2");
+    expect(running).toMatchObject({ project_id: "p1", date: "2026-10-03", note: "nav", invoice_id: null });
+    expect(running.started_at).not.toBeNull();
+    expect(await w.row()).toMatchObject({ minutes: 120, started_at: null, invoice_id: "inv1" });
+
+    const stopped = await w.c.entry.stop();
+    expect(stopped.id).toBe(running.id);
+    expect(await w.c.invoice.unbilled()).toEqual([
+      expect.objectContaining({ clientId: "c1", minutes: stopped.minutes }),
+    ]);
+    expect(await w.row()).toMatchObject({ minutes: 120, invoice_id: "inv1" });
+  });
+
+  it("Resume on a billed entry that holds a full day still starts a new entry", async () => {
+    const w = sqliteWorld(1440);
+    const running = await w.c.entry.resume({ id: "e2" });
+    expect(running).toMatchObject({ project_id: "p1", invoice_id: null, minutes: 0 });
+    expect(await w.row()).toMatchObject({ minutes: 1440, started_at: null });
+  });
+
+  it("Resume on an unbilled entry still runs the same row", async () => {
+    const w = sqliteWorld();
+    w.db.exec("UPDATE time_entries SET invoice_id = NULL WHERE id = 'e2'");
+    const running = await w.c.entry.resume({ id: "e2" });
+    expect(running.id).toBe("e2");
+    expect(running.started_at).not.toBeNull();
+  });
+
+  it("bulkSet skips a billed day whose minutes would change, updates only a note, and still deletes at 0", async () => {
+    const w = sqliteWorld();
+    const cell = (minutes: number) => ({ projectId: "p1", cells: [{ date: "2026-10-03", minutes }] });
+    expect(await w.c.entry.bulkSet(cell(180))).toEqual({ created: 0, updated: 0, deleted: 0, skipped: ["2026-10-03"] });
+    expect(await w.row()).toMatchObject({ minutes: 120, note: "nav", invoice_id: "inv1" });
+
+    expect(await w.c.entry.bulkSet({ ...cell(120), note: "header" })).toMatchObject({ updated: 1, skipped: [] });
+    expect(await w.row()).toMatchObject({ minutes: 120, note: "header", invoice_id: "inv1" });
+
+    expect(await w.c.entry.bulkSet(cell(0))).toMatchObject({ deleted: 1 });
+    expect(await w.prisma.timeEntry.count({ where: { id: "e2" } })).toBe(0);
   });
 });
 
