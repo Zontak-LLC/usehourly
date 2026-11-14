@@ -18,7 +18,8 @@ const MONTH_NAMES = [
   "December",
 ];
 
-const hours = (m: number) => Math.round((m / 60) * 100) / 100;
+// Hours are written unrounded (minutes / 60); each cell's "0.00" format shows two decimals, so
+// SUM cells match their cached results when Excel recalculates (issue 450).
 const dollars = (c: number) => c / 100;
 
 export type ReportBusiness = { name: string | null; ein: string | null; currency?: string };
@@ -47,9 +48,9 @@ export async function buildAnnualWorkbook(
   sum.addRow([]);
   const t = report.totals;
   const rows: [string, number | string, string?][] = [
-    ["Total hours worked", hours(t.minutes), "0.00"],
-    ["Billable hours", hours(t.billableMinutes), "0.00"],
-    ["Non-billable hours", hours(t.nonBillableMinutes), "0.00"],
+    ["Total hours worked", t.minutes / 60, "0.00"],
+    ["Billable hours", t.billableMinutes / 60, "0.00"],
+    ["Non-billable hours", t.nonBillableMinutes / 60, "0.00"],
     ["Days with time logged", t.workedDays, "0"],
     ["Earned (billable hours × project rate)", dollars(t.earnedCents), money],
     [
@@ -78,8 +79,8 @@ export async function buildAnnualWorkbook(
   report.quarters.forEach((q) => {
     const r = sum.addRow([
       `Q${q.quarter}`,
-      hours(q.minutes),
-      hours(q.billableMinutes),
+      q.minutes / 60,
+      q.billableMinutes / 60,
       dollars(q.earnedCents),
       dollars(q.receivedCents),
     ]);
@@ -102,8 +103,8 @@ export async function buildAnnualWorkbook(
   report.months.forEach((m, i) => {
     const r = mon.addRow([
       MONTH_NAMES[i],
-      hours(m.minutes),
-      hours(m.billableMinutes),
+      m.minutes / 60,
+      m.billableMinutes / 60,
       dollars(m.earnedCents),
       dollars(m.receivedCents),
     ]);
@@ -114,8 +115,8 @@ export async function buildAnnualWorkbook(
   });
   const mt = mon.addRow([
     "Total",
-    { formula: "SUM(B2:B13)", result: hours(t.minutes) },
-    { formula: "SUM(C2:C13)", result: hours(t.billableMinutes) },
+    { formula: "SUM(B2:B13)", result: t.minutes / 60 },
+    { formula: "SUM(C2:C13)", result: t.billableMinutes / 60 },
     { formula: "SUM(D2:D13)", result: dollars(t.earnedCents) },
     { formula: "SUM(E2:E13)", result: dollars(report.received.totalCents) },
   ]);
@@ -139,8 +140,8 @@ export async function buildAnnualWorkbook(
       p.project,
       p.billable ? "Yes" : "No",
       p.billable ? dollars(p.rateCents) : null,
-      hours(p.minutes),
-      hours(p.billableMinutes),
+      p.minutes / 60,
+      p.billableMinutes / 60,
       dollars(p.earnedCents),
     ]);
     r.getCell(4).numFmt = money;
@@ -155,8 +156,8 @@ export async function buildAnnualWorkbook(
       "",
       "",
       "",
-      { formula: `SUM(E2:E${last})`, result: hours(t.minutes) },
-      { formula: `SUM(F2:F${last})`, result: hours(t.billableMinutes) },
+      { formula: `SUM(E2:E${last})`, result: t.minutes / 60 },
+      { formula: `SUM(F2:F${last})`, result: t.billableMinutes / 60 },
       { formula: `SUM(G2:G${last})`, result: dollars(t.earnedCents) },
     ]);
     ct.font = { bold: true };
@@ -176,7 +177,7 @@ export async function buildAnnualWorkbook(
       i.number,
       i.client_name,
       i.issue_date,
-      hours(i.total_minutes),
+      i.total_minutes / 60,
       dollars(i.total_cents),
       i.paid_date ?? "Unpaid",
     ]);
@@ -189,7 +190,7 @@ export async function buildAnnualWorkbook(
       "Total",
       "",
       "",
-      { formula: `SUM(D2:D${last})`, result: hours(report.invoices.list.reduce((a, i) => a + i.total_minutes, 0)) },
+      { formula: `SUM(D2:D${last})`, result: report.invoices.list.reduce((a, i) => a + i.total_minutes, 0) / 60 },
       { formula: `SUM(E2:E${last})`, result: dollars(report.invoices.totalCents) },
     ]);
     it.font = { bold: true };
