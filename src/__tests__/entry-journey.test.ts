@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ENTRY_GONE } from "@/lib/entry-gone";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
@@ -799,5 +800,93 @@ describe("entry search journey", () => {
     await expect(asCaller(prisma, "u1").entry.search({ q: "a" })).rejects.toBeInstanceOf(TRPCError);
     await expect(asCaller(prisma, "u1").entry.search({ q: "x".repeat(101) })).rejects.toBeInstanceOf(TRPCError);
     expect(prisma.timeEntry.findMany).not.toHaveBeenCalled();
+  });
+});
+
+// Issue 458 (Sentinel, 2026-11-08): saving an entry deleted in another tab gave a 500 (trpc_internal_error).
+describe("an entry deleted elsewhere: a plain NOT_FOUND, never a server error", () => {
+  const GONE = { code: "NOT_FOUND", message: ENTRY_GONE };
+
+  /** An entry u1 owns, found by the first read, for the race between that read and the write. */
+  function readThenRace() {
+    const prisma = mockPrisma();
+    prisma.timeEntry.findFirst.mockResolvedValue({ id: "e1", user_id: "u1", project_id: "p1", minutes: 60 });
+    return prisma;
+  }
+
+  /** mockPrisma with time entries kept in memory, so create, delete and update see the same rows. */
+  function memoryEntries() {
+    const prisma = mockPrisma();
+    const rows = new Map<string, Record<string, unknown>>();
+    type Where = { id: string; user_id: string };
+    const find = (where: Where) => {
+      const row = rows.get(where.id);
+      return row && row.user_id === where.user_id ? row : null;
+    };
+    prisma.project.findFirst.mockResolvedValue({ id: "p1" });
+    prisma.timeEntry.create.mockImplementation(async ({ data }) => {
+      const row = { ...data };
+      rows.set(row.id as string, row);
+      return row;
+    });
+    prisma.timeEntry.findFirst.mockImplementation(async ({ where }: { where: Where }) => find(where));
+    prisma.timeEntry.deleteMany.mockImplementation(async ({ where }: { where: Where }) => {
+      if (!find(where)) return { count: 0 };
+      rows.delete(where.id);
+      return { count: 1 };
+    });
+    return { prisma, rows };
+  }
+
+  it("turns a delete between the read and the write (Prisma P2025) into NOT_FOUND with a plain message", async () => {
+    const prisma = readThenRace();
+    prisma.timeEntry.update.mockRejectedValueOnce(
+      Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+    );
+    await expect(asCaller(prisma, "u1").entry.update({ id: "e1", minutes: 90 })).rejects.toMatchObject(GONE);
+  });
+
+  it("maps P2025 thrown as a plain object too (the D1 adapter does not always throw an Error)", async () => {
+    const prisma = readThenRace();
+    prisma.timeEntry.update.mockRejectedValueOnce({ code: "P2025" });
+    await expect(asCaller(prisma, "u1").entry.update({ id: "e1", note: "x" })).rejects.toMatchObject(GONE);
+  });
+
+  it("still lets other database faults through as server errors (no silent catch)", async () => {
+    const prisma = readThenRace();
+    prisma.timeEntry.update.mockRejectedValueOnce(Object.assign(new Error("D1_ERROR: boom"), { code: "P2002" }));
+    await expect(asCaller(prisma, "u1").entry.update({ id: "e1", minutes: 90 })).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+    });
+  });
+
+  it("create, delete, then update the same id: NOT_FOUND and nothing is written", async () => {
+    const { prisma, rows } = memoryEntries();
+    const c = asCaller(prisma, "u1");
+    const made = await c.entry.create({ projectId: "p1", date: "2026-11-08", duration: "1:00" });
+    expect(rows.has(made.id)).toBe(true);
+    await expect(c.entry.delete({ id: made.id })).resolves.toEqual({ ok: true });
+    await expect(c.entry.update({ id: made.id, minutes: 90 })).rejects.toMatchObject(GONE);
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+  });
+
+  it("a second delete of the same id says the entry was deleted", async () => {
+    const { prisma } = memoryEntries();
+    const c = asCaller(prisma, "u1");
+    const made = await c.entry.create({ projectId: "p1", date: "2026-11-08", duration: "1:00" });
+    await c.entry.delete({ id: made.id });
+    await expect(c.entry.delete({ id: made.id })).rejects.toMatchObject(GONE);
+  });
+
+  it("someone else cannot update or delete u1's entry, and it stays as it was", async () => {
+    const { prisma, rows } = memoryEntries();
+    const made = await asCaller(prisma, "u1").entry.create({ projectId: "p1", date: "2026-11-08", duration: "1:00" });
+    const before = { ...rows.get(made.id) };
+    const u2 = asCaller(prisma, "u2");
+    await expect(u2.entry.update({ id: made.id, minutes: 600 })).rejects.toMatchObject(GONE);
+    await expect(u2.entry.delete({ id: made.id })).rejects.toMatchObject(GONE);
+    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: made.id, user_id: "u2" } });
+    expect(rows.get(made.id)).toEqual(before);
   });
 });

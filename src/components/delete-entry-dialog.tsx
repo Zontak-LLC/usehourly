@@ -7,7 +7,7 @@ import { InlineConfirm } from "@/components/inline-confirm";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
-import { toastError } from "@/lib/toast-error";
+import { isNotFound, toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 export type EntryToDelete = {
@@ -33,18 +33,22 @@ export function DeleteEntryConfirm({ entry, onClose }: { entry: EntryToDelete | 
     // Gone from the list and the dialog closed at once; the server's answer confirms it, or the entry comes back.
     const undo = await optimistic.remove(id);
     onClose();
-    try {
-      await del.mutateAsync({ id });
-      await Promise.all([
+    const refresh = () =>
+      Promise.all([
         utils.entry.list.invalidate(),
         utils.entry.running.invalidate(),
         utils.project.budgets.invalidate(),
         utils.project.totals.invalidate(),
       ]);
+    try {
+      await del.mutateAsync({ id });
+      await refresh();
       toast.success("Entry deleted.");
     } catch (err) {
-      undo();
       toastError(err, "Couldn't delete that entry.");
+      // Already deleted elsewhere: the row stays gone and the lists catch up.
+      if (isNotFound(err)) return void (await refresh());
+      undo();
     }
   }
 
