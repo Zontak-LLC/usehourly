@@ -1,5 +1,6 @@
 import { fromISODate } from "@/lib/dates";
 import { WEEKLY_AFTER_WORKED_DAYS, weekStart } from "@/lib/export-range";
+import { amountCents } from "@/lib/invoice";
 import { effectiveCurrency } from "@/lib/money";
 import { buildSheet, exportableEntries, type SheetEntry } from "@/lib/timesheet";
 
@@ -66,7 +67,8 @@ export async function buildTimesheetWorkbook(opts: {
   }
   const colMinutes = (cells: Record<string, { minutes: number }>, c: Column) =>
     c.dates.reduce((a, d) => a + (cells[d]?.minutes ?? 0), 0);
-  const hours = (m: number) => Math.round((m / 60) * 100) / 100;
+  // Hours are written unrounded (minutes / 60); the "0.00" format shows two decimals. Rounding each
+  // cell first made 3 × 20 min add up to 0.99 h while the invoice said 1.00 h (issue 450).
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "UseHourly";
@@ -85,11 +87,11 @@ export async function buildTimesheetWorkbook(opts: {
       r.project,
       ...columns.map((c) => {
         const m = colMinutes(r.cells, c);
-        return m ? hours(m) : null;
+        return m ? m / 60 : null;
       }),
       {
         formula: `SUM(${colLetter(firstDayCol)}${rowNum}:${colLetter(totalCol - 1)}${rowNum})`,
-        result: hours(r.total),
+        result: r.total / 60,
       },
     ]);
     row.getCell(totalCol).font = { bold: true };
@@ -102,10 +104,10 @@ export async function buildTimesheetWorkbook(opts: {
     ...columns.map((col, i) => {
       const c = colLetter(firstDayCol + i);
       const m = col.dates.reduce((a, d) => a + (sheet.dayTotals[d] ?? 0), 0);
-      return sheet.rows.length ? { formula: `SUM(${c}2:${c}${last})`, result: hours(m) } : 0;
+      return sheet.rows.length ? { formula: `SUM(${c}2:${c}${last})`, result: m / 60 } : 0;
     }),
     sheet.rows.length
-      ? { formula: `SUM(${colLetter(totalCol)}2:${colLetter(totalCol)}${last})`, result: hours(sheet.total) }
+      ? { formula: `SUM(${colLetter(totalCol)}2:${colLetter(totalCol)}${last})`, result: sheet.total / 60 }
       : 0,
   ]);
   totals.font = { bold: true };
@@ -135,18 +137,20 @@ export async function buildTimesheetWorkbook(opts: {
       e.project.client.name,
       e.project.name,
       e.note,
-      hours(e.minutes),
+      e.minutes / 60,
       e.project.billable ? "Yes" : "No",
       rate || null,
-      e.project.billable && rate ? { formula: `E${n}*G${n}`, result: hours(e.minutes) * rate } : null,
+      e.project.billable && rate
+        ? { formula: `E${n}*G${n}`, result: amountCents(e.minutes, e.project.hourly_rate) / 100 }
+        : null,
       effectiveCurrency(e.project.client.currency, opts.accountCurrency),
     ]);
   });
   // Amounts in different currencies are never added together: the total is left out when the entries mix them.
   const oneCurrency =
     new Set(sorted.map((e) => effectiveCurrency(e.project.client.currency, opts.accountCurrency))).size <= 1;
-  const amountTotal = sorted.reduce(
-    (a, e) => a + (e.project.billable ? hours(e.minutes) * (e.project.hourly_rate / 100) : 0),
+  const amountTotalCents = sorted.reduce(
+    (a, e) => a + (e.project.billable ? amountCents(e.minutes, e.project.hourly_rate) : 0),
     0,
   );
   if (sorted.length) {
@@ -155,10 +159,10 @@ export async function buildTimesheetWorkbook(opts: {
       "",
       "",
       "",
-      { formula: `SUM(E2:E${sorted.length + 1})`, result: hours(sheet.total) },
+      { formula: `SUM(E2:E${sorted.length + 1})`, result: sheet.total / 60 },
       "",
       "",
-      oneCurrency ? { formula: `SUM(H2:H${sorted.length + 1})`, result: amountTotal } : "",
+      oneCurrency ? { formula: `SUM(H2:H${sorted.length + 1})`, result: amountTotalCents / 100 } : "",
     ]);
     t.font = { bold: true };
     t.border = { top: { style: "thin" } };
