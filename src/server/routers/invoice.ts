@@ -11,7 +11,7 @@ import { sha256Hex } from "@/lib/sha256";
 import { nextInvoiceNumber } from "@/lib/unbilled";
 
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
-import { assertNumberFree, buildInvoiceSnapshot, invoiceClient } from "../invoice-snapshot";
+import { assertNumberFree, buildInvoiceSnapshot, invoiceClient, numberUsedError } from "../invoice-snapshot";
 import { dateSchema } from "../schemas/dates";
 import { type Context, protectedProcedure, router } from "../trpc";
 import { markInvoiced, unbilledByClient } from "../unbilled";
@@ -249,26 +249,33 @@ export const invoiceRouter = router({
       (logo) => storeInvoiceLogo(ctx.prisma, ctx.userId, logo),
     );
 
-    const created = await ctx.prisma.invoice.create({
-      data: {
-        user_id: ctx.userId,
-        client_id: client.id,
-        client_name: client.name,
-        number: input.number,
-        issue_date: input.issueDate,
-        due_date: input.dueDate ?? null,
-        period_from: input.from,
-        period_to: input.to,
-        total_minutes: totals.totalMinutes,
-        total_cents: totalCents,
-        currency,
-        notes: input.notes,
-        snapshot: snapshotText,
-        search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),
-        summary: summarizeInvoice(snapshot),
-      },
-      select: { id: true },
-    });
+    // Two saves of the same number at once (double click, two tabs) both pass the check above; the unique index
+    // [user_id, number] stops the second one here. Only that clash says "already used": other failures stay as they are.
+    const created = await ctx.prisma.invoice
+      .create({
+        data: {
+          user_id: ctx.userId,
+          client_id: client.id,
+          client_name: client.name,
+          number: input.number,
+          issue_date: input.issueDate,
+          due_date: input.dueDate ?? null,
+          period_from: input.from,
+          period_to: input.to,
+          total_minutes: totals.totalMinutes,
+          total_cents: totalCents,
+          currency,
+          notes: input.notes,
+          snapshot: snapshotText,
+          search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),
+          summary: summarizeInvoice(snapshot),
+        },
+        select: { id: true },
+      })
+      .catch((e: unknown) => {
+        if ((e as { code?: string } | null)?.code === "P2002") throw numberUsedError(input.number);
+        throw e;
+      });
     // Mark the time it bills, so it is never billed again. If another invoice took some of it in the meantime (two
     // made at once), this one is taken back: it would bill those hours twice.
     const billed = entries.filter((e) => e.project.billable && e.minutes > 0 && !e.started_at).map((e) => e.id);
