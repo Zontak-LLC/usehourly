@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -134,6 +135,16 @@ async function openInvoice(ctx: Pick<Context, "prisma"> & { userId: string }, in
     paidDate: inv.paid_date,
     snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot),
   };
+}
+
+/**
+ * Undoes a new invoice that could not be saved whole: frees the time marked on it, then deletes it. Filters by invoice
+ * and account (no id lists), so it stays under D1's bound-values limit for any size; time billed again on purpose keeps
+ * its first invoice.
+ */
+async function takeBackInvoice(prisma: PrismaClient, userId: string, invoiceId: string) {
+  await prisma.timeEntry.updateMany({ where: { user_id: userId, invoice_id: invoiceId }, data: { invoice_id: null } });
+  await prisma.invoice.deleteMany({ where: { id: invoiceId, user_id: userId } });
 }
 
 export const invoiceRouter = router({
@@ -344,13 +355,16 @@ export const invoiceRouter = router({
     // made at once), this one is taken back: it would bill those hours twice.
     const billed = entries.filter((e) => e.project.billable && e.minutes > 0 && !e.started_at).map((e) => e.id);
     // Time billed again on purpose stays marked with the invoice it was first billed on.
-    const marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+    let marked: number;
+    try {
+      marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+    } catch (err) {
+      // D1 has no real transactions, so this is the rollback: a half-saved invoice would bill its unmarked hours twice.
+      await takeBackInvoice(ctx.prisma, ctx.userId, created.id);
+      throw err;
+    }
     if (!input.includeInvoiced && marked < billed.length) {
-      await ctx.prisma.timeEntry.updateMany({
-        where: { user_id: ctx.userId, invoice_id: created.id },
-        data: { invoice_id: null },
-      });
-      await ctx.prisma.invoice.deleteMany({ where: { id: created.id, user_id: ctx.userId } });
+      await takeBackInvoice(ctx.prisma, ctx.userId, created.id);
       throw new TRPCError({
         code: "CONFLICT",
         message: "Some of this time was just put on another invoice. Check the period and try again.",
