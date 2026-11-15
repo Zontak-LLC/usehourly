@@ -47,6 +47,10 @@ export function InvoicesView() {
   // Every query the page needs starts in this render, so they go out as ONE batched request.
   const clients = trpc.clients.list.useQuery();
   const invoices = trpc.invoice.list.useQuery();
+  // The list holds the newest 200; the money line, the tab counts and the Overdue tab come from the server over EVERY
+  // invoice (issue 451), so an old unpaid, late invoice is never missed. They wait for the browser's today.
+  const totals = trpc.invoice.totals.useQuery({ today: today ?? "" }, { enabled: today !== null });
+  const overdue = trpc.invoice.overdue.useQuery({ today: today ?? "" }, { enabled: today !== null });
   const unbilled = useUnbilled();
   const pageSize = usePageSize();
   const [tab, setTab] = useState<InvoiceTab>("all");
@@ -54,7 +58,10 @@ export function InvoicesView() {
   const [pageNo, setPageNo] = useState(1);
 
   const all = invoices.data ?? [];
-  const filtered = filterInvoices(all, tab, search, today);
+  // Until the server answers, the list's own figures stand in, so the line and the counts never flash empty.
+  const money = totals.data?.money ?? moneyLines(all, today);
+  const counts = totals.data?.counts ?? tabCounts(all, today);
+  const filtered = filterInvoices(tab === "overdue" ? (overdue.data ?? all) : all, tab, search, today);
   const selectedId = routeId ?? filtered[0]?.id ?? null;
   const shown = useShownInvoice(routeId, selectedId);
 
@@ -100,8 +107,8 @@ export function InvoicesView() {
           list={
             <InvoiceListPane
               page={paginate(filtered, pageNo, pageSize)}
-              money={moneyLines(all, today)}
-              counts={tabCounts(all, today)}
+              money={money}
+              counts={counts}
               tab={tab}
               onTab={(t) => {
                 setTab(t);
@@ -122,7 +129,7 @@ export function InvoicesView() {
         >
           <InvoicePane
             selectedId={selectedId}
-            row={all.find((i) => i.id === selectedId)}
+            row={all.find((i) => i.id === selectedId) ?? overdue.data?.find((i) => i.id === selectedId)}
             shown={shown}
             today={today}
             colourOf={colourOf}
