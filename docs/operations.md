@@ -134,6 +134,18 @@ Lines that are not ours and need no fix. Match the whole signature, not one fram
 - Night Watch triage: close as known noise. Do look further when the lines come with no deploy in the hour before, or
   in a steady stream from many `requestId`s: that is someone posting made-up action ids.
 
+**Bot form post to a page** (incident `usehourly:9bef45d27c59b510`, 2026-11-03 to 2026-11-12)
+
+- Signature: a multi-line `warn` whose first frame is anonymous (`at custom-worker.js:<line>:46`), then `r$`, `sg`,
+  `n2`, `p2`, `o8.handleResponse`, `v2`. No `Object.get` or `rD` (that is the stale-action entry above).
+- Warning text (the first line, which Night Watch does not capture): `Error: Invalid Server Actions request.`
+- Source: Next.js 16.4.2, `next/dist/server/app-render/action-handler.js` (`handleAction`, `r$`): a
+  `multipart/form-data` POST to a page with no `next-action` header. Next writes it with `console.warn` and answers
+  400 with `x-nextjs-action-not-found: 1`. No screen of the app sends one; bots and scanners do.
+- Fixed: `src/proxy.ts` now refuses these with 400 `Bad request` before Next runs (`isStrayFormPost` in
+  `src/lib/route-access.ts`; test `e2e/stray-form-post.spec.ts`). A new line with this signature means the guard was
+  bypassed: look again, do not close as noise.
+
 ## Shipping a change
 
 Pushing to `main` is the release: CircleCI runs `npm run ci` (Biome, types, tests with the coverage floor), applies

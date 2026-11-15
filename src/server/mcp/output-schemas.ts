@@ -247,7 +247,11 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     created: z.number(),
     updated: z.number(),
     deleted: z.number(),
-    skipped: z.array(z.string()).describe("Days skipped: several entries or a running timer"),
+    skipped: z
+      .array(z.string())
+      .describe(
+        "Days skipped: several entries, a running timer, or time already on an invoice (add a new entry for extra time)",
+      ),
   }),
   update_entry: obj({ updated: entry }),
   merge_entries: obj({

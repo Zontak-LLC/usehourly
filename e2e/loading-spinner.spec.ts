@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { SPINNER_DELAY_MS } from "../src/lib/loading";
-import { expect, hold, startFreshAccount, test } from "./helpers";
+import { expect, hold, pollPausedClock, startFreshAccount, test, watchForElement } from "./helpers";
 
 /**
  * One calm spinner for slow waits (issue 430). Log time saves optimistically: the row shows and the form clears at once,
@@ -54,18 +54,12 @@ test("the spinner fits the disc: the same box as the icon, and Log time keeps it
   expect(Math.abs(busyWidth - doneWidth)).toBeLessThanOrEqual(1);
 });
 
-// No wall time (R-152): a slow CI runner once made a real save take longer than the delay and turned a release red. The
-// page's clock stands still and the save is held at a gate, so "fast" means "answered before SPINNER_DELAY_MS of the
-// page's own clock", whatever the runner's speed.
+// No wall time (R-152, R-189): the page's clock stands still while the save is open and the save is held at a gate, so
+// "fast" means "answered 1 ms before SPINNER_DELAY_MS of the page's own clock", whatever the runner's speed. The paused
+// clock moves only on purpose: each wait runs only the 0 ms timers due now, and it never waits for a step that needs a
+// longer timer (a query's retry, React's reveal of the refreshed list). Once the save is answered the clock runs again.
 test("a fast save never shows the spinner, not even for a moment", async ({ page }) => {
-  // Watches the whole page from the first load, so a "Saving" spinner shown for a single frame is still seen.
-  await page.addInitScript(() => {
-    const seen = { spinner: false };
-    (window as unknown as { spinnerSeen: typeof seen }).spinnerSeen = seen;
-    new MutationObserver(() => {
-      if (document.querySelector('[data-slot="spinner"][aria-label="Saving"]')) seen.spinner = true;
-    }).observe(document, { childList: true, subtree: true });
-  });
+  const savingSpinner = await watchForElement(page, '[data-slot="spinner"][aria-label="Saving"]');
   await page.clock.install(); // the clock runs as normal until it is paused below
   await startFreshAccount(page);
   const now = await page.evaluate(() => Date.now());
@@ -74,34 +68,23 @@ test("a fast save never shows the spinner, not even for a moment", async ({ page
   const save = await hold(page, "entry.create");
   try {
     await logEntry(page, "45m", "Fast save");
-    await page.clock.runFor(SPINNER_DELAY_MS - 1); // also runs the timers that send the call
-    await save.arrived;
-    await expect(logButton(page)).toHaveAttribute("aria-busy", "true"); // the save is still open...
-    await expect(spinner(page)).toHaveCount(0); // ...and 1 ms before the delay there is no spinner
+    // The call goes out on 0 ms timers that may start a moment after the click: wait for it without moving the clock.
+    await pollPausedClock(page, save.hasArrived).toBe(true);
+    await pollPausedClock(page, () => logButton(page).getAttribute("aria-busy")).toBe("true"); // the save is open...
+    await page.clock.runFor(SPINNER_DELAY_MS - 1);
+    // ...and up to 1 ms before the delay no spinner has shown, not even for a frame.
+    expect(await savingSpinner.seen(), `a Saving spinner showed before ${SPINNER_DELAY_MS} ms`).toBe(false);
   } finally {
     save.release();
   }
 
-  // The answer is handled on timers of 0 ms: run only those, so the page's clock stays 1 ms short of the delay.
-  await expect
-    .poll(async () => {
-      await page.clock.runFor(0);
-      return logButton(page).getAttribute("aria-busy");
-    })
-    .not.toBe("true");
-  // The saved row swaps in on the same 0 ms timers: keep running only those while waiting, or the paused clock holds it.
-  const row = page.getByRole("listitem").filter({ hasText: "Fast save" });
-  await expect
-    .poll(async () => {
-      await page.clock.runFor(0);
-      return row.getAttribute("aria-busy");
-    })
-    .not.toBe("true");
-
-  await page.clock.runFor(SPINNER_DELAY_MS); // well past the delay: a late spinner would show now
-  await expect(spinner(page)).toHaveCount(0);
-  const seen = await page.evaluate(() => (window as unknown as { spinnerSeen: { spinner: boolean } }).spinnerSeen);
-  expect(seen.spinner, "a Saving spinner was on screen during the test").toBe(false);
+  // The answer is handled on 0 ms timers: run only those, so the page's clock stays 1 ms short of the delay until the
+  // save is over.
+  await pollPausedClock(page, () => logButton(page).getAttribute("aria-busy")).not.toBe("true");
+  await page.clock.runFor(SPINNER_DELAY_MS); // well past the delay: a spinner timer left running would fire now
+  await page.clock.resume(); // the rest (the list refresh, the saved row) runs on the page's normal timers
+  await expect(page.getByRole("listitem").filter({ hasText: "Fast save" })).not.toHaveAttribute("aria-busy", "true");
+  expect(await savingSpinner.seen(), "a Saving spinner was on screen during the fast save").toBe(false);
 });
 
 test("with reduced motion the spinner stands still; with motion its dashes run", async ({ page }) => {

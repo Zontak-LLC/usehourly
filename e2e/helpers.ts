@@ -3,6 +3,7 @@ import {
   type Browser,
   type BrowserContext,
   test as base,
+  type ConsoleMessage,
   type Download,
   expect,
   type Locator,
@@ -60,7 +61,7 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
 /**
  * Holds every call to one tRPC procedure (e.g. "entry.create") back before it goes on to the server: for `ms`, or, with
  * no `ms`, until the test calls `release()` (a gate, so no wall time decides the test). `arrived` settles when the first
- * call reaches the hold.
+ * call reaches the hold; `hasArrived()` says the same without waiting, for a poll.
  */
 export async function hold(page: Page, procedure: string, ms?: number) {
   let release!: () => void;
@@ -68,15 +69,53 @@ export async function hold(page: Page, procedure: string, ms?: number) {
     release = resolve;
   });
   let arrive!: () => void;
+  let hasArrived = false;
   const arrived = new Promise<void>((resolve) => {
     arrive = resolve;
   });
   await page.route(`**/api/trpc/${procedure}*`, async (route) => {
+    hasArrived = true;
     arrive();
     await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
     await route.continue();
   });
-  return { arrived, release };
+  return { arrived, hasArrived: () => hasArrived, release };
+}
+
+/**
+ * Polls `read` with the page's clock paused, running only the timers that are due now (0 ms: React Query's notices,
+ * tRPC's batch) before each read, so the page's own clock never moves. For a page whose next step may start a moment
+ * later than the test's last action: a slow runner then only makes the poll take longer, never moves the page's time.
+ */
+export function pollPausedClock<T>(page: Page, read: () => T | Promise<T>) {
+  return expect.poll(async () => {
+    await page.clock.runFor(0);
+    return read();
+  });
+}
+
+/**
+ * Watches the page from its first load for an element matching `selector`, so one shown for a single frame is still
+ * seen (a look at one moment would miss it). Call before the first `goto`; `seen()` says whether it was ever there.
+ */
+export async function watchForElement(page: Page, selector: string) {
+  await page.addInitScript((watched) => {
+    const flag = { seen: false };
+    (window as unknown as { e2eSeen: Record<string, typeof flag> }).e2eSeen ??= {};
+    (window as unknown as { e2eSeen: Record<string, typeof flag> }).e2eSeen[watched] = flag;
+    const look = () => {
+      if (document.querySelector(watched)) flag.seen = true;
+    };
+    new MutationObserver(look).observe(document, { childList: true, subtree: true });
+  }, selector);
+  return {
+    seen: () =>
+      page.evaluate(
+        (watched) =>
+          (window as unknown as { e2eSeen: Record<string, { seen: boolean }> }).e2eSeen[watched]?.seen === true,
+        selector,
+      ),
+  };
 }
 
 /**
@@ -472,6 +511,13 @@ const IGNORED = [
   /\[Fast Refresh\]/i,
 ];
 
+/**
+ * A 404 from a tRPC call is the server's NOT_FOUND on purpose (an entry deleted in another tab, issue 458), so it is not
+ * a problem. A 404 for a page, script or picture still fails: Chromium logs the missing file's address as the location.
+ */
+const isDeliberateNotFound = (m: ConsoleMessage) =>
+  /status of 404/i.test(m.text()) && m.location().url.includes("/api/trpc/");
+
 type Fixtures = {
   /** Save a full-page screenshot, numbered, under e2e/report/screens/<device>/. */
   shot: (name: string) => Promise<void>;
@@ -495,7 +541,7 @@ export const test = base.extend<Fixtures>({
     const problems: string[] = [];
     page.on("pageerror", (e) => problems.push(`uncaught error: ${e.message}`));
     page.on("console", (m) => {
-      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())))
+      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())) && !isDeliberateNotFound(m))
         problems.push(`console error: ${m.text().slice(0, 3500)}`);
     });
     page.on("response", (r) => {

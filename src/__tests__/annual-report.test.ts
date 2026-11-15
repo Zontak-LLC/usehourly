@@ -227,7 +227,8 @@ describe("annual report Excel export", () => {
     const monthly = read.getWorksheet("Monthly");
     expect(monthly?.getRow(2).getCell(1).value).toBe("January");
     expect(monthly?.getRow(2).getCell(4).value).toBe(200); // Jan earned $200.00
-    expect(monthly?.getRow(14).getCell(2).value).toMatchObject({ formula: "SUM(B2:B13)", result: 16.67 });
+    // 1,000 minutes, written unrounded (shown as 16.67 by the cell's "0.00" format).
+    expect(monthly?.getRow(14).getCell(2).value).toMatchObject({ formula: "SUM(B2:B13)", result: 1000 / 60 });
     expect(monthly?.getRow(14).getCell(4).value).toMatchObject({ formula: "SUM(D2:D13)", result: 1489.17 });
 
     const invs = read.getWorksheet("Invoices");

@@ -90,7 +90,7 @@ export const TIME_TOOLS: McpTool[] = [
     name: "set_day_totals",
     title: "Set a project's total for days",
     description:
-      "Set one project's total minutes for up to 31 days: more than 0 creates or updates that day's single entry, 0 clears it. Days that hold several entries or a running timer are skipped and reported, never merged. A note, when given, is applied to every day written.",
+      "Set one project's total minutes for up to 31 days: more than 0 creates or updates that day's single entry, 0 clears it. Days skipped: several entries, a running timer, or time already on an invoice (add a new entry for extra time); they are reported, never merged. A note, when given, is applied to every day written.",
     access: "write",
     idempotent: true,
     input: z.object({
@@ -117,7 +117,8 @@ export const TIME_TOOLS: McpTool[] = [
   defineTool({
     name: "update_entry",
     title: "Edit an entry",
-    description: "Change an entry's project, date, minutes or note. Only the fields you pass change.",
+    description:
+      "Change an entry's project, date, minutes or note. Only the fields you pass change. Entries on an invoice keep their minutes and client.",
     access: "write",
     idempotent: true,
     input: z

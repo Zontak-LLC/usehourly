@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { fromISODate } from "@/lib/dates";
-import { toastError } from "@/lib/toast-error";
+import { isNotFound, toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 
 /** The entry being dragged from the open day card onto a calendar day. */
@@ -30,9 +30,10 @@ export function useEntryDrag() {
     async (id: string, from: string, to: string, undoable: boolean) => {
       if (from === to) return;
       const undo = await optimistic.patch(id, { date: to });
+      const refresh = () => Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
       try {
         await update.mutateAsync({ id, date: to });
-        await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
+        await refresh();
         const message = `${undoable ? "Moved" : "Moved back"} to ${movedDay.format(fromISODate(to))}.`;
         if (undoable) {
           toast.success(message, { action: { label: "Undo", onClick: () => void move(id, to, from, false) } });
@@ -40,8 +41,10 @@ export function useEntryDrag() {
           toast.success(message);
         }
       } catch (err) {
-        undo();
         toastError(err, "Couldn't move that entry.");
+        // Deleted elsewhere: the refresh takes it off the calendar; putting it back would show a ghost.
+        if (isNotFound(err)) return void (await refresh());
+        undo();
       }
     },
     [optimistic, update, utils],

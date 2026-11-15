@@ -57,3 +57,17 @@ export function accessDecision(pathname: string, signedIn: boolean): AccessDecis
   }
   return isLanding || isAuthPage ? "allow" : "to-login";
 }
+
+/**
+ * A form posted to a page as `multipart/form-data` with no `next-action` header: no screen of the app sends one (every
+ * form uses onSubmit; Server Actions are fetch calls that carry `next-action`). Bots do, and Next.js then logs
+ * "Invalid Server Actions request." (incident usehourly:9bef45d27c59b510). A page-level `<form action={serverAction}>`
+ * would send exactly this without JavaScript, so it needs this rule changed first.
+ */
+export function isStrayFormPost(method: string, contentType: string | null, nextActionHeader: string | null): boolean {
+  return (
+    method.toUpperCase() === "POST" &&
+    (contentType ?? "").trimStart().toLowerCase().startsWith("multipart/form-data") &&
+    !nextActionHeader
+  );
+}

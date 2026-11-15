@@ -159,6 +159,35 @@ describe("client invoice journey", () => {
     expect(prisma.invoice.create).not.toHaveBeenCalled();
   });
 
+  it("the same number saved twice at once (both pass the check) says it is already used and marks no time", async () => {
+    const prisma = mockPrisma();
+    const c = asCaller(prisma, "u1");
+    const used = { code: "CONFLICT", message: "Invoice number INV-2026-003 is already used." };
+
+    // The check's own refusal, for the wording both must share.
+    prisma.invoice.findFirst.mockResolvedValueOnce({ id: "old" } as never);
+    await expect(c.invoice.create(input)).rejects.toMatchObject(used);
+
+    // The race: the check finds nothing, then the unique index [user_id, number] stops the insert.
+    prisma.invoice.create.mockRejectedValueOnce(
+      Object.assign(new Error("Unique constraint failed"), { code: "P2002" }) as never,
+    );
+    await expect(c.invoice.create(input)).rejects.toMatchObject(used);
+    expect(prisma.invoice.create).toHaveBeenCalledTimes(1);
+    expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("any other failure saving the invoice comes out as it is, never as a number clash", async () => {
+    const prisma = mockPrisma();
+    const boom = new Error("boom");
+    prisma.invoice.create.mockRejectedValueOnce(boom as never);
+    const err = await asCaller(prisma, "u1")
+      .invoice.create(input)
+      .catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: "INTERNAL_SERVER_ERROR", message: "boom", cause: boom });
+    expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
+  });
+
   it("history search is scoped to the user and matches lowercased text", async () => {
     const prisma = mockPrisma();
     await asCaller(prisma, "u1").invoice.list({ q: "  Homepage HERO ", clientId: "c1" });

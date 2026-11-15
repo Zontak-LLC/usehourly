@@ -2,6 +2,7 @@ import { toCsv } from "@/lib/csv";
 import { addDays } from "@/lib/dates";
 import { categoryLabel, rateInput } from "@/lib/expenses";
 import { buildTimesheetWorkbook } from "@/lib/export-xlsx";
+import { amountCents } from "@/lib/invoice";
 import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 import type { SheetEntry } from "@/lib/timesheet";
 import { dateRange, exportableEntries } from "@/lib/timesheet";
@@ -35,6 +36,11 @@ export type InvoiceRow = {
 
 export type ExportFile = { path: string; content: string | Uint8Array };
 
+/**
+ * Hours as a 2-decimal number, for CSV and README text only: a CSV has no number format, so
+ * unrounded hours would print 0.3333333333333333. The exact Minutes column sits next to it, and
+ * amounts come from minutes, never from these rounded hours. The .xlsx files write minutes / 60.
+ */
 const hours = (m: number) => Math.round((m / 60) * 100) / 100;
 
 /** A safe, readable file name from a client's name; unique within `taken`. */
@@ -67,7 +73,8 @@ export function entriesCsv(entries: SheetEntry[], accountCurrency?: string): str
   );
   for (const e of sorted) {
     const rate = e.project.hourly_rate / 100;
-    const amount = e.project.billable && rate ? Math.round(hours(e.minutes) * rate * 100) / 100 : null;
+    // The same per-entry cent rounding as the invoice line, from exact minutes (issue 450).
+    const amount = e.project.billable && rate ? amountCents(e.minutes, e.project.hourly_rate) / 100 : null;
     rows.push([
       e.date,
       e.project.client.name,

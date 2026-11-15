@@ -14,7 +14,7 @@ export const POND_URL = "https://quiet.zontakllc.com/pond/";
 /**
  * After Stop (issue 218, 2026-10-23): the time is ALREADY an entry in the timesheet, so the strip says so ("Saved 0:42") instead
  * of asking to "Add to timesheet". Beside it: - / + 5 min to correct it, Undo (the entry goes away, as if the timer never
- * ran), Resume (the stopwatch carries on with the same entry) and Done (the strip goes back to Start timer). Under them, one
+ * ran), Resume (the stopwatch carries on with the same entry, or a new one if the entry is already on an invoice) and Done (the strip goes back to Start timer). Under them, one
  * small line offers a pause: the pond, in a new tab so the work stays open.
  */
 export function TimeTicket({ timer }: { timer: TodayTimer }) {

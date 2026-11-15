@@ -147,6 +147,8 @@ function world() {
     headers?: Record<string, string>;
   }[] = [];
   const flags = { mailerOn: true, failing: false };
+  /** Owners' stored IANA time zones (most owners have none). */
+  const timezones: Record<string, string | null> = {};
   const matches = (row: Record<string, unknown>, where: Record<string, unknown>) =>
     Object.entries(where).every(([k, v]) => {
       const val = row[k];
@@ -157,7 +159,12 @@ function world() {
     });
   const prisma = {
     rateLimit: limiter.rateLimit,
-    authUser: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) => owners[where.id] ?? null) },
+    authUser: {
+      findUnique: vi.fn(async ({ where }: { where: { id: string } }) => owners[where.id] ?? null),
+      findMany: vi.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
+        where.id.in.filter((id) => owners[id]).map((id) => ({ id, timezone: timezones[id] ?? null })),
+      ),
+    },
     invoice: {
       findFirst: vi.fn(
         async ({ where }: { where: { id: string; user_id: string } }) =>
@@ -244,7 +251,7 @@ function world() {
       mailer: mailer(),
       baseUrl: APP,
     } as never);
-  return { owners, invoices, clients, suppressed, links, emails, sent, flags, limiter, prisma, mailer, as };
+  return { owners, invoices, clients, suppressed, links, emails, sent, flags, timezones, limiter, prisma, mailer, as };
 }
 
 beforeEach(() => {
@@ -514,6 +521,39 @@ describe("overdue reminders", () => {
     ]);
     expect(w.emails.map((e) => e.kind)).toEqual(["reminder", "reminder"]);
     expect(w.links).toHaveLength(2); // each reminder carries its own fresh link
+  });
+
+  describe("uses the owner's own date when a timezone is stored (issue 452)", () => {
+    const at = (w: ReturnType<typeof world>, iso: string) =>
+      runInvoiceReminders({
+        prisma: w.prisma as never,
+        mailer: w.mailer(),
+        appUrl: APP,
+        secret: SECRET,
+        now: new Date(iso),
+      });
+
+    it("New York: not on the evening of the due date, but just after local midnight", async () => {
+      const w = world();
+      w.timezones.u1 = "America/New_York";
+      optIn(w);
+      expect(await at(w, "2026-10-11T00:00:00Z")).toMatchObject({ sent: 0 }); // 20:00 on 10-10 in New York
+      expect(await at(w, "2026-10-11T05:00:00Z")).toMatchObject({ sent: 1 }); // 01:00 on 10-11 in New York
+    });
+
+    it("Tokyo: already the next day there while UTC is still on the due date", async () => {
+      const w = world();
+      w.timezones.u1 = "Asia/Tokyo";
+      optIn(w);
+      expect(await at(w, "2026-10-10T16:00:00Z")).toMatchObject({ sent: 1 }); // 01:00 on 10-11 in Tokyo
+    });
+
+    it.each([null, "Not/AZone"])("timezone %s keeps the UTC date", async (tz) => {
+      const w = world();
+      w.timezones.u1 = tz;
+      optIn(w);
+      expect(await at(w, "2026-10-11T00:00:00Z")).toMatchObject({ sent: 1 });
+    });
   });
 
   it("never reminds about a paid invoice, an invoice that did not opt in, or one with no due date", async () => {

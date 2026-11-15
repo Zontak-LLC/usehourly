@@ -122,11 +122,25 @@ export function memoryBillingDb() {
       }),
     },
     project: {
+      findFirst: vi.fn(
+        async ({ where }: { where: { id: string; user_id: string } }) =>
+          projects.find((p) => p.id === where.id && p.user_id === where.user_id) ?? null,
+      ),
       findMany: vi.fn(async ({ where }: { where: { user_id: string } }) =>
         projects.filter((p) => p.user_id === where.user_id),
       ),
     },
     timeEntry: {
+      findFirst: vi.fn(
+        async ({ where }: { where: { id: string; user_id: string } }) =>
+          entries.find((e) => e.id === where.id && e.user_id === where.user_id) ?? null,
+      ),
+      update: vi.fn(async ({ where, data }: { where: { id: string; user_id: string }; data: Partial<Entry> }) => {
+        const e = entries.find((x) => x.id === where.id && x.user_id === where.user_id);
+        if (!e) throw new Error("Record to update not found.");
+        Object.assign(e, data);
+        return { ...e, project: projects.find((p) => p.id === e.project_id) };
+      }),
       findMany: vi.fn(async ({ where }: { where: Where }) =>
         entries
           .filter((e) => matches(e, where))
@@ -162,8 +176,13 @@ export function memoryBillingDb() {
         async ({ where }: { where: { user_id: string } }) => invoices.filter((i) => i.user_id === where.user_id).length,
       ),
       findFirst: vi.fn(
-        async ({ where }: { where: { user_id: string; number: string } }) =>
-          invoices.find((i) => i.user_id === where.user_id && i.number === where.number) ?? null,
+        async ({ where }: { where: { user_id: string; number?: string; id?: string } }) =>
+          invoices.find(
+            (i) =>
+              i.user_id === where.user_id &&
+              (where.number === undefined || i.number === where.number) &&
+              (where.id === undefined || i.id === where.id),
+          ) ?? null,
       ),
       findMany: vi.fn(async ({ where }: { where: InvoiceWhere }) => invoices.filter((i) => invoiceMatches(i, where))),
       create: vi.fn(async ({ data }: { data: Omit<Invoice, "id"> }) => {
@@ -202,5 +221,5 @@ export function memoryBillingDb() {
       })),
     },
   };
-  return { prisma, entries, invoices, clients, nonBillableRows: prisma.nonBillableRows, entry };
+  return { prisma, entries, invoices, clients, projects, nonBillableRows: prisma.nonBillableRows, entry };
 }
