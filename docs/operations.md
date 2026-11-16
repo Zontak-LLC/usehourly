@@ -10,24 +10,13 @@ change goes wrong. Written for the next person on call, including future you.
 | App | One Cloudflare Worker named `hourly` (Next.js through OpenNext) | Cloudflare dashboard > Workers & Pages > `hourly` |
 | Database | Cloudflare D1 `hourly-db` (SQLite) | `npx wrangler d1 ...`; Time Travel keeps 30 days |
 | Public address | https://usehourly.app (custom domain, the only public origin) | `wrangler.jsonc` `routes` |
-| Pipeline | CircleCI: `check`, `e2e`, then `deploy` and `smoke` on `main` | CircleCI project `useHourly` (see below for the plan) |
+| Pipeline | GitHub Actions `ci.yml`: `check`, `e2e` (4 shards), then `deploy` (with the smoke test) on `main` | https://github.com/Zontak-LLC/usehourly/actions (free: the repository is public) |
 | Secrets | Worker secrets (`AUTH_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAILS`, `TURNSTILE_SECRET_KEY`, OAuth ids/secrets, ...) | `npx wrangler secret list` (names only) |
 
-## CircleCI plan and credits (checked 2026-10-22, issue #201)
+## CI cost (2026-11-16)
 
-- The CircleCI organization (ID `dd08e881-e229-479f-a377-6615ea3e56c8`, slug `circleci/UJ56CWJ43qJrrspUC34hLb`; renamed
-  from `Zontakllc` on 2026-10-22, the name does not matter to pipelines, contexts or secrets) is on the **Free plan**:
-  30,000 credits a month, 2 GB of storage, 30 jobs at once. It also holds MagSmith and Club ADHD.
-- **Open-source credits already apply, with no application:** this repository is public, and the plan page says "Your
-  OS project contributions are not subject to a 30,000 credit limit." In the cycle Oct 14 to Nov 13 the organization
-  used 50,381 credits (useHourly 28,431, MagSmith 16,979, Club ADHD 426, storage 4,545) and was not stopped. So a
-  bigger machine or more containers for `e2e` costs nothing here (issue #197).
-- **What does count against the 30,000:** the private projects (MagSmith, Club ADHD) and storage. Storage was 12.6
-  GB-months against 2 GB, mostly this project's saved test reports, so `e2e` and `smoke` keep their report only when a
-  run fails (`when: on_fail`). The Free plan has no Usage Controls page, so artifact retention cannot be shortened in
-  the settings. Check Plan > Usage at the start of a cycle if MagSmith's builds grow.
-- Support was not contacted: the plan page answered the question. Larger allowances go through
-  https://support.circleci.com/.
+CI runs on GitHub Actions' standard runners, which are free and unlimited for a public repository. CircleCI was used
+until 2026-11 and was dropped because its credits cost money. Test reports are kept only when a run fails, for 14 days.
 
 ## Read-only tokens for Claude (2026-10-23, issue #199)
 
@@ -37,34 +26,22 @@ need the owner's go every time.
 
 | Variable | Service | Scope | Make it at | Revoke it at |
 |---|---|---|---|---|
-| `CIRCLECI_TOKEN` | CircleCI | Project API token, **Read Only**, project `useHourly` | CircleCI > Projects > `useHourly` > Project Settings > API Permissions > Create Token | The same page, the token's X |
 | `CLOUDFLARE_READ_TOKEN` | Cloudflare | Account: Workers Scripts **Read**, D1 **Read**, Workers Tail **Read**, Account Analytics **Read**; only the Zontak LLC account | https://dash.cloudflare.com/profile/api-tokens > Create Token > Custom token | The same page, ··· > Delete |
 | `RESEND_READ_TOKEN` | Resend | Only if Resend offers a read-only key; its keys are "Full access" or "Sending access", so skip it until it does | https://resend.com/api-keys | The same page |
-| (none) | GitHub | The `gh` login already in use | | `gh auth logout` |
+| (none) | GitHub | The `gh` login already in use (CI runs and logs too) | | `gh auth logout` |
 
 Rules: the smallest scope that does the job; never paste a token into a chat, an issue or a file in this repository
 (they live in `~/.zshrc` or a password manager's shell integration); rotate a token whenever it may have been seen.
-The deploy token stays only in the CircleCI context `usehourly-production`.
+The deploy token stays only in the GitHub Environment `production` (deployment branches: `main`).
 
-Note: `~/.circleci/cli.yml` holds a personal CircleCI token (the `circleci` CLI login). A personal token can do
-everything its owner can, so prefer the read-only project token above for reading results.
-
-**Reading a CircleCI run (checked 2026-10-23).** The project's slug is
-`circleci/UJ56CWJ43qJrrspUC34hLb/AKYfr2PaRyXAT1JcGqvZiY` (the GitHub App style; `gh/Zontak-LLC/usehourly` answers
-"Project not found"). Pipeline, workflow and job ids come from each answer in turn:
+**Reading a CI run.** `gh` reads everything, no extra token:
 
 ```bash
-S=circleci/UJ56CWJ43qJrrspUC34hLb/AKYfr2PaRyXAT1JcGqvZiY
-H="Circle-Token: $CIRCLECI_TOKEN"
-curl -s -H "$H" "https://circleci.com/api/v2/project/$S/pipeline?branch=next"   # newest first: .items[].id
-curl -s -H "$H" "https://circleci.com/api/v2/pipeline/<pipeline-id>/workflow"    # .items[].id, status
-curl -s -H "$H" "https://circleci.com/api/v2/workflow/<workflow-id>/job"         # name, status, job_number
-curl -s -H "$H" "https://circleci.com/api/v2/project/$S/<job-number>/tests"      # failed tests and messages
-curl -s -H "$H" "https://circleci.com/api/v2/project/$S/<job-number>/artifacts"  # reports kept on failure
+gh run list --workflow ci.yml --branch main --limit 5   # newest first
+gh run view <run-id>                                     # jobs and their status
+gh run view <run-id> --log-failed                        # only the failed steps' logs
+gh run download <run-id> -n e2e-report-1                 # a shard's report (kept only when it failed)
 ```
-
-A project token only reads its own project; `/api/v2/me` needs a personal token, so check a new project token with
-the pipeline line instead.
 
 ## Is it healthy?
 
@@ -75,8 +52,7 @@ the pipeline line instead.
   indexed read that touches no one's data). Night Watch's Database monitor compares them with their own 7-day normal.
   Its limits live in Night Watch, not here. Staging's probe sits near 50 ms since 2026-10-27 with no errors: see
   `docs/incidents/2026-10-27-staging-database-probe.md` (no app change; the fix is a Night Watch ticket).
-- After every deploy CircleCI's job finishes green only if the deploy command succeeded; it does not call the health
-  endpoint. Check it yourself after a release: `curl -s -o /dev/null -w "%{http_code}\n" https://usehourly.app/api/health`.
+- After every deploy the `deploy` job waits for the health endpoint and runs the smoke test (below). To check by hand: `curl -s -o /dev/null -w "%{http_code}\n" https://usehourly.app/api/health`.
 
 ## Reading the logs
 
@@ -136,10 +112,11 @@ Lines that are not ours and need no fix. Match the whole signature, not one fram
 
 ## Shipping a change
 
-Pushing to `main` is the release: CircleCI runs `npm run ci` (Biome, types, tests with the coverage floor), applies
-D1 migrations (`wrangler d1 migrations apply DB --remote`), then deploys. Run `npm run ci` before every push. Two more
-workflows run on GitHub: the same `npm run ci` for pull requests, a weekly dependency audit and CodeQL, and a nightly
-browser-test run (`e2e.yml`). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
+Pushing to `main` is the release: GitHub Actions (`ci.yml`) runs `npm run ci` (Biome, types, tests with the coverage
+floor) and the browser tests (4 shards), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys,
+then smoke-tests the live site. Pull requests run the same checks and browser tests, without the deploy. Run
+`npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, and a nightly browser-test run
+(`e2e.yml`: every spec on the phone too, plus the "every control" sweep). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
 `summary.md` in the `e2e-report` artifact.
 
 ## Staging and daily releases (2026-10-21)
@@ -150,7 +127,7 @@ browser-test run (`e2e.yml`). That run prints its 10 slowest tests in its log (s
 - **Test against it:** `E2E_BASE_URL=https://staging.usehourly.app npx playwright test <files>` (sign-up is limited to 5 per hour per connection, so run a few files at a time; tests that read mail from the stand-in mailbox cannot run there). The full suite runs on the release pull request in GitHub.
 - Not yet: a Cloudflare Access lock in front of it (dashboard: Zero Trust, Access, Applications), and deploying it from CI.
 
-**Daily release** (when the owner says "daily release"): tickets merge into the `next` branch one after another (each cut from `next`, `npm run ci`, targeted e2e, cold review, approval of the before/after page). Deploy `next` to staging and look at it. On "ship": one pull request `next` to `main`, full CI and e2e green, record the rollback points first (`wrangler deployments list` for the current Worker version id, and for a migration the D1 Time Travel timestamp), merge, watch the CircleCI deploy, confirm `/api/health`, check the Worker logs for new errors for 15 minutes, and list what went out. If health fails or errors spike, roll back first (`wrangler rollback <version-id>`), investigate after. At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
+**Daily release** (when the owner says "daily release"): tickets merge into the `next` branch one after another (each cut from `next`, `npm run ci`, targeted e2e, cold review, approval of the before/after page). Deploy `next` to staging and look at it. On "ship": one pull request `next` to `main`, full CI and e2e green, record the rollback points first (`wrangler deployments list` for the current Worker version id, and for a migration the D1 Time Travel timestamp), merge, watch the `deploy` job (`gh run watch`), confirm `/api/health`, check the Worker logs for new errors for 15 minutes, and list what went out. If health fails or errors spike, roll back first (`wrangler rollback <version-id>`), investigate after. At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
 
 ## Drills: break one thing on purpose, on staging (2026-10-24)
 
@@ -177,8 +154,8 @@ One command drives real browsers as stress-test accounts on staging and writes a
 - Each run adds a few 15-minute "perf check" entries and some invoices to the stress accounts (staging test data). 50 people means 50 browser tabs on this machine: close other heavy work first.
 
 ## After a deploy: the smoke test and automatic rollback (2026-10-22)
-- **What runs:** the CircleCI job `smoke` runs after `deploy` on `main`. It waits for `/api/health`, then runs `e2e/smoke/production.spec.ts` in a real browser (desktop and phone) against the live site: the public pages and the health check, then a throwaway **sample account** (the app deletes it within 24 hours): Today, add an entry, edit it, delete it (the question opens in its card), Week, Month (a day opens as a card), Invoices, Clients, Year summary. An uncaught error, a console error or an HTTP 5xx anywhere fails it. It touches nobody's data.
-- **If it fails** (the spec retries once, so two failures), and the project variable `SMOKE_ROLLBACK` is `1` (switched on after the job has passed once on a real deploy): `scripts/rollback-previous.mjs` puts the Worker back on the version that was live before this deploy (`wrangler rollback`), the job checks `/api/health` again and **stays red** so it is noticed. The database is not touched: migrations must be additive (expand, then remove later), so the old code runs on the new schema. A sample-account limit (5 an hour per connection) skips the test instead of failing it, because that says nothing about the deploy.
+- **What runs:** the `deploy` job in `ci.yml`, after the deploy on `main`. It waits for `/api/health`, then runs `e2e/smoke/production.spec.ts` in a real browser (desktop and phone) against the live site: the public pages and the health check, then a throwaway **sample account** (the app deletes it within 24 hours): Today, add an entry, edit it, delete it (the question opens in its card), Week, Month (a day opens as a card), Invoices, Clients, Year summary. An uncaught error, a console error or an HTTP 5xx anywhere fails it. It touches nobody's data.
+- **If it fails** (the spec retries once, so two failures), and the `production` environment variable `SMOKE_ROLLBACK` is `1` (switched on after the job has passed once on a real deploy): `scripts/rollback-previous.mjs` puts the Worker back on the version that was live before this deploy (`wrangler rollback`), the job checks `/api/health` again and **stays red** so it is noticed. The database is not touched: migrations must be additive (expand, then remove later), so the old code runs on the new schema. A sample-account limit (5 an hour per connection) skips the test instead of failing it, because that says nothing about the deploy.
 - **By hand:** `npm run smoke:prod` runs the same test against production; `node scripts/rollback-previous.mjs --dry-run` shows which version a rollback would go to. A rollback leaves the Worker on the older version until the next deploy to `main`.
 - **Adding to it:** keep it short (a few minutes) and read-only for real users; anything it needs must work with a sample account. When a screen it clicks changes, update the spec in the same pull request (a stale smoke test would roll back a good deploy).
 

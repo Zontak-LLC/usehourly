@@ -12,7 +12,7 @@ test("on a phone the week's project rows are plain rows: name and client on the 
   const week = page.getByRole("region", { name: "This week", exact: true });
   const rows = week.getByRole("button");
   await expect(week).toBeVisible();
-  // The sample's entries are on the days before today, so on a Monday (CircleCI runs in UTC) this week is still
+  // The sample's entries are on the days before today, so on a Monday (CI runs in UTC) this week is still
   // empty: then the rows are last week's.
   if ((await rows.count()) === 0) await page.getByRole("button", { name: "Previous week" }).click();
   await expect(rows.first()).toBeVisible();
