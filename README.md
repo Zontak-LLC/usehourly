@@ -103,26 +103,25 @@ npx wrangler secret put EMAIL_FROM        # for example: UseHourly <noreply@your
 
 Without them the app works as before, and the forgot-password page says email isn't set up.
 
-### Deploy from CircleCI
+### Deploy from GitHub Actions
 
-`.circleci/config.yml` runs the checks on every push and, on `main`, applies the D1 migrations and
-deploys. The deploy token is a secret, so keep it out of the project settings: create a **context**
-named `usehourly-production` (Organization Settings > Contexts), add an expression restriction
-`pipeline.git.branch == "main"`, and put the token in it. Only the deploy job on `main` can read it.
+`.github/workflows/ci.yml` runs the checks and the browser tests on every pull request and push. On a push to
+`main`, when both pass, it applies the D1 migrations, deploys and smoke-tests the live site. The deploy reads its
+settings from a GitHub **Environment** named `production` (Settings > Environments), with deployment branches limited
+to `main`, so pull requests and other branches never see the token.
 
-| Context variable | Value |
+| Environment secret | Value |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | a token with Workers Scripts: Edit and D1: Edit |
 
-In the CircleCI project settings add these environment variables:
-
-| Variable | Value |
+| Environment variable | Value |
 |---|---|
 | `CLOUDFLARE_ACCOUNT_ID` | your Cloudflare account id |
 | `D1_DATABASE_ID` | the id of your D1 database |
 | `APP_URL` | your public address, for example `https://app.example.com` |
 
-Optional: `WORKER_NAME`, `D1_DATABASE_NAME`, `CUSTOM_DOMAIN`. `AUTH_SECRET` stays a Worker secret
+Optional variables: `WORKER_NAME`, `D1_DATABASE_NAME`, `CUSTOM_DOMAIN`, and `SMOKE_ROLLBACK=1` (roll back
+automatically when the smoke test fails). `AUTH_SECRET` stays a Worker secret
 (`npx wrangler secret put AUTH_SECRET`, once); CI never sees it. `scripts/ci-wrangler-config.mjs`
 writes `wrangler.jsonc` from these variables, so no account ids live in the repository.
 

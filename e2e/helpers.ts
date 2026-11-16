@@ -226,7 +226,7 @@ export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number
 
 /**
  * Opens the landing page and starts the sample-data demo, ending on the dashboard. The button only works once the page's
- * script has loaded, which on a slow machine (a cold CircleCI container compiling the page) can take a while: a click
+ * script has loaded, which on a slow machine (a cold CI machine compiling the page) can take a while: a click
  * before that does nothing. So wait for the page to settle, and click again if nothing happened.
  */
 export async function startDemo(page: Page) {

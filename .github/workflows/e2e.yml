@@ -1,8 +1,8 @@
 name: Browser tests
 
-# The Playwright suite runs on every pull request in CircleCI (the `e2e` job, split across 4 containers, and a release
-# waits for it). This workflow is the nightly run and the on-demand run: it runs EVERY spec on the phone too
-# (E2E_FULL_PHONE=1). Nightly it also runs the slower sweep that
+# The normal Playwright suite runs on every pull request and push to main in ci.yml (the `e2e` job, 4 shards, and a
+# release waits for it). This workflow adds only what that run leaves out, nightly and on demand: it runs EVERY
+# spec on the phone too (E2E_FULL_PHONE=1). Nightly it also runs the slower sweep that
 # clicks every control on every page and fails on any that does nothing.
 # It starts its own copy of the app against a throwaway local database; nothing here touches production.
 
