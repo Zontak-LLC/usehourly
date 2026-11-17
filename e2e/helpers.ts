@@ -243,10 +243,7 @@ export async function trpc<T>(page: Page, path: string, data: unknown): Promise<
  */
 export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number; minutes: number[] }) {
   const user = await startFreshAccount(page, "Acme Studio");
-  const listed = await page.request.get("/api/trpc/clients.list");
-  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
-  const clients = ((await listed.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
-  const projectId = clients[0].projects[0].id;
+  const projectId = (await firstClient(page)).projects[0].id;
   if (rate) await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
   // "Today" in the browser's own time zone, where the app works it out (UTC can already be tomorrow).
   const date = await page.evaluate(() => {
@@ -281,15 +278,31 @@ export async function startDemo(page: Page) {
 
 /** Adds projects to the signed-in account's first client through the API (the picker shows "More…" from six projects). */
 export async function addProjects(page: Page, names: string[]) {
-  const listed = await page.request.get("/api/trpc/clients.list");
-  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
-  const clients = ((await listed.json()) as { result: { data: { id: string }[] } }).result.data;
+  const { id: clientId } = await firstClient(page);
   for (const name of names) {
     const made = await page.request.post("/api/trpc/project.create", {
-      data: { clientId: clients[0].id, name, hourlyRate: 5000 },
+      data: { clientId, name, hourlyRate: 5000 },
     });
     expect(made.ok(), `project.create answered ${made.status()}`).toBe(true);
   }
+}
+
+/** The signed-in account's first client (as clients.list lists them), with its projects. */
+export async function firstClient(page: Page): Promise<{ id: string; projects: { id: string }[] }> {
+  const listed = await page.request.get("/api/trpc/clients.list");
+  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
+  const clients = ((await listed.json()) as { result: { data: { id: string; projects: { id: string }[] }[] } }).result
+    .data;
+  return clients[0];
+}
+
+/**
+ * Adds `count` 30-minute entries without a note on `date` (YYYY-MM-DD), on the first client's first project, through
+ * the API. Go to a page after it: the one open does not show them yet.
+ */
+export async function addEntries(page: Page, date: string, count: number) {
+  const projectId = (await firstClient(page)).projects[0].id;
+  for (let i = 0; i < count; i++) await trpc(page, "entry.create", { projectId, date, minutes: 30, note: "" });
 }
 
 export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
