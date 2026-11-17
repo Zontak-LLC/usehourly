@@ -1,4 +1,4 @@
-import { expect, menuAction, openAllEntries, shownMonth, startFreshAccount, test } from "./helpers";
+import { expect, gotoClient, menuAction, openAllEntries, shownMonth, startFreshAccount, test } from "./helpers";
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
@@ -47,7 +47,7 @@ test("buttons that open a form close it on the second click; the day's list is h
   });
 
   await test.step("on Clients Add project and Billing details open their forms and close them again", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme Studio"); // on a phone the address is the list: the client is picked first
     const add = page.getByRole("button", { name: "Add a project for Acme Studio" }).first();
     await expect(add).toHaveAttribute("aria-expanded", "false");
     await add.click();
