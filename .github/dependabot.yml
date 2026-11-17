@@ -20,3 +20,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # init and analyze must be the same version, so they arrive as one pull request.
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
