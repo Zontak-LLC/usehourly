@@ -1,5 +1,6 @@
 import {
   expect,
+  gotoClient,
   makeInvoice,
   openEntryEdit,
   pastTimerLock,
@@ -15,7 +16,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
   await startFreshAccount(page, "Acme");
 
   await test.step("a rate and two hours of work", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme"); // on a phone the address is the list: the client is picked first
     await page.getByRole("button", { name: "Edit General" }).click();
     await page.getByLabel("Rate per hour").fill("100");
     await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -28,7 +29,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
 
   const card = page.getByRole("region", { name: "Acme" });
   await test.step("the client shows what is not invoiced yet, with Make invoice", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme");
     await expect(card.getByTestId("bill-bar")).toContainText("$200.00 not invoiced"); // the bill bar (issue 238)
     await card.getByRole("link", { name: "Make an invoice for Acme" }).click();
     await expect(page).toHaveURL(/\/dashboard\/invoices\/new\?client=/);
@@ -38,7 +39,7 @@ test("not invoiced yet, make the invoice, and the same time is not billed twice"
   });
 
   await test.step("once invoiced, nothing is left to bill and the entry says so", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme");
     await expect(card.getByRole("heading", { name: "Acme" })).toBeVisible();
     await expect(card.getByTestId("bill-bar")).toHaveCount(0); // all billed up: no bill bar
     await expect(card.getByRole("link", { name: "Make an invoice for Acme" })).toHaveCount(0);
@@ -109,7 +110,7 @@ test("Resume on an entry invoiced meanwhile starts a new entry, so the extra tim
   });
 
   await test.step("the new time waits to be billed", async () => {
-    await page.goto("/dashboard/clients");
+    await gotoClient(page, "Acme Studio");
     await expect(page.getByRole("region", { name: "Acme Studio" }).getByTestId("bill-bar")).toContainText(
       /\$[1-9][\d.,]* not invoiced/,
     );

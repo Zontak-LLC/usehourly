@@ -595,18 +595,22 @@ export const test = base.extend<Fixtures>({
 
 export { expect };
 
+/** A client's row (link) in the Clients list: the visible one, since a split view can render the list twice. */
+export function clientRow(page: Page, name: string) {
+  return page
+    .locator('a[href^="/dashboard/clients/"]')
+    .filter({ has: page.getByText(name, { exact: true }) })
+    .locator("visible=true")
+    .first();
+}
+
 /**
  * Opens the Clients page on one client's profile (issue 238): the page is a split view, and on a phone the list and
  * the profile are two screens, so the client is picked from the list.
  */
 export async function gotoClient(page: Page, name: string) {
   await page.goto("/dashboard/clients");
-  await page
-    .locator('a[href^="/dashboard/clients/"]')
-    .filter({ has: page.getByText(name, { exact: true }) })
-    .locator("visible=true")
-    .first()
-    .click();
+  await clientRow(page, name).click();
   await expect(page.getByRole("region", { name, exact: true }).getByRole("heading", { level: 2 })).toHaveText(name);
 }
 
