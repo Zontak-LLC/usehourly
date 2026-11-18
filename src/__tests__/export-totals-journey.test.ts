@@ -2,8 +2,8 @@ import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
 
 import { buildAnnualReport } from "@/lib/annual-report";
-import { entriesCsv } from "@/lib/export-all";
 import { buildAnnualWorkbook } from "@/lib/export-annual-xlsx";
+import { entriesCsv } from "@/lib/export-csv";
 import { buildTimesheetWorkbook } from "@/lib/export-xlsx";
 import { buildInvoice } from "@/lib/invoice";
 import type { SheetEntry } from "@/lib/timesheet";

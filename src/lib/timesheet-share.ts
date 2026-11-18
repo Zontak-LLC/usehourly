@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import { buildSheet, type SheetEntry } from "./timesheet";
 
 /**
@@ -75,33 +73,6 @@ export function buildShareSnapshot(opts: {
   };
 }
 
-const snapshotSchema = z.object({
-  version: z.literal(1),
-  owner: z.string(),
-  title: z.string(),
-  from: z.string(),
-  to: z.string(),
-  days: z.array(z.string()),
-  rows: z.array(z.object({ client: z.string(), project: z.string(), minutes: z.array(z.number()), total: z.number() })),
-  dayTotals: z.array(z.number()),
-  total: z.number(),
-  notes: z
-    .array(
-      z.object({ date: z.string(), client: z.string(), project: z.string(), minutes: z.number(), note: z.string() }),
-    )
-    .nullable(),
-});
-
-/** The stored JSON as a snapshot, or null if it is not one (never throws). */
-export function parseSnapshot(json: string): ShareSnapshot | null {
-  try {
-    const parsed = snapshotSchema.safeParse(JSON.parse(json));
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
 export type ShareStatus = "approved" | "revoked" | "expired" | "waiting";
 
 /** What a link is doing right now. Approved wins, so an approved sheet still reads as approved after it expires. */
@@ -114,8 +85,3 @@ export function shareStatus(
   if (row.expires_at <= nowSeconds) return "expired";
   return "waiting";
 }
-
-export const approvalSchema = z.object({
-  name: z.string().trim().min(1, "Please type your name.").max(MAX_APPROVER_NAME),
-  note: z.string().trim().max(MAX_APPROVER_NOTE).optional(),
-});

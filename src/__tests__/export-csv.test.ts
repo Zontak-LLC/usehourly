@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { csvFilename } from "@/lib/csv";
 import { categoryLabel } from "@/lib/expenses";
-import { type ExpenseCsvRow, type ExportPlan, entriesCsv, planExport } from "@/lib/export-all";
+import { type ExportPlan, planExport } from "@/lib/export-all";
+import { type ExpenseCsvRow, entriesCsv } from "@/lib/export-csv";
 import { exportableEntries, type SheetEntry } from "@/lib/timesheet";
 
 /**

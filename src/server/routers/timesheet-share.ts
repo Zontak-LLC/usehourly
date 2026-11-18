@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
+import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { hashToken, newToken } from "@/lib/email-token";
 import { describeRange } from "@/lib/export-range";
@@ -9,7 +9,6 @@ import { logError } from "@/lib/log";
 import { timesheetApprovedMessage } from "@/lib/mailer";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 import {
-  approvalSchema,
   buildShareSnapshot,
   DEFAULT_SHARE_EXPIRY_DAYS,
   MAX_LIVE_SHARES,
@@ -18,10 +17,11 @@ import {
   shareStatus,
 } from "@/lib/timesheet-share";
 
+import { dateSchema } from "../schemas/dates";
+import { approvalSchema } from "../schemas/timesheet-share";
 import { findShareByToken } from "../timesheet-share";
 import { type Context, protectedProcedure, publicProcedure, router } from "../trpc";
 
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 const UNAVAILABLE = "This link isn't available any more.";
 

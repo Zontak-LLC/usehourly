@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
+import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { entryMinutes } from "@/lib/duration";
 import { hashToken } from "@/lib/email-token";
@@ -10,11 +10,11 @@ import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 import { MAX_TEAMS_JOINED } from "@/lib/team";
 
 import { accountQuota, insertWithinQuota } from "../quota-insert";
+import { dateSchema } from "../schemas/dates";
 import { activeMembership } from "../team";
 import { protectedProcedure, router } from "../trpc";
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 const teamId = z.string().max(100);
 const NOT_AVAILABLE = "This invitation isn't available any more.";
 

@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import type { Session } from "next-auth";
 import { z } from "zod";
 
-import { DATE_RE, isRealDate, MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
+import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { entryMinutes } from "@/lib/duration";
 import { ENTRY_GONE } from "@/lib/entry-gone";
@@ -15,9 +15,9 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { drillError, faultActive } from "../drill";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
+import { dateSchema } from "../schemas/dates";
 import { protectedProcedure, router } from "../trpc";
 
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 /** Entries the global search shows. */
 const ENTRY_SEARCH_LIMIT = 8;
 /** Entries per page of `listAll`. */

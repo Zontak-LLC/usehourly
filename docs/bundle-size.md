@@ -118,3 +118,18 @@ load no zod (marker `$ZodType`). `npm run measure:bundle -- --before` replaces t
 | /timesheet/[token] | 231969 | 226.5 | -29.5 |
 | /tools/hours-calculator | 228313 | 223.0 | -29.6 |
 | /verify-email | 227847 | 222.5 | -29.6 |
+
+<!-- route-size: written by npm run measure:routes -->
+## First-load JavaScript per route (next build)
+
+Written by `npm run measure:routes` after `npx next build`: the gzip of each route's unique first-load chunks
+(`rootMainFiles` in `.next/build-manifest.json` plus the route's `entryJSFiles`), largest first, and whether one of
+them holds zod (marker `$ZodType`). `-- --before` writes the Before table; a run without it writes After.
+
+### Before (base)
+
+Filled by npm run measure:routes; never typed by hand.
+
+### After
+
+Filled by npm run measure:routes; never typed by hand.
