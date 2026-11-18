@@ -7,7 +7,7 @@ import type { DueInvoice, Unbilled } from "@/lib/unbilled";
 import { nonBillableDates } from "./non-billable";
 
 /** D1 allows 100 bound values per query; ids go in groups well under that. */
-const CHUNK = 80;
+export const CHUNK = 80;
 
 /**
  * Marks unbilled entries as billed on `invoiceId`. An entry already on an invoice (billed again on purpose, or taken by
