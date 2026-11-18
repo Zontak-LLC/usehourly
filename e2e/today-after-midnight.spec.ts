@@ -69,6 +69,25 @@ test("a day picked in the address stays after midnight, and Back to today opens 
   await expect(days(page)).toContainText("Tuesday, March 17");
 });
 
+const TUESDAY_17_23 = new Date(2026, 2, 17, 23, 0);
+
+test("Week marks and opens the new day at midnight, and keeps showing the same week", async ({ page }) => {
+  await signUpReady(page);
+  await page.clock.install({ time: TUESDAY_17_23 });
+  await page.goto("/dashboard/week");
+  const strip = page.getByRole("navigation", { name: "This week" });
+  const pickedDay = strip.locator('[aria-current="date"]');
+  const todayCircle = strip.locator(".bg-amber-fill");
+  await expect(pickedDay).toHaveAttribute("aria-label", /^Tuesday, March 17,/);
+  await expect(todayCircle).toHaveText("17");
+
+  await page.clock.runFor(PAST_MIDNIGHT);
+  await expect(pickedDay).toHaveAttribute("aria-label", /^Wednesday, March 18,/);
+  await expect(todayCircle).toHaveText("18");
+  await expect(strip.getByRole("button").first()).toHaveAttribute("aria-label", /^Monday, March 16,/);
+  await expect(page).toHaveURL(/\/dashboard\/week$/);
+});
+
 const markedToday = (page: Page) => page.locator('[aria-current="date"]').locator("visible=true");
 
 test("Month with no month in the address moves to September at midnight on 31 August", async ({ page }) => {

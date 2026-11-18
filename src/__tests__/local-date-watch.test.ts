@@ -86,6 +86,11 @@ describe("msUntilNextLocalMidnight", () => {
     expect(msUntilNextLocalMidnight(MONDAY_23)).toBe(HOUR);
   });
 
+  it("is one minute at 23:59 and a whole 24-hour day at 00:00 on a day with no clock change", () => {
+    expect(msUntilNextLocalMidnight(new Date(2026, 10, 18, 23, 59, 0))).toBe(60_000);
+    expect(msUntilNextLocalMidnight(new Date(2026, 10, 18, 0, 0, 0))).toBe(86_400_000);
+  });
+
   it("is a full day at exactly midnight, never 0", () => {
     const midnight = new Date(2026, 2, 17, 0, 0, 0, 0);
     const next = new Date(midnight.getTime() + msUntilNextLocalMidnight(midnight));
