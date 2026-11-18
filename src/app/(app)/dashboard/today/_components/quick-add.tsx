@@ -633,7 +633,7 @@ function LogTimeButton({
       >
         {/* Only the disc's child changes, so `spin()` on the disc and its size stay as they are. */}
         {showSpinner ? (
-          <Spinner size="sm" label="Saving" />
+          <Spinner size="sm" />
         ) : logged ? (
           <Check className="size-4" strokeWidth={3} aria-hidden />
         ) : (

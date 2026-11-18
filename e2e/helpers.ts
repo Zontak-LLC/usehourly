@@ -59,10 +59,14 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
   await card.getByRole("button", { name: "Save", exact: true }).click();
 }
 
+/** How long `hold(page, procedure, SLOW)` keeps a server answer back: seconds past the spinner delay, so no race. */
+export const SLOW = 4000;
+
 /**
  * Holds every call to one tRPC procedure (e.g. "entry.create") back before it goes on to the server: for `ms`, or, with
  * no `ms`, until the test calls `release()` (a gate, so no wall time decides the test). `arrived` settles when the first
- * call reaches the hold; `hasArrived()` says the same without waiting, for a poll.
+ * call reaches the hold; `hasArrived()` says the same without waiting, for a poll. Then the call falls back to a route
+ * set earlier for it (a `refuse`, for a slow refusal) or, with none, goes to the server.
  */
 export async function hold(page: Page, procedure: string, ms?: number) {
   let release!: () => void;
@@ -78,7 +82,7 @@ export async function hold(page: Page, procedure: string, ms?: number) {
     hasArrived = true;
     arrive();
     await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
-    await route.continue();
+    await route.fallback();
   });
   return { arrived, hasArrived: () => hasArrived, release };
 }
