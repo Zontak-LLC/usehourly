@@ -177,13 +177,25 @@ export const memberRouter = router({
       }));
     }),
 
-  /** Deletes one of this member's own entries (only while they are still on the team). */
+  /**
+   * Deletes one of this member's own entries. Only while they are still on the team, only before the owner has put it
+   * on an invoice (so the owner's books keep matching what they billed), and only on a client still shared with them.
+   * The checks and the delete are one statement, so nothing can change in between.
+   * Throws NOT_FOUND without saying which check failed.
+   */
   deleteEntry: protectedProcedure
     .input(z.object({ teamId, id: z.string().max(100) }))
     .mutation(async ({ ctx, input }) => {
       const team = await activeMembership(ctx.prisma, ctx.userId, input.teamId);
       const done = await ctx.prisma.timeEntry.deleteMany({
-        where: { id: input.id, user_id: team.ownerId, author_id: ctx.userId, started_at: null },
+        where: {
+          id: input.id,
+          user_id: team.ownerId,
+          author_id: ctx.userId,
+          started_at: null,
+          invoice_id: null,
+          project: { client_id: { in: team.clientIds } },
+        },
       });
       if (done.count !== 1) throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found." });
       return { deleted: true };

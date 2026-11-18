@@ -35,6 +35,15 @@ function matches(row: Row, where: Where): boolean {
   });
 }
 
+/** Like `matches`, plus the `project: { client_id: { in } }` filter the routers put on time entries. */
+function matchesEntry(entry: Row, where: Where): boolean {
+  const { project, ...flat } = where as Where & { project?: { client_id: { in: string[] } } };
+  if (!matches(entry, flat)) return false;
+  if (!project) return true;
+  const clientId = PROJECTS.find((p) => p.id === entry.project_id)?.client_id as string;
+  return project.client_id.in.includes(clientId);
+}
+
 const OLD = new Date("2026-01-01");
 const mail = { email_verified_at: OLD, email_bounced_at: null, is_demo: false, created_at: OLD };
 const USERS: Record<string, Row & { name: string; business_name: string | null; email: string }> = {
@@ -67,6 +76,7 @@ function world() {
       minutes: 60,
       note: "Ada's own",
       started_at: null,
+      invoice_id: null,
       created_at: new Date(1),
     },
     {
@@ -78,6 +88,7 @@ function world() {
       minutes: 45,
       note: "Kim's",
       started_at: null,
+      invoice_id: null,
       created_at: new Date(2),
     },
   ];
@@ -180,17 +191,13 @@ function world() {
       count: vi.fn(async ({ where }: { where: Where }) => entries.filter((e) => matches(e, where)).length),
       findFirst: vi.fn(async ({ where }: { where: Where }) => entries.find((e) => matches(e, where)) ?? null),
       create: vi.fn(async ({ data }: { data: Row }) => {
-        const row = { id: `e${++n}`, started_at: null, created_at: new Date(100 + n), ...data };
+        const row = { id: `e${++n}`, started_at: null, invoice_id: null, created_at: new Date(100 + n), ...data };
         entries.push(row);
         return row;
       }),
       findMany: vi.fn(async ({ where }: { where: Where }) => {
-        const ok = (where.project as { client_id: { in: string[] } }).client_id.in;
-        const { project: _p, ...flat } = where;
         return entries
-          .filter(
-            (e) => matches(e, flat) && ok.includes(PROJECTS.find((p) => p.id === e.project_id)?.client_id as string),
-          )
+          .filter((e) => matchesEntry(e, where))
           .map((e) => {
             const p = PROJECTS.find((x) => x.id === e.project_id) as Row;
             return {
@@ -200,7 +207,7 @@ function world() {
           });
       }),
       deleteMany: vi.fn(async ({ where }: { where: Where }) => {
-        const hit = entries.filter((e) => matches(e, where));
+        const hit = entries.filter((e) => matchesEntry(e, where));
         for (const e of hit) entries.splice(entries.indexOf(e), 1);
         return { count: hit.length };
       }),
@@ -347,6 +354,38 @@ describe("a studio owner invites a person who logs time on chosen clients", () =
     expect(w.entries.map((e) => e.id)).toEqual(expect.arrayContaining(["own1", "other1", mine.id]));
     await w.as("sam").member.deleteEntry({ teamId: id, id: mine.id as string });
     expect(w.entries.some((e) => e.id === mine.id)).toBe(false);
+  });
+
+  it("a member cannot delete their own entry once the owner has put it on an invoice", async () => {
+    const w = world();
+    const { id, token } = await w.as("ada").team.invite({ email: "sam@example.com", name: "Sam", clientIds: ["acme"] });
+    await w.as("sam").member.accept({ token });
+    const mine = await w.as("sam").member.log(log({ teamId: id }));
+    const billed = w.entries.find((e) => e.id === mine.id) as Row;
+    billed.invoice_id = "inv1";
+
+    await expect(w.as("sam").member.deleteEntry({ teamId: id, id: mine.id as string })).rejects.toThrow(
+      /Entry not found/,
+    );
+    expect(w.entries.find((e) => e.id === mine.id)).toMatchObject({ invoice_id: "inv1", author_id: "sam" });
+    expect(w.prisma.timeEntry.deleteMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: mine.id, invoice_id: null, project: { client_id: { in: ["acme"] } } }),
+    });
+  });
+
+  it("a member cannot delete their entry on a client the owner stopped sharing", async () => {
+    const w = world();
+    const { id, token } = await w
+      .as("ada")
+      .team.invite({ email: "sam@example.com", name: "Sam", clientIds: ["acme", "beta"] });
+    await w.as("sam").member.accept({ token });
+    const onBeta = await w.as("sam").member.log(log({ teamId: id, projectId: "app" }));
+    await w.as("ada").team.setClients({ id, clientIds: ["acme"] });
+
+    await expect(w.as("sam").member.deleteEntry({ teamId: id, id: onBeta.id as string })).rejects.toThrow(
+      /Entry not found/,
+    );
+    expect(w.entries.find((e) => e.id === onBeta.id)).toMatchObject({ project_id: "app", author_id: "sam" });
   });
 
   it("changing the grant takes effect at once, and removing a person cuts them off but keeps their entries", async () => {
