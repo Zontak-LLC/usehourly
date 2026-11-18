@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { BudgetBar } from "@/components/budget-bar";
 import { ClientCurrency } from "@/components/currency-provider";
+import { DurationHint, durationHintId } from "@/components/duration-hint";
 import { useSaveNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
 import { useCurrentUserId } from "@/components/offline-guard";
@@ -21,7 +22,7 @@ import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { UNDONE_TEXT, useUndoEntry } from "@/components/use-undo-entry";
 import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { formatDate, monthBounds } from "@/lib/dates";
-import { addChipTime, formatDuration, readDuration } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { getActiveEngine } from "@/lib/local-sync/active";
 import { addPending, isNetworkError } from "@/lib/offline-queue";
@@ -31,9 +32,10 @@ import { pickableProjects } from "@/lib/project-shade";
 import { DURATION_CHIPS } from "@/lib/quick-start";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { addChipTime, readTypedDuration } from "@/lib/typed-duration";
 import { notifyPending, useOnline } from "@/lib/use-offline";
 
-/** What a time chip writes in the box: "30m", "1h", "1h30", "2h" (never "120m"). parseDuration reads all of them. */
+/** What a time chip writes in the box: "30m", "1h", "1h30", "2h" (never "120m"). readTypedDuration reads them all. */
 function chipText(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -144,11 +146,10 @@ export function QuickAdd({
   }, []);
 
   // Read from the text on every render, so a hint goes away on the next keystroke that makes a time (issue 435).
-  const read = readDuration(duration);
-  const parsed = "minutes" in read ? read.minutes : null;
+  const read = readTypedDuration(duration);
+  const parsed = read.minutes ?? null;
   const pickedName = projects.find((p) => p.id === projectId)?.name ?? "";
-  const durationError = duration.trim() !== "" && "error" in read ? read.error : null;
-  const invalid = durationError !== null;
+  const invalid = read.error !== undefined;
 
   function remember(id: string) {
     setProjectId(id);
@@ -158,8 +159,8 @@ export function QuickAdd({
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!projectId) return toast.error("Pick a project first.");
-    // Never sends 0 or a bare "45" to the server: the toast says the same words as the line under the field.
-    if ("error" in read) return toast.error(read.error);
+    // Never sends 0 or a bare "25": the line under the box already says why, so only the cursor goes back there.
+    if (read.minutes === undefined) return durationRef.current?.focus();
     const { minutes } = read;
     setFollowUp(null);
     setSaved(null);
@@ -297,13 +298,9 @@ export function QuickAdd({
   const onlyProject = projects.length === 1 ? projects[0] : null;
   const onlyClient = onlyProject ? clients.data?.find((c) => c.projects.some((p) => p.id === onlyProject.id)) : null;
 
-  const help = timeLine({
-    error: durationError,
-    minutes: parsed === null ? null : (fieldRoll.shown ?? parsed),
-    dayMinutes,
-    dayAfter: parsed === null ? null : (dayRoll.shown ?? dayMinutes + parsed),
-    firstUse: loggedCount < HELP_UNTIL,
-  });
+  // What will be logged, and the day it makes ("= 2:00 · Day total 1:00 → 3:00 h"); the rolling figures while a chip plays.
+  const dayAfter = parsed === null ? "" : formatDuration(dayRoll.shown ?? dayMinutes + parsed);
+  const dayTotal = parsed === null ? undefined : `Day total ${formatDuration(dayMinutes)} → ${dayAfter} h`;
   // One layout everywhere (Today, Week's day panel, the day dialog; 2026-10-23 redesign): the time first with Log time
   // beside it from 640px (at the foot on a phone, where the thumb is), the quick times, "on" and the project pills, then
   // the description.
@@ -328,6 +325,7 @@ export function QuickAdd({
             placeholder="Time: 2, 1,5, 1:30 or 90m"
             aria-label="Time to add"
             aria-invalid={invalid}
+            aria-describedby={durationHintId("quick-duration")}
             inputMode="decimal"
             enterKeyHint="next"
             className={`h-11 pr-11 text-base ${fieldRoll.shown !== null ? "text-transparent" : ""}`}
@@ -374,11 +372,15 @@ export function QuickAdd({
               </Button>
             ))}
           </div>
-          {help && (
-            <p className={`text-xs ${invalid ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
-              {help}
-            </p>
-          )}
+          <DurationHint
+            boxId="quick-duration"
+            read={read}
+            shownMinutes={fieldRoll.shown ?? undefined}
+            after={dayTotal}
+            empty={
+              loggedCount < HELP_UNTIL ? "Type a time or tap one (tap again to add more), then add it." : undefined
+            }
+          />
         </div>
 
         {/* After the quick times in the source, so on a phone it sits right under them and is in view when Today opens
@@ -473,24 +475,6 @@ export function QuickAdd({
       {body}
     </section>
   );
-}
-
-/**
- * The one line under the quick times: the plain error while the text cannot be logged, otherwise what will be logged
- * ("= 2:00 · Day total 0:00 → 2:00 h", issue 435: so nobody has to guess what "2" means), or the first-use hint.
- * `minutes` and `dayAfter` are the rolling figures while a chip's reward plays.
- */
-function timeLine(line: {
-  error: string | null;
-  minutes: number | null;
-  dayMinutes: number;
-  dayAfter: number | null;
-  firstUse: boolean;
-}): string {
-  if (line.error) return line.error;
-  if (line.minutes !== null && line.dayAfter !== null)
-    return `= ${formatDuration(line.minutes)} · Day total ${formatDuration(line.dayMinutes)} → ${formatDuration(line.dayAfter)} h`;
-  return line.firstUse ? "Type a time or tap one (tap again to add more), then add it." : "";
 }
 
 /** The entry just saved: what the saved-time line names and what the follow-up note box belongs to. */

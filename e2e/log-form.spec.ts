@@ -1,3 +1,4 @@
+import { minutesHint, TYPED_NOT_POSITIVE, TYPED_UNREADABLE } from "../src/lib/typed-duration";
 import { expect, startFreshAccount, test } from "./helpers";
 
 // One Log time form everywhere (2026-10-23 redesign): the time first, Log time beside it on a wide screen and under the
@@ -67,4 +68,82 @@ test("a refused save takes the Logged moment back and gives the typed time back"
   await expect(page.getByText("Refused on purpose.")).toBeVisible();
   await expect(page.getByText(/^Logged /)).toHaveCount(0);
   await expect(page.getByLabel("Time to add")).toHaveValue("2h");
+});
+
+/**
+ * The time box says what it will log, so nobody logs two minutes when they meant two hours (issue 435): a bare number is
+ * hours, "1,5" works like "1.5", and a value it cannot log gets plain words (never the raw zod "Too small") that the
+ * next keystroke clears. Nothing is sent while it shows them.
+ */
+test("the time box previews = 2:00, reads 1,5, and refuses 0 and 25 in plain words without sending them", async ({
+  page,
+}) => {
+  await startFreshAccount(page, "Acme");
+  const card = page.getByRole("region", { name: /^Log time/ });
+  const time = card.getByLabel("Time to add");
+  const log = card.getByRole("button", { name: /^Log time/ });
+  const days = page.getByRole("navigation", { name: "Days" });
+  const creates: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("entry.create")) creates.push(request.url());
+  });
+  await expect(time).toHaveAttribute("placeholder", "Time: 2, 1,5, 1:30 or 90m");
+
+  await test.step("a bare 2 shows = 2:00 before saving and logs two hours", async () => {
+    await time.fill("13");
+    await expect(card.getByText(/^= 13:00 · /)).toBeVisible();
+    await time.fill("24");
+    await expect(card.getByText(/^= 24:00 · /)).toBeVisible();
+    await time.fill("2");
+    await expect(card.getByText("= 2:00 · Day total 0:00 → 2:00 h")).toBeVisible();
+    await expect(time).toHaveAttribute("aria-invalid", "false");
+    await log.click();
+    await expect(days).toContainText("2:00 this day");
+  });
+
+  await test.step("1,5 shows = 1:30 and logs 1:30", async () => {
+    await time.fill("1,5");
+    await expect(card.getByText(/^= 1:30 · Day total 2:00 → 3:30 h$/)).toBeVisible();
+    await log.click();
+    await expect(days).toContainText("3:30 this day");
+  });
+
+  await test.step("-2 and 0 ask for more than 0, send nothing, and the next key clears it", async () => {
+    const sent = creates.length;
+    const error = card.getByText(TYPED_NOT_POSITIVE, { exact: true });
+    await time.fill("-2");
+    await expect(error).toBeVisible();
+    await time.fill("0");
+    await expect(error).toBeVisible();
+    await expect(time).toHaveAttribute("aria-invalid", "true");
+    await expect(log).toBeDisabled();
+    await time.press("Enter"); // the form's own submit: refused in the browser
+    await expect(time).toBeFocused();
+    await expect(page.getByText(/Too small/)).toHaveCount(0);
+    expect(creates).toHaveLength(sent);
+    await time.press("1"); // "01" is one hour
+    await expect(card.getByText(/^= 1:00 · /)).toBeVisible();
+    await expect(error).toHaveCount(0);
+    await expect(time).toHaveAttribute("aria-invalid", "false");
+    await expect(days).toContainText("3:30 this day");
+  });
+
+  await test.step("a bare 25 is not logged; 25m logs twenty-five minutes", async () => {
+    const sent = creates.length;
+    await time.fill("25");
+    await expect(card.getByText(minutesHint(25), { exact: true })).toBeVisible();
+    await time.press("Enter");
+    expect(creates).toHaveLength(sent);
+    await expect(days).toContainText("3:30 this day");
+    await time.fill("25m");
+    await expect(card.getByText(minutesHint(25))).toHaveCount(0);
+    await expect(card.getByText(/^= 0:25 · /)).toBeVisible();
+    await log.click();
+    await expect(days).toContainText("3:55 this day");
+  });
+
+  await test.step("abc gets the formats to try", async () => {
+    await time.fill("abc");
+    await expect(card.getByText(TYPED_UNREADABLE, { exact: true })).toBeVisible();
+  });
 });

@@ -58,8 +58,10 @@
 <h1>Log time field: say what will be logged</h1>
 <p class="note">The line under the chips is the one place the field talks. Empty: the first-use hint (unchanged).
 A time it can read: "= 2:00 · Day total 0:00 → 2:00 h", updated on every key. A time it cannot log: plain words in the
-invalid style, worked out again on every key, so the next key that makes a time clears it. Log time stays off while
-there is an error; Enter shows the same words in a toast. A bare number up to 24 is hours; minutes need "m".</p>
+invalid style (the theme's destructive token), worked out again on every key, so the next key that makes a time clears
+it. Log time stays off while there is an error; Enter sends nothing and shows no toast (the line already says why).
+A bare number up to 24 is hours, a decimal comma works ("1,5"), and minutes need "m". The same line (without the
+Day total) sits under Month's "Hours per day", an entry row's Time box and the Team page's Time box.</p>
 
 <h2>Desktop</h2>
 <div class="frames">
@@ -80,7 +82,15 @@ there is an error; Enter shows the same words in a toast. A bare number up to 24
     </div></div>
   </div>
   <div>
-    <p class="tag">3 · "0" typed: ask for more than 0</p>
+    <p class="tag">3 · "1,5" typed: a decimal comma, one and a half hours</p>
+    <div class="card desktop"><div class="head">Log time</div><div class="body">
+      <div class="row"><div class="field">1,5</div><button class="log" type="button">Log 1:30</button></div>
+      <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
+      <p class="help">= 1:30 · Day total 0:00 → 1:30 h</p>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">4 · "0" typed: ask for more than 0</p>
     <div class="card desktop"><div class="head">Log time</div><div class="body">
       <div class="row"><div class="field bad">0</div><button class="log off" type="button">Log time</button></div>
       <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
@@ -88,7 +98,7 @@ there is an error; Enter shows the same words in a toast. A bare number up to 24
     </div></div>
   </div>
   <div>
-    <p class="tag">4 · "25" typed: too many hours, so suggest minutes</p>
+    <p class="tag">5 · "25" typed: too many hours, so suggest minutes</p>
     <div class="card desktop"><div class="head">Log time</div><div class="body">
       <div class="row"><div class="field bad">25</div><button class="log off" type="button">Log time</button></div>
       <div class="chips"><span class="chip">+ 15 min</span><span class="chip">+ 30 min</span><span class="chip">+ 1 hour</span><span class="chip">+ 2 hours</span></div>
@@ -118,7 +128,16 @@ there is an error; Enter shows the same words in a toast. A bare number up to 24
     </div></div>
   </div>
   <div>
-    <p class="tag">3 · "0"</p>
+    <p class="tag">3 · "1,5"</p>
+    <div class="card phone"><div class="head">Log time</div><div class="body">
+      <div class="field">1,5</div>
+      <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
+      <p class="help">= 1:30 · Day total 0:00 → 1:30 h</p>
+      <button class="log" type="button">Log 1:30</button>
+    </div></div>
+  </div>
+  <div>
+    <p class="tag">4 · "0"</p>
     <div class="card phone"><div class="head">Log time</div><div class="body">
       <div class="field bad">0</div>
       <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>
@@ -127,7 +146,7 @@ there is an error; Enter shows the same words in a toast. A bare number up to 24
     </div></div>
   </div>
   <div>
-    <p class="tag">4 · "25"</p>
+    <p class="tag">5 · "25"</p>
     <div class="card phone"><div class="head">Log time</div><div class="body">
       <div class="field bad">25</div>
       <div class="chips"><span class="chip">+ 15m</span><span class="chip">+ 30m</span><span class="chip">+ 1h</span><span class="chip">+ 2h</span></div>

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { TYPED_NOT_POSITIVE } from "../src/lib/typed-duration";
 import { startDemo } from "./helpers";
 
 // On a phone the sample's four project pills pushed Log time under the bottom menu at load (2026-10-25). The button now
@@ -48,4 +49,19 @@ test("on a phone Today's Log time button is in view at load, under the quick tim
   await page.getByRole("button", { name: "1 hour", exact: true }).click();
   await log.click();
   await expect(log.getByText("Logged 1:00")).toBeVisible(); // the button's words (the line under it says it too)
+});
+
+// The line under the time box on a phone: a bare 2 is previewed as two hours, and 0 gets plain words, not zod's.
+test("on a phone the time box previews = 2:00 for a bare 2 and asks for more than 0", async ({ page }, info) => {
+  test.skip(info.project.name !== "phone", "a phone check");
+  await startDemo(page);
+  await page.goto("/dashboard/today");
+  const card = page.getByRole("region", { name: /^Log time/ });
+  const time = card.getByLabel("Time to add");
+  await time.fill("2");
+  await expect(card.getByText(/^= 2:00 · Day total /)).toBeVisible();
+  await time.fill("0");
+  await expect(card.getByText(TYPED_NOT_POSITIVE, { exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: /^Log time/ })).toBeDisabled();
+  await expect(page.getByText(/Too small/)).toHaveCount(0);
 });

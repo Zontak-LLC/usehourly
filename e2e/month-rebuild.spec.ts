@@ -1,5 +1,7 @@
 import type { Page } from "@playwright/test";
 
+import { FEATURES } from "../src/lib/features";
+import { minutesHint, TYPED_NOT_POSITIVE } from "../src/lib/typed-duration";
 import { auditPage, expect, shownMonth, startFreshAccount, test, trpc } from "./helpers";
 
 /**
@@ -152,4 +154,23 @@ test("on a phone the calendar comes first, then the switch and the day", async (
   expect((calendar?.y ?? 0) + (calendar?.height ?? 0)).toBeLessThanOrEqual((switcher?.y ?? 0) + 1);
   expect(switcher?.y ?? 0).toBeLessThan(day?.y ?? 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("the several-days panel says why it cannot create 25 or 0 and keeps Create off", async ({ page }) => {
+  test.skip(!FEATURES.multiDay, "'Add to several days' is hidden in this release (src/lib/features.ts)");
+  await seed(page);
+  await page.goto(MARCH);
+  await page.getByRole("button", { name: "Add to several days" }).click();
+  await page.getByRole("button", { name: /^2026-03-10/ }).click();
+  const hours = page.getByLabel("Hours per day");
+  const create = page.getByRole("button", { name: /^Create 1 entr/ });
+  await hours.fill("25");
+  await expect(page.getByText(minutesHint(25), { exact: true })).toBeVisible();
+  await expect(create).toBeDisabled();
+  await hours.fill("0");
+  await expect(page.getByText(TYPED_NOT_POSITIVE, { exact: true })).toBeVisible();
+  await expect(create).toBeDisabled();
+  await hours.fill("2");
+  await expect(page.getByText("= 2:00", { exact: true })).toBeVisible();
+  await expect(create).toBeEnabled();
 });

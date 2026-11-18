@@ -5,13 +5,15 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { DurationHint, durationHintId } from "@/components/duration-hint";
 import { HeaderCard } from "@/components/header-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDuration, readDuration } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { readTypedDuration } from "@/lib/typed-duration";
 import { useToday } from "@/lib/use-today";
 
 type Team = {
@@ -44,6 +46,7 @@ function TeamLog({ team }: { team: Team }) {
   const projects = team.clients.flatMap((c) => c.projects.map((p) => ({ ...p, client: c.name })));
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const [duration, setDuration] = useState("");
+  const durationRead = readTypedDuration(duration);
   const [note, setNote] = useState("");
   const range = today ? monthRange(today) : null;
   const mine = trpc.member.myEntries.useQuery(
@@ -55,9 +58,9 @@ function TeamLog({ team }: { team: Team }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!today) return;
-    const read = readDuration(duration);
-    if ("error" in read) return toast.error(read.error);
-    const { minutes } = read;
+    // Nothing is sent while the box cannot be logged; the line under it already says why.
+    const { minutes } = durationRead;
+    if (minutes === undefined) return;
     try {
       await log.mutateAsync({ teamId: team.id, projectId, date: today, minutes, note, clientId: crypto.randomUUID() });
       setDuration("");
@@ -123,7 +126,10 @@ function TeamLog({ team }: { team: Team }) {
             onChange={(e) => setDuration(e.target.value)}
             placeholder="1.5"
             inputMode="text"
+            aria-invalid={durationRead.error !== undefined}
+            aria-describedby={durationHintId(`dur-${team.id}`)}
           />
+          <DurationHint boxId={`dur-${team.id}`} read={durationRead} />
         </div>
       </div>
       <div className="flex flex-col gap-2">

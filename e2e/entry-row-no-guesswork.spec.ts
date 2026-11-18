@@ -1,3 +1,4 @@
+import { minutesHint } from "../src/lib/typed-duration";
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
@@ -48,4 +49,37 @@ test("a click on an entry opens Edit, and a move by the Day field can be undone"
     await expect(page.getByRole("region", { name: "Today's entries" })).toContainText("row click opens edit");
     expect(today).not.toBe(yesterday);
   });
+});
+
+// A bare 25 in the row's Time box is not guessed as minutes or hours: the line under the box says how to type minutes,
+// and Save sends nothing, so the entry keeps its time.
+test("an entry edited to a bare 25 shows the minutes hint, and Save leaves its old time", async ({ page }) => {
+  await startFreshAccount(page, "Acme");
+  await page.getByLabel("Time to add").fill("1");
+  await page.getByLabel("Description").fill("bare 25 is not saved");
+  await page.getByRole("button", { name: /Log time/ }).click();
+  const row = page.getByRole("region", { name: "Today's entries" }).getByRole("listitem").filter({
+    hasText: "bare 25 is not saved",
+  });
+  await expect(row).toBeVisible();
+  await expect(row).not.toHaveAttribute("aria-busy", "true");
+  const updates: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("entry.update")) updates.push(request.url());
+  });
+
+  await row.getByText("bare 25 is not saved").click();
+  const time = row.getByLabel("Time", { exact: true });
+  await time.fill("25");
+  const hint = row.getByText(minutesHint(25), { exact: true });
+  await expect(hint).toBeVisible();
+  await expect(time).toHaveAttribute("aria-invalid", "true");
+  await row.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(hint).toBeVisible(); // the form stays open with the words
+  expect(updates).toHaveLength(0);
+  await row.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(row).toContainText("1:00");
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Today's entries" })).toContainText("1:00");
+  expect(updates).toHaveLength(0);
 });
