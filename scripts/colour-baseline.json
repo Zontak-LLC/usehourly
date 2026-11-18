@@ -1,8 +1,8 @@
 {
-  "src/app/(app)/dashboard/clients/_components/new-client-card.tsx": 8,
-  "src/app/(app)/dashboard/clients/_components/project-row.tsx": 1,
-  "src/app/(app)/dashboard/team/_components/team-strip.tsx": 1,
-  "src/app/(app)/dashboard/today/_components/quick-add.tsx": 1,
+  "src/app/(main)/dashboard/clients/_components/new-client-card.tsx": 8,
+  "src/app/(main)/dashboard/clients/_components/project-row.tsx": 1,
+  "src/app/(main)/dashboard/team/_components/team-strip.tsx": 1,
+  "src/app/(main)/dashboard/today/_components/quick-add.tsx": 1,
   "src/app/global-error.tsx": 5,
   "src/app/manifest.ts": 2,
   "src/components/assistant-terminal.tsx": 18,

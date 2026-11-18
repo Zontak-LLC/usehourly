@@ -223,6 +223,40 @@ check `/api/health` and a sign-in, then deploy `main` again and record the time 
    everyone out and invalidates one-click email links, which is the correct outcome.
 5. Write down what happened and the fix in the issue tracker.
 
+## How the landing page `/` is served
+
+`/` is a static file. Cloudflare Workers static assets serve `.open-next/assets/index.html` for `/` and apply
+`.open-next/assets/_headers` before any Worker code runs, so a first visit never waits for an idle Worker to start.
+Every other page still goes through the Worker and `src/proxy.ts` (per-request nonce CSP, sign-in check). So does an
+unknown address: its 404 is `src/app/global-not-found.tsx` (`experimental.globalNotFound` in `next.config.mjs`), which
+reads the proxy's nonce. `npm run build` fails if that 404 (`/_not-found`) or any page but `/` is built static.
+
+- **The post-build step:** `npm run landing:static` (`scripts/landing-static.mjs`) runs right after
+  `opennextjs-cloudflare build`. It copies the prerendered `.next/server/app/index.html` to `.open-next/assets/index.html`
+  and adds a `/` rule to `.open-next/assets/_headers` (rules already in that file are kept). The rule holds a
+  Content-Security-Policy that allows the page's inline scripts by their sha256 hash (the theme boot script, the JSON-LD
+  and Next.js's own `self.__next_f.push` scripts; no nonce, no `'unsafe-inline'`), plus the same security headers
+  `next.config.mjs` sets on every other page (HSTS, X-Frame-Options and the rest, X-Robots-Tag on staging). Both come
+  from `src/lib/security-policy.mjs`. Each build (staging, production) computes its own hashes from its own HTML.
+- **Its three callers:** `npm run deploy` (the CircleCI deploy job), `npm run preview` and `scripts/staging-deploy.mjs`
+  (`npm run staging:deploy`). `src/__tests__/landing-static-callers.test.ts` fails if one of them loses the step.
+- **When it fails the deploy:** the prerendered page is missing (`/` is no longer static), the page's canonical origin
+  is not `NEXT_PUBLIC_APP_URL` (a page from the other build), an inline script's hash is not in the written `_headers`,
+  `script-src` has `'unsafe-inline'`, the `/` rule is already there (run the build again first), or a `_headers` line is
+  over Cloudflare's 2,000 characters. It never ships a page whose scripts the browser would block.
+- **If the step is skipped** (for example `npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy` by
+  hand): no `index.html` ships, so the Worker serves `/` as before, but with no Content-Security-Policy at all, because
+  the proxy no longer runs on `/`. The other security headers still come from `next.config.mjs`. Never deploy by hand.
+- **Signed-in visitors:** the page's `SignedInRedirect` asks `/api/auth/session` after it paints and goes to
+  `/dashboard/today` when there is a user. That call starts the Worker, but after the first paint. The service worker
+  (`public/sw.js`) never caches `/`, so an old copy cannot stall the redirect.
+- **Keep these Cloudflare features off for the zone:** Rocket Loader and Email Address Obfuscation. Both inject inline
+  scripts that the hash policy blocks. Web Analytics is fine: its beacon is an external script from
+  `static.cloudflareinsights.com`, which the policy allows.
+- **Check it after a release:** leave staging idle for 15 minutes or more, then run
+  `npm run measure:speed -- https://staging.usehourly.app`; the `/` row's "first" should be under 200 ms. Time the HTML response, not the redirect. `curl -sI https://usehourly.app/` should
+  show the hash CSP (`'sha256-`, no `'unsafe-inline'` in `script-src`) with HSTS and X-Frame-Options.
+
 ## Why is a page slow?
 D1 charges a network round trip for every query, so look at how many queries a page runs one after another, not at how
 big they are.

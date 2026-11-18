@@ -15,7 +15,7 @@ const shareImage = (url: string) => ({
   alt: "UseHourly: your timesheet, run by your AI assistant. A free, open source time tracker with a built-in MCP server for Claude, ChatGPT and Cursor.",
 });
 
-/** The metadata both root layouts share: `(landing)` for the static `/`, `(app)` for every other page. */
+/** The metadata both root layouts share: `(landing)` for the static `/`, `(main)` for every other page. */
 export const ROOT_METADATA: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3028"),
   title: APP_CONFIG.meta.title,

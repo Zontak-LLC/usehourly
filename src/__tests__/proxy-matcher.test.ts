@@ -22,7 +22,7 @@ describe("where the proxy runs (issue 424)", () => {
   });
 
   it("still runs on every page that needs the sign-in check or a CSP nonce, unknown addresses included", () => {
-    for (const path of ["/dashboard/today", "/auth/v2/login", "/help", "/privacy", "/nope"]) {
+    for (const path of ["/dashboard/today", "/auth/v2/login", "/help", "/privacy", "/no-such-page"]) {
       expect(runsOn(path), path).toBe(true);
     }
   });

@@ -25,8 +25,7 @@ describe("Who can see which page", () => {
   });
 
   describe("a signed-in user", () => {
-    it("goes straight to their day instead of the landing or log-in pages", () => {
-      expect(accessDecision("/", true)).toBe("to-dashboard");
+    it("goes straight to their day instead of the log-in pages", () => {
       expect(accessDecision("/auth/v2/login", true)).toBe("to-dashboard");
       expect(accessDecision("/auth/v2/register", true)).toBe("to-dashboard");
     });
@@ -42,6 +41,11 @@ describe("Who can see which page", () => {
         expect(accessDecision(path, true)).toBe("allow");
       }
     });
+  });
+
+  it("lets everyone through to the landing page: it sends a signed-in visitor on itself, in the browser", () => {
+    expect(accessDecision("/", false)).toBe("allow");
+    expect(accessDecision("/", true)).toBe("allow");
   });
 
   it("keeps the privacy and terms pages open to everyone, signed in or not", () => {

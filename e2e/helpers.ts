@@ -70,6 +70,11 @@ export const SLOW = 4000;
  * set earlier for it (a `refuse`, for a slow refusal) or, with none, goes to the server.
  */
 export async function hold(page: Page, procedure: string, ms?: number) {
+  return holdRoute(page, `**/api/trpc/${procedure}*`, ms);
+}
+
+/** The gate behind `hold`, for any requests matching `url` (a glob, as `page.route` takes it): a page's own scripts too. */
+export async function holdRoute(page: Page, url: string, ms?: number) {
   let release!: () => void;
   const released = new Promise<void>((resolve) => {
     release = resolve;
@@ -79,7 +84,7 @@ export async function hold(page: Page, procedure: string, ms?: number) {
   const arrived = new Promise<void>((resolve) => {
     arrive = resolve;
   });
-  await page.route(`**/api/trpc/${procedure}*`, async (route) => {
+  await page.route(url, async (route) => {
     hasArrived = true;
     arrive();
     await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
