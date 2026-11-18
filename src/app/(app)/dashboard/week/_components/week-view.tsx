@@ -15,6 +15,7 @@ import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib
 import { feature } from "@/lib/features";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
 
 import { longDayLabel, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
@@ -26,15 +27,14 @@ function chooseDay(start: string, picked: string | null, today: string | null): 
 }
 
 export function WeekView({ initialProject, initialDate }: { initialProject?: string; initialDate?: string }) {
-  const [today, setToday] = useState<string | null>(null);
+  const today = useToday();
   const [start, setStart] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null); // the day chosen in the strip
   const [projectId, setProjectId] = useProjectFilter(initialProject);
   const panelRef = useRef<HTMLElement>(null);
+  // The week is set once from the first date seen, not from `today`: the week on screen must not jump at midnight.
   useEffect(() => {
-    const t = toISODate(new Date());
-    setToday(t);
-    setStart(startOfWeek(initialDate ?? t));
+    setStart(startOfWeek(initialDate ?? toISODate(new Date())));
     setPicked(initialDate ?? null); // an address with ?date= opens on that day, not just that week
   }, [initialDate]);
 
