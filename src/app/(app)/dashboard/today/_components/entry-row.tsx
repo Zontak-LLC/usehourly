@@ -6,6 +6,7 @@ import { Check, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteEntryConfirm } from "@/components/delete-entry-dialog";
+import { DurationHint, durationHintId } from "@/components/duration-hint";
 import { FoldedNote } from "@/components/folded-note";
 import { InlineNote } from "@/components/inline-note";
 import { NoteTextarea } from "@/components/note-textarea";
@@ -17,13 +18,14 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { useOptimisticEntries } from "@/components/use-optimistic-entries";
 import { useRunningMinutes } from "@/components/use-running-minutes";
 import { DATE_RE, fromISODate } from "@/lib/dates";
-import { formatDuration, parseDuration, readDuration } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { QUIET_BELOW_MINUTES, ROW_FIGURE, ROW_FIGURE_QUIET } from "@/lib/figures";
 import { needsNote } from "@/lib/note-later";
 import { isPendingId, projectWithClient } from "@/lib/optimistic-entries";
 import { isNotFound, toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { readTypedDuration, TYPED_UNREADABLE } from "@/lib/typed-duration";
 
 export type EntryData = {
   id: string;
@@ -91,6 +93,7 @@ export function EntryRow({
     if (!on) onEditDone?.();
   };
   const [duration, setDuration] = useState(formatDuration(entry.minutes));
+  const durationRead = readTypedDuration(duration);
   const [note, setNote] = useState(entry.note);
   const [projectId, setProjectId] = useState(entry.project_id);
   // The day lives in the edit form: a wrong day is fixed like any other field (there is no separate "move" step).
@@ -107,9 +110,9 @@ export function EntryRow({
   const runningNow = useRunningMinutes(entry.started_at);
 
   async function save() {
-    const read = readDuration(duration);
-    if ("error" in read) return toast.error(read.error);
-    const { minutes } = read;
+    // Nothing is sent while the box cannot be logged; the line under it already says why.
+    const { minutes } = durationRead;
+    if (minutes === undefined) return;
     if (!DATE_RE.test(date)) return toast.error("Pick a day for this entry.");
     const moved = date !== entry.date;
     // Show the change and close the form at once; the server's answer confirms it, or the form opens again.
@@ -328,8 +331,11 @@ export function EntryRow({
               }}
               className="h-11 font-mono font-semibold text-base tabular-nums"
               placeholder="1:30"
+              aria-invalid={durationRead.error !== undefined}
+              aria-describedby={durationHintId(`${uid}-time`)}
               autoFocus
             />
+            <DurationHint boxId={`${uid}-time`} read={durationRead} empty={TYPED_UNREADABLE} />
             <div className="grid grid-cols-3 gap-2">
               {/* Corrections go both ways, so the chips take time off as well as add it. */}
               {[-15, 15, 30].map((step) => (
@@ -338,7 +344,7 @@ export function EntryRow({
                   type="button"
                   variant="outline"
                   className="h-9 rounded-full px-1 text-sm"
-                  onClick={() => setDuration(formatDuration(Math.max(1, (parseDuration(duration) ?? 0) + step)))}
+                  onClick={() => setDuration(formatDuration(Math.max(1, (durationRead.minutes ?? 0) + step)))}
                 >
                   {step < 0 ? "−" : "+"} {Math.abs(step)} min
                 </Button>

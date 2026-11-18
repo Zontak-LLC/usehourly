@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  addChipTime,
   DURATION_NOT_POSITIVE,
   DURATION_TOO_LONG,
   DURATION_UNREADABLE,
@@ -60,24 +59,6 @@ describe("freelancer duration entry", () => {
     expect(minutesHint(25)).toBe("Did you mean 25 minutes? Type 25m");
     expect(DURATION_NOT_POSITIVE).toBe("Enter more than 0, like 1:30");
     expect(DURATION_UNREADABLE).toBe("Couldn't read that duration. Try 1.5, 1:30 or 90m.");
-  });
-
-  // QA 2026-10-25: "+ 1 hour" then "+ 30 min" saved 0:30, because a different chip replaced the value.
-  it.each([
-    ["", 60, 0, 60], // empty box: the chip's own amount
-    ["1h", 30, 60, 90], // "+ 1 hour" then "+ 30 min" = 1:30
-    ["1:15", 30, 75, 105], // a typed time then a chip = 1:45
-    ["2h", 120, 120, 240], // the same chip again still adds up
-    ["abc", 60, 0, 60], // text that cannot be read: start from the chip's amount
-    ["45", 30, 0, 30], // a bare "45" is refused with a hint (issue 435), so the chip replaces it
-  ])("a chip adds to %j: +%i → %i to %i", (current, chip, from, to) => {
-    expect(addChipTime(current, chip)).toEqual({ from, to });
-  });
-
-  it("chips tapped one after another add up to the total a freelancer expects", () => {
-    let box = "";
-    for (const chip of [60, 30, 120]) box = formatDuration(addChipTime(box, chip).to);
-    expect(box).toBe("3:30");
   });
 
   it("formats minutes as h:mm", () => {

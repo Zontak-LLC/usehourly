@@ -5,16 +5,20 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
+import { DurationHint, durationHintId } from "@/components/duration-hint";
 import { NoteTextarea } from "@/components/note-textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatDuration, readDuration } from "@/lib/duration";
+import { formatDuration } from "@/lib/duration";
 import { browserStorage, readLastProject, startProject } from "@/lib/picked-project";
 import type { SheetEntry } from "@/lib/timesheet";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
+import { readTypedDuration } from "@/lib/typed-duration";
 
 const clip = (text: string, n: number) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
+/** Month shows one quick-create panel at a time, so its hours box can have a fixed id. */
+const HOURS_BOX_ID = "quick-create-hours";
 
 /**
  * Create the same entry (project, hours, note) on every selected day of the month.
@@ -71,15 +75,13 @@ export function QuickCreate({
     return out;
   }, [entries]);
 
-  const read = readDuration(duration);
-  const invalid = duration.trim() !== "" && "error" in read;
-  // Text that cannot be logged keeps the button on, so pressing it says why in plain words (issue 435).
-  const canCreate = dates.length > 0 && !!projectId && duration.trim() !== "";
+  const read = readTypedDuration(duration);
+  const { minutes } = read;
+  // Text that cannot be logged keeps Create off; the line under the box says why.
+  const canCreate = dates.length > 0 && !!projectId && minutes !== undefined;
 
   async function create() {
-    if (!canCreate) return;
-    if ("error" in read) return toast.error(read.error);
-    const { minutes } = read;
+    if (!canCreate || minutes === undefined) return;
     try {
       const res = await createMany.mutateAsync({ projectId, dates, minutes, note, skipExisting });
       await Promise.all([utils.entry.list.invalidate(), utils.project.budgets.invalidate()]);
@@ -169,11 +171,13 @@ export function QuickCreate({
           ))}
         </select>
         <Input
+          id={HOURS_BOX_ID}
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           placeholder="Hours: 8 · 1:30"
           aria-label="Hours per day"
-          aria-invalid={invalid}
+          aria-invalid={read.error !== undefined}
+          aria-describedby={durationHintId(HOURS_BOX_ID)}
           className="h-9"
         />
         <NoteTextarea
@@ -185,6 +189,7 @@ export function QuickCreate({
           className="min-h-9 resize-none py-2"
         />
       </div>
+      <DurationHint boxId={HOURS_BOX_ID} read={read} className="-mt-1" />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="flex items-center gap-2 text-sm">

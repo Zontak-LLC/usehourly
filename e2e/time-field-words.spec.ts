@@ -1,4 +1,4 @@
-import { DURATION_NOT_POSITIVE, minutesHint } from "../src/lib/duration";
+import { minutesHint, TYPED_NOT_POSITIVE, TYPED_UNREADABLE } from "../src/lib/typed-duration";
 import { expect, startFreshAccount, test } from "./helpers";
 
 /**
@@ -33,7 +33,7 @@ test("the time field shows = 2:00 as you type, reads 1,5, and refuses 0 and 25 i
   });
 
   await test.step("0 and -2 ask for more than 0, and one more key that makes a time clears it", async () => {
-    const error = card.getByText(DURATION_NOT_POSITIVE);
+    const error = card.getByText(TYPED_NOT_POSITIVE);
     await time.fill("-2");
     await expect(error).toBeVisible();
     await time.fill("0");
@@ -63,8 +63,8 @@ test("the time field shows = 2:00 as you type, reads 1,5, and refuses 0 and 25 i
     await expect(entries.filter({ hasText: "0:25" })).toHaveCount(1);
   });
 
-  await test.step("abc still gets the old plain sentence", async () => {
+  await test.step("abc gets the formats to try", async () => {
     await time.fill("abc");
-    await expect(card.getByText("Couldn't read that duration. Try 1.5, 1:30 or 90m.")).toBeVisible();
+    await expect(card.getByText(TYPED_UNREADABLE, { exact: true })).toBeVisible();
   });
 });
