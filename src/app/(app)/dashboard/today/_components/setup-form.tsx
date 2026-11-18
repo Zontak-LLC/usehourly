@@ -17,11 +17,14 @@ import { parseWebsite } from "@/lib/web-address";
 /** Inline "client + project" creator. Shown on first run and reused on the Clients page. */
 export function SetupForm({
   clientId,
+  clientName,
   onDone,
   onCancel,
   bar = false,
 }: {
   clientId?: string;
+  /** Fills the client name in (a name said to the Log time card's mic); the project field then gets the focus. */
+  clientName?: string;
   onDone?: (projectId: string) => void;
   /** Closes the form: called when Escape is pressed in a field (the parent shows its own Cancel button). */
   onCancel?: () => void;
@@ -90,7 +93,8 @@ export function SetupForm({
           placeholder="Client (e.g. Acme)"
           required
           className="w-44"
-          autoFocus
+          defaultValue={clientName}
+          autoFocus={!clientName}
         />
       )}
       <Input
@@ -98,7 +102,7 @@ export function SetupForm({
         aria-label="Project name"
         placeholder="Project (e.g. Website)"
         required
-        autoFocus={bar}
+        autoFocus={bar || Boolean(clientName)}
         onKeyDown={escapeToCancel}
         className={bar ? "max-sm:col-span-2 sm:min-w-0 sm:flex-1" : "w-44"}
       />

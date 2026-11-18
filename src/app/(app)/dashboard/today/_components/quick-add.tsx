@@ -35,6 +35,8 @@ import { trpc } from "@/lib/trpc";
 import { addChipTime, readTypedDuration } from "@/lib/typed-duration";
 import { notifyPending, useOnline } from "@/lib/use-offline";
 
+import { MicButton, UnknownClientRow, useVoiceEntry, VoiceAddClient, VoiceLines } from "./voice-entry";
+
 /** What a time chip writes in the box: "30m", "1h", "1h30", "2h" (never "120m"). readTypedDuration reads them all. */
 function chipText(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -156,9 +158,24 @@ export function QuickAdd({
     rememberLastProject(browserStorage(), id);
   }
 
+  // Say it: a spoken sentence fills the same values typing does, as a new entry (never the follow-up note).
+  const voice = useVoiceEntry({
+    clients: clients.data ?? [],
+    onPick: remember,
+    onFill: (fill) => {
+      setDuration(fill.minutes === undefined ? "" : chipText(fill.minutes));
+      setNote(fill.note);
+      if (fill.projectId) remember(fill.projectId);
+      setFollowUp(null);
+      setSaved(null);
+      setLogged(null);
+      if (fill.minutes === undefined) durationRef.current?.focus();
+    },
+  });
+
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!projectId) return toast.error("Pick a project first.");
+    if (!projectId || voice.unknown) return toast.error("Pick a project first.");
     // Never sends 0 or a bare "25": the line under the box already says why, so only the cursor goes back there.
     if (read.minutes === undefined) return durationRef.current?.focus();
     const { minutes } = read;
@@ -172,6 +189,7 @@ export function QuickAdd({
       dayRoll.stop();
       setDuration("");
       setNote("");
+      voice.reset();
       durationRef.current?.focus();
     };
     // With the copy on this device switched on, the device itself takes the entry and sends it later (issue #95).
@@ -339,7 +357,9 @@ export function QuickAdd({
               {chipText(fieldRoll.shown)}
             </span>
           )}
+          <MicButton voice={voice} />
         </div>
+        <VoiceLines voice={voice} />
 
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <div className="flex flex-wrap gap-2">
@@ -389,7 +409,7 @@ export function QuickAdd({
         <LogTimeButton
           logged={logged}
           typed={parsed === null ? null : formatDuration(parsed)}
-          disabled={create.isPending || parsed === null}
+          disabled={create.isPending || parsed === null || voice.unknown !== null}
           busy={create.isPending}
           iconRef={logIconRef}
         />
@@ -414,26 +434,29 @@ export function QuickAdd({
           <span id={projectLabel} className="mt-2 shrink-0 text-muted-foreground text-sm">
             on
           </span>
-          {onlyProject ? (
-            <p className="mt-2 text-sm">
-              <span className="font-semibold">{onlyProject.name}</span>
-              <span className="text-muted-foreground"> · {onlyClient?.name}</span>
-            </p>
-          ) : (
-            <ProjectPicker
-              labelledBy={projectLabel}
-              projects={pickableProjects(clients.data ?? [])}
-              value={projectId}
-              onChange={remember}
-              onPicked={() => durationRef.current?.focus({ preventScroll: true })}
-            />
-          )}
+          <UnknownClientRow voice={voice}>
+            {onlyProject ? (
+              <p className="mt-2 text-sm">
+                <span className="font-semibold">{onlyProject.name}</span>
+                <span className="text-muted-foreground"> · {onlyClient?.name}</span>
+              </p>
+            ) : (
+              <ProjectPicker
+                labelledBy={projectLabel}
+                projects={pickableProjects(clients.data ?? [])}
+                value={projectId}
+                onChange={remember}
+                onPicked={() => durationRef.current?.focus({ preventScroll: true })}
+              />
+            )}
+          </UnknownClientRow>
         </div>
 
         <NoteBox
           note={note}
           onChange={setNote}
           followUp={followUp}
+          heard={voice.liveWords}
           polish={feature("aiPolish") ? polishContext : undefined}
           onKeyDown={(e) => {
             if (followUp) return followUpKey(e);
@@ -457,6 +480,7 @@ export function QuickAdd({
           </div>
         )}
       </form>
+      <VoiceAddClient voice={voice} />
       {timerFoot}
     </div>
   );
@@ -536,6 +560,7 @@ function NoteBox({
   note,
   onChange,
   followUp,
+  heard,
   polish,
   onKeyDown,
   onBlur,
@@ -543,6 +568,7 @@ function NoteBox({
   note: string;
   onChange: (v: string) => void;
   followUp: FollowUp | null;
+  heard: string; // the words heard so far while the mic listens, greyed in the empty box
   polish?: { project: string; client: string };
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onBlur: () => void;
@@ -563,7 +589,7 @@ function NoteBox({
         onKeyDown={onKeyDown}
         onBlur={onBlur}
         placeholder={
-          followUp ? "Type a note, then press Enter" : "What did you work on? (optional, you can add it later)"
+          followUp ? "Type a note, then press Enter" : heard || "What did you work on? (optional, you can add it later)"
         }
         aria-label={followUp ? undefined : "Description"}
         rows={2}
