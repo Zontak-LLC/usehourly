@@ -31,6 +31,16 @@ export async function markInvoiced(
   return marked;
 }
 
+/**
+ * Undoes a new invoice that could not be saved whole: frees the time marked on it, then deletes it. Filters by invoice
+ * and account (no id lists), so it stays under D1's bound-values limit for any size; time billed again on purpose keeps
+ * its first invoice. Throws the database error if either write fails.
+ */
+export async function undoInvoice(prisma: PrismaClient, userId: string, invoiceId: string): Promise<void> {
+  await prisma.timeEntry.updateMany({ where: { user_id: userId, invoice_id: invoiceId }, data: { invoice_id: null } });
+  await prisma.invoice.deleteMany({ where: { id: invoiceId, user_id: userId } });
+}
+
 type ProjectRow = { id: string; client_id: string; billable: boolean; hourly_rate: number };
 
 /**

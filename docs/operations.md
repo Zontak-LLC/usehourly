@@ -100,6 +100,7 @@ Events you may see (all `level: "error"`), and what they mean:
 | `invoice_email_failed`, `report_email_failed`, `approval_email_failed`, `verification_email_failed`, `password_reset_email_failed` | The email service refused or was unreachable; the user action itself still worked | Check Resend status and the API key; users can retry |
 | `weekly_reminder_failed`, `invoice_reminder_failed` | One reminder in the hourly cron failed; it is retried the next hour where that is safe | Look for a pattern (one bad address vs all) |
 | `housekeeping_sweep_failed` | The hourly clean-up of spent rate limits, email links and OAuth codes failed | Harmless for a while; fix before tables grow |
+| `invoice_undo_failed` | Saving an invoice failed while marking its time, and undoing it failed too (`userId`, `invoiceId`): a half-saved invoice may be left, with some of its hours still shown as not invoiced | Check D1 status; once it answers, find the invoice by `invoiceId` and delete it on the Invoices screen, so its hours are not billed twice |
 | `invoice_logo_cleanup_failed` | A leftover logo row after deleting an invoice | Harmless |
 | `usage_count_failed` (warn) | One page view was not counted (two first views of a day raced, or the database was busy) | Harmless; a steady stream means the usage table needs a look |
 | `mcp_internal_error`, `mcp_tool_error`, `mcp_last_used_update_failed` | A failure inside the MCP endpoint | Same as tRPC; the caller got a plain "try again" |
