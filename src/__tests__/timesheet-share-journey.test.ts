@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { accessDecision } from "@/lib/route-access";
-import { buildShareSnapshot, parseSnapshot, shareStatus } from "@/lib/timesheet-share";
+import { buildShareSnapshot, shareStatus } from "@/lib/timesheet-share";
 import { appRouter } from "@/server/routers/_app";
+import { parseSnapshot } from "@/server/schemas/timesheet-share";
 import { findShareByToken } from "@/server/timesheet-share";
 import { createCallerFactory } from "@/server/trpc";
 

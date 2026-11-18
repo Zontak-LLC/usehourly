@@ -30,6 +30,14 @@ export const ZOD_FREE_ROUTES = ["/", "/privacy"];
 const CLIENT_MANIFEST = "page_client-reference-manifest.js";
 const BEFORE_START = "<!-- before:start -->";
 const BEFORE_END = "<!-- before:end -->";
+/** The line that starts the section scripts/route-size.mjs writes; this script keeps it and everything below it. */
+export const ROUTE_SIZE_MARKER = "<!-- route-size: written by npm run measure:routes -->";
+
+/** The route-size section of an earlier doc (the marker line to the end), or "" when it has none. Exact string, no regex. */
+export function routeSizeSectionOf(doc) {
+  const start = doc.indexOf(ROUTE_SIZE_MARKER);
+  return start === -1 ? "" : doc.slice(start);
+}
 
 /** The group an esbuild input path counts toward: an npm package, a .next/server chunk, or "(other)". */
 function groupOf(path) {
@@ -269,7 +277,8 @@ export function renderClientMarkdown({ date, commit, rows, beforeBlock }) {
   ].join("\n");
 }
 
-function shortCommit() {
+/** The short hash of HEAD, or "unknown" outside a git checkout. */
+export function shortCommit() {
   try {
     return execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8", stdio: "pipe" }).trim();
   } catch {
@@ -327,7 +336,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const old = existsSync(DOC) ? readFileSync(DOC, "utf8") : "";
   const beforeBlock = before ? renderBeforeBlock({ date, commit, rows }) : beforeBlockOf(old);
   const worker = renderMarkdown({ date, commit, raw, gzip, top, summed });
-  writeFileSync(DOC, `${worker}\n${renderClientMarkdown({ date, commit, rows, beforeBlock })}`);
+  const routeSize = routeSizeSectionOf(old);
+  const client = renderClientMarkdown({ date, commit, rows, beforeBlock });
+  writeFileSync(DOC, `${worker}\n${client}${routeSize ? `\n${routeSize}` : ""}`);
   console.log(`Wrote ${DOC}`);
 
   const zod = zodInFirstLoad(nextDir, rows);

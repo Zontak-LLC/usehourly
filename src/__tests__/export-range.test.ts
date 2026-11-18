@@ -3,7 +3,8 @@ import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { addDays } from "@/lib/dates";
-import { type InvoiceRow, planExport, zipBytes } from "@/lib/export-all";
+import { planExport, zipBytes } from "@/lib/export-all";
+import type { InvoiceRow } from "@/lib/export-csv";
 import {
   checkRange,
   describeRange,

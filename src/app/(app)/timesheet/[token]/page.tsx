@@ -6,7 +6,8 @@ import { LogoMark } from "@/components/logo";
 import { formatDate, formatInstant } from "@/lib/dates";
 import { formatDecimalHours, formatDuration } from "@/lib/duration";
 import { getPrisma } from "@/lib/prisma";
-import { parseSnapshot, type ShareSnapshot } from "@/lib/timesheet-share";
+import type { ShareSnapshot } from "@/lib/timesheet-share";
+import { parseSnapshot } from "@/server/schemas/timesheet-share";
 import { findShareByToken } from "@/server/timesheet-share";
 
 import { ApproveForm } from "./_components/approve-form";

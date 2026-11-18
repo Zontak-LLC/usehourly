@@ -1,13 +1,12 @@
 import { z } from "zod";
 
 import type { AccountingInvoice } from "@/lib/accounting-export";
-import { DATE_RE, isRealDate } from "@/lib/dates";
 import type { InvoiceSnapshot } from "@/lib/invoice";
 import { CURRENCY_CODES, currencyOrDefault } from "@/lib/money";
 
+import { dateSchema } from "../schemas/dates";
 import { protectedProcedure, router } from "../trpc";
 
-const dateSchema = z.string().regex(DATE_RE, "Use YYYY-MM-DD").refine(isRealDate, "That is not a real date.");
 /** Invoices per request. Each one carries its frozen copy, so a request is bounded; the screen asks for a shorter range. */
 const MAX_INVOICES = 200;
 

@@ -1,6 +1,7 @@
 /**
- * Small checks for data this browser saved itself (localStorage). They replaced zod schemas in `offline-queue.ts` and
- * `calendar-store.ts` (issue 425): those files load with every dashboard page, and zod cost about 30 KB gz there. Each
+ * Small checks for data the browser reads without zod: what it saved itself (localStorage) and Google Calendar's
+ * answer. They replaced zod schemas in `offline-queue.ts`, `calendar-store.ts` and `google-calendar.ts` (issue 425):
+ * those files load in the browser, and zod cost about 30 KB gz there. Each
  * check accepts exactly what the zod rule did: `z.object` (a non-array object), `z.string().min().max()` (length in
  * UTF-16 units), `z.number()` (finite), `.int()`.
  */

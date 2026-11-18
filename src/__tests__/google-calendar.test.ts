@@ -57,6 +57,47 @@ describe("meetings from Google Calendar", () => {
   });
 });
 
+describe("which Google items count as events (the rules the zod schema had)", () => {
+  it.each([
+    ["an array", [ev()]],
+    ["null", null],
+    ["no id", ev({ id: undefined })],
+    ["an id that is a number", ev({ id: 7 })],
+    ["an id over 400 characters", ev({ id: "i".repeat(401) })],
+    ["a title that is a number", ev({ summary: 5 })],
+    ["a null title", ev({ summary: null })],
+    ["a status that is a number", ev({ status: 1 })],
+    ["a free/busy mark that is a number", ev({ transparency: true })],
+    ["a start that is text", ev({ start: "2026-10-21T10:00:00Z" })],
+    ["a start that is a list", ev({ start: [] })],
+    ["a start time that is a number", ev({ start: { dateTime: 1 } })],
+    ["an end day that is a number", ev({ end: { dateTime: "2026-10-21T10:45:00-04:00", date: 2 } })],
+    ["attendees that are not a list", ev({ attendees: { self: true } })],
+    ["an attendee that is text", ev({ attendees: ["me"] })],
+    ["an attendee whose self is text", ev({ attendees: [{ self: "yes" }] })],
+    ["an attendee whose answer is a number", ev({ attendees: [{ responseStatus: 1 }] })],
+  ])("skips an item with %s", (_name, raw) => {
+    expect(googleEventsToCalendar([raw])).toEqual([]);
+  });
+
+  it("keeps an item at the limits, with fields left out or set to undefined", () => {
+    const out = googleEventsToCalendar([
+      ev({ id: "i".repeat(400), summary: undefined, status: undefined, attendees: [{}], extra: 1 }),
+      ev({ id: "b", start: { dateTime: "2026-10-21T10:00:00-04:00", date: undefined }, attendees: [] }),
+    ]);
+    expect(out.map((e) => e.uid)).toEqual(["i".repeat(400), "b"]);
+  });
+
+  it("reads a page with no items as empty, and refuses a page that is not one", async () => {
+    const answer = (body: unknown) =>
+      vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
+    expect(await fetchGoogleEvents("t", range, answer({}))).toEqual({ events: [], truncated: false });
+    for (const bad of [null, [], { items: null }, { items: {} }, { items: [], nextPageToken: 5 }]) {
+      await expect(fetchGoogleEvents("t", range, answer(bad))).rejects.toThrow(/Couldn't reach/);
+    }
+  });
+});
+
 describe("asking Google", () => {
   it("asks for expanded repeats, only the fields it needs, in the window", () => {
     const u = new URL(eventsUrl(range, "tok"));

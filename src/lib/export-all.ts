@@ -1,9 +1,6 @@
-import { toCsv } from "@/lib/csv";
 import { addDays } from "@/lib/dates";
-import { categoryLabel, rateInput } from "@/lib/expenses";
+import { csvHours, type ExpenseCsvRow, entriesCsv, expensesCsv, type InvoiceRow, invoicesCsv } from "@/lib/export-csv";
 import { buildTimesheetWorkbook } from "@/lib/export-xlsx";
-import { amountCents } from "@/lib/invoice";
-import { currencyOrDefault, effectiveCurrency } from "@/lib/money";
 import type { SheetEntry } from "@/lib/timesheet";
 import { dateRange, exportableEntries } from "@/lib/timesheet";
 
@@ -20,19 +17,6 @@ import { dateRange, exportableEntries } from "@/lib/timesheet";
  *
  * Everything is built in the browser from data the signed-in user already owns.
  */
-
-export type InvoiceRow = {
-  number: string;
-  client_name: string;
-  issue_date: string;
-  due_date: string | null;
-  paid_date: string | null;
-  period_from: string;
-  period_to: string;
-  total_minutes: number;
-  total_cents: number;
-  currency: string;
-};
 
 export type ExportFile = { path: string; content: string | Uint8Array };
 
@@ -57,13 +41,6 @@ export async function fetchAllPages<T>(
   return all;
 }
 
-/**
- * Hours as a 2-decimal number, for CSV and README text only: a CSV has no number format, so
- * unrounded hours would print 0.3333333333333333. The exact Minutes column sits next to it, and
- * amounts come from minutes, never from these rounded hours. The .xlsx files write minutes / 60.
- */
-const hours = (m: number) => Math.round((m / 60) * 100) / 100;
-
 /** A safe, readable file name from a client's name; unique within `taken`. */
 export function fileNameFor(name: string, taken: Set<string>): string {
   // Drop control characters, then the characters that are not allowed in file names.
@@ -80,97 +57,6 @@ export function fileNameFor(name: string, taken: Set<string>): string {
   while (taken.has(candidate.toLowerCase())) candidate = `${base} (${n++})`;
   taken.add(candidate.toLowerCase());
   return candidate;
-}
-
-export function entriesCsv(entries: SheetEntry[], accountCurrency?: string): string {
-  const rows: (string | number | null)[][] = [
-    ["Date", "Client", "Project", "Note", "Hours", "Minutes", "Billable", "Rate (per hour)", "Amount", "Currency"],
-  ];
-  const sorted = [...entries].sort(
-    (a, b) =>
-      a.date.localeCompare(b.date) ||
-      a.project.client.name.localeCompare(b.project.client.name) ||
-      a.project.name.localeCompare(b.project.name),
-  );
-  for (const e of sorted) {
-    const rate = e.project.hourly_rate / 100;
-    // The same per-entry cent rounding as the invoice line, from exact minutes (issue 450).
-    const amount = e.project.billable && rate ? amountCents(e.minutes, e.project.hourly_rate) / 100 : null;
-    rows.push([
-      e.date,
-      e.project.client.name,
-      e.project.name,
-      e.note,
-      hours(e.minutes),
-      e.minutes,
-      e.project.billable ? "Yes" : "No",
-      rate || null,
-      amount,
-      effectiveCurrency(e.project.client.currency, accountCurrency),
-    ]);
-  }
-  return toCsv(rows);
-}
-
-export function invoicesCsv(invoices: InvoiceRow[]): string {
-  const rows: (string | number | null)[][] = [
-    ["Number", "Client", "Issued", "Due", "Paid", "Period from", "Period to", "Hours", "Total", "Currency", "Status"],
-  ];
-  for (const i of invoices) {
-    rows.push([
-      i.number,
-      i.client_name,
-      i.issue_date,
-      i.due_date,
-      i.paid_date,
-      i.period_from,
-      i.period_to,
-      hours(i.total_minutes),
-      i.total_cents / 100,
-      currencyOrDefault(i.currency),
-      i.paid_date ? "Paid" : "Unpaid",
-    ]);
-  }
-  return toCsv(rows);
-}
-
-/** One expense or mileage trip, as `expense.listAll` returns it (units as stored, see lib/expenses.ts). */
-export type ExpenseCsvRow = {
-  date: string;
-  kind: string;
-  category: string;
-  amount_cents: number;
-  currency: string | null;
-  note: string | null;
-  distance: number | null;
-  distance_unit: string | null;
-  mileage_rate: number | null;
-  client: { name: string } | null;
-};
-
-export function expensesCsv(expenses: ExpenseCsvRow[]): string {
-  const rows: (string | number | null)[][] = [
-    ["Date", "Kind", "Category", "Amount", "Currency", "Distance", "Unit", "Rate (per unit)", "Client", "Note"],
-  ];
-  const sorted = [...expenses].sort(
-    (a, b) => a.date.localeCompare(b.date) || (a.client?.name ?? "").localeCompare(b.client?.name ?? ""),
-  );
-  for (const x of sorted) {
-    const trip = x.kind === "mileage";
-    rows.push([
-      x.date,
-      trip ? "Mileage" : "Expense",
-      categoryLabel(x.category),
-      x.amount_cents / 100,
-      currencyOrDefault(x.currency),
-      trip && x.distance !== null ? x.distance / 10 : null,
-      trip ? (x.distance_unit === "km" ? "km" : "mi") : null,
-      trip && x.mileage_rate !== null ? rateInput(x.mileage_rate) : null,
-      x.client?.name ?? null,
-      x.note,
-    ]);
-  }
-  return toCsv(rows);
 }
 
 /** All the days a workbook should cover for these entries (earliest to latest). */
@@ -239,7 +125,7 @@ export async function planExport(opts: {
     "",
     entries.length
       ? `${entries.length} entries, ${clients.length} ${clients.length === 1 ? "client" : "clients"}, ` +
-        `${hours(totalMinutes)} hours, from ${dates[0]} to ${dates[dates.length - 1]}.`
+        `${csvHours(totalMinutes)} hours, from ${dates[0]} to ${dates[dates.length - 1]}.`
       : "You have not logged any time yet.",
     "",
     "What is in this zip:",
