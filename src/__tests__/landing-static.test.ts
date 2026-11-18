@@ -55,7 +55,7 @@ describe("the landing page's _headers (issue 424)", () => {
     expect(headerLine(prod, "X-Content-Type-Options")).toContain("nosniff");
     expect(headerLine(prod, "X-Frame-Options")).toContain("DENY");
     expect(headerLine(prod, "Referrer-Policy")).toContain("strict-origin-when-cross-origin");
-    expect(headerLine(prod, "Permissions-Policy")).toContain("camera=(), microphone=(), geolocation=()");
+    expect(headerLine(prod, "Permissions-Policy")).toContain("camera=(), microphone=(self), geolocation=()");
     expect(headerLine(prod, "Strict-Transport-Security")).toContain("max-age=31536000; includeSubDomains");
     expect(prod).not.toContain("X-Robots-Tag");
     expect(headerLine(landingHeaders(page(), "staging"), "X-Robots-Tag")).toContain("noindex, nofollow, noarchive");
