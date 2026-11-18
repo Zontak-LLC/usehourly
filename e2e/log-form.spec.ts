@@ -1,4 +1,4 @@
-import { minutesHint, TYPED_NOT_POSITIVE } from "../src/lib/typed-duration";
+import { minutesHint, TYPED_NOT_POSITIVE, TYPED_UNREADABLE } from "../src/lib/typed-duration";
 import { expect, startFreshAccount, test } from "./helpers";
 
 // One Log time form everywhere (2026-10-23 redesign): the time first, Log time beside it on a wide screen and under the
@@ -87,8 +87,13 @@ test("the time box previews = 2:00, reads 1,5, and refuses 0 and 25 in plain wor
   page.on("request", (request) => {
     if (request.url().includes("entry.create")) creates.push(request.url());
   });
+  await expect(time).toHaveAttribute("placeholder", "Time: 2, 1,5, 1:30 or 90m");
 
   await test.step("a bare 2 shows = 2:00 before saving and logs two hours", async () => {
+    await time.fill("13");
+    await expect(card.getByText(/^= 13:00 · /)).toBeVisible();
+    await time.fill("24");
+    await expect(card.getByText(/^= 24:00 · /)).toBeVisible();
     await time.fill("2");
     await expect(card.getByText("= 2:00 · Day total 0:00 → 2:00 h")).toBeVisible();
     await expect(time).toHaveAttribute("aria-invalid", "false");
@@ -103,9 +108,11 @@ test("the time box previews = 2:00, reads 1,5, and refuses 0 and 25 in plain wor
     await expect(days).toContainText("3:30 this day");
   });
 
-  await test.step("0 asks for more than 0, sends nothing, and the next key clears it", async () => {
+  await test.step("-2 and 0 ask for more than 0, send nothing, and the next key clears it", async () => {
     const sent = creates.length;
     const error = card.getByText(TYPED_NOT_POSITIVE, { exact: true });
+    await time.fill("-2");
+    await expect(error).toBeVisible();
     await time.fill("0");
     await expect(error).toBeVisible();
     await expect(time).toHaveAttribute("aria-invalid", "true");
@@ -117,6 +124,7 @@ test("the time box previews = 2:00, reads 1,5, and refuses 0 and 25 in plain wor
     await time.press("1"); // "01" is one hour
     await expect(card.getByText(/^= 1:00 · /)).toBeVisible();
     await expect(error).toHaveCount(0);
+    await expect(time).toHaveAttribute("aria-invalid", "false");
     await expect(days).toContainText("3:30 this day");
   });
 
@@ -132,5 +140,10 @@ test("the time box previews = 2:00, reads 1,5, and refuses 0 and 25 in plain wor
     await expect(card.getByText(/^= 0:25 · /)).toBeVisible();
     await log.click();
     await expect(days).toContainText("3:55 this day");
+  });
+
+  await test.step("abc gets the formats to try", async () => {
+    await time.fill("abc");
+    await expect(card.getByText(TYPED_UNREADABLE, { exact: true })).toBeVisible();
   });
 });
