@@ -38,19 +38,7 @@ export async function runWeeklyReminders(opts: {
   let after = "";
 
   while (run.considered < MAX_PER_RUN) {
-    const people = await opts.prisma.authUser.findMany({
-      where: {
-        id: { gt: after },
-        weekly_reminder: true,
-        is_demo: false,
-        email_verified_at: { not: null },
-        email_bounced_at: null,
-        timezone: { not: null },
-      },
-      select: { id: true, name: true, email: true, timezone: true, reminder_sent_week: true },
-      orderBy: { id: "asc" },
-      take: PAGE,
-    });
+    const people = await findReminderPage({ prisma: opts.prisma, after });
     if (people.length === 0) break;
     after = people[people.length - 1].id;
 
@@ -68,6 +56,23 @@ export async function runWeeklyReminders(opts: {
   return run;
 }
 
+/** Loads the next page of people who may get the reminder, in `id` order after `after`. */
+function findReminderPage(opts: { prisma: PrismaClient; after: string }) {
+  return opts.prisma.authUser.findMany({
+    where: {
+      id: { gt: opts.after },
+      weekly_reminder: true,
+      is_demo: false,
+      email_verified_at: { not: null },
+      email_bounced_at: null,
+      timezone: { not: null },
+    },
+    select: { id: true, name: true, email: true, timezone: true, reminder_sent_week: true },
+    orderBy: { id: "asc" },
+    take: PAGE,
+  });
+}
+
 function dueStatus(now: Date, timezone: string, sentWeek: string | null): DueStatus | undefined {
   try {
     return isDue(now, timezone, sentWeek);
@@ -76,16 +81,18 @@ function dueStatus(now: Date, timezone: string, sentWeek: string | null): DueSta
   }
 }
 
-/** Claims, emails and (if the email fails) unclaims one due person. "skipped" means another run claimed them. */
-async function sendOneReminder(opts: {
+type ReminderSend = {
   prisma: PrismaClient;
   mailer: Mailer;
   person: Person;
   status: DueStatus;
   appUrl: string;
   secret: string;
-}): Promise<"sent" | "failed" | "skipped"> {
-  const { prisma, mailer, person, status, appUrl, secret } = opts;
+};
+
+/** Claims, emails and (if the email fails) unclaims one due person. "skipped" means another run claimed them. */
+async function sendOneReminder(opts: ReminderSend): Promise<"sent" | "failed" | "skipped"> {
+  const { prisma, person, status } = opts;
   const previousWeek = person.reminder_sent_week; // remembered now, in case the claim has to be undone
   // Claim this week. Only one run can win; the others see count 0 and move on.
   const claim = await prisma.authUser.updateMany({
@@ -99,27 +106,7 @@ async function sendOneReminder(opts: {
   if (claim.count === 0) return "skipped";
 
   try {
-    const entries = await prisma.timeEntry.findMany({
-      where: { user_id: person.id, date: { gte: mondayOf(status.today), lte: status.today } },
-      select: {
-        date: true,
-        minutes: true,
-        project: { select: { name: true, client: { select: { name: true } } } },
-      },
-    });
-    const token = await unsubscribeToken(secret, person.id);
-    const off = `${appUrl}/reminders/off?u=${encodeURIComponent(person.id)}&t=${encodeURIComponent(token)}`;
-    await mailer.send(
-      buildWeeklyReminder({
-        name: person.name,
-        email: person.email,
-        today: status.today,
-        entries,
-        appUrl,
-        unsubscribeUrl: off,
-        oneClickUrl: `${appUrl}/api/reminders/off?u=${encodeURIComponent(person.id)}&t=${encodeURIComponent(token)}`,
-      }),
-    );
+    await emailReminder(opts);
     return "sent";
   } catch (err) {
     logError("weekly_reminder_failed", err);
@@ -130,4 +117,30 @@ async function sendOneReminder(opts: {
     });
     return "failed";
   }
+}
+
+/** Loads the person's entries for this week and sends the reminder email. Throws when the mailer fails. */
+async function emailReminder(opts: ReminderSend): Promise<void> {
+  const { prisma, mailer, person, status, appUrl, secret } = opts;
+  const entries = await prisma.timeEntry.findMany({
+    where: { user_id: person.id, date: { gte: mondayOf(status.today), lte: status.today } },
+    select: {
+      date: true,
+      minutes: true,
+      project: { select: { name: true, client: { select: { name: true } } } },
+    },
+  });
+  const token = await unsubscribeToken(secret, person.id);
+  const offQuery = `?u=${encodeURIComponent(person.id)}&t=${encodeURIComponent(token)}`;
+  await mailer.send(
+    buildWeeklyReminder({
+      name: person.name,
+      email: person.email,
+      today: status.today,
+      entries,
+      appUrl,
+      unsubscribeUrl: `${appUrl}/reminders/off${offQuery}`,
+      oneClickUrl: `${appUrl}/api/reminders/off${offQuery}`,
+    }),
+  );
 }
