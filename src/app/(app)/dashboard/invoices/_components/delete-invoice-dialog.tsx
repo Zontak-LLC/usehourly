@@ -25,6 +25,7 @@ export function DeleteInvoiceConfirm({
       await del.mutateAsync({ id });
       await Promise.all([
         utils.invoice.list.invalidate(),
+        utils.invoice.listPage.invalidate(),
         utils.invoice.latest.invalidate(),
         utils.invoice.totals.invalidate(),
         utils.invoice.overdue.invalidate(),

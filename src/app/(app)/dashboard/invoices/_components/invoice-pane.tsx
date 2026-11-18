@@ -101,6 +101,7 @@ export function InvoicePane({
       await markPaid.mutateAsync({ id, paidDate });
       await Promise.all([
         utils.invoice.list.invalidate(),
+        utils.invoice.listPage.invalidate(),
         utils.invoice.get.invalidate({ id }),
         utils.invoice.latest.invalidate(),
         utils.invoice.totals.invalidate(),

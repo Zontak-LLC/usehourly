@@ -324,6 +324,29 @@ export function sql(statement: string) {
   runSql(statement);
 }
 
+/**
+ * Copies one of the signed-in account's invoices `count` times (numbers INV-2099-001 up, same dates, snapshot and
+ * search text) straight into the local database, after startDemo and before page.goto. The demo quota is not checked:
+ * this is setup only. Returns the account's id.
+ */
+export async function copyInvoices(page: Page, count: number): Promise<string> {
+  // This test's own account (not "the newest sample account", which another test running at the same time may have made).
+  const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
+  const userId = session.user?.id ?? "";
+  expect(userId).toMatch(/^[0-9a-f-]{20,}$/);
+  sql(
+    `WITH RECURSIVE n(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM n WHERE n < ${Math.floor(count)})
+    INSERT INTO invoices (id, user_id, client_id, client_name, number, issue_date, due_date, paid_date, period_from,
+    period_to, total_minutes, total_cents, currency, notes, snapshot, search_text, summary, remind_overdue, reminders_sent, created_at)
+    SELECT lower(hex(randomblob(16))), i.user_id, i.client_id, i.client_name, 'INV-2099-' || printf('%03d', n.n), i.issue_date,
+      i.due_date, i.paid_date, i.period_from, i.period_to, i.total_minutes, i.total_cents, i.currency, i.notes, i.snapshot,
+      i.search_text, i.summary, 0, 0, i.created_at
+    FROM (SELECT * FROM invoices WHERE user_id = '${userId}' LIMIT 1) i,
+      n`.replace(/\s+/g, " "),
+  );
+  return userId;
+}
+
 export type Mail = {
   from: string;
   to: string;

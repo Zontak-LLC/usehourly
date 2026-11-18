@@ -1,4 +1,6 @@
-import { expect, invoiceRows, openInvoice, sql, startDemo, test } from "./helpers";
+import type { Locator, Page } from "@playwright/test";
+
+import { copyInvoices, expect, invoiceRows, openInvoice, sql, startDemo, test } from "./helpers";
 import { createHash, randomBytes } from "node:crypto";
 
 const numbersOf = (rows: ReturnType<typeof invoiceRows>) =>
@@ -7,22 +9,9 @@ const numbersOf = (rows: ReturnType<typeof invoiceRows>) =>
 /** The invoice list is paginated: a phone shows 3 at a time, a wide screen 10, with the arrow buttons. */
 test("the invoice list is paginated: 3 per page on a phone, 10 on a wide screen", async ({ page }, info) => {
   await startDemo(page);
-  // This test's own account (not "the newest sample account", which another test running at the same time may have made).
-  const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
-  const userId = session.user?.id ?? "";
-  expect(userId).toMatch(/^[0-9a-f-]{20,}$/);
   // The sample data has two invoices; copy one nine times (numbers INV-2099-001 to 009) so there are eleven: more than
   // one wide-screen page of ten and four phone pages of three.
-  sql(
-    `WITH RECURSIVE n(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM n WHERE n < 9)
-    INSERT INTO invoices (id, user_id, client_id, client_name, number, issue_date, due_date, paid_date, period_from,
-    period_to, total_minutes, total_cents, currency, notes, snapshot, search_text, summary, remind_overdue, reminders_sent, created_at)
-    SELECT lower(hex(randomblob(16))), i.user_id, i.client_id, i.client_name, 'INV-2099-' || printf('%03d', n.n), i.issue_date,
-      i.due_date, i.paid_date, i.period_from, i.period_to, i.total_minutes, i.total_cents, i.currency, i.notes, i.snapshot,
-      i.search_text, i.summary, 0, 0, i.created_at
-    FROM (SELECT * FROM invoices WHERE user_id = '${userId}' LIMIT 1) i,
-      n`.replace(/\s+/g, " "),
-  );
+  await copyInvoices(page, 9);
   await page.goto("/dashboard/invoices");
 
   const card = page.getByRole("region", { name: "Your invoices" });
@@ -41,6 +30,78 @@ test("the invoice list is paginated: 3 per page on a phone, 10 on a wide screen"
   expect(secondPage.filter((n) => firstPage.includes(n))).toEqual([]);
   await pager.getByRole("button", { name: "Previous page" }).click();
   await expect.poll(() => numbersOf(rows)).toEqual(firstPage);
+});
+
+test.describe("Load more reads older invoices 200 at a time (issue 499)", () => {
+  const OLDEST = "INV-1999-001";
+  const MONEY = /\d[\d,]*\.\d{2}/;
+
+  /** 602 invoices: the sample's two and 600 copies, one of them renumbered OLDEST and issued 2000-01-01. */
+  async function seed602(page: Page) {
+    await startDemo(page);
+    const userId = await copyInvoices(page, 600);
+    sql(
+      `UPDATE invoices SET number = '${OLDEST}', issue_date = '2000-01-01',
+        search_text = '${OLDEST.toLowerCase()} ' || search_text,
+        snapshot = json_set(snapshot, '$.number', '${OLDEST}', '$.issueDate', '2000-01-01')
+      WHERE user_id = '${userId}' AND number = 'INV-2099-600'`.replace(/\s+/g, " "),
+    );
+    await page.goto("/dashboard/invoices");
+  }
+
+  const card = (page: Page) => page.getByRole("region", { name: "Your invoices" });
+  const loadMore = (page: Page) => card(page).getByRole("button", { name: "Load more" });
+  /** The aside of the last month group shown: its sum, or its count while the month may be cut by the load edge. */
+  const lastMonthAside = (page: Page) => card(page).locator('p[id^="invoices-month-"]').last().locator("span").nth(1);
+
+  /** Clicks Next until the pager is on its last page, waiting for each page to show. */
+  async function toLastPage(pager: Locator) {
+    const next = pager.getByRole("button", { name: "Next page" });
+    while (await next.isEnabled()) {
+      const before = (await pager.textContent()) ?? "";
+      await next.click();
+      await expect(pager).not.toHaveText(before);
+    }
+  }
+
+  test("the last page offers Load more until all 602 are in, the oldest last", async ({ page }) => {
+    await seed602(page);
+    const pager = card(page).getByRole("navigation", { name: "invoices pages" });
+    await expect(invoiceRows(page).first()).toBeVisible();
+
+    await toLastPage(pager);
+    await expect(card(page)).toContainText("Showing 200 of 602");
+    await expect(loadMore(page)).toBeVisible();
+    // The month cut by the load edge shows its count, not a sum that would be short.
+    await expect(lastMonthAside(page)).toHaveText(/^\d+ invoices?$/);
+    await expect(lastMonthAside(page)).not.toHaveText(MONEY);
+
+    for (const loaded of [400, 600]) {
+      await loadMore(page).click();
+      await expect(pager).toContainText(`of ${loaded}`);
+      await toLastPage(pager);
+      await expect(card(page)).toContainText(`Showing ${loaded} of 602`);
+    }
+    await loadMore(page).click();
+    await expect(pager).toContainText("of 602");
+    await toLastPage(pager);
+    await expect(loadMore(page)).toHaveCount(0);
+    await expect(card(page)).not.toContainText("Showing");
+    await expect(invoiceRows(page).last()).toHaveAttribute("data-number", OLDEST);
+    await expect(lastMonthAside(page)).toHaveText(MONEY);
+  });
+
+  test("searching finds an invoice that is not loaded yet, and it opens", async ({ page }) => {
+    await seed602(page);
+    await expect(invoiceRows(page).first()).toBeVisible();
+    await page.getByRole("searchbox", { name: "Search invoices" }).fill(OLDEST);
+    await expect(invoiceRows(page)).toHaveCount(1);
+    await expect(invoiceRows(page).first()).toHaveAttribute("data-number", OLDEST);
+    await expect(loadMore(page)).toHaveCount(0);
+    const { number, detail } = await openInvoice(page, 0);
+    expect(number).toBe(OLDEST);
+    await expect(detail).toContainText(OLDEST);
+  });
 });
 
 test("each invoice says its state in words, unpaid ones have Mark paid, and the tabs narrow the list", async ({

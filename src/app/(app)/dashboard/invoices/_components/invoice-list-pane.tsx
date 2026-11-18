@@ -18,6 +18,8 @@ import { formatMoney } from "@/lib/money";
 import type { Page } from "@/lib/paginate";
 import { count } from "@/lib/plural";
 
+import { InvoiceLoadMore, type LoadMore } from "./invoice-load-more";
+
 const monthName = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" });
 
 /**
@@ -37,6 +39,8 @@ export function InvoiceListPane({
   onOpen,
   today,
   colourOf,
+  more,
+  partialMonth,
 }: {
   /** This page of what the tab and the search show. */
   page: Page<ListInvoice>;
@@ -51,6 +55,10 @@ export function InvoiceListPane({
   onOpen: (id: string) => void;
   today: string | null;
   colourOf: (clientId: string) => string | undefined;
+  /** Set while the server holds more invoices than are loaded: the "Load more" line under the last row. */
+  more?: LoadMore;
+  /** The month (`YYYY-MM`) the next page may add to: it shows its count, not a sum that would be short. */
+  partialMonth?: string;
 }) {
   return (
     <section aria-label="Your invoices" className="flex flex-col gap-2 p-2">
@@ -91,7 +99,11 @@ export function InvoiceListPane({
                 key={m.key}
                 id={`invoices-month-${m.key}`}
                 title={monthName.format(fromISODate(`${m.key}-01`))}
-                aside={oneCurrency ? formatMoney(sum, m.items[0].currency) : count(m.items.length, "invoice")}
+                aside={
+                  oneCurrency && m.key !== partialMonth
+                    ? formatMoney(sum, m.items[0].currency)
+                    : count(m.items.length, "invoice")
+                }
               >
                 {m.items.map((i) => (
                   <li key={i.id}>
@@ -109,6 +121,7 @@ export function InvoiceListPane({
           })}
         </div>
       )}
+      {more && page.page === page.pages && <InvoiceLoadMore more={more} />}
 
       {page.pages > 1 && (
         <div className="px-1 pt-1">
