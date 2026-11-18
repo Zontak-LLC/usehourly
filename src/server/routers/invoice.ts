@@ -12,6 +12,17 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { sha256Hex } from "@/lib/sha256";
 import { nextInvoiceNumber } from "@/lib/unbilled";
 
+import { cursorArgs, cursorInput, toPage } from "../cursor-page";
+import {
+  invoiceFilters,
+  invoiceOrder,
+  invoicePageInput,
+  invoiceSummarySelect,
+  invoiceWhere,
+  lateWhere,
+  readInvoicePage,
+  withSummaries,
+} from "../invoice-history";
 import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
 import { assertNumberFree, buildInvoiceSnapshot, invoiceClient, numberUsedError } from "../invoice-snapshot";
 import { dateSchema } from "../schemas/dates";
@@ -42,54 +53,11 @@ const invoiceInput = z
     message: `Choose a period of up to a year (${MAX_QUERY_DAYS} days).`,
   });
 
-const summary = {
-  id: true,
-  client_id: true,
-  client_name: true,
-  number: true,
-  issue_date: true,
-  due_date: true,
-  paid_date: true,
-  period_from: true,
-  period_to: true,
-  total_minutes: true,
-  total_cents: true,
-  currency: true,
-  notes: true,
-  summary: true,
-  created_at: true,
-} as const;
-
 /** Invoices per page of `listAll` (at most 4 pages at the 2,000 quota). */
 export const INVOICE_LIST_ALL_PAGE = 500;
 
-/** The list's order: newest issue date first, then newest made. */
-const NEWEST_FIRST = [{ issue_date: "desc" }, { created_at: "desc" }] as const;
-
-/** Late = unpaid with a due date before today: the same rule as `daysLate` in lib/invoice-mail.ts. */
-const lateWhere = (today: string) => ({ paid_date: null, due_date: { not: null, lt: today } });
-
-type SummaryRow = { id: string; summary: string | null };
-
-/**
- * Invoices made before summaries existed have an empty one: work it out once from the frozen snapshot and keep it (a
- * few rows at most, the first time the history is opened). Shared by `list`, `listAll` and `overdue`.
- */
-function withSummaries<T extends SummaryRow>(ctx: Pick<Context, "prisma"> & { userId: string }, rows: T[]) {
-  return Promise.all(
-    rows.map(async (r) => {
-      if (r.summary) return r;
-      const row = await ctx.prisma.invoice.findFirst({
-        where: { id: r.id, user_id: ctx.userId },
-        select: { snapshot: true },
-      });
-      if (!row) return r;
-      const text = summarizeInvoice(JSON.parse(row.snapshot) as InvoiceSnapshot);
-      if (text) await ctx.prisma.invoice.update({ where: { id: r.id, user_id: ctx.userId }, data: { summary: text } });
-      return { ...r, summary: text };
-    }),
-  );
-}
+/** The most invoices `list` returns (search, the MCP tools and Clients read it whole). */
+const LIST_CAP = 200;
 
 type StoredInvoice = { id: string; client_id: string | null; snapshot: string; paid_date: string | null };
 
@@ -149,67 +117,33 @@ async function takeBackInvoice(prisma: PrismaClient, userId: string, invoiceId: 
 
 export const invoiceRouter = router({
   /** History. `q` matches number, client, notes, project names and entry notes (case-insensitive). */
-  list: protectedProcedure
-    .input(
-      z
-        .object({
-          q: z.string().trim().max(100).optional(),
-          clientId: z.string().optional(),
-          status: z.enum(["all", "unpaid", "paid"]).optional(),
-          // Issue date range (inclusive, YYYY-MM-DD) and the order of the results.
-          from: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          to: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          sort: z.enum(["newest", "oldest", "highest", "lowest"]).optional(),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const rows = await ctx.prisma.invoice.findMany({
-        where: {
-          user_id: ctx.userId,
-          ...((input?.from || input?.to) && {
-            issue_date: { ...(input.from && { gte: input.from }), ...(input.to && { lte: input.to }) },
-          }),
-          ...(input?.clientId && { client_id: input.clientId }),
-          ...(input?.status === "paid" && { paid_date: { not: null } }),
-          ...(input?.status === "unpaid" && { paid_date: null }),
-          ...(input?.q && { search_text: { contains: input.q.toLowerCase() } }),
-        },
-        select: summary,
-        orderBy:
-          input?.sort === "oldest"
-            ? [{ issue_date: "asc" }, { created_at: "asc" }]
-            : input?.sort === "highest"
-              ? [{ total_cents: "desc" }, { issue_date: "desc" }]
-              : input?.sort === "lowest"
-                ? [{ total_cents: "asc" }, { issue_date: "desc" }]
-                : [...NEWEST_FIRST],
-        take: 200,
-      });
-      return withSummaries(ctx, rows);
-    }),
+  list: protectedProcedure.input(invoiceFilters.optional()).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.invoice.findMany({
+      where: invoiceWhere(ctx, input),
+      select: invoiceSummarySelect,
+      orderBy: invoiceOrder(input?.sort),
+      take: LIST_CAP,
+    });
+    return withSummaries(ctx, rows);
+  }),
+
+  /**
+   * The history a page of `INVOICE_PAGE` at a time (Invoices' "Load more"), with `list`'s filters and the Waiting and
+   * Overdue tabs. Pass the previous page's `nextCursor` until it comes back null.
+   */
+  listPage: protectedProcedure.input(invoicePageInput).query(({ ctx, input }) => readInvoicePage(ctx, input)),
 
   /** Every invoice, a page at a time like `entry.listAll` ("Download everything"; `list` stops at the newest 200). */
-  listAll: protectedProcedure
-    .input(z.object({ cursor: z.string().max(100).nullish() }))
-    .query(async ({ ctx, input }) => {
-      const rows = await ctx.prisma.invoice.findMany({
-        where: { user_id: ctx.userId },
-        select: summary,
-        orderBy: [...NEWEST_FIRST, { id: "asc" }],
-        take: INVOICE_LIST_ALL_PAGE + 1,
-        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 0 } : {}),
-      });
-      const more = rows.length > INVOICE_LIST_ALL_PAGE;
-      const items = await withSummaries(ctx, more ? rows.slice(0, INVOICE_LIST_ALL_PAGE) : rows);
-      return { items, nextCursor: more ? rows[INVOICE_LIST_ALL_PAGE].id : null };
-    }),
+  listAll: protectedProcedure.input(z.object({ cursor: cursorInput })).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.invoice.findMany({
+      where: { user_id: ctx.userId },
+      select: invoiceSummarySelect,
+      orderBy: invoiceOrder(),
+      ...cursorArgs(input.cursor, INVOICE_LIST_ALL_PAGE),
+    });
+    const page = toPage(rows, INVOICE_LIST_ALL_PAGE);
+    return { ...page, items: await withSummaries(ctx, page.items) };
+  }),
 
   /**
    * The money line and the tab counts over EVERY invoice (issue 451: worked out in the browser they stopped at the
@@ -235,9 +169,9 @@ export const invoiceRouter = router({
   /** Every late, unpaid invoice, newest first (the Overdue tab). No cap: the invoice quota (2,000) bounds it. */
   overdue: protectedProcedure.input(z.object({ today: dateSchema })).query(async ({ ctx, input }) => {
     const rows = await ctx.prisma.invoice.findMany({
-      where: { user_id: ctx.userId, ...lateWhere(input.today) },
-      select: summary,
-      orderBy: [...NEWEST_FIRST],
+      where: invoiceWhere(ctx, { status: "overdue", today: input.today }),
+      select: invoiceSummarySelect,
+      orderBy: invoiceOrder(),
     });
     return withSummaries(ctx, rows);
   }),

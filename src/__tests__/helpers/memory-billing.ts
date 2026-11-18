@@ -64,10 +64,10 @@ type InvoiceWhere = {
   paid_date?: null | { not: null };
   due_date?: { not: null; lt?: string; lte?: string };
 };
-type InvoiceOrder = Partial<Record<keyof Invoice, "asc" | "desc">>[];
+export type InvoiceOrder = Partial<Record<keyof Invoice, "asc" | "desc">>[];
 
 /** Prisma's `orderBy` over the invoice rows: each key in turn, dates by time, missing values first. */
-function byOrder(order: InvoiceOrder) {
+export function byOrder(order: InvoiceOrder) {
   const value = (i: Invoice, k: keyof Invoice) => {
     const v = i[k];
     return v instanceof Date ? v.getTime() : (v ?? "");

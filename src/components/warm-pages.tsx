@@ -27,9 +27,9 @@ export function WarmPages() {
           void utils.entry.list.prefetch(range);
           void utils.entry.nonBillableDays.prefetch(range);
         }
-        void utils.invoice.list.prefetch(); // no input, as on Invoices and Clients
+        void utils.invoice.listPage.prefetchInfinite({}); // Invoices' All tab, its first page
+        void utils.invoice.list.prefetch(); // no input, as on Clients
         void utils.invoice.totals.prefetch({ today });
-        void utils.invoice.overdue.prefetch({ today });
         void utils.clients.list.prefetch();
       };
       idle = "requestIdleCallback" in window ? window.requestIdleCallback(run, { timeout: 2000 }) : undefined;

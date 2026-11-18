@@ -273,14 +273,14 @@ describe("client invoice journey", () => {
     expect(prisma.invoice.findMany).toHaveBeenLastCalledWith(
       expect.objectContaining({
         where: { user_id: "u1", issue_date: { gte: "2026-09-01", lte: "2026-10-31" } },
-        orderBy: [{ total_cents: "desc" }, { issue_date: "desc" }],
+        orderBy: [{ total_cents: "desc" }, { issue_date: "desc" }, { id: "asc" }],
       }),
     );
     await c.invoice.list({ from: "2026-09-01", sort: "oldest" });
     expect(prisma.invoice.findMany).toHaveBeenLastCalledWith(
       expect.objectContaining({
         where: { user_id: "u1", issue_date: { gte: "2026-09-01" } },
-        orderBy: [{ issue_date: "asc" }, { created_at: "asc" }],
+        orderBy: [{ issue_date: "asc" }, { created_at: "asc" }, { id: "asc" }],
       }),
     );
     // a malformed date is refused and nothing is queried

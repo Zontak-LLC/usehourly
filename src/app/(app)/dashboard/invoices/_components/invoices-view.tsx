@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,6 +13,7 @@ import { PageShell } from "@/components/page-shell";
 import { SplitView } from "@/components/split-view";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInvoicePages } from "@/components/use-invoice-pages";
 import { usePageSize } from "@/components/use-page-size";
 import { useUnbilled } from "@/components/use-unbilled";
 import {
@@ -23,6 +24,7 @@ import {
   moneyLines,
   tabCounts,
 } from "@/lib/invoice-list";
+import { listPageInput, partialMonth } from "@/lib/invoice-pages";
 import { paginate } from "@/lib/paginate";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
@@ -44,33 +46,44 @@ export function InvoicesView() {
   // "Today" is the browser's date (the Worker runs in UTC); used to say what is due and what is late.
   const today = useToday();
 
-  // Every query the page needs starts in this render, so they go out as ONE batched request.
-  const clients = trpc.clients.list.useQuery();
-  const invoices = trpc.invoice.list.useQuery();
-  // The list holds the newest 200; the money line, the tab counts and the Overdue tab come from the server over EVERY
-  // invoice (issue 451), so an old unpaid, late invoice is never missed. They wait for the browser's today.
-  const totals = trpc.invoice.totals.useQuery({ today: today ?? "" }, { enabled: today !== null });
-  const overdue = trpc.invoice.overdue.useQuery({ today: today ?? "" }, { enabled: today !== null });
-  const unbilled = useUnbilled();
-  const pageSize = usePageSize();
   const [tab, setTab] = useState<InvoiceTab>("all");
   const [search, setSearch] = useState("");
+  // The server does the search: it is asked once typing settles, not on every key.
+  const deferredSearch = useDeferredValue(search);
   const [pageNo, setPageNo] = useState(1);
 
-  const all = invoices.data ?? [];
-  // Until the server answers, the list's own figures stand in, so the line and the counts never flash empty.
-  const money = totals.data?.money ?? moneyLines(all, today);
-  const counts = totals.data?.counts ?? tabCounts(all, today);
-  const filtered = filterInvoices(tab === "overdue" ? (overdue.data ?? all) : all, tab, search, today);
-  const selectedId = routeId ?? filtered[0]?.id ?? null;
+  // Every query the page needs starts in this render, so they go out as ONE batched request.
+  const clients = trpc.clients.list.useQuery();
+  // The tab's invoices, 200 at a time, filtered and searched on the server. The money line and the tab counts come
+  // from the server over EVERY invoice (issue 451); they wait for the browser's today.
+  const invoices = useInvoicePages(listPageInput({ tab, search: deferredSearch, today }));
+  const totals = trpc.invoice.totals.useQuery({ today: today ?? "" }, { enabled: today !== null });
+  const unbilled = useUnbilled();
+  const pageSize = usePageSize();
+
+  // While a new tab or search is asked, the previous rows stay on screen narrowed to it, never another tab's rows.
+  const loaded = invoices.isStandIn ? filterInvoices(invoices.data ?? [], tab, search, today) : (invoices.data ?? []);
+  const isSearching = deferredSearch.trim() !== "";
+  const isUnfiltered = tab === "all" && !isSearching;
+  // Until the server answers, the newest invoices stand in, so the line and the counts never flash empty.
+  const standIn = isUnfiltered ? loaded : [];
+  const money = totals.data?.money ?? moneyLines(standIn, today);
+  const counts = totals.data?.counts ?? tabCounts(standIn, today);
+  const selectedId = routeId ?? loaded[0]?.id ?? null;
   const shown = useShownInvoice(routeId, selectedId);
+
+  async function loadMore() {
+    const next = await invoices.loadMore();
+    // Show the first invoice just added: on the page after the last full one.
+    if (!next.isError) setPageNo(Math.floor(loaded.length / pageSize) + 1);
+  }
 
   function openInvoice(id: string | null) {
     const path = id ? invoicePath(id) : "/dashboard/invoices";
     if (path !== pathname) window.history.pushState(null, "", path);
   }
   const colourOf = (id: string) => clients.data?.find((c) => c.id === id)?.color ?? undefined;
-  const empty = all.length === 0 && !routeId;
+  const empty = isUnfiltered && loaded.length === 0 && !routeId;
 
   return (
     <PageShell
@@ -106,7 +119,7 @@ export function InvoicesView() {
           back={{ href: "/dashboard/invoices", label: "Invoices", onBack: () => openInvoice(null) }}
           list={
             <InvoiceListPane
-              page={paginate(filtered, pageNo, pageSize)}
+              page={paginate(loaded, pageNo, pageSize)}
               money={money}
               counts={counts}
               tab={tab}
@@ -124,12 +137,23 @@ export function InvoicesView() {
               onOpen={openInvoice}
               today={today}
               colourOf={colourOf}
+              more={
+                invoices.hasMore && !invoices.isStandIn
+                  ? {
+                      loaded: loaded.length,
+                      total: isSearching ? undefined : counts[tab],
+                      isLoading: invoices.isLoadingMore,
+                      onLoad: () => void loadMore(),
+                    }
+                  : undefined
+              }
+              partialMonth={partialMonth(loaded, { hasMore: invoices.hasMore })}
             />
           }
         >
           <InvoicePane
             selectedId={selectedId}
-            row={all.find((i) => i.id === selectedId) ?? overdue.data?.find((i) => i.id === selectedId)}
+            row={loaded.find((i) => i.id === selectedId)}
             shown={shown}
             today={today}
             colourOf={colourOf}

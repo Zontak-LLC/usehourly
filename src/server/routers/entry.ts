@@ -12,6 +12,7 @@ import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 import { assertWithinQuota } from "@/lib/quotas";
 
+import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { drillError, faultActive } from "../drill";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
@@ -225,21 +226,17 @@ export const entryRouter = router({
    * Every entry, a page at a time (for "export everything"). Pass the previous page's `nextCursor`
    * until it comes back null. A page is bounded, so no single response can be enormous.
    */
-  listAll: protectedProcedure
-    .input(z.object({ cursor: z.string().max(100).nullish() }))
-    .query(async ({ ctx, input }) => {
-      const rows = await ctx.prisma.timeEntry.findMany({
-        where: { user_id: ctx.userId },
-        include: withProject,
-        orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
-        take: LIST_ALL_PAGE + 1,
-        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 0 } : {}),
-      });
-      const more = rows.length > LIST_ALL_PAGE;
-      const days = await nonBillableDates(ctx.prisma, ctx.userId);
-      const items = (more ? rows.slice(0, LIST_ALL_PAGE) : rows).map((e) => ({ ...e, non_billable: days.has(e.date) }));
-      return { items, nextCursor: more ? rows[LIST_ALL_PAGE].id : null };
-    }),
+  listAll: protectedProcedure.input(z.object({ cursor: cursorInput })).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.timeEntry.findMany({
+      where: { user_id: ctx.userId },
+      include: withProject,
+      orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
+      ...cursorArgs(input.cursor, LIST_ALL_PAGE),
+    });
+    const page = toPage(rows, LIST_ALL_PAGE);
+    const days = await nonBillableDates(ctx.prisma, ctx.userId);
+    return { ...page, items: page.items.map((e) => ({ ...e, non_billable: days.has(e.date) })) };
+  }),
 
   /** Quick-add. Accepts either `minutes` or free-form `duration` text ("1.5", "1:30", "90m"). */
   create: protectedProcedure

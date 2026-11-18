@@ -16,6 +16,7 @@ import {
 import { currencyOrDefault } from "@/lib/money";
 import { assertWithinQuota } from "@/lib/quotas";
 
+import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { dateSchema } from "../schemas/dates";
 import { protectedProcedure, router } from "../trpc";
 
@@ -120,19 +121,15 @@ export const expenseRouter = router({
    * Every expense and trip, a page at a time, with no date limit (for "export everything"). Pass the previous page's
    * `nextCursor` until it comes back null. The `id` tie-break keeps the order stable across pages.
    */
-  listAll: protectedProcedure
-    .input(z.object({ cursor: z.string().max(100).nullish() }))
-    .query(async ({ ctx, input }) => {
-      const rows = await ctx.prisma.expense.findMany({
-        where: { user_id: ctx.userId },
-        select: SELECT,
-        orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
-        take: LIST_ALL_PAGE + 1,
-        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 0 } : {}),
-      });
-      const more = rows.length > LIST_ALL_PAGE;
-      return { items: more ? rows.slice(0, LIST_ALL_PAGE) : rows, nextCursor: more ? rows[LIST_ALL_PAGE].id : null };
-    }),
+  listAll: protectedProcedure.input(z.object({ cursor: cursorInput })).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.expense.findMany({
+      where: { user_id: ctx.userId },
+      select: SELECT,
+      orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
+      ...cursorArgs(input.cursor, LIST_ALL_PAGE),
+    });
+    return toPage(rows, LIST_ALL_PAGE);
+  }),
 
   create: protectedProcedure.input(expenseInput).mutation(async ({ ctx, input }) => {
     assertWithinQuota(
