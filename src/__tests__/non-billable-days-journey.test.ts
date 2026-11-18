@@ -172,21 +172,29 @@ describe("marking a day non-billable", () => {
     expect(report.totals.earnedCents).toBe(25000);
   });
 
-  it("leaves the day out of every export, and the zip says how many entries it left out", async () => {
+  it("leaves the day out of the workbooks; the zip's all-entries.csv keeps it with Billable day = No", async () => {
     const { as } = world([{ user_id: "u1", date: "2026-10-03" }]);
     const listed = await as("u1").entry.list(RANGE);
 
     const plan = await planExport({ entries: listed, invoices: [], today: "2026-10-31" });
     const csv = String(plan.files.find((f) => f.path === "all-entries.csv")?.content);
-    expect(csv).toContain("homepage hero");
-    expect(csv).toContain("contact form");
-    expect(csv).not.toContain("nav fixes");
-    expect(csv).not.toContain("footer links");
-    expect(plan.entryCount).toBe(2);
-    expect(plan.totalMinutes).toBe(150);
+    expect(csv).toContain("2026-10-02,Acme,Website,homepage hero,1.5,90,Yes,100,150,USD,Yes\r\n");
+    expect(csv).toContain("2026-10-05,Acme,Website,contact form,1,60,Yes,100,100,USD,Yes\r\n");
+    // on the marked day: no amount, Billable day = No
+    expect(csv).toContain("2026-10-03,Acme,Website,nav fixes,0.75,45,Yes,100,,USD,No\r\n");
+    expect(csv).toContain("2026-10-03,Acme,Website,footer links,0.5,30,Yes,100,,USD,No\r\n");
+    expect(plan.entryCount).toBe(4);
+    expect(plan.totalMinutes).toBe(225);
     expect(String(plan.files.find((f) => f.path === "README.txt")?.content)).toContain(
-      "2 entries on days marked non-billable were left out.",
+      "2 entries are on days marked non-billable: they are in all-entries.csv (Billable day = No), not in the workbooks.",
     );
+    const allTime = plan.files.find((f) => f.path === "all-time.xlsx")?.content as Uint8Array;
+    const allBook = new ExcelJS.Workbook();
+    await allBook.xlsx.load(allTime.buffer as ArrayBuffer);
+    const allNotes: unknown[] = [];
+    allBook.getWorksheet("Entries")?.eachRow((row) => allNotes.push(...(row.values as unknown[])));
+    expect(allNotes).toContain("homepage hero");
+    expect(allNotes).not.toContain("nav fixes");
 
     // the week/month/range workbook: no row and no column for the marked day
     const wb = await buildTimesheetWorkbook({ entries: listed, days: ["2026-10-02", "2026-10-03", "2026-10-05"] });

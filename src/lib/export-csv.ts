@@ -30,11 +30,35 @@ export type InvoiceRow = {
  */
 export const csvHours = (m: number) => Math.round((m / 60) * 100) / 100;
 
-/** Every entry, one row each, by date, client and project; amounts in the client's (or the account's) currency. */
-export function entriesCsv(entries: SheetEntry[], accountCurrency?: string): string {
-  const rows: (string | number | null)[][] = [
-    ["Date", "Client", "Project", "Note", "Hours", "Minutes", "Billable", "Rate (per hour)", "Amount", "Currency"],
-  ];
+/** How `entriesCsv` writes its rows. */
+export type EntriesCsvOptions = {
+  /**
+   * Add a last "Billable day" column (Yes/No) and leave Amount empty on days marked non-billable. The zip sets it, as it
+   * holds every day; the Week/Month CSV leaves those days out instead.
+   */
+  billableDayColumn?: boolean;
+};
+
+const ENTRIES_HEADER = [
+  "Date",
+  "Client",
+  "Project",
+  "Note",
+  "Hours",
+  "Minutes",
+  "Billable",
+  "Rate (per hour)",
+  "Amount",
+  "Currency",
+];
+
+/**
+ * Every entry, one row each, by date, client and project; amounts in the client's (or the account's) currency. Returns
+ * the CSV text with its BOM.
+ */
+export function entriesCsv(entries: SheetEntry[], accountCurrency?: string, options: EntriesCsvOptions = {}): string {
+  const withDay = options.billableDayColumn === true;
+  const rows: (string | number | null)[][] = [withDay ? [...ENTRIES_HEADER, "Billable day"] : ENTRIES_HEADER];
   const sorted = [...entries].sort(
     (a, b) =>
       a.date.localeCompare(b.date) ||
@@ -44,8 +68,10 @@ export function entriesCsv(entries: SheetEntry[], accountCurrency?: string): str
   for (const e of sorted) {
     const rate = e.project.hourly_rate / 100;
     // The same per-entry cent rounding as the invoice line, from exact minutes (issue 450).
-    const amount = e.project.billable && rate ? amountCents(e.minutes, e.project.hourly_rate) / 100 : null;
-    rows.push([
+    const isBilledDay = !(withDay && e.non_billable);
+    const amount =
+      e.project.billable && rate && isBilledDay ? amountCents(e.minutes, e.project.hourly_rate) / 100 : null;
+    const row: (string | number | null)[] = [
       e.date,
       e.project.client.name,
       e.project.name,
@@ -56,7 +82,8 @@ export function entriesCsv(entries: SheetEntry[], accountCurrency?: string): str
       rate || null,
       amount,
       effectiveCurrency(e.project.client.currency, accountCurrency),
-    ]);
+    ];
+    rows.push(withDay ? [...row, isBilledDay ? "Yes" : "No"] : row);
   }
   return toCsv(rows);
 }

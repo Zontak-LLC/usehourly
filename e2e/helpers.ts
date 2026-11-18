@@ -309,6 +309,19 @@ export async function addEntries(page: Page, date: string, count: number) {
   for (let i = 0; i < count; i++) await trpc(page, "entry.create", { projectId, date, minutes: 30, note: "" });
 }
 
+/**
+ * Makes one invoice for the signed-in account's first client through the API: its first project billable at `rate`
+ * (cents an hour), a 60-minute entry today on it, then `invoice.create` for today under `number`. Returns the new id.
+ */
+export async function invoiceTodayByApi(page: Page, number: string, rate = 10_000): Promise<{ id: string }> {
+  const client = await firstClient(page);
+  const projectId = client.projects[0].id;
+  await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
+  const date = localToday();
+  await trpc(page, "entry.create", { projectId, date, minutes: 60, note: "Export check" });
+  return trpc(page, "invoice.create", { clientId: client.id, from: date, to: date, number, issueDate: date });
+}
+
 export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
 /** The first VISIBLE element showing exactly this text (the same time often also appears in hidden menus). */
 export const seen = (scope: Page, text: string) =>
