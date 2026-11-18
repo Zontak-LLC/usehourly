@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -27,7 +26,7 @@ import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceL
 import { assertNumberFree, buildInvoiceSnapshot, invoiceClient, numberUsedError } from "../invoice-snapshot";
 import { dateSchema } from "../schemas/dates";
 import { type Context, protectedProcedure, router } from "../trpc";
-import { markInvoiced, unbilledByClient } from "../unbilled";
+import { markInvoiced, unbilledByClient, undoInvoice } from "../unbilled";
 
 const MAX_SEARCH_CHARS = 50_000;
 
@@ -103,16 +102,6 @@ async function openInvoice(ctx: Pick<Context, "prisma"> & { userId: string }, in
     paidDate: inv.paid_date,
     snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot),
   };
-}
-
-/**
- * Undoes a new invoice that could not be saved whole: frees the time marked on it, then deletes it. Filters by invoice
- * and account (no id lists), so it stays under D1's bound-values limit for any size; time billed again on purpose keeps
- * its first invoice.
- */
-async function takeBackInvoice(prisma: PrismaClient, userId: string, invoiceId: string) {
-  await prisma.timeEntry.updateMany({ where: { user_id: userId, invoice_id: invoiceId }, data: { invoice_id: null } });
-  await prisma.invoice.deleteMany({ where: { id: invoiceId, user_id: userId } });
 }
 
 export const invoiceRouter = router({
@@ -294,11 +283,14 @@ export const invoiceRouter = router({
       marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
     } catch (err) {
       // D1 has no real transactions, so this is the rollback: a half-saved invoice would bill its unmarked hours twice.
-      await takeBackInvoice(ctx.prisma, ctx.userId, created.id);
+      // If the undo fails too (D1 fully down), the half-saved invoice is logged by id; the user still sees the first error.
+      await undoInvoice(ctx.prisma, ctx.userId, created.id).catch((undoErr: unknown) =>
+        logError("invoice_undo_failed", undoErr, { userId: ctx.userId, invoiceId: created.id }),
+      );
       throw err;
     }
     if (!input.includeInvoiced && marked < billed.length) {
-      await takeBackInvoice(ctx.prisma, ctx.userId, created.id);
+      await undoInvoice(ctx.prisma, ctx.userId, created.id);
       throw new TRPCError({
         code: "CONFLICT",
         message: "Some of this time was just put on another invoice. Check the period and try again.",
