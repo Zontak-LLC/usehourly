@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAvatarUpload } from "@/components/use-avatar-upload";
+import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { feature } from "@/lib/features";
 import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
@@ -24,6 +25,7 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
   const utils = trpc.useUtils();
   const updateProfile = trpc.account.updateProfile.useMutation();
   const avatar = useAvatarUpload();
+  const showSaving = useDelayedFlag(updateProfile.isPending);
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -68,8 +70,9 @@ export function ProfileCard({ me, emailEnabled }: { me: AccountMe; emailEnabled:
           <p className="text-muted-foreground text-xs">Shown beside your name at the top right. Only you see it.</p>
         </div>
       )}
-      <Button type="submit" className="self-start" disabled={updateProfile.isPending}>
-        Save
+      {/* Off at once while saving; the spinner and "Saving…" only after the delay, so a fast save never flickers. */}
+      <Button type="submit" className="self-start" busy={updateProfile.isPending}>
+        {showSaving ? "Saving…" : "Save"}
       </Button>
     </SectionCard>
   );

@@ -1,12 +1,11 @@
 import type { Page } from "@playwright/test";
 
-import { entryAction, expect, hold, openEntryEdit, refuse, startFreshAccount, test } from "./helpers";
+import { entryAction, expect, hold, openEntryEdit, refuse, SLOW, startFreshAccount, test } from "./helpers";
 
 /**
  * Adding, editing and deleting an entry show on screen at once; the server's answer only confirms them. Each test
  * holds the server's answer back for four seconds (or has it refuse) and checks the screen within a second and a half.
  */
-const SLOW = 4000;
 
 async function addEntry(page: Page, time: string, note: string) {
   await page.getByPlaceholder(/Time:/).fill(time);

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useDelayedFlag } from "@/hooks/use-delayed-flag";
-import { SPINNER_DELAY_MS } from "@/lib/loading";
+import { SPINNER_DELAY_MS } from "@/lib/loading-delay";
 
 import { mount } from "./helpers/hook-runtime";
 
