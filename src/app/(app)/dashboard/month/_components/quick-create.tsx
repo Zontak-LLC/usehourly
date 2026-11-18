@@ -16,6 +16,8 @@ import { toastError } from "@/lib/toast-error";
 import { trpc } from "@/lib/trpc";
 import { readTypedDuration } from "@/lib/typed-duration";
 
+import { quickCreateMinutes } from "./quick-create-gate";
+
 const clip = (text: string, n: number) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
 /** Month shows one quick-create panel at a time, so its hours box can have a fixed id. */
 const HOURS_BOX_ID = "quick-create-hours";
@@ -76,9 +78,8 @@ export function QuickCreate({
   }, [entries]);
 
   const read = readTypedDuration(duration);
-  const { minutes } = read;
-  // Text that cannot be logged keeps Create off; the line under the box says why.
-  const canCreate = dates.length > 0 && !!projectId && minutes !== undefined;
+  const minutes = quickCreateMinutes({ dayCount: dates.length, projectId, read });
+  const canCreate = minutes !== undefined;
 
   async function create() {
     if (!canCreate || minutes === undefined) return;
