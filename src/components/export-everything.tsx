@@ -40,15 +40,16 @@ export function ExportEverything({
     }
     const { downloadExportZip, fetchAllPages, planExport } = exportAll;
     try {
-      // Every row of each list, a page at a time (invoices too: `invoice.list` stops at the newest 200, issue 451).
-      // Expenses are a hidden feature: with the switch off there is no request for them at all.
-      const [entries, invoices, expenses] = await Promise.all([
+      // Every row of each list, a page at a time (invoices too: `invoice.list` stops at the newest 200, issue 451),
+      // each invoice with its frozen snapshot. Expenses are a hidden feature: with the switch off there is no request.
+      const [entries, invoices, expenses, records] = await Promise.all([
         fetchAllPages((cursor) => utils.entry.listAll.fetch({ cursor })),
-        fetchAllPages((cursor) => utils.invoice.listAll.fetch({ cursor })),
+        fetchAllPages((cursor) => utils.invoice.listAll.fetch({ cursor, detail: "full" })),
         feature("expenses") ? fetchAllPages((cursor) => utils.expense.listAll.fetch({ cursor })) : [],
+        utils.dataExport.records.fetch(),
       ]);
       const today = toISODate(new Date());
-      const plan = await planExport({ entries, invoices, expenses, today, accountCurrency });
+      const plan = await planExport({ entries, invoices, expenses, records, today, accountCurrency });
       if (plan.entryCount === 0) {
         toast.info("You haven't logged any time yet, so there is nothing to export.");
         return;

@@ -134,7 +134,48 @@ export function withSummaries<T extends SummaryRow>(ctx: Reader, rows: T[]) {
   );
 }
 
-type InvoicePage = CursorPage<Prisma.InvoiceGetPayload<{ select: typeof invoiceSummarySelect }>>;
+type InvoiceSummaryRow = Prisma.InvoiceGetPayload<{ select: typeof invoiceSummarySelect }>;
+type InvoicePage = CursorPage<InvoiceSummaryRow>;
+
+/** Invoices per page of `invoice.listAll` (at most 4 pages at the 2,000 quota). */
+export const INVOICE_LIST_ALL_PAGE = 500;
+
+/**
+ * What `invoice.listAll` takes: the previous page's cursor, and how much of each invoice to send. `"summary"` (the
+ * default, for Totals, the Overdue tab and Invoices) is the list row; `"full"` adds the frozen snapshot, for the zip.
+ */
+export const invoiceListAllInput = z.object({
+  cursor: cursorInput,
+  detail: z.enum(["summary", "full"]).default("summary"),
+});
+
+/** A `listAll` row: the list row, plus the parsed snapshot when `"full"` was asked for. */
+export type InvoiceListAllRow = InvoiceSummaryRow & { snapshot?: InvoiceSnapshot };
+
+/**
+ * One page of `INVOICE_LIST_ALL_PAGE` of the caller's invoices, newest first, from `cursor` on (every invoice, no
+ * filters). With `detail: "full"` each row also carries its snapshot, parsed. Returns the page and the next cursor.
+ */
+export async function readAllInvoicesPage(
+  ctx: Reader,
+  input: z.infer<typeof invoiceListAllInput>,
+): Promise<CursorPage<InvoiceListAllRow>> {
+  const isFull = input.detail === "full";
+  const rows = await ctx.prisma.invoice.findMany({
+    where: { user_id: ctx.userId },
+    select: { ...invoiceSummarySelect, snapshot: isFull },
+    orderBy: invoiceOrder(),
+    ...cursorArgs(input.cursor, INVOICE_LIST_ALL_PAGE),
+  });
+  const page = toPage(rows, INVOICE_LIST_ALL_PAGE);
+  const items = await withSummaries(ctx, page.items);
+  return {
+    ...page,
+    items: items.map(({ snapshot, ...row }) =>
+      isFull && snapshot ? { ...row, snapshot: JSON.parse(snapshot) as InvoiceSnapshot } : row,
+    ),
+  };
+}
 
 /**
  * One page of `INVOICE_PAGE` invoices that match the filters, in the chosen order, from `cursor` on. Returns the page
