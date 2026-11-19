@@ -1,14 +1,25 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { addDays } from "@/lib/dates";
 import { dueReminder, REMINDER_LINK_DAYS } from "@/lib/invoice-mail";
 import { logError } from "@/lib/log";
 import type { Mailer } from "@/lib/mailer";
+import { isValidTimeZone, localParts } from "@/lib/reminder";
 
 import { deliverInvoiceEmail, InvoiceMailError } from "./invoice-mail";
 
 export type InvoiceReminderRun = { considered: number; sent: number; skipped: number; retry: number };
 
 const MAX_PER_RUN = 200;
+
+/**
+ * Today's date where the invoice's owner is (issue 452). Most owners have no stored time zone (only the Friday reminder
+ * card saves one), so they keep the UTC date, the owner's chosen fallback: for them the first reminder can still arrive
+ * on the US evening of the due date. A missing or invalid zone never throws.
+ */
+function ownerToday(now: Date, timezone: string | null): string {
+  return timezone && isValidTimeZone(timezone) ? localParts(now, timezone).date : now.toISOString().slice(0, 10);
+}
 
 /**
  * Overdue reminders for invoices whose owner opted in when sending (`remind_overdue`): the first a day after the due date
@@ -29,20 +40,27 @@ export async function runInvoiceReminders(opts: {
 }): Promise<InvoiceReminderRun> {
   const { prisma, mailer } = opts;
   const now = opts.now ?? new Date();
-  const today = now.toISOString().slice(0, 10);
+  const utcToday = now.toISOString().slice(0, 10);
   const run: InvoiceReminderRun = { considered: 0, sent: 0, skipped: 0, retry: 0 };
   if (!mailer) return run;
 
+  // One day past the UTC date, because an owner east of UTC (Tokyo) can already be on the next day; dueReminder then
+  // decides with each owner's own date.
   const candidates = await prisma.invoice.findMany({
-    where: { remind_overdue: true, paid_date: null, due_date: { lt: today }, reminders_sent: { lt: 2 } },
+    where: { remind_overdue: true, paid_date: null, due_date: { lt: addDays(utcToday, 1) }, reminders_sent: { lt: 2 } },
     select: { id: true, user_id: true, due_date: true, paid_date: true, reminders_sent: true },
     orderBy: { id: "asc" },
     take: MAX_PER_RUN,
   });
+  const ownerIds = [...new Set(candidates.map((inv) => inv.user_id))];
+  const owners = ownerIds.length
+    ? await prisma.authUser.findMany({ where: { id: { in: ownerIds } }, select: { id: true, timezone: true } })
+    : [];
+  const timezoneOf = new Map(owners.map((o) => [o.id, o.timezone]));
 
   for (const inv of candidates) {
     run.considered++;
-    const stage = dueReminder(inv, today);
+    const stage = dueReminder(inv, ownerToday(now, timezoneOf.get(inv.user_id) ?? null));
     if (stage === null) continue;
     const claim = await prisma.invoice.updateMany({
       where: { id: inv.id, remind_overdue: true, paid_date: null, reminders_sent: stage },

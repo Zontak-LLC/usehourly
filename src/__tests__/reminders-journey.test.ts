@@ -109,6 +109,12 @@ function mailbox(failFor: string[] = []) {
 
 // Saturday 2026-10-17 01:30 UTC = Friday 18:30 in Los Angeles, 21:30 in New York, Saturday 10:30 in Tokyo.
 const FRIDAY_EVENING = new Date("2026-10-17T01:30:00Z");
+const AN_HOUR_LATER = new Date("2026-10-17T02:30:00Z");
+const TWO_HOURS_LATER = new Date("2026-10-17T03:30:00Z");
+
+/** `count` people with ids like `u0000`, `u0001`, …, in id order. */
+const manyUsers = (prefix: string, count: number, over: Partial<U> = {}): U[] =>
+  Array.from({ length: count }, (_, i) => user(`${prefix}${String(i).padStart(4, "0")}`, over));
 
 describe("the hourly run that sends the Friday reminders", () => {
   beforeEach(() => {
@@ -219,17 +225,90 @@ describe("the hourly run that sends the Friday reminders", () => {
   });
 
   it("works through a long list in pages", async () => {
-    const users = Array.from({ length: 450 }, (_, i) => user(`u${String(i).padStart(4, "0")}`));
+    const users = manyUsers("u", 450);
+    const db = fakeDb(users);
+    const box = mailbox();
+    for (const now of [FRIDAY_EVENING, AN_HOUR_LATER, TWO_HOURS_LATER]) {
+      const run = await runWeeklyReminders({
+        prisma: db as never,
+        mailer: box.mailer,
+        now,
+        appUrl: APP,
+        secret: SECRET,
+      });
+      expect(run.sent).toBe(150);
+    }
+    expect(new Set(box.sent.map((m) => m.to)).size).toBe(450);
+  });
+
+  it("pages past people who are not due", async () => {
+    const users = [...manyUsers("t", 250, { timezone: "Asia/Tokyo" }), user("z-la-a"), user("z-la-b")];
+    const db = fakeDb(users);
     const box = mailbox();
     const run = await runWeeklyReminders({
-      prisma: fakeDb(users) as never,
+      prisma: db as never,
       mailer: box.mailer,
       now: FRIDAY_EVENING,
       appUrl: APP,
       secret: SECRET,
     });
-    expect(run).toMatchObject({ considered: 450, sent: 450 });
-    expect(new Set(box.sent.map((m) => m.to)).size).toBe(450);
+    expect(run).toEqual({ considered: 252, due: 2, sent: 2, failed: 0 });
+    expect(db.authUser.findMany).toHaveBeenCalledTimes(2);
+    expect(box.sent.map((m) => m.to)).toEqual(["z-la-a@example.com", "z-la-b@example.com"]);
+  });
+
+  it("stops after 150 due people and lets the next hours send the rest", async () => {
+    const users = manyUsers("u", 400);
+    const db = fakeDb(users);
+    const box = mailbox();
+    const go = (now: Date) =>
+      runWeeklyReminders({ prisma: db as never, mailer: box.mailer, now, appUrl: APP, secret: SECRET });
+
+    const run = await go(FRIDAY_EVENING);
+    expect(run).toEqual({ considered: 150, due: 150, sent: 150, failed: 0 });
+    expect(box.sent).toHaveLength(150);
+    expect(users.filter((u) => u.reminder_sent_week === "2026-W42")).toHaveLength(150);
+    expect(users.filter((u) => u.reminder_sent_week === null)).toHaveLength(250);
+    // One Worker request allows about 1,000 outside calls; this run stays well under it.
+    expect(db.authUser.findMany).toHaveBeenCalledTimes(1);
+    expect(db.authUser.updateMany).toHaveBeenCalledTimes(150);
+    expect(db.timeEntry.findMany).toHaveBeenCalledTimes(150);
+    expect(box.mailer.send).toHaveBeenCalledTimes(150);
+    const calls = [db.authUser.findMany, db.authUser.updateMany, db.timeEntry.findMany, box.mailer.send];
+    expect(calls.reduce((total, fn) => total + fn.mock.calls.length, 0)).toBe(451);
+
+    expect((await go(AN_HOUR_LATER)).sent).toBe(150);
+    expect((await go(TWO_HOURS_LATER)).sent).toBe(100);
+    const addresses = box.sent.map((m) => m.to);
+    expect(addresses).toHaveLength(400);
+    expect(new Set(addresses).size).toBe(400);
+  });
+
+  it("an email failure before the cap is undone and does not let the run go past 150", async () => {
+    const users = manyUsers("u", 400);
+    const db = fakeDb(users);
+    const down = mailbox(["u0000@example.com"]);
+    const run = await runWeeklyReminders({
+      prisma: db as never,
+      mailer: down.mailer,
+      now: FRIDAY_EVENING,
+      appUrl: APP,
+      secret: SECRET,
+    });
+    expect(run).toEqual({ considered: 150, due: 150, sent: 149, failed: 1 });
+    expect(users.find((u) => u.id === "u0000")?.reminder_sent_week).toBeNull();
+    expect(db.authUser.updateMany).toHaveBeenCalledTimes(151); // 150 claims + 1 undo
+    expect(users.slice(150).every((u) => u.reminder_sent_week === null)).toBe(true);
+
+    const up = mailbox();
+    await runWeeklyReminders({
+      prisma: db as never,
+      mailer: up.mailer,
+      now: AN_HOUR_LATER,
+      appUrl: APP,
+      secret: SECRET,
+    });
+    expect(up.sent[0].to).toBe("u0000@example.com");
   });
 });
 

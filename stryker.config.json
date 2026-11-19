@@ -16,6 +16,7 @@
     "src/lib/quotas.ts",
     "src/lib/client-ip.ts",
     "src/lib/csp.ts",
+    "src/lib/security-policy.mjs",
     "src/lib/email-template.ts",
     "src/lib/safe-next.ts",
     "src/lib/session-version.ts",

@@ -137,7 +137,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 
 ### Feedback and states
 - **Every action answers within about 100 ms** (a pressed state, an optimistic change); anything over 1 s shows progress; over 10 s says what is happening and offers cancel.
-- **Loading:** skeletons shaped like the content, not spinners; no layout jump when the data arrives.
+- **Loading:** lists and cards whose shape is known get skeletons shaped like the content, so nothing jumps when the data arrives. Busy buttons (a save, an invoice, an export, a send) and slow sections of unknown shape get the one shared `Spinner` (`components/ui/spinner.tsx`), shown only after `SPINNER_DELAY_MS` (300 ms, `lib/loading-delay.ts`) through `useDelayedFlag`, so a fast answer shows nothing. A spinner inside a button has no label; the button carries `aria-busy` and keeps its own name.
 - **Empty:** says what this is and the one next step (a dashed card with +); a filtered-to-nothing list says "No invoices match that search", not "No invoices yet".
 - **Errors:** plain words, what happened and what to do, never a code or the provider's own text; recoverable where possible (Undo, Try again). Network trouble says "No connection. That needs you to be online."
 - **Success is quiet:** a toast or the change itself (the entry appears); no modal "Success!".
@@ -181,7 +181,7 @@ These are the general UI/UX habits every screen is judged against, by a person a
 - **No clear (×) buttons (2026-10-24, the owner):** text fields have no × to empty them (issue 220's button was removed). A Copy button lives INSIDE the box it copies, top right (`CopyBox`), and turns the accent with "Copied" for a moment.
 - Destructive actions that cannot be undone ask first, **inside the card they belong to** (`InlineConfirm`: it names what will go, the safe choice comes first and is focused, Escape cancels): deleting an entry, deleting an invoice. Reversible ones do not ask: archiving a client or project happens at once and the toast offers Undo.
 - **Deleting the whole account is a slide, not a button (issue 210):** `SlideToConfirm` (`components/slide-to-confirm.tsx`): drag the knob all the way right (or End on the keyboard) and let go; let go before 90% and it springs back. It stays off until the password (or email) box is filled, Enter in that box only moves to the slider, and it carries `data-no-swipe`. Use it only for an action that cannot be undone AND wipes a lot; ordinary deletes keep `InlineConfirm`.
-- Loading: skeletons, not spinners. Errors: `Notice tone="danger"` or a toast; network errors say "No connection. That needs you to be online."
+- Loading: skeletons for lists and cards of known shape; the shared delayed `Spinner` for busy buttons and slow sections (see "Feedback and states"). Errors: `Notice tone="danger"` or a toast; network errors say "No connection. That needs you to be online."
 - Offline: a banner; adding time still works; everything else says it needs a connection.
 
 ## Words

@@ -22,6 +22,8 @@ describe("the static-route guard after next build (issue 424)", () => {
 
   it("names a page that became static by mistake (it would have no CSP nonce and would not hydrate)", () => {
     expect(unexpectedStaticRoutes(manifest(["/", "/sitemap.xml", "/privacy"]))).toEqual(["/privacy"]);
+    // The global 404 reads the proxy's nonce; built static it would show without its scripts.
+    expect(unexpectedStaticRoutes(manifest(["/", "/_not-found"]))).toEqual(["/_not-found"]);
     expect(unexpectedStaticRoutes(manifest(["/help", "/nope", "/dashboard/today"]))).toEqual([
       "/help",
       "/nope",

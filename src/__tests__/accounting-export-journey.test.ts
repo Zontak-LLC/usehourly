@@ -136,7 +136,14 @@ function invoiceFor(user_id: string, number: string, issue_date: string): Row {
   };
 }
 
-function world(rows: Row[] = INVOICES) {
+type ClientRow = { id: string; user_id: string; email: string | null };
+const CLIENTS: ClientRow[] = [
+  { id: "c1", user_id: "u1", email: "ap@acme.example" },
+  { id: "c2", user_id: "u1", email: null },
+  { id: "cx", user_id: "u2", email: "secret@other.example" },
+];
+
+function world(rows: Row[] = INVOICES, clients: ClientRow[] = CLIENTS) {
   const prisma = {
     invoice: {
       findMany: vi.fn(
@@ -159,13 +166,11 @@ function world(rows: Row[] = INVOICES) {
       ),
     },
     client: {
-      findMany: vi.fn(async ({ where }: { where: { user_id: string; id: { in: string[] } } }) =>
-        [
-          { id: "c1", user_id: "u1", email: "ap@acme.example" },
-          { id: "c2", user_id: "u1", email: null },
-          { id: "cx", user_id: "u2", email: "secret@other.example" },
-        ].filter((c) => c.user_id === where.user_id && where.id.in.includes(c.id)),
-      ),
+      findMany: vi.fn(async ({ where }: { where: { user_id: string; id: { in: string[] } } }) => {
+        // D1 refuses a query that binds more than 100 values: the account plus every listed id.
+        if (1 + where.id.in.length > 100) throw new Error("too many SQL variables");
+        return clients.filter((c) => c.user_id === where.user_id && where.id.in.includes(c.id));
+      }),
     },
   };
   const as = (id: string | null) =>
@@ -236,6 +241,32 @@ describe("exporting invoices for an accounting app", () => {
     const theirs = await as("u2").accounting.invoices(YEAR);
     expect(theirs.invoices.map((i) => i.number)).toEqual(["INV-2026-050"]);
     expect(theirs.invoices[0].client.email).toBe("secret@other.example");
+  });
+
+  it("finds every client's email when the period holds 150 invoices for 150 different clients", async () => {
+    const rows = Array.from({ length: 150 }, (_, i) => ({
+      ...invoiceFor("u1", `INV-2026-${String(i + 1).padStart(3, "0")}`, "2026-05-01"),
+      client_id: `client-${i + 1}`,
+      created_at: i + 1,
+    }));
+    const clients = Array.from({ length: 150 }, (_, i) => ({
+      id: `client-${i + 1}`,
+      user_id: "u1",
+      email: `billing${i + 1}@example.com`,
+    }));
+    const { prisma, as } = world(rows, clients);
+
+    const { invoices, more } = await as("u1").accounting.invoices(YEAR);
+
+    expect(more).toBe(false);
+    expect(invoices).toHaveLength(150);
+    expect(invoices[0]).toMatchObject({ number: "INV-2026-001", client: { email: "billing1@example.com" } });
+    expect(invoices[149]).toMatchObject({ number: "INV-2026-150", client: { email: "billing150@example.com" } });
+    expect(prisma.client.findMany.mock.calls.length).toBeGreaterThan(1); // the ids went in groups
+    for (const [{ where }] of prisma.client.findMany.mock.calls) {
+      expect(where.user_id).toBe("u1");
+      expect(where.id.in.length).toBeLessThanOrEqual(80);
+    }
   });
 
   it("makes a Xero file with one row per line, the invoice number repeated, and every row the full width", async () => {

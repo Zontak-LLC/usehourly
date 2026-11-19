@@ -3,6 +3,7 @@ import {
   type Browser,
   type BrowserContext,
   test as base,
+  type ConsoleMessage,
   type Download,
   expect,
   type Locator,
@@ -14,7 +15,7 @@ import JSZip from "jszip";
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { buildDemoData } from "../src/lib/demo";
 import { runSql } from "./local-db";
-import { today } from "./today";
+import { today as localToday } from "./today";
 import { mkdirSync, readFileSync } from "node:fs";
 
 export const PASSWORD = "E2e-Test-Password-2026";
@@ -59,26 +60,73 @@ export async function entryAction(scope: Page | Locator, action: "Delete" | "Mov
   await card.getByRole("button", { name: "Save", exact: true }).click();
 }
 
+/** How long `hold(page, procedure, SLOW)` keeps a server answer back: seconds past the spinner delay, so no race. */
+export const SLOW = 4000;
+
 /**
  * Holds every call to one tRPC procedure (e.g. "entry.create") back before it goes on to the server: for `ms`, or, with
  * no `ms`, until the test calls `release()` (a gate, so no wall time decides the test). `arrived` settles when the first
- * call reaches the hold.
+ * call reaches the hold; `hasArrived()` says the same without waiting, for a poll. Then the call falls back to a route
+ * set earlier for it (a `refuse`, for a slow refusal) or, with none, goes to the server.
  */
 export async function hold(page: Page, procedure: string, ms?: number) {
+  return holdRoute(page, `**/api/trpc/${procedure}*`, ms);
+}
+
+/** The gate behind `hold`, for any requests matching `url` (a glob, as `page.route` takes it): a page's own scripts too. */
+export async function holdRoute(page: Page, url: string, ms?: number) {
   let release!: () => void;
   const released = new Promise<void>((resolve) => {
     release = resolve;
   });
   let arrive!: () => void;
+  let hasArrived = false;
   const arrived = new Promise<void>((resolve) => {
     arrive = resolve;
   });
-  await page.route(`**/api/trpc/${procedure}*`, async (route) => {
+  await page.route(url, async (route) => {
+    hasArrived = true;
     arrive();
     await (ms === undefined ? released : new Promise((r) => setTimeout(r, ms)));
-    await route.continue();
+    await route.fallback();
   });
-  return { arrived, release };
+  return { arrived, hasArrived: () => hasArrived, release };
+}
+
+/**
+ * Polls `read` with the page's clock paused, running only the timers that are due now (0 ms: React Query's notices,
+ * tRPC's batch) before each read, so the page's own clock never moves. For a page whose next step may start a moment
+ * later than the test's last action: a slow runner then only makes the poll take longer, never moves the page's time.
+ */
+export function pollPausedClock<T>(page: Page, read: () => T | Promise<T>) {
+  return expect.poll(async () => {
+    await page.clock.runFor(0);
+    return read();
+  });
+}
+
+/**
+ * Watches the page from its first load for an element matching `selector`, so one shown for a single frame is still
+ * seen (a look at one moment would miss it). Call before the first `goto`; `seen()` says whether it was ever there.
+ */
+export async function watchForElement(page: Page, selector: string) {
+  await page.addInitScript((watched) => {
+    const flag = { seen: false };
+    (window as unknown as { e2eSeen: Record<string, typeof flag> }).e2eSeen ??= {};
+    (window as unknown as { e2eSeen: Record<string, typeof flag> }).e2eSeen[watched] = flag;
+    const look = () => {
+      if (document.querySelector(watched)) flag.seen = true;
+    };
+    new MutationObserver(look).observe(document, { childList: true, subtree: true });
+  }, selector);
+  return {
+    seen: () =>
+      page.evaluate(
+        (watched) =>
+          (window as unknown as { e2eSeen: Record<string, { seen: boolean }> }).e2eSeen[watched]?.seen === true,
+        selector,
+      ),
+  };
 }
 
 /**
@@ -205,10 +253,7 @@ export async function trpc<T>(page: Page, path: string, data: unknown): Promise<
  */
 export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number; minutes: number[] }) {
   const user = await startFreshAccount(page, "Acme Studio");
-  const listed = await page.request.get("/api/trpc/clients.list");
-  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
-  const clients = ((await listed.json()) as { result: { data: { projects: { id: string }[] }[] } }).result.data;
-  const projectId = clients[0].projects[0].id;
+  const projectId = (await firstClient(page)).projects[0].id;
   if (rate) await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
   // "Today" in the browser's own time zone, where the app works it out (UTC can already be tomorrow).
   const date = await page.evaluate(() => {
@@ -243,15 +288,44 @@ export async function startDemo(page: Page) {
 
 /** Adds projects to the signed-in account's first client through the API (the picker shows "More…" from six projects). */
 export async function addProjects(page: Page, names: string[]) {
-  const listed = await page.request.get("/api/trpc/clients.list");
-  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
-  const clients = ((await listed.json()) as { result: { data: { id: string }[] } }).result.data;
+  const { id: clientId } = await firstClient(page);
   for (const name of names) {
     const made = await page.request.post("/api/trpc/project.create", {
-      data: { clientId: clients[0].id, name, hourlyRate: 5000 },
+      data: { clientId, name, hourlyRate: 5000 },
     });
     expect(made.ok(), `project.create answered ${made.status()}`).toBe(true);
   }
+}
+
+/** The signed-in account's first client (as clients.list lists them), with its projects. */
+export async function firstClient(page: Page): Promise<{ id: string; projects: { id: string }[] }> {
+  const listed = await page.request.get("/api/trpc/clients.list");
+  expect(listed.ok(), `clients.list answered ${listed.status()}`).toBe(true);
+  const clients = ((await listed.json()) as { result: { data: { id: string; projects: { id: string }[] }[] } }).result
+    .data;
+  return clients[0];
+}
+
+/**
+ * Adds `count` 30-minute entries without a note on `date` (YYYY-MM-DD), on the first client's first project, through
+ * the API. Go to a page after it: the one open does not show them yet.
+ */
+export async function addEntries(page: Page, date: string, count: number) {
+  const projectId = (await firstClient(page)).projects[0].id;
+  for (let i = 0; i < count; i++) await trpc(page, "entry.create", { projectId, date, minutes: 30, note: "" });
+}
+
+/**
+ * Makes one invoice for the signed-in account's first client through the API: its first project billable at `rate`
+ * (cents an hour), a 60-minute entry today on it, then `invoice.create` for today under `number`. Returns the new id.
+ */
+export async function invoiceTodayByApi(page: Page, number: string, rate = 10_000): Promise<{ id: string }> {
+  const client = await firstClient(page);
+  const projectId = client.projects[0].id;
+  await trpc(page, "project.update", { id: projectId, hourlyRate: rate, billable: true });
+  const date = localToday();
+  await trpc(page, "entry.create", { projectId, date, minutes: 60, note: "Export check" });
+  return trpc(page, "invoice.create", { clientId: client.id, from: date, to: date, number, issueDate: date });
 }
 
 export const clientEmail = () => `e2e-client-${stamp()}@example.test`;
@@ -267,6 +341,47 @@ export { today } from "./today";
 /** Run SQL against the local database (only for setup a user cannot do, like making an account a few days old). */
 export function sql(statement: string) {
   runSql(statement);
+}
+
+/**
+ * Copies one of the signed-in account's invoices `count` times (numbers INV-2099-001 up, same dates, snapshot and
+ * search text) straight into the local database, after startDemo and before page.goto. The demo quota is not checked:
+ * this is setup only. With `clientName`, the copied invoice is one of that client's. Returns the account's id.
+ */
+export async function copyInvoices(
+  page: Page,
+  count: number,
+  { clientName }: { clientName?: string } = {},
+): Promise<string> {
+  // This test's own account (not "the newest sample account", which another test running at the same time may have made).
+  const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
+  const userId = session.user?.id ?? "";
+  expect(userId).toMatch(/^[0-9a-f-]{20,}$/);
+  const ofClient = clientName === undefined ? "" : ` AND client_name = '${clientName.replace(/'/g, "''")}'`;
+  sql(
+    `WITH RECURSIVE n(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM n WHERE n < ${Math.floor(count)})
+    INSERT INTO invoices (id, user_id, client_id, client_name, number, issue_date, due_date, paid_date, period_from,
+    period_to, total_minutes, total_cents, currency, notes, snapshot, search_text, summary, remind_overdue, reminders_sent, created_at)
+    SELECT lower(hex(randomblob(16))), i.user_id, i.client_id, i.client_name, 'INV-2099-' || printf('%03d', n.n), i.issue_date,
+      i.due_date, i.paid_date, i.period_from, i.period_to, i.total_minutes, i.total_cents, i.currency, i.notes, i.snapshot,
+      i.search_text, i.summary, 0, 0, i.created_at
+    FROM (SELECT * FROM invoices WHERE user_id = '${userId}'${ofClient} LIMIT 1) i,
+      n`.replace(/\s+/g, " "),
+  );
+  return userId;
+}
+
+/**
+ * Gives the account's invoice numbered `from` the number `to` and the issue date `issueDate`, in its list fields, its
+ * search text and its frozen snapshot (setup only, after copyInvoices: e.g. to make one copy the oldest invoice).
+ */
+export function renumberCopy(userId: string, { from, to, issueDate }: { from: string; to: string; issueDate: string }) {
+  sql(
+    `UPDATE invoices SET number = '${to}', issue_date = '${issueDate}',
+      search_text = '${to.toLowerCase()} ' || search_text,
+      snapshot = json_set(snapshot, '$.number', '${to}', '$.issueDate', '${issueDate}')
+    WHERE user_id = '${userId}' AND number = '${from}'`.replace(/\s+/g, " "),
+  );
 }
 
 export type Mail = {
@@ -474,6 +589,13 @@ const IGNORED = [
   /\[Fast Refresh\]/i,
 ];
 
+/**
+ * A 404 from a tRPC call is the server's NOT_FOUND on purpose (an entry deleted in another tab, issue 458), so it is not
+ * a problem. A 404 for a page, script or picture still fails: Chromium logs the missing file's address as the location.
+ */
+const isDeliberateNotFound = (m: ConsoleMessage) =>
+  /status of 404/i.test(m.text()) && m.location().url.includes("/api/trpc/");
+
 type Fixtures = {
   /** Save a full-page screenshot, numbered, under e2e/report/screens/<device>/. */
   shot: (name: string) => Promise<void>;
@@ -497,7 +619,7 @@ export const test = base.extend<Fixtures>({
     const problems: string[] = [];
     page.on("pageerror", (e) => problems.push(`uncaught error: ${e.message}`));
     page.on("console", (m) => {
-      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())))
+      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())) && !isDeliberateNotFound(m))
         problems.push(`console error: ${m.text().slice(0, 3500)}`);
     });
     page.on("response", (r) => {
@@ -550,18 +672,32 @@ export const test = base.extend<Fixtures>({
 
 export { expect };
 
+/** A client's row (link) in the Clients list: the visible one, since a split view can render the list twice. */
+export function clientRow(page: Page, name: string) {
+  return page
+    .locator('a[href^="/dashboard/clients/"]')
+    .filter({ has: page.getByText(name, { exact: true }) })
+    .locator("visible=true")
+    .first();
+}
+
 /**
  * Opens the Clients page on one client's profile (issue 238): the page is a split view, and on a phone the list and
  * the profile are two screens, so the client is picked from the list.
  */
 export async function gotoClient(page: Page, name: string) {
   await page.goto("/dashboard/clients");
-  await page
-    .locator('a[href^="/dashboard/clients/"]')
-    .filter({ has: page.getByText(name, { exact: true }) })
-    .locator("visible=true")
-    .first()
-    .click();
+  await pickClient(page, name);
+}
+
+/**
+ * Picks another client on the open Clients page without reloading it (the page keeps its cached data): on a phone it
+ * first goes back to the list with "All clients". Waits for the client's profile.
+ */
+export async function pickClient(page: Page, name: string) {
+  const back = page.getByRole("link", { name: "All clients" });
+  if (await back.isVisible()) await back.click();
+  await clientRow(page, name).click();
   await expect(page.getByRole("region", { name, exact: true }).getByRole("heading", { level: 2 })).toHaveText(name);
 }
 
@@ -595,7 +731,7 @@ export async function menuAction(page: Page, button: string, item: string) {
  * built from the visitor's day (`buildDemoData`, the 35 days up to yesterday), so this asks the same function. A fixed
  * "before the 15th" rule failed on days whose random sample left 9 entries in the half month (2026-11-16).
  */
-export function fullDemoMonth(day = today()) {
+export function fullDemoMonth(day = localToday()) {
   const thisMonth = day.slice(0, 7);
   const [year, month] = thisMonth.split("-").map(Number);
   const before = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7);
@@ -619,12 +755,18 @@ export async function openAllEntries(page: Page) {
  * The zip code loads on the click (issue 425), so this also proves the lazy load works.
  */
 export async function downloadEverything(page: Page, scope: Locator): Promise<string> {
+  const zip = await downloadEverythingZip(page, scope);
+  return (await zip.file("all-entries.csv")?.async("string")) ?? "";
+}
+
+/** The same click and checks as `downloadEverything`, returning the whole zip (to read invoices.csv, for example). */
+export async function downloadEverythingZip(page: Page, scope: Locator): Promise<JSZip> {
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     scope.getByRole("button", { name: "Download everything" }).click(),
   ]);
-  expect(download.suggestedFilename()).toMatch(/^usehourly-export-\d{4}-\d{2}-\d{2}\.zip$/);
+  expect(download.suggestedFilename()).toBe(`usehourly-export-${localToday()}.zip`);
   const zip = await JSZip.loadAsync(readFileSync(await download.path()));
   expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(["README.txt", "all-time.xlsx", "all-entries.csv"]));
-  return (await zip.file("all-entries.csv")?.async("string")) ?? "";
+  return zip;
 }

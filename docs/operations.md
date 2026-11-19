@@ -76,6 +76,7 @@ Events you may see (all `level: "error"`), and what they mean:
 | `invoice_email_failed`, `report_email_failed`, `approval_email_failed`, `verification_email_failed`, `password_reset_email_failed` | The email service refused or was unreachable; the user action itself still worked | Check Resend status and the API key; users can retry |
 | `weekly_reminder_failed`, `invoice_reminder_failed` | One reminder in the hourly cron failed; it is retried the next hour where that is safe | Look for a pattern (one bad address vs all) |
 | `housekeeping_sweep_failed` | The hourly clean-up of spent rate limits, email links and OAuth codes failed | Harmless for a while; fix before tables grow |
+| `invoice_undo_failed` | Saving an invoice failed while marking its time, and undoing it failed too (`userId`, `invoiceId`): a half-saved invoice may be left, with some of its hours still shown as not invoiced | Check D1 status; once it answers, find the invoice by `invoiceId` and delete it on the Invoices screen, so its hours are not billed twice |
 | `invoice_logo_cleanup_failed` | A leftover logo row after deleting an invoice | Harmless |
 | `usage_count_failed` (warn) | One page view was not counted (two first views of a day raced, or the database was busy) | Harmless; a steady stream means the usage table needs a look |
 | `mcp_internal_error`, `mcp_tool_error`, `mcp_last_used_update_failed` | A failure inside the MCP endpoint | Same as tRPC; the caller got a plain "try again" |
@@ -110,11 +111,24 @@ Lines that are not ours and need no fix. Match the whole signature, not one fram
 - Night Watch triage: close as known noise. Do look further when the lines come with no deploy in the hour before, or
   in a steady stream from many `requestId`s: that is someone posting made-up action ids.
 
+**Bot form post to a page** (incident `usehourly:9bef45d27c59b510`, 2026-11-03 to 2026-11-12)
+
+- Signature: a multi-line `warn` whose first frame is anonymous (`at custom-worker.js:<line>:46`), then `r$`, `sg`,
+  `n2`, `p2`, `o8.handleResponse`, `v2`. No `Object.get` or `rD` (that is the stale-action entry above).
+- Warning text (the first line, which Night Watch does not capture): `Error: Invalid Server Actions request.`
+- Source: Next.js 16.4.2, `next/dist/server/app-render/action-handler.js` (`handleAction`, `r$`): a
+  `multipart/form-data` POST to a page with no `next-action` header. Next writes it with `console.warn` and answers
+  400 with `x-nextjs-action-not-found: 1`. No screen of the app sends one; bots and scanners do.
+- Fixed: `src/proxy.ts` now refuses these with 400 `Bad request` before Next runs (`isStrayFormPost` in
+  `src/lib/route-access.ts`; test `e2e/stray-form-post.spec.ts`). A new line with this signature means the guard was
+  bypassed: look again, do not close as noise.
+
 ## Shipping a change
 
 Pushing to `main` is the release: GitHub Actions (`ci.yml`) runs `npm run ci` (Biome, types, tests with the coverage
-floor) and the browser tests (4 shards), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys,
-then smoke-tests the live site. Pull requests run the same checks and browser tests, without the deploy. Run
+floor) and the browser tests (4 shards), prints a D1 Time Travel bookmark
+(step "Record the database restore point (D1 Time Travel bookmark)"), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys, then smoke-tests
+the live site. Pull requests run the same checks and browser tests, without the deploy. Run
 `npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, and a nightly browser-test run
 (`e2e.yml`: every spec on the phone too, plus the "every control" sweep). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
 `summary.md` in the `e2e-report` artifact.
@@ -155,7 +169,8 @@ One command drives real browsers as stress-test accounts on staging and writes a
 
 ## After a deploy: the smoke test and automatic rollback (2026-10-22)
 - **What runs:** the `deploy` job in `ci.yml`, after the deploy on `main`. It waits for `/api/health`, then runs `e2e/smoke/production.spec.ts` in a real browser (desktop and phone) against the live site: the public pages and the health check, then a throwaway **sample account** (the app deletes it within 24 hours): Today, add an entry, edit it, delete it (the question opens in its card), Week, Month (a day opens as a card), Invoices, Clients, Year summary. An uncaught error, a console error or an HTTP 5xx anywhere fails it. It touches nobody's data.
-- **If it fails** (the spec retries once, so two failures), and the `production` environment variable `SMOKE_ROLLBACK` is `1` (switched on after the job has passed once on a real deploy): `scripts/rollback-previous.mjs` puts the Worker back on the version that was live before this deploy (`wrangler rollback`), the job checks `/api/health` again and **stays red** so it is noticed. The database is not touched: migrations must be additive (expand, then remove later), so the old code runs on the new schema. A sample-account limit (5 an hour per connection) skips the test instead of failing it, because that says nothing about the deploy.
+- **If it fails** (the spec retries once, so two failures), and the `production` environment variable `SMOKE_ROLLBACK` is `1` (switched on after the job has passed once on a real deploy): `scripts/rollback-previous.mjs` puts the Worker back on the version that was live before this deploy (`wrangler rollback`), the job checks `/api/health` again and **stays red** so it is noticed. The database is not touched: migrations must be additive (expand, then remove later), so the old code runs on the new schema. While `SMOKE_ROLLBACK` is not `1`, the step "Check automatic rollback is on" puts a yellow warning on every release run. A sample-account limit (5 an hour per connection) skips the test instead of failing it, because that says nothing about the deploy.
+- **The database restore point:** before any migration, the `deploy` job runs the step "Record the database restore point (D1 Time Travel bookmark)", which prints the D1 Time Travel bookmark of the database as it was before this release. If wrangler cannot read it, the release stops before the migrations. A Worker rollback never undoes a migration, so if a migration damaged data: find the bookmark in that step of the run's log (`gh run view <id> --log`), take the `d1 export` backup first (see "2. The database" below), then `npx wrangler d1 time-travel restore hourly-db --bookmark=<bookmark>`.
 - **By hand:** `npm run smoke:prod` runs the same test against production; `node scripts/rollback-previous.mjs --dry-run` shows which version a rollback would go to. A rollback leaves the Worker on the older version until the next deploy to `main`.
 - **Adding to it:** keep it short (a few minutes) and read-only for real users; anything it needs must work with a sample account. When a screen it clicks changes, update the spec in the same pull request (a stale smoke test would roll back a good deploy).
 
@@ -190,7 +205,11 @@ Following the rule, a code rollback is always safe and the database never needs 
 npx wrangler d1 time-travel info hourly-db          # shows the restorable window (30 days)
 npx wrangler d1 export hourly-db --remote --output=backups/before-restore.sql   # keep what exists now first
 npx wrangler d1 time-travel restore hourly-db --timestamp=<ISO time>            # overwrites live data
+npx wrangler d1 time-travel restore hourly-db --bookmark=<bookmark>             # or the exact point before a release
 ```
+
+The bookmark of the moment before each release's migrations is in that run's `deploy` job log, step
+"Record the database restore point (D1 Time Travel bookmark)" (`gh run view <id> --log`).
 
 `npm run d1:backup` writes a full SQL dump to `backups/` (git-ignored: it holds everyone's data).
 
@@ -209,6 +228,40 @@ check `/api/health` and a sign-in, then deploy `main` again and record the time 
 4. A leaked secret: rotate it first (`npx wrangler secret put NAME`), then investigate. Changing `AUTH_SECRET` signs
    everyone out and invalidates one-click email links, which is the correct outcome.
 5. Write down what happened and the fix in the issue tracker.
+
+## How the landing page `/` is served
+
+`/` is a static file. Cloudflare Workers static assets serve `.open-next/assets/index.html` for `/` and apply
+`.open-next/assets/_headers` before any Worker code runs, so a first visit never waits for an idle Worker to start.
+Every other page still goes through the Worker and `src/proxy.ts` (per-request nonce CSP, sign-in check). So does an
+unknown address: its 404 is `src/app/global-not-found.tsx` (`experimental.globalNotFound` in `next.config.mjs`), which
+reads the proxy's nonce. `npm run build` fails if that 404 (`/_not-found`) or any page but `/` is built static.
+
+- **The post-build step:** `npm run landing:static` (`scripts/landing-static.mjs`) runs right after
+  `opennextjs-cloudflare build`. It copies the prerendered `.next/server/app/index.html` to `.open-next/assets/index.html`
+  and adds a `/` rule to `.open-next/assets/_headers` (rules already in that file are kept). The rule holds a
+  Content-Security-Policy that allows the page's inline scripts by their sha256 hash (the theme boot script, the JSON-LD
+  and Next.js's own `self.__next_f.push` scripts; no nonce, no `'unsafe-inline'`), plus the same security headers
+  `next.config.mjs` sets on every other page (HSTS, X-Frame-Options and the rest, X-Robots-Tag on staging). Both come
+  from `src/lib/security-policy.mjs`. Each build (staging, production) computes its own hashes from its own HTML.
+- **Its three callers:** `npm run deploy` (the GitHub Actions `deploy` job in `ci.yml`), `npm run preview` and
+  `scripts/staging-deploy.mjs` (`npm run staging:deploy`). `src/__tests__/landing-static-callers.test.ts` fails if one of them loses the step.
+- **When it fails the deploy:** the prerendered page is missing (`/` is no longer static), the page's canonical origin
+  is not `NEXT_PUBLIC_APP_URL` (a page from the other build), an inline script's hash is not in the written `_headers`,
+  `script-src` has `'unsafe-inline'`, the `/` rule is already there (run the build again first), or a `_headers` line is
+  over Cloudflare's 2,000 characters. It never ships a page whose scripts the browser would block.
+- **If the step is skipped** (for example `npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy` by
+  hand): no `index.html` ships, so the Worker serves `/` as before, but with no Content-Security-Policy at all, because
+  the proxy no longer runs on `/`. The other security headers still come from `next.config.mjs`. Never deploy by hand.
+- **Signed-in visitors:** the page's `SignedInRedirect` asks `/api/auth/session` after it paints and goes to
+  `/dashboard/today` when there is a user. That call starts the Worker, but after the first paint. The service worker
+  (`public/sw.js`) never caches `/`, so an old copy cannot stall the redirect.
+- **Keep these Cloudflare features off for the zone:** Rocket Loader and Email Address Obfuscation. Both inject inline
+  scripts that the hash policy blocks. Web Analytics is fine: its beacon is an external script from
+  `static.cloudflareinsights.com`, which the policy allows.
+- **Check it after a release:** leave staging idle for 15 minutes or more, then run
+  `npm run measure:speed -- https://staging.usehourly.app`; the `/` row's "first" should be under 200 ms. Time the HTML response, not the redirect. `curl -sI https://usehourly.app/` should
+  show the hash CSP (`'sha256-`, no `'unsafe-inline'` in `script-src`) with HSTS and X-Frame-Options.
 
 ## Why is a page slow?
 D1 charges a network round trip for every query, so look at how many queries a page runs one after another, not at how

@@ -1,14 +1,13 @@
-import { z } from "zod";
-
 import { type CalendarEvent, MAX_EVENTS } from "@/lib/calendar-events";
+import { type Fields, isFields, isText } from "@/lib/stored-guards";
 
 /**
  * Reading the day's meetings straight from Google Calendar, in the browser (issue #99). The person signs in with
  * Google's own popup, the browser gets a short-lived read-only token and asks Google for the events; UseHourly's
  * servers never see the token or the calendar. The same rules as the file import apply: all-day events, events marked
  * free, cancelled ones and ones the person declined are left out, and only a title, a start and an end are kept.
- * It checks Google's answer with zod, so it loads only when a calendar is read (`await import` in use-calendar.ts,
- * issue 425); never import it statically from a component.
+ * Google's answer is outside data: each page and each item is checked by hand (no zod, this file runs in the
+ * browser) before anything is read from it.
  */
 
 const API = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
@@ -18,17 +17,41 @@ const TITLE_MAX = 120;
 
 export class GoogleCalendarError extends Error {}
 
-const when = z.object({ dateTime: z.string().optional(), date: z.string().optional() }).partial();
-const item = z.object({
-  id: z.string().max(400),
-  summary: z.string().optional(),
-  status: z.string().optional(),
-  transparency: z.string().optional(),
-  start: when.optional(),
-  end: when.optional(),
-  attendees: z.array(z.object({ self: z.boolean().optional(), responseStatus: z.string().optional() })).optional(),
-});
-const page = z.object({ items: z.array(z.unknown()).default([]), nextPageToken: z.string().optional() });
+/** The fields of a Google event this file reads; any others are ignored. */
+type GoogleItem = {
+  id: string;
+  summary?: string;
+  status?: string;
+  transparency?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  attendees?: { self?: boolean; responseStatus?: string }[];
+};
+
+const ID_MAX = 400;
+
+const isOptionalText = (v: unknown): v is string | undefined => v === undefined || isText(v);
+const isOptionalWhen = (v: unknown) =>
+  v === undefined || (isFields(v) && isOptionalText(v.dateTime) && isOptionalText(v.date));
+const isAttendee = (v: unknown) =>
+  isFields(v) && (v.self === undefined || typeof v.self === "boolean") && isOptionalText(v.responseStatus);
+
+/** One event as Google sends it: an id of at most 400 characters; every other field optional, but of its type. */
+function isGoogleItem(v: unknown): v is Fields & GoogleItem {
+  if (!isFields(v) || !isText(v.id, 0, ID_MAX)) return false;
+  if (!isOptionalText(v.summary) || !isOptionalText(v.status) || !isOptionalText(v.transparency)) return false;
+  if (!isOptionalWhen(v.start) || !isOptionalWhen(v.end)) return false;
+  return v.attendees === undefined || (Array.isArray(v.attendees) && v.attendees.every(isAttendee));
+}
+
+/** One page of Google's answer, or undefined when it is not one. A page without `items` has none. */
+function readPage(v: unknown): { items: unknown[]; nextPageToken?: string } | undefined {
+  if (!isFields(v)) return undefined;
+  const { items, nextPageToken } = v;
+  if (!isOptionalText(nextPageToken)) return undefined;
+  if (items !== undefined && !Array.isArray(items)) return undefined;
+  return { items: items ?? [], nextPageToken };
+}
 
 /** The address of one page of events. `singleEvents` makes Google expand repeating meetings into their occurrences. */
 export function eventsUrl(range: { from: Date; to: Date }, pageToken?: string): string {
@@ -48,9 +71,8 @@ export function eventsUrl(range: { from: Date; to: Date }, pageToken?: string): 
 export function googleEventsToCalendar(items: readonly unknown[]): CalendarEvent[] {
   const out: CalendarEvent[] = [];
   for (const raw of items) {
-    const parsed = item.safeParse(raw);
-    if (!parsed.success) continue;
-    const e = parsed.data;
+    if (!isGoogleItem(raw)) continue;
+    const e = raw;
     if (e.status === "cancelled") continue;
     if (e.transparency === "transparent") continue; // shown as free
     if (e.attendees?.some((a) => a.self && a.responseStatus === "declined")) continue;
@@ -89,10 +111,10 @@ export async function fetchGoogleEvents(
       throw new GoogleCalendarError(explainGoogleStatus(0));
     }
     if (!res.ok) throw new GoogleCalendarError(explainGoogleStatus(res.status));
-    const body = page.safeParse(await res.json().catch(() => null));
-    if (!body.success) throw new GoogleCalendarError(explainGoogleStatus(0));
-    events.push(...googleEventsToCalendar(body.data.items));
-    pageToken = body.data.nextPageToken;
+    const body = readPage(await res.json().catch(() => null));
+    if (!body) throw new GoogleCalendarError(explainGoogleStatus(0));
+    events.push(...googleEventsToCalendar(body.items));
+    pageToken = body.nextPageToken;
     if (!pageToken) break;
   }
   events.sort((a, b) => a.start - b.start);

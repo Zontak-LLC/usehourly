@@ -34,10 +34,14 @@ export async function invoiceClient(db: Db, userId: string, clientId: string): P
   return client;
 }
 
+/** The one refusal for a used invoice number: the check below and the unique index catch in `invoice.create`. */
+export const numberUsedError = (number: string) =>
+  new TRPCError({ code: "CONFLICT", message: `Invoice number ${number} is already used.` });
+
 /** Refuses an invoice number this account already used. */
 export async function assertNumberFree(db: Db, userId: string, number: string): Promise<void> {
   const dup = await db.invoice.findFirst({ where: { user_id: userId, number } });
-  if (dup) throw new TRPCError({ code: "CONFLICT", message: `Invoice number ${number} is already used.` });
+  if (dup) throw numberUsedError(number);
 }
 
 /**

@@ -8,15 +8,21 @@ import { config } from "@/proxy";
 vi.mock("next-auth", () => ({ default: () => ({ auth: (handler: unknown) => handler }) }));
 vi.mock("@/lib/auth.config", () => ({ default: {} }));
 
-const runsOn = (path: string) => unstable_doesMiddlewareMatch({ config, url: `http://localhost${path}` });
+const runsOn = (path: string, headers?: Record<string, string>) =>
+  unstable_doesMiddlewareMatch({ config, url: `http://localhost${path}`, headers });
 
 describe("where the proxy runs (issue 424)", () => {
   it("skips the landing page: / is a static file served before the Worker", () => {
     expect(runsOn("/")).toBe(false);
   });
 
+  it("runs on / only for a request with a body and no action id, so the stray-form guard sees bot posts there", () => {
+    expect(runsOn("/", { "content-type": "multipart/form-data; boundary=x" })).toBe(true);
+    expect(runsOn("/", { "content-type": "multipart/form-data; boundary=x", "next-action": "7f3a9c" })).toBe(false);
+  });
+
   it("still runs on every page that needs the sign-in check or a CSP nonce, unknown addresses included", () => {
-    for (const path of ["/dashboard/today", "/auth/v2/login", "/help", "/privacy", "/nope"]) {
+    for (const path of ["/dashboard/today", "/auth/v2/login", "/help", "/privacy", "/no-such-page"]) {
       expect(runsOn(path), path).toBe(true);
     }
   });

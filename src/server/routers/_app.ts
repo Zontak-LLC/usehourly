@@ -2,6 +2,7 @@ import { router } from "../trpc";
 import { accountRouter } from "./account";
 import { accountingRouter } from "./accounting";
 import { clientRouter } from "./client";
+import { dataExportRouter } from "./data-export";
 import { entryRouter } from "./entry";
 import { expenseRouter } from "./expense";
 import { helpRouter } from "./help";
@@ -23,6 +24,7 @@ export const appRouter = router({
   accounting: accountingRouter,
   clients: clientRouter,
   project: projectRouter,
+  dataExport: dataExportRouter,
   entry: entryRouter,
   expense: expenseRouter,
   help: helpRouter,

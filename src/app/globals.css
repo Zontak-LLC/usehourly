@@ -402,9 +402,17 @@ textarea,
   }
 }
 
-/* The spinner (components/ui/spinner.tsx): each of its 12 dashes fades from full to faint, 1/12 s after the one before,
-   so a wave of brightness runs round still dashes. Only under motion-safe; reduced motion keeps a still picture. */
-@keyframes spinner-dash {
+/* The Log time card's "Say it" mic while it listens: a soft ring swells and fades. Only under motion-safe; reduced
+   motion keeps it still (the filled button and aria-pressed still say it listens). */
+@keyframes mic-pulse {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--foreground) 14%, transparent);
+  }
+}
+
+/* The spinner (components/ui/spinner.tsx): each of its 12 spokes fades from full to faint, 1/12 s after the one before,
+   so a wave of brightness runs round still spokes. Only under motion-safe; reduced motion keeps a still picture. */
+@keyframes spinner-fade {
   from {
     opacity: 1;
   }

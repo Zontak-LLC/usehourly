@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Bot, Code2, Heart, type LucideIcon, ShieldCheck, WifiOff } from "lucide-react";
 import type { Metadata } from "next";
 
-import { ThemeSwitcher } from "@/app/(app)/dashboard/_components/header/theme-switcher";
+import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/header/theme-switcher";
 import { ClaudeMark, CursorMark, OpenAIMark } from "@/components/assistant-logos";
 import { AssistantTerminal } from "@/components/assistant-terminal";
 import { DayRuler } from "@/components/day-ruler";
@@ -15,28 +15,11 @@ import { Supporters } from "@/components/supporters";
 import { TryDemoButton } from "@/components/try-demo-button";
 import { APP_CONFIG } from "@/config/app-config";
 import { DONATE_PLATFORM, donateUrl } from "@/lib/donate";
+import { LANDING_JSON_LD } from "@/lib/landing-json-ld";
 
-const JSON_LD = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "UseHourly",
-  url: "https://usehourly.app",
-  description:
-    "Intuitive time tracking. Free. Type 1.5, press Enter, done. Timesheets, invoices and a tax summary from your hours, and a built-in MCP server so Claude, ChatGPT, Cursor and others can log time for you.",
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  featureList: [
-    "Quick daily time entry, with a timer when you want one",
-    "Weekly timesheet that shows the gaps, and a month calendar you can drag entries across",
-    "Invoices as PDF or as a private link, with paid, waiting and late at a glance",
-    "Each client's month in hours and money, and one tap to make the invoice",
-    "Year summary for taxes and Excel export",
-    "Works offline and installs like an app",
-    "Export all your data, or delete it",
-    "MCP server: your AI assistant can log time, build timesheets for clients and prepare invoices",
-  ],
-};
+// `/` is a static file served before the Worker runs (scripts/landing-static.mjs): the build fails if anything here
+// would make it render per request.
+export const dynamic = "error";
 
 export const metadata: Metadata = {
   title: "UseHourly: intuitive time tracking. Free.",
@@ -80,8 +63,8 @@ export default function LandingPage() {
     <div className="landing relative isolate min-h-dvh overflow-x-clip bg-[var(--landing-page)] text-foreground">
       <SignedInRedirect />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5 max-sm:px-4">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LANDING_JSON_LD) }} />
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5">
         <Link href="/" className="flex items-center gap-2 font-semibold text-base sm:text-lg">
           <LogoMark className="size-7 sm:size-8" aria-hidden />
           {APP_CONFIG.name}

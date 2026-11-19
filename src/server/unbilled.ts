@@ -7,7 +7,7 @@ import type { DueInvoice, Unbilled } from "@/lib/unbilled";
 import { nonBillableDates } from "./non-billable";
 
 /** D1 allows 100 bound values per query; ids go in groups well under that. */
-const CHUNK = 80;
+export const CHUNK = 80;
 
 /**
  * Marks unbilled entries as billed on `invoiceId`. An entry already on an invoice (billed again on purpose, or taken by
@@ -29,6 +29,16 @@ export async function markInvoiced(
     marked += count;
   }
   return marked;
+}
+
+/**
+ * Undoes a new invoice that could not be saved whole: frees the time marked on it, then deletes it. Filters by invoice
+ * and account (no id lists), so it stays under D1's bound-values limit for any size; time billed again on purpose keeps
+ * its first invoice. Throws the database error if either write fails.
+ */
+export async function undoInvoice(prisma: PrismaClient, userId: string, invoiceId: string): Promise<void> {
+  await prisma.timeEntry.updateMany({ where: { user_id: userId, invoice_id: invoiceId }, data: { invoice_id: null } });
+  await prisma.invoice.deleteMany({ where: { id: invoiceId, user_id: userId } });
 }
 
 type ProjectRow = { id: string; client_id: string; billable: boolean; hourly_rate: number };

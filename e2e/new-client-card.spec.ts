@@ -1,4 +1,4 @@
-import { expect, gotoClient, startDemo, startFreshAccount, test } from "./helpers";
+import { clientRow, expect, gotoClient, startDemo, startFreshAccount, test } from "./helpers";
 
 /**
  * Clients: "New client" is a button in the page header that opens the form as a card at the top of the list; an empty page has
@@ -27,7 +27,8 @@ test("a new client is added from the card in place, and the title line counts cl
     await expect(plus).toHaveAttribute("aria-expanded", "true");
     const form = page.getByRole("region", { name: "New client" });
     await expect(form).toBeVisible();
-    const first = page.getByRole("region", { name: "Acme Studio" });
+    // The client's row in the list (the profile is its own screen on a phone, so it is not on the page yet).
+    const first = clientRow(page, "Acme Studio");
     expect((await form.boundingBox())?.y ?? 0).toBeLessThan((await first.boundingBox())?.y ?? 0); // above the clients
     await page.getByLabel("New client name").fill("Fernhill");
     await page.getByRole("button", { name: "Add client" }).click();

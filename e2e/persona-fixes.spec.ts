@@ -1,6 +1,19 @@
+import type { Page } from "@playwright/test";
+
 import { toISODate } from "../src/lib/dates";
+import { ENTRY_GONE } from "../src/lib/entry-gone";
 import { FEATURES } from "../src/lib/features";
-import { expect, gotoClient, sql, startFreshAccount, test } from "./helpers";
+import {
+  entryAction,
+  expect,
+  gotoClient,
+  openEntryEdit,
+  seedFirstDay,
+  sql,
+  startFreshAccount,
+  test,
+  trpc,
+} from "./helpers";
 
 /** Found by the persona walkthrough (ticket #179): three things that tripped a first-time freelancer. */
 
@@ -141,4 +154,43 @@ test("a project can be added as not billable, with no rate and no red warning (#
   const row = page.getByRole("listitem").filter({ hasText: "Admin and invoicing" });
   await expect(row.getByText("non-billable")).toBeVisible();
   await expect(row.getByText("No hourly rate yet")).toHaveCount(0);
+});
+
+// Issue 458 (Sentinel, 2026-11-08): saving an entry that another tab or device had deleted gave a server error.
+test.describe("an entry deleted in another tab", () => {
+  /** One entry on Today, its row (found by id: a row filtered by its note stops matching while the note is in a box). */
+  async function oneEntryOnToday(page: Page) {
+    await seedFirstDay(page, { rate: 0, minutes: [60] });
+    await page.goto("/dashboard/today");
+    const entries = page.getByRole("region", { name: "Today's entries" });
+    await expect(entries.getByText("Logo concepts for the homepage")).toBeVisible();
+    const id = await entries.getByRole("listitem").first().getAttribute("data-entry-id");
+    if (!id) throw new Error("the entry row has no id");
+    return { id, row: entries.locator(`li[data-entry-id="${id}"]`) };
+  }
+
+  test("Save says it was deleted, keeps the form closed and drops the row", async ({ page }) => {
+    const { id, row } = await oneEntryOnToday(page);
+    const card = await openEntryEdit(row);
+    await card.getByLabel("Time", { exact: true }).fill("2:00");
+    await trpc(page, "entry.delete", { id }); // what the second tab does, finished before Save
+    await card.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText(ENTRY_GONE)).toBeVisible();
+    await expect(row).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Edit", exact: true, expanded: true })).toHaveCount(0);
+  });
+
+  test("Delete entry says it was deleted, and the row does not come back", async ({ page }) => {
+    const { id, row } = await oneEntryOnToday(page);
+    await entryAction(row, "Delete");
+    const ask = row.getByRole("region", { name: "Delete this entry?" });
+    await expect(ask).toBeVisible();
+    await trpc(page, "entry.delete", { id });
+    const listed = page.waitForResponse((r) => r.url().includes("entry.list"));
+    await ask.getByRole("button", { name: "Delete entry" }).click();
+    await expect(page.getByText(ENTRY_GONE)).toBeVisible();
+    await listed; // the list was read again after the refusal
+    await expect(row).toHaveCount(0);
+    await expect(page.getByText("Entry deleted.")).toHaveCount(0);
+  });
 });

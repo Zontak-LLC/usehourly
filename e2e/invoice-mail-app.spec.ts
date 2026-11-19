@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 import {
   anonymous,
   expect,
+  gotoClient,
   makeInvoice,
   menuAction,
   openInvoice,
@@ -21,7 +22,7 @@ import {
 async function invoiceForAcme(page: Page) {
   const user = await startFreshAccount(page, "Acme");
 
-  await page.goto("/dashboard/clients");
+  await gotoClient(page, "Acme"); // on a phone the address is the list: the client is picked first
   await page.getByRole("button", { name: "Edit General" }).click();
   await page.getByLabel("Rate per hour").fill("100");
   await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -30,7 +31,7 @@ async function invoiceForAcme(page: Page) {
   await page.getByLabel("Time to add").fill("2h");
   await page.getByRole("button", { name: /^Log time/ }).click();
   await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:00 this day");
-  await page.goto("/dashboard/clients");
+  await gotoClient(page, "Acme");
   await menuAction(page, "More actions for Acme", "Billing details");
   await page.getByLabel("Email for invoices").fill("accounts@client.example");
   await page.getByRole("button", { name: "Save", exact: true }).click();

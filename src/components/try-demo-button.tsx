@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { signIn } from "next-auth/react";
 
 import { toISODate } from "@/lib/dates";
 
-/** "Try the demo": makes a throwaway account with sample data and goes straight to the app. No sign-up. */
+const noSubscription = () => () => undefined;
+
+/**
+ * "Try the demo": makes a throwaway account with sample data and goes straight to the app. No sign-up.
+ * The landing page is a static file that paints before its script runs, and until then a tap on this button does
+ * nothing. So the button says it is unavailable (aria-disabled) until the page has hydrated; it looks the same.
+ */
 export function TryDemoButton({ className, children }: { className?: string; children: React.ReactNode }) {
+  const isHydrated = useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
+  );
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -32,7 +43,13 @@ export function TryDemoButton({ className, children }: { className?: string; chi
 
   return (
     <div className="flex w-full flex-col items-center gap-2 sm:w-auto">
-      <button type="button" onClick={start} disabled={busy} className={className}>
+      <button
+        type="button"
+        onClick={start}
+        disabled={busy}
+        aria-disabled={isHydrated ? undefined : true}
+        className={className}
+      >
         {busy ? "Setting up your demo…" : children}
       </button>
       {problem && (

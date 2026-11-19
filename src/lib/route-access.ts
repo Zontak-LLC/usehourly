@@ -2,10 +2,9 @@
  * Who may see which page. Kept as a pure function so the rule can be tested without the
  * auth middleware: `src/proxy.ts` just asks it and acts on the answer.
  *
- * - `/` is the public landing page. Visitors see it; someone already signed in goes on to their
- *   day. The proxy no longer runs on `/` (it is a static file, see the matcher in `src/proxy.ts`):
- *   the page's `SignedInRedirect` does it after paint, so the rule here only covers a request that
- *   reaches the proxy anyway.
+ * - `/` is the public landing page: allowed for everyone. It is a static file the proxy never sees
+ *   on a normal visit (see the matcher in `src/proxy.ts`), so the page's own `SignedInRedirect`
+ *   sends a signed-in visitor on to their day, in the browser.
  * - `/auth/*` are the log-in and create-account pages: public, but pointless once signed in.
  * - `/privacy`, `/terms`, `/reset-password`, `/verify-email`, `/reminders/off`, the app manifest and the offline worker (`/sw.js`, `/offline.html`) are public for everyone, signed in or not.
  * - `/timesheet/<token>` is a private link a freelancer sends a client for sign-off: public for everyone, protected by the unguessable token.
@@ -41,6 +40,7 @@ const PUBLIC_FOR_EVERYONE = new Set([
 export function accessDecision(pathname: string, signedIn: boolean): AccessDecision {
   if (
     PUBLIC_FOR_EVERYONE.has(pathname) ||
+    pathname === "/" ||
     pathname.startsWith("/.well-known/") ||
     pathname.startsWith("/timesheet/") ||
     pathname.startsWith("/invoice/") ||
@@ -50,10 +50,23 @@ export function accessDecision(pathname: string, signedIn: boolean): AccessDecis
   ) {
     return "allow";
   }
-  const isLanding = pathname === "/";
   const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
   if (signedIn) {
-    return isLanding || isAuthPage ? "to-dashboard" : "allow";
+    return isAuthPage ? "to-dashboard" : "allow";
   }
-  return isLanding || isAuthPage ? "allow" : "to-login";
+  return isAuthPage ? "allow" : "to-login";
+}
+
+/**
+ * A form posted to a page as `multipart/form-data` with no `next-action` header: no screen of the app sends one (every
+ * form uses onSubmit; Server Actions are fetch calls that carry `next-action`). Bots do, and Next.js then logs
+ * "Invalid Server Actions request." (incident usehourly:9bef45d27c59b510). A page-level `<form action={serverAction}>`
+ * would send exactly this without JavaScript, so it needs this rule changed first.
+ */
+export function isStrayFormPost(method: string, contentType: string | null, nextActionHeader: string | null): boolean {
+  return (
+    method.toUpperCase() === "POST" &&
+    (contentType ?? "").trimStart().toLowerCase().startsWith("multipart/form-data") &&
+    !nextActionHeader
+  );
 }

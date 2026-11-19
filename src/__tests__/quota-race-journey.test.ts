@@ -233,6 +233,24 @@ describe("starting a timer near the limit", () => {
     expect(w.count("time_entries", `user_id = '${OWNER}' AND started_at IS NOT NULL`)).toBe(1);
   });
 
+  it("Resume on a billed entry and a start at the same moment run one timer; the other hears a timer is running", async () => {
+    const w = world();
+    // Issue 448: Resume on a billed entry starts a new entry through the same path as start.
+    w.db.exec(
+      `INSERT INTO invoices (id, user_id, client_id, client_name, number, issue_date, period_from, period_to,
+         total_minutes, total_cents, snapshot, search_text)
+         VALUES ('inv1', '${OWNER}', 'c0', 'Acme', 'INV-2026-004', '2026-11-01', '2026-10-03', '2026-10-03', 120, 0, '{}', '');
+       INSERT INTO time_entries (id, user_id, project_id, date, minutes, invoice_id, created_at, updated_at)
+         VALUES ('billed', '${OWNER}', 'p0', '2026-10-03', 120, 'inv1', '${OLD}', '${OLD}');`,
+    );
+    const resume = () => w.as(OWNER).entry.resume({ id: "billed" });
+    const { won, lost } = await race(resume, start(w));
+    expect(won).toHaveLength(1);
+    expect(lost).toEqual([expect.objectContaining({ code: "CONFLICT", message: TIMER_TAKEN })]);
+    expect(w.count("time_entries", `user_id = '${OWNER}' AND started_at IS NOT NULL`)).toBe(1);
+    expect(w.count("time_entries", `id = 'billed' AND minutes = 120 AND started_at IS NULL`)).toBe(1);
+  });
+
   it("a race lost at exactly the limit saves the old timer's minutes and shows the limit message", async () => {
     const w = world();
     w.fill("time_entries", QUOTAS.entries - 2);

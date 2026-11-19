@@ -137,7 +137,7 @@ export function useSavedCalendar() {
         revokeGoogleToken(); // disconnected while Google's window was open: drop the access it just gave
         return null;
       }
-      const { fetchGoogleEvents } = await import("@/lib/google-calendar"); // zod with it, so only on use (issue 425)
+      const { fetchGoogleEvents } = await import("@/lib/google-calendar"); // only people who connect Google need it
       const { events, truncated } = await fetchGoogleEvents(token, keepWindow(new Date()));
       if (started !== calendarGeneration()) return null;
       if (!saveCalendar(safeStorage(), userId, { name: "Google Calendar", events, importedAt: Date.now() })) {

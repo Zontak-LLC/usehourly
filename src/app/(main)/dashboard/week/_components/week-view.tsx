@@ -1,0 +1,167 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { DayEditorPanel, periodSeed } from "@/components/day-editor";
+import { MergeDaysPanel } from "@/components/merge-days-panel";
+import { PageShell } from "@/components/page-shell";
+import { useProjectFilter } from "@/components/project-filter";
+import { useProjectLogos } from "@/components/project-logo";
+import { SideColumn } from "@/components/side-column";
+import { Skeleton } from "@/components/ui/skeleton";
+import { WeekPills } from "@/components/week-pills";
+import { WorkItems } from "@/components/work-items";
+import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
+import { feature } from "@/lib/features";
+import { buildSheet } from "@/lib/timesheet";
+import { trpc } from "@/lib/trpc";
+import { useToday } from "@/lib/use-today";
+
+import { longDayLabel, WeekTotalCard } from "./week-strip";
+import { WeekToolbar } from "./week-toolbar";
+
+/** The chosen day, else today when it is in this week, else Monday. */
+function chooseDay(start: string, picked: string | null, today: string | null): string {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  return picked && days.includes(picked) ? picked : today && days.includes(today) ? today : days[0];
+}
+
+export function WeekView({ initialProject, initialDate }: { initialProject?: string; initialDate?: string }) {
+  const today = useToday();
+  const [start, setStart] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null); // the day chosen in the strip
+  const [projectId, setProjectId] = useProjectFilter(initialProject);
+  const panelRef = useRef<HTMLElement>(null);
+  // The week is set once from the first date seen, not from `today`: the week on screen must not jump at midnight.
+  useEffect(() => {
+    setStart(startOfWeek(initialDate ?? toISODate(new Date())));
+    setPicked(initialDate ?? null); // an address with ?date= opens on that day, not just that week
+  }, [initialDate]);
+
+  const end = start ? addDays(start, 6) : "";
+  const entries = trpc.entry.list.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
+
+  // The day panel below asks for these only once it is on screen, which would be a second round trip. Started here with
+  // the first batch (same keys, so nothing is fetched twice). The picked day's own entries are not asked for at all: the
+  // panel is handed them from the week's (see `seed`).
+  const day = start && today ? chooseDay(start, picked, today) : "";
+  trpc.entry.running.useQuery();
+  trpc.project.budgets.useQuery(day ? monthBounds(day) : { from: "", to: "" }, { enabled: !!day });
+  useProjectLogos();
+
+  const nonBillableDays = trpc.entry.nonBillableDays.useQuery({ from: start ?? "", to: end }, { enabled: !!start });
+  const nonBillable = useMemo(() => new Set(nonBillableDays.data ?? []), [nonBillableDays.data]);
+
+  // Filtering is client-side: the week's entries are already loaded and small.
+  const shown = useMemo(
+    () => (entries.data ?? []).filter((e) => !projectId || e.project_id === projectId),
+    [entries.data, projectId],
+  );
+  // The whole week, NOT the filtered rows: with a project picked, "By project" keeps every project (the others dimmed),
+  // so the way back is the same list (press the picked one again, or another). It used to shrink to one row.
+  const sheet = useMemo(() => buildSheet(entries.data ?? []), [entries.data]);
+
+  if (!start) return <Skeleton className="h-64 w-full" />;
+  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const selected = chooseDay(start, picked, today);
+  // The address always says which day (or week) is showing, so a refresh or a shared link comes back to it.
+  const writeDate = (d: string | null) => {
+    const url = new URL(window.location.href);
+    if (d) url.searchParams.set("date", d);
+    else url.searchParams.delete("date");
+    window.history.replaceState(null, "", url);
+  };
+  const pickDay = (d: string) => {
+    setPicked(d);
+    writeDate(d === today ? null : d);
+  };
+  const openDay = (d: string) => {
+    pickDay(d);
+    panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  // Swipe left for the next day, right for the previous one; past the week's edge the next or previous week opens.
+  const moveDay = (delta: number) => {
+    const d = addDays(selected, delta);
+    if (d < start || d > end) setStart(startOfWeek(d));
+    pickDay(d);
+  };
+  const goWeek = (s: string) => {
+    setStart(s);
+    setPicked(null);
+    writeDate(today && startOfWeek(today) === s ? null : s);
+  };
+
+  return (
+    <PageShell
+      nav="week"
+      title="Weekly timesheet"
+      // The dates are in the toolbar right under it ("‹ Oct 19 – Oct 25 ›"), so not here as well (walkthrough 2026-10-25).
+      description="Pick a day to see and change its time."
+      descriptionOnPhone
+      onSwipe={feature("swipe") ? (direction) => moveDay(direction === "left" ? 1 : -1) : undefined}
+    >
+      <WeekToolbar
+        start={start}
+        end={end}
+        today={today}
+        days={days}
+        shown={entries.data ? shown : undefined}
+        projectId={projectId}
+        onProjectId={setProjectId}
+        onWeek={goWeek}
+      />
+
+      {entries.error ? (
+        <p className="rounded-lg border border-destructive/40 p-3 text-destructive text-sm">
+          Couldn't load entries: {entries.error.message}
+        </p>
+      ) : entries.isLoading ? (
+        <Skeleton className="h-48 w-full" />
+      ) : (
+        // Same pattern as Today: the days as one row, then the week's hours and its projects on the left (a SideColumn: as
+        // tall as the right column, its rows scroll), and the picked day on the right, then the week's full list.
+        <div className="flex min-w-0 flex-col gap-4">
+          <WeekPills
+            entries={shown}
+            weekStart={start}
+            date={selected}
+            today={today}
+            onPick={pickDay}
+            nonBillable={nonBillable}
+            allEntries={entries.data}
+          />
+          <div className="grid items-start gap-4 md:grid-cols-[15rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)]">
+            <SideColumn>
+              <WeekTotalCard
+                sheet={sheet}
+                weekMinutes={(entries.data ?? []).reduce((a, e) => a + e.minutes, 0)}
+                projectId={projectId}
+                onProjectId={setProjectId}
+              />
+            </SideColumn>
+            <div className="flex min-w-0 flex-col gap-4">
+              <section ref={panelRef} aria-label={longDayLabel.format(fromISODate(selected))} className="scroll-mt-28">
+                <DayEditorPanel
+                  key={selected}
+                  date={selected}
+                  projectFilter={projectId}
+                  seed={periodSeed(entries, nonBillableDays)}
+                />
+              </section>
+              {feature("merge") && <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />}
+              {/* The week's full list, always open under the day (it renders nothing for an empty week). */}
+              <WorkItems
+                key={`${start}-${projectId}`}
+                entries={shown}
+                onOpenDay={openDay}
+                period="week"
+                editInPlace
+                nonBillable={nonBillable}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </PageShell>
+  );
+}

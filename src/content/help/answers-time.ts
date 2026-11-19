@@ -16,7 +16,7 @@ Time is always logged on a project, and each project belongs to one client.`,
   {
     id: "typing-time",
     question: "What can I type in the time box?",
-    keywords: ["duration", "hours", "minutes", "format", "1.5", "90m", "decimal", "enter", "log time"],
+    keywords: ["duration", "hours", "minutes", "format", "1.5", "90m", "decimal", "comma", "enter", "log time"],
     answer: `Type the time and press **Enter** (or **Log time**). These all work:
 
 - \`1.5\` is one and a half hours
@@ -24,7 +24,7 @@ Time is always logged on a project, and each project belongs to one client.`,
 - \`90m\` is ninety minutes
 - \`2h\` is two hours, and \`1h30\` is one hour thirty
 
-A plain number up to 24 means hours (\`4\` is four hours). For minutes add m: \`45m\`. A comma works too: \`1,5\`. The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
+A plain number means hours (\`2\` is two hours, \`1,5\` is one and a half). For minutes add m (\`45m\`). A plain number over 24 is not logged: type \`25m\` for 25 minutes. The chips under the box add time: press **2h** twice for four hours. The × in the box clears it. One entry can be up to 24 hours.`,
   },
   {
     id: "add-note",

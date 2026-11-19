@@ -143,7 +143,10 @@ test("an owner invites someone by email, they join and log time, and the owner r
   await test.step("Pat logs time on the client Pat was given and sees only that", async () => {
     await patPage.goto("/dashboard/team");
     await expect(patPage.getByText(/Log time for/)).toBeVisible();
-    await patPage.getByLabel("Time", { exact: true }).fill("1.5");
+    const patTime = patPage.getByLabel("Time", { exact: true });
+    await patTime.fill("2"); // a bare number is hours, and the line under the box says so before Log time
+    await expect(patPage.getByText("= 2:00", { exact: true })).toBeVisible();
+    await patTime.fill("1.5");
     await patPage.getByLabel("Description").fill("Pat built the header");
     await patPage.getByRole("button", { name: "Log time" }).click();
     await expect(patPage.getByText("Pat built the header")).toBeVisible();

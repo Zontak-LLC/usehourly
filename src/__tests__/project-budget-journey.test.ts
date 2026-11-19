@@ -62,6 +62,23 @@ function matches(e: Entry, where: EntryWhere): boolean {
   return true;
 }
 
+/** How many values a query binds: the account, every listed project and day, and each date bound. */
+function boundValues(where: EntryWhere): number {
+  const d = where.date;
+  return (
+    1 +
+    where.project_id.in.length +
+    (d?.in?.length ?? 0) +
+    (d?.gte !== undefined ? 1 : 0) +
+    (d?.lte !== undefined ? 1 : 0)
+  );
+}
+
+/** Throws as D1 does when one query binds more than 100 values. */
+function refuseOverD1Limit(where: EntryWhere): void {
+  if (boundValues(where) > 100) throw new Error("too many SQL variables");
+}
+
 function world(projects: ProjectRow[], entries: Entry[], days: { user_id: string; date: string }[] = []) {
   const stored = [...projects];
   const prisma = {
@@ -83,8 +100,12 @@ function world(projects: ProjectRow[], entries: Entry[], days: { user_id: string
     },
     client: { findFirst: vi.fn() },
     timeEntry: {
-      findMany: vi.fn(async ({ where }: { where: EntryWhere }) => entries.filter((e) => matches(e, where))),
+      findMany: vi.fn(async ({ where }: { where: EntryWhere }) => {
+        refuseOverD1Limit(where);
+        return entries.filter((e) => matches(e, where));
+      }),
       groupBy: vi.fn(async ({ where }: { where: EntryWhere }) => {
+        refuseOverD1Limit(where);
         const sums = new Map<string, number>();
         for (const e of entries.filter((x) => matches(x, where)))
           sums.set(e.project_id, (sums.get(e.project_id) ?? 0) + e.minutes);
@@ -251,6 +272,43 @@ describe("budgets read as little as possible", () => {
     for (const [arg] of prisma.timeEntry.findMany.mock.calls) {
       const values = 1 + arg.where.project_id.in.length + (arg.where.date?.in?.length ?? 0);
       expect(values).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("works for an account with 150 month-budget and 150 total-budget projects and 100 non-billable days", async () => {
+    const monthIds = Array.from({ length: 150 }, (_, i) => `m${i}`);
+    const totalIds = Array.from({ length: 150 }, (_, i) => `t${i}`);
+    const days = Array.from({ length: 100 }, (_, i) => ({
+      user_id: "u1",
+      date: new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10),
+    }));
+    const hours = { budget_amount: 100 * 60, budget_unit: "hours" };
+    const projects = [
+      ...monthIds.map((id) => project({ id, ...hours, budget_period: "month" })),
+      ...totalIds.map((id) => project({ id, ...hours, budget_period: "total" })),
+    ];
+    const entries = [
+      ...monthIds.flatMap((id, i) => [entry(id, "2026-10-02", 60 + i), entry(id, "2026-09-30", 500)]),
+      ...totalIds.flatMap((id, i) => [
+        entry(id, "2026-08-03", 120 + i),
+        entry(id, "2026-10-05", 30),
+        entry(id, days[i % 100].date, 45), // on a non-billable day: taken back out
+      ]),
+    ];
+    const { prisma, as } = world(projects, entries, days);
+
+    const budgets = await as("u1").project.budgets(OCT);
+
+    expect(Object.keys(budgets)).toHaveLength(300);
+    expect(budgets.m0.used).toBe(60); // first group
+    expect(budgets.m149.used).toBe(60 + 149); // last group
+    expect(budgets.t0.used).toBe(120 + 30);
+    expect(budgets.t149.used).toBe(120 + 149 + 30);
+    expect(prisma.timeEntry.groupBy.mock.calls.length).toBeGreaterThan(1); // the ids went in groups
+    const calls = [...prisma.timeEntry.findMany.mock.calls, ...prisma.timeEntry.groupBy.mock.calls];
+    for (const [{ where }] of calls) {
+      expect(where.user_id).toBe("u1");
+      expect(boundValues(where)).toBeLessThanOrEqual(100);
     }
   });
 });

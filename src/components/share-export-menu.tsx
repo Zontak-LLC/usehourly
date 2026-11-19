@@ -17,6 +17,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv } from "@/lib/accounting-export";
 import { csvFilename } from "@/lib/csv";
+// Only the plain CSV module: @/lib/export-all would bring the zip and workbook code into Week and Month (issue 425).
+import { entriesCsv } from "@/lib/export-csv";
 import { downloadTimesheetXlsx } from "@/lib/export-xlsx";
 import { feature } from "@/lib/features";
 import { exportableEntries, type SheetEntry } from "@/lib/timesheet";
@@ -123,11 +125,8 @@ export function ShareExportMenu({
   async function download(format: "xlsx" | "csv") {
     if (!entries) return;
     try {
-      if (format === "csv") {
-        // Loaded on click: a static import would keep the "Download everything" zip code in Week and Month (issue 425).
-        const { entriesCsv } = await import("@/lib/export-all");
-        downloadCsv(csvFilename(filename), entriesCsv(exportableEntries(entries), accountCurrency));
-      } else await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
+      if (format === "csv") downloadCsv(csvFilename(filename), entriesCsv(exportableEntries(entries), accountCurrency));
+      else await downloadTimesheetXlsx({ entries, days, filename, accountCurrency });
     } catch (err) {
       toast.error(err instanceof Error ? `Export failed: ${err.message}` : "Export failed. Please try again.");
     }

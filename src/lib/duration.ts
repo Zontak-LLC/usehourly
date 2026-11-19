@@ -1,4 +1,7 @@
-/** The words a time field shows when it cannot log what was typed. Shared by the forms, the server and the tests. */
+/**
+ * The words the server, local sync and MCP give when duration text cannot be logged. The typed UI boxes use their own
+ * shorter words from `typed-duration.ts`.
+ */
 export const DURATION_UNREADABLE = "Couldn't read that duration. Try 1.5, 1:30 or 90m.";
 export const DURATION_NOT_POSITIVE = "Enter more than 0, like 1:30";
 export const DURATION_TOO_LONG = "One entry can be up to 24 hours.";
@@ -8,6 +11,8 @@ export function minutesHint(n: number): string {
 }
 /** One entry is at most a day. */
 export const MAX_ENTRY_MINUTES = 24 * 60;
+/** A bare number up to this is hours; above it, it is more than one entry can hold. */
+export const MAX_BARE_HOURS = 24;
 
 export type DurationRead = { minutes: number } | { error: string };
 
@@ -18,10 +23,12 @@ export type DurationRead = { minutes: number } | { error: string };
  *   logged two minutes, so a bare number over 24 is refused with a hint instead of guessed.
  */
 export function readDuration(input: string): DurationRead {
-  const s = decimalComma(input.trim().toLowerCase().replace(/\s+/g, ""));
-  const read = readMinutes(s);
-  if (read === null) return { error: DURATION_UNREADABLE };
-  if (typeof read !== "number") return read;
+  const text = readDurationText(input);
+  if (text === null) return { error: DURATION_UNREADABLE };
+  if ("bareHours" in text && text.bareHours > MAX_BARE_HOURS) {
+    return { error: text.isWhole ? minutesHint(text.bareHours) : DURATION_TOO_LONG };
+  }
+  const read = "minutes" in text ? text.minutes : Math.round(text.bareHours * 60);
   return read > 0 ? { minutes: read } : { error: DURATION_NOT_POSITIVE };
 }
 
@@ -50,31 +57,36 @@ function decimalComma(s: string): string {
   return s.replace(/^(\d+),(\d{1,2})(?!\d)/, "$1.$2");
 }
 
-/** Minutes (0 or less included), a refusal with its own words, or null for text that cannot be read. */
-function readMinutes(s: string): number | { error: string } | null {
+/** What duration text says before any limit: minutes for a time with a unit or a colon, or a bare number of hours. */
+export type DurationText = { minutes: number } | { bareHours: number; isWhole: boolean };
+
+/**
+ * Read duration text before any limit or words: whole minutes for "1:30", "90m", "2h", "1h30" (0 included), a bare
+ * number of hours for "2", "1,5" or "-2" (whole or not, any size), or null when it cannot be read. Spaces and case are
+ * ignored, and one decimal comma is read as a point. `readDuration` (server, MCP, CSV) and `readTypedDuration` (the
+ * typed UI boxes) both start here and each puts its own limits and words on the result.
+ */
+export function readDurationText(input: string): DurationText | null {
+  const s = decimalComma(input.trim().toLowerCase().replace(/\s+/g, ""));
   if (!s) return null;
 
   let m = s.match(/^(\d+):(\d{1,2})$/);
   if (m) {
     const mins = Number(m[2]);
-    return mins < 60 ? Number(m[1]) * 60 + mins : null;
+    return mins < 60 ? { minutes: Number(m[1]) * 60 + mins } : null;
   }
 
   // "2h", "90m", "1.5h", "1h30", "1h30m"
   m = s.match(/^(?:(\d+(?:\.\d+)?)h(?:ours?|rs?)?)?(?:(\d+)(?:m(?:in(?:ute)?s?)?)?)?$/);
   if (m && s.includes("h") && (m[1] || m[2])) {
-    return Math.round(Number(m[1] ?? 0) * 60 + Number(m[2] ?? 0));
+    return { minutes: Math.round(Number(m[1] ?? 0) * 60 + Number(m[2] ?? 0)) };
   }
   m = s.match(/^(\d+)m(?:in(?:ute)?s?)?$/);
-  if (m) return Number(m[1]);
+  if (m) return { minutes: Number(m[1]) };
 
-  // A bare number is hours, whole or decimal ("-2" is read only to say it must be more than 0).
+  // "-2" is read only so a reader can say it must be more than 0.
   m = s.match(/^-?(\d+)(\.\d+)?$/);
-  if (m) {
-    const n = Number(s);
-    if (n > 24) return { error: m[2] ? DURATION_TOO_LONG : minutesHint(n) };
-    return Math.round(n * 60);
-  }
+  if (m) return { bareHours: Number(s), isWhole: !m[2] };
   return null;
 }
 
@@ -88,15 +100,4 @@ export function formatDuration(minutes: number): string {
 /** 90 → "1.50" — decimal hours for invoicing. */
 export function formatDecimalHours(minutes: number): string {
   return (minutes / 60).toFixed(2);
-}
-
-/**
- * What a "+" quick-time chip does to the time box: it adds its minutes to what is there ("1:15" + 30 = 105).
- * An empty box starts at 0. A box that cannot be read also starts at 0, so the chip's own amount replaces the bad text.
- * That includes "0" and a bare "45" (issue 435): the field already shows its hint before the chip is pressed.
- * `from` is where the reward roll starts, `to` is the new value.
- */
-export function addChipTime(current: string, chipMinutes: number): { from: number; to: number } {
-  const from = parseDuration(current) ?? 0;
-  return { from, to: from + chipMinutes };
 }

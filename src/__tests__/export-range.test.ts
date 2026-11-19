@@ -3,7 +3,8 @@ import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { addDays } from "@/lib/dates";
-import { type InvoiceRow, planExport, zipBytes } from "@/lib/export-all";
+import { planExport, zipBytes } from "@/lib/export-all";
+import type { InvoiceRow } from "@/lib/export-csv";
 import {
   checkRange,
   describeRange,
@@ -252,6 +253,8 @@ describe("Export everything as a zip", () => {
       "by-client/Acme.xlsx",
       "by-client/Fernhill Café.xlsx",
       "invoices.csv",
+      "invoices/INV-2026-001.json",
+      "invoices/INV-2026-002.json",
     ]);
     expect(plan.entryCount).toBe(4);
     expect(plan.clientCount).toBe(2);
@@ -269,13 +272,16 @@ describe("Export everything as a zip", () => {
     const csv = await fileIn(zip, "all-entries.csv").async("string");
     expect(csv.charCodeAt(0)).toBe(0xfeff); // so Excel reads it as UTF-8
     const lines = csv.slice(1).split("\r\n");
-    expect(lines[0]).toBe("Date,Client,Project,Note,Hours,Minutes,Billable,Rate (per hour),Amount,Currency");
+    // the zip's file has one more column at the end: whether the entry's day is billable
+    expect(lines[0]).toBe(
+      "Date,Client,Project,Note,Hours,Minutes,Billable,Rate (per hour),Amount,Currency,Billable day",
+    );
     // commas, quotes and line breaks inside a note stay inside one field
     expect(csv).toContain('"Homepage, hero & nav"');
     expect(csv).toContain('"Said ""ship it""\nsecond line"');
-    expect(csv).toContain('2026-03-03,Acme,Website,"Homepage, hero & nav",1.5,90,Yes,100,150,USD');
+    expect(csv).toContain('2026-03-03,Acme,Website,"Homepage, hero & nav",1.5,90,Yes,100,150,USD,Yes\r\n');
     expect(csv).toContain("Fernhill Café,Menu"); // accents survive
-    expect(csv).toContain("2026-04-21,Acme,Retainer,,0.75,45,No,,,USD"); // not billable: no rate or amount
+    expect(csv).toContain("2026-04-21,Acme,Retainer,,0.75,45,No,,,USD,Yes\r\n"); // not billable: no rate or amount
     expect(csv).not.toContain("timer just started"); // zero-minute entry left out
   });
 

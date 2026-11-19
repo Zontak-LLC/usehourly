@@ -186,11 +186,14 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     ),
   }),
   list_invoices: obj({
-    count: z.number(),
+    count: z.number().describe("Every invoice that matches, not only the ones listed"),
+    listed: z.number().describe("How many invoices are in invoices (the first 200 matches at most)"),
     unpaid_total: z
       .number()
       .nullable()
-      .describe("Still unpaid across the matches, in their currency; null when the matches use more than one currency"),
+      .describe(
+        "Still unpaid across every match, in their currency; null when the unpaid matches use more than one currency",
+      ),
     unpaid_totals: z.record(z.string(), z.number()).describe("Still unpaid per currency code, e.g. { USD: 150 }"),
     invoices: z.array(
       obj({
@@ -247,7 +250,11 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     created: z.number(),
     updated: z.number(),
     deleted: z.number(),
-    skipped: z.array(z.string()).describe("Days skipped: several entries or a running timer"),
+    skipped: z
+      .array(z.string())
+      .describe(
+        "Days skipped: several entries, a running timer, or time already on an invoice (add a new entry for extra time)",
+      ),
   }),
   update_entry: obj({ updated: entry }),
   merge_entries: obj({

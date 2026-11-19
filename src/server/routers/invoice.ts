@@ -4,17 +4,32 @@ import { z } from "zod";
 import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
 import { buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
+import { invoiceTotals } from "@/lib/invoice-list";
 import { summarizeInvoice } from "@/lib/invoice-summary";
 import { logError } from "@/lib/log";
 import { assertWithinQuota } from "@/lib/quotas";
 import { sha256Hex } from "@/lib/sha256";
 import { nextInvoiceNumber } from "@/lib/unbilled";
 
-import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo, withInvoiceLogos } from "../invoice-logos";
-import { assertNumberFree, buildInvoiceSnapshot, invoiceClient } from "../invoice-snapshot";
+import { countInvoicesByClient, sumInvoiceMatches } from "../invoice-counts";
+import {
+  invoiceFilters,
+  invoiceListAllInput,
+  invoiceOrder,
+  invoicePageInput,
+  invoiceSummarySelect,
+  invoiceWhere,
+  lateWhere,
+  readAllInvoicesPage,
+  readInvoicePage,
+  withSummaries,
+} from "../invoice-history";
+import { logoHashesOf, releaseUnusedInvoiceLogos, storeInvoiceLogo } from "../invoice-logos";
+import { openInvoice } from "../invoice-open";
+import { assertNumberFree, buildInvoiceSnapshot, invoiceClient, numberUsedError } from "../invoice-snapshot";
 import { dateSchema } from "../schemas/dates";
-import { type Context, protectedProcedure, router } from "../trpc";
-import { markInvoiced, unbilledByClient } from "../unbilled";
+import { protectedProcedure, router } from "../trpc";
+import { markInvoiced, unbilledByClient, undoInvoice } from "../unbilled";
 
 const MAX_SEARCH_CHARS = 50_000;
 
@@ -40,132 +55,73 @@ const invoiceInput = z
     message: `Choose a period of up to a year (${MAX_QUERY_DAYS} days).`,
   });
 
-const summary = {
-  id: true,
-  client_id: true,
-  client_name: true,
-  number: true,
-  issue_date: true,
-  due_date: true,
-  paid_date: true,
-  period_from: true,
-  period_to: true,
-  total_minutes: true,
-  total_cents: true,
-  currency: true,
-  notes: true,
-  summary: true,
-  created_at: true,
-} as const;
+export { INVOICE_LIST_ALL_PAGE } from "../invoice-history";
 
-type StoredInvoice = { id: string; client_id: string | null; snapshot: string; paid_date: string | null };
-
-/** One invoice as the screens read it: its frozen snapshot (old ones backfilled once) with the logos put back. */
-async function openInvoice(ctx: Pick<Context, "prisma"> & { userId: string }, inv: StoredInvoice) {
-  const snapshot = JSON.parse(inv.snapshot) as InvoiceSnapshot;
-
-  // Invoices issued before clients had a full name / address / logo have none of those keys
-  // (a deliberately empty value is stored as null, not absent). Backfill them once from the
-  // client's current details and freeze the result, so the old PDF isn't stuck without them.
-  const legacy = !("legalName" in snapshot.client) && !("address" in snapshot.client) && !("logo" in snapshot.client);
-  if (legacy && inv.client_id) {
-    const client = await ctx.prisma.client.findFirst({ where: { id: inv.client_id, user_id: ctx.userId } });
-    if (client) {
-      snapshot.client = {
-        ...snapshot.client,
-        legalName: client.legal_name,
-        address: client.address,
-        logo: client.logo,
-      };
-      await ctx.prisma.invoice.update({
-        where: { id: inv.id, user_id: ctx.userId },
-        data: { snapshot: JSON.stringify(snapshot), search_text: buildSearchText(snapshot) },
-      });
-    }
-  }
-
-  // Invoices issued before "how to pay" existed have no such key (an empty value is stored as
-  // null). Backfill once from the account's current instructions and freeze the result.
-  if (!("paymentInstructions" in snapshot.seller)) {
-    const user = await ctx.prisma.authUser.findUnique({
-      where: { id: ctx.userId },
-      select: { payment_instructions: true },
-    });
-    snapshot.seller = { ...snapshot.seller, paymentInstructions: user?.payment_instructions ?? null };
-    await ctx.prisma.invoice.update({
-      where: { id: inv.id, user_id: ctx.userId },
-      data: { snapshot: JSON.stringify(snapshot) },
-    });
-  }
-  return {
-    id: inv.id,
-    paidDate: inv.paid_date,
-    snapshot: await withInvoiceLogos(ctx.prisma, ctx.userId, snapshot),
-  };
-}
+/** The most invoices `list` returns. Only global search reads it, and it shows just the newest few matches. */
+const LIST_CAP = 200;
 
 export const invoiceRouter = router({
   /** History. `q` matches number, client, notes, project names and entry notes (case-insensitive). */
-  list: protectedProcedure
-    .input(
-      z
-        .object({
-          q: z.string().trim().max(100).optional(),
-          clientId: z.string().optional(),
-          status: z.enum(["all", "unpaid", "paid"]).optional(),
-          // Issue date range (inclusive, YYYY-MM-DD) and the order of the results.
-          from: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          to: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          sort: z.enum(["newest", "oldest", "highest", "lowest"]).optional(),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      const rows = await ctx.prisma.invoice.findMany({
-        where: {
-          user_id: ctx.userId,
-          ...((input?.from || input?.to) && {
-            issue_date: { ...(input.from && { gte: input.from }), ...(input.to && { lte: input.to }) },
-          }),
-          ...(input?.clientId && { client_id: input.clientId }),
-          ...(input?.status === "paid" && { paid_date: { not: null } }),
-          ...(input?.status === "unpaid" && { paid_date: null }),
-          ...(input?.q && { search_text: { contains: input.q.toLowerCase() } }),
-        },
-        select: summary,
-        orderBy:
-          input?.sort === "oldest"
-            ? [{ issue_date: "asc" }, { created_at: "asc" }]
-            : input?.sort === "highest"
-              ? [{ total_cents: "desc" }, { issue_date: "desc" }]
-              : input?.sort === "lowest"
-                ? [{ total_cents: "asc" }, { issue_date: "desc" }]
-                : [{ issue_date: "desc" }, { created_at: "desc" }],
-        take: 200,
+  list: protectedProcedure.input(invoiceFilters.optional()).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.invoice.findMany({
+      where: invoiceWhere(ctx, input),
+      select: invoiceSummarySelect,
+      orderBy: invoiceOrder(input?.sort),
+      take: LIST_CAP,
+    });
+    return withSummaries(ctx, rows);
+  }),
+
+  /**
+   * The history a page of `INVOICE_PAGE` at a time (Invoices' "Load more"), with `list`'s filters and the Waiting and
+   * Overdue tabs. Pass the previous page's `nextCursor` until it comes back null.
+   */
+  listPage: protectedProcedure.input(invoicePageInput).query(({ ctx, input }) => readInvoicePage(ctx, input)),
+
+  /**
+   * Every invoice, a page at a time like `entry.listAll` (Totals, Overdue, "Download everything"; `list` stops at the
+   * newest 200). `detail: "full"` adds each invoice's frozen snapshot; only the zip asks for it.
+   */
+  listAll: protectedProcedure.input(invoiceListAllInput).query(({ ctx, input }) => readAllInvoicesPage(ctx, input)),
+
+  /** How many invoices each client has, every invoice counted (Clients' "Invoices · N"). Sends no invoice rows. */
+  countByClient: protectedProcedure.query(({ ctx }) => countInvoicesByClient(ctx)),
+
+  /** How many invoices match the filters, and their unpaid cents per currency, over every match (MCP list_invoices). */
+  matchTotals: protectedProcedure
+    .input(invoiceFilters.omit({ sort: true }).optional())
+    .query(({ ctx, input }) => sumInvoiceMatches(ctx, input)),
+
+  /**
+   * The money line and the tab counts over EVERY invoice (issue 451: worked out in the browser they stopped at the
+   * newest 200). Amounts per currency, never added across currencies; unpaid includes late, as `moneyLines` does.
+   * `today` is the browser's date (the Worker runs in UTC).
+   */
+  totals: protectedProcedure.input(z.object({ today: dateSchema })).query(async ({ ctx, input }) => {
+    const sums = (where: object) =>
+      ctx.prisma.invoice.groupBy({
+        by: ["currency"],
+        where: { user_id: ctx.userId, ...where },
+        _sum: { total_cents: true },
+        _count: { _all: true },
       });
-      // Invoices made before summaries existed have an empty one: work it out once from the frozen
-      // snapshot and keep it (a few rows at most, the first time the history is opened).
-      return Promise.all(
-        rows.map(async (r) => {
-          if (r.summary) return r;
-          const row = await ctx.prisma.invoice.findFirst({
-            where: { id: r.id, user_id: ctx.userId },
-            select: { snapshot: true },
-          });
-          if (!row) return r;
-          const text = summarizeInvoice(JSON.parse(row.snapshot) as InvoiceSnapshot);
-          if (text)
-            await ctx.prisma.invoice.update({ where: { id: r.id, user_id: ctx.userId }, data: { summary: text } });
-          return { ...r, summary: text };
-        }),
-      );
-    }),
+    const [paid, unpaid, late] = await Promise.all([
+      sums({ paid_date: { not: null } }),
+      sums({ paid_date: null }),
+      sums(lateWhere(input.today)),
+    ]);
+    return invoiceTotals({ paid, unpaid, late });
+  }),
+
+  /** Every late, unpaid invoice, newest first (the Overdue tab). No cap: the invoice quota (2,000) bounds it. */
+  overdue: protectedProcedure.input(z.object({ today: dateSchema })).query(async ({ ctx, input }) => {
+    const rows = await ctx.prisma.invoice.findMany({
+      where: invoiceWhere(ctx, { status: "overdue", today: input.today }),
+      select: invoiceSummarySelect,
+      orderBy: invoiceOrder(),
+    });
+    return withSummaries(ctx, rows);
+  }),
 
   /** The frozen snapshot the PDF is rendered from. */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
@@ -249,37 +205,50 @@ export const invoiceRouter = router({
       (logo) => storeInvoiceLogo(ctx.prisma, ctx.userId, logo),
     );
 
-    const created = await ctx.prisma.invoice.create({
-      data: {
-        user_id: ctx.userId,
-        client_id: client.id,
-        client_name: client.name,
-        number: input.number,
-        issue_date: input.issueDate,
-        due_date: input.dueDate ?? null,
-        period_from: input.from,
-        period_to: input.to,
-        total_minutes: totals.totalMinutes,
-        total_cents: totalCents,
-        currency,
-        notes: input.notes,
-        snapshot: snapshotText,
-        search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),
-        summary: summarizeInvoice(snapshot),
-      },
-      select: { id: true },
-    });
+    // Two saves of the same number at once (double click, two tabs) both pass the check above; the unique index
+    // [user_id, number] stops the second one here. Only that clash says "already used": other failures stay as they are.
+    const created = await ctx.prisma.invoice
+      .create({
+        data: {
+          user_id: ctx.userId,
+          client_id: client.id,
+          client_name: client.name,
+          number: input.number,
+          issue_date: input.issueDate,
+          due_date: input.dueDate ?? null,
+          period_from: input.from,
+          period_to: input.to,
+          total_minutes: totals.totalMinutes,
+          total_cents: totalCents,
+          currency,
+          notes: input.notes,
+          snapshot: snapshotText,
+          search_text: buildSearchText(snapshot).slice(0, MAX_SEARCH_CHARS),
+          summary: summarizeInvoice(snapshot),
+        },
+        select: { id: true },
+      })
+      .catch((e: unknown) => {
+        if ((e as { code?: string } | null)?.code === "P2002") throw numberUsedError(input.number);
+        throw e;
+      });
     // Mark the time it bills, so it is never billed again. If another invoice took some of it in the meantime (two
     // made at once), this one is taken back: it would bill those hours twice.
     const billed = entries.filter((e) => e.project.billable && e.minutes > 0 && !e.started_at).map((e) => e.id);
     // Time billed again on purpose stays marked with the invoice it was first billed on.
-    const marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+    let marked: number;
+    try {
+      marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+    } catch (err) {
+      // D1 has no real transactions, so this is the rollback: a half-saved invoice would bill its unmarked hours twice.
+      // If the undo fails too (D1 fully down), the half-saved invoice is logged by id; the user still sees the first error.
+      await undoInvoice(ctx.prisma, ctx.userId, created.id).catch((undoErr: unknown) =>
+        logError("invoice_undo_failed", undoErr, { userId: ctx.userId, invoiceId: created.id }),
+      );
+      throw err;
+    }
     if (!input.includeInvoiced && marked < billed.length) {
-      await ctx.prisma.timeEntry.updateMany({
-        where: { user_id: ctx.userId, invoice_id: created.id },
-        data: { invoice_id: null },
-      });
-      await ctx.prisma.invoice.deleteMany({ where: { id: created.id, user_id: ctx.userId } });
+      await undoInvoice(ctx.prisma, ctx.userId, created.id);
       throw new TRPCError({
         code: "CONFLICT",
         message: "Some of this time was just put on another invoice. Check the period and try again.",

@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 
-export type RateLimitResult = { allowed: true } | { allowed: false; retryAfterSeconds: number };
+import { errorCode } from "@/lib/error-code";
 
-const errorCode = (e: unknown) => (e as { code?: string } | null)?.code;
+export type RateLimitResult = { allowed: true } | { allowed: false; retryAfterSeconds: number };
 
 type Verdict = { allowed: true } | { allowed: false; retryAfterSeconds: number };
 const verdict = (row: { count: number; reset_at: number }, limit: number, now: number): Verdict =>

@@ -7,6 +7,7 @@ import { hashToken, newToken } from "@/lib/email-token";
 import { appUrl } from "@/lib/mailer";
 import { cleanLabel, INVITE_DAYS, MAX_TEAM_MEMBERS, memberStatus } from "@/lib/team";
 
+import { replaceGrants } from "../team-grants";
 import { emailInvite } from "../team-invite";
 import { type Context, protectedProcedure, router } from "../trpc";
 
@@ -105,7 +106,10 @@ export const teamRouter = router({
     return { id: input.id, token, ...mail };
   }),
 
-  /** Replaces the clients a person may log time on. Only for someone not removed, and only the owner's own clients. */
+  /**
+   * Replaces the clients a person may log time on. Only for someone not removed, and only the owner's own clients.
+   * A failed save never leaves them with no clients (see `replaceGrants`).
+   */
   setClients: protectedProcedure
     .input(z.object({ id: z.string().max(100), clientIds }))
     .mutation(async ({ ctx, input }) => {
@@ -116,10 +120,7 @@ export const teamRouter = router({
       const ids = [...new Set(input.clientIds)];
       const owned = await ctx.prisma.client.count({ where: { user_id: ctx.userId, id: { in: ids } } });
       if (owned !== ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found." });
-      await ctx.prisma.teamMemberClient.deleteMany({ where: { team_member_id: member.id } });
-      await ctx.prisma.teamMemberClient.createMany({
-        data: ids.map((client_id) => ({ team_member_id: member.id, client_id })),
-      });
+      await replaceGrants(ctx.prisma, member.id, ids);
       return { id: member.id, clientIds: ids };
     }),
 

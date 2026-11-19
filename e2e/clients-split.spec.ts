@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { addDays } from "../src/lib/dates";
-import { expect, signUpByApi, test, today, trpc } from "./helpers";
+import { expect, gotoClient, signUpByApi, startFreshAccount, test, today, trpc } from "./helpers";
 
 // Clients as a split view with a bill bar (issue 238, design 3 variation B): the list groups the clients with time to
 // bill first, each with its amount; the chosen client's profile has three calm figures, tabs, and a bill bar pinned to
@@ -181,6 +181,24 @@ test("a new client opens its own profile, which says how to start", async ({ pag
   await expect(empty.getByText("New project for Empty Co")).toBeVisible();
   await empty.getByRole("button", { name: "Cancel" }).first().click();
   await expect(add).toHaveAttribute("aria-expanded", "false");
+});
+
+// Nightly phone failures (issue 481): specs that opened /dashboard/clients and clicked "Edit General" straight away waited
+// 20 s on a phone, where that address is the list screen and a client's profile is a second screen.
+test("on a phone /dashboard/clients is the list screen: a client's Edit button shows once the client is picked", async ({
+  page,
+  isPhone,
+}) => {
+  await startFreshAccount(page, "Acme Studio");
+  await page.goto("/dashboard/clients");
+  await expect(page.getByRole("heading", { name: "Clients", level: 1 })).toBeVisible();
+  const edit = page.getByRole("button", { name: "Edit General", exact: true });
+  if (isPhone) {
+    await expect(page.locator('[data-view="list"]')).toBeVisible();
+    await expect(edit).toHaveCount(0); // the profile is on its own screen: a spec must pick the client first
+  }
+  await gotoClient(page, "Acme Studio");
+  await expect(edit).toBeVisible();
 });
 
 test("an unknown or archived client's address says so and points to the archive", async ({ page }) => {

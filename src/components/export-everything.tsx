@@ -10,6 +10,7 @@ import { DocButton } from "@/components/doc-button";
 import { Button } from "@/components/ui/button";
 import { toISODate } from "@/lib/dates";
 import { feature } from "@/lib/features";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { trpc } from "@/lib/trpc";
 
 /** Everything the signed-in user has logged, all clients and all time, as one zip. */
@@ -27,34 +28,6 @@ export function ExportEverything({
   const utils = trpc.useUtils();
   const [busy, setBusy] = useState(false);
 
-  /** Every entry, fetched a page at a time so no single response is huge. */
-  async function fetchAllEntries() {
-    const all: Awaited<ReturnType<typeof utils.entry.listAll.fetch>>["items"] = [];
-    let cursor: string | null = null;
-    for (let page = 0; page < 200; page++) {
-      const res: Awaited<ReturnType<typeof utils.entry.listAll.fetch>> = await utils.entry.listAll.fetch({ cursor });
-      all.push(...res.items);
-      if (!res.nextCursor) break;
-      cursor = res.nextCursor;
-    }
-    return all;
-  }
-
-  /** Every expense and trip, a page at a time like the entries. */
-  async function fetchAllExpenses() {
-    const all: Awaited<ReturnType<typeof utils.expense.listAll.fetch>>["items"] = [];
-    let cursor: string | null = null;
-    for (let page = 0; page < 200; page++) {
-      const res: Awaited<ReturnType<typeof utils.expense.listAll.fetch>> = await utils.expense.listAll.fetch({
-        cursor,
-      });
-      all.push(...res.items);
-      if (!res.nextCursor) break;
-      cursor = res.nextCursor;
-    }
-    return all;
-  }
-
   async function run() {
     setBusy(true);
     // The zip code loads on the first click, like exceljs and jspdf, so the pages with this button load less (issue 425).
@@ -68,14 +41,16 @@ export function ExportEverything({
     }
     const { downloadExportZip, planExport } = exportAll;
     try {
-      // Expenses are a hidden feature: with the switch off there is no request for them at all.
-      const [entries, invoices, expenses] = await Promise.all([
-        fetchAllEntries(),
-        utils.invoice.list.fetch(),
-        feature("expenses") ? fetchAllExpenses() : [],
+      // Every row of each list, a page at a time (invoices too: `invoice.list` stops at the newest 200, issue 451),
+      // each invoice with its frozen snapshot. Expenses are a hidden feature: with the switch off there is no request.
+      const [entries, invoices, expenses, records] = await Promise.all([
+        fetchAllPages((cursor) => utils.entry.listAll.fetch({ cursor })),
+        fetchAllPages((cursor) => utils.invoice.listAll.fetch({ cursor, detail: "full" })),
+        feature("expenses") ? fetchAllPages((cursor) => utils.expense.listAll.fetch({ cursor })) : [],
+        utils.dataExport.records.fetch(),
       ]);
       const today = toISODate(new Date());
-      const plan = await planExport({ entries, invoices, expenses, today, accountCurrency });
+      const plan = await planExport({ entries, invoices, expenses, records, today, accountCurrency });
       if (plan.entryCount === 0) {
         toast.info("You haven't logged any time yet, so there is nothing to export.");
         return;

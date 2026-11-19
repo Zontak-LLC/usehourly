@@ -5,16 +5,22 @@ import { z } from "zod";
 import { type BudgetPeriod, type BudgetUnit, budgetStatus, usedAmount } from "@/lib/budget";
 import { DATE_RE, isRealDate } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
+import { inGroups } from "@/lib/entry-sync";
 import { parseWebsite } from "@/lib/web-address";
 
 import { projectLogoSchema } from "../logo-schema";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
 import { protectedProcedure, router } from "../trpc";
+import { CHUNK } from "../unbilled";
+
+/** Projects per entriesOnDays query; the days fill the rest, so a query never passes D1's 100 bound values. */
+const PROJECTS_PER_DAYS_QUERY = 45;
 
 /**
- * The entries of some projects that fall on any of the given days. D1 allows only 100 bound values in one query, so
- * the days go in groups (the account, the projects and the days all count as values).
+ * The entries of some projects that fall on any of the given days. D1 allows only 100 bound values in one query (the
+ * account, the projects and the days all count), so the projects go in groups of PROJECTS_PER_DAYS_QUERY and the days
+ * in groups that fill the rest: at most 1 + 45 + 45 = 91 values per query.
  */
 async function entriesOnDays(
   prisma: PrismaClient,
@@ -22,18 +28,15 @@ async function entriesOnDays(
   projectIds: string[],
   days: string[],
 ): Promise<{ project_id: string; minutes: number }[]> {
-  const perQuery = Math.max(1, 90 - projectIds.length);
-  const groups: string[][] = [];
-  for (let i = 0; i < days.length; i += perQuery) groups.push(days.slice(i, i + perQuery));
-  const rows = await Promise.all(
-    groups.map((group) =>
+  const queries = inGroups(projectIds, PROJECTS_PER_DAYS_QUERY).flatMap((projectGroup) =>
+    inGroups(days, 90 - projectGroup.length).map((dayGroup) =>
       prisma.timeEntry.findMany({
-        where: { user_id: userId, project_id: { in: projectIds }, date: { in: group } },
+        where: { user_id: userId, project_id: { in: projectGroup }, date: { in: dayGroup } },
         select: { project_id: true, minutes: true },
       }),
     ),
   );
-  return rows.flat();
+  return (await Promise.all(queries)).flat();
 }
 
 // The text as typed: parseWebsite (on the server too, since the browser's check can be skipped) gives the plain error.
@@ -245,20 +248,25 @@ export const projectRouter = router({
       const monthIds = projects.filter((p) => p.budget_period !== "total").map((p) => p.id);
       const totalIds = projects.filter((p) => p.budget_period === "total").map((p) => p.id);
       const skipDays = await nonBillableDates(ctx.prisma, ctx.userId);
+      // The ids go in groups of CHUNK, so a big account never passes D1's 100 bound values in one query.
       const [monthEntries, totalSums, skippedEntries] = await Promise.all([
-        monthIds.length
-          ? ctx.prisma.timeEntry.findMany({
-              where: { user_id: ctx.userId, project_id: { in: monthIds }, date: { gte: input.from, lte: input.to } },
+        Promise.all(
+          inGroups(monthIds, CHUNK).map((group) =>
+            ctx.prisma.timeEntry.findMany({
+              where: { user_id: ctx.userId, project_id: { in: group }, date: { gte: input.from, lte: input.to } },
               select: { project_id: true, date: true, minutes: true },
-            })
-          : [],
-        totalIds.length
-          ? ctx.prisma.timeEntry.groupBy({
+            }),
+          ),
+        ).then((groups) => groups.flat()),
+        Promise.all(
+          inGroups(totalIds, CHUNK).map((group) =>
+            ctx.prisma.timeEntry.groupBy({
               by: ["project_id"],
-              where: { user_id: ctx.userId, project_id: { in: totalIds } },
+              where: { user_id: ctx.userId, project_id: { in: group } },
               _sum: { minutes: true },
-            })
-          : [],
+            }),
+          ),
+        ).then((groups) => groups.flat()),
         totalIds.length && skipDays.size > 0 ? entriesOnDays(ctx.prisma, ctx.userId, totalIds, [...skipDays]) : [],
       ]);
       const minutesByProject = new Map<string, number>();
