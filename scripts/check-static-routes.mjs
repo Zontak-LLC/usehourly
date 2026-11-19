@@ -11,13 +11,11 @@ import { pathToFileURL } from "node:url";
 /**
  * The routes allowed to be static: the landing page, and what was already static before it (recorded from a real
  * `next build` on 2026-11-04): metadata files with no scripts, and Next.js's own global-error page. `/_not-found` is
- * Next.js's built-in fallback, static since there is no app-wide root layout; nothing reaches it, because
- * `(app)/[...missing]` answers every unknown address with the (app) 404 and its nonce.
+ * not on the list: src/app/global-not-found.tsx reads the proxy's nonce, so a static 404 would not hydrate.
  */
 export const STATIC_ALLOWED = new Set([
   "/",
   "/_global-error",
-  "/_not-found",
   "/apple-icon.png",
   "/favicon.ico",
   "/icon.svg",
@@ -38,7 +36,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const wrong = unexpectedStaticRoutes(JSON.parse(readFileSync(file, "utf8")));
   if (wrong.length > 0) {
     console.error(
-      `Static by mistake: ${wrong.join(", ")}. Only / may be static; a page under src/app/(app) must read headers() ` +
+      `Static by mistake: ${wrong.join(", ")}. Only / may be static; a page under src/app/(main) must read headers() ` +
         "(its root layout does) so it gets the CSP nonce. A new static metadata file goes in STATIC_ALLOWED.",
     );
     process.exit(1);

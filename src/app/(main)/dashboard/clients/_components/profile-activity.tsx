@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { InvoiceLoadMore } from "@/app/(app)/dashboard/invoices/_components/invoice-load-more";
+import { InvoiceLoadMore } from "@/app/(main)/dashboard/invoices/_components/invoice-load-more";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvoicePages } from "@/components/use-invoice-pages";
 import { shortDay } from "@/lib/client-list";

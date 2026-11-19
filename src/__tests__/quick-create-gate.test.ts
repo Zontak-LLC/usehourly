@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { quickCreateMinutes } from "@/app/(app)/dashboard/month/_components/quick-create-gate";
+import { quickCreateMinutes } from "@/app/(main)/dashboard/month/_components/quick-create-gate";
 import { readTypedDuration } from "@/lib/typed-duration";
 
 // Month's several-days panel is hidden while FEATURES.multiDay is off, so its e2e case is skipped; this pins when

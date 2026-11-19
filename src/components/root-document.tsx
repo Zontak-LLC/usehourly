@@ -13,7 +13,7 @@ import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provi
 import "@/app/globals.css";
 
 /**
- * The `<html>` tree of every page, rendered by both root layouts. `(app)` passes the request's CSP nonce; `(landing)`
+ * The `<html>` tree of every page, rendered by both root layouts and the global 404. `(main)` passes the request's CSP nonce; `(landing)`
  * passes none, so `/` can be built once as a static file (its scripts are allowed by hash, scripts/landing-static.mjs).
  */
 export function RootDocument({ nonce, children }: Readonly<{ nonce?: string; children: ReactNode }>) {

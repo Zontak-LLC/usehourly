@@ -1,6 +1,6 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
-import { securityHeaders } from "./src/lib/security-headers.mjs";
+import { securityHeaders } from "./src/lib/security-policy.mjs";
 
 /** Where usehourly.app/nightshift sends people (the Claude Night Shift board). */
 export const NIGHT_SHIFT_URL = "https://claude.ai/artifact/W2bbs2n4KaQDUtxo831tV7";
@@ -15,7 +15,7 @@ if (process.env.NODE_ENV === "development" || process.env.E2E_SERVE === "1") {
   );
 }
 
-// The Content-Security-Policy is built per request (a fresh nonce for scripts) in src/proxy.ts; see src/lib/csp.ts.
+// The Content-Security-Policy is built per request (a fresh nonce for scripts) in src/proxy.ts; see src/lib/security-policy.mjs.
 // The static landing page `/` gets its policy and these headers from `_headers` (scripts/landing-static.mjs).
 
 /** @type {import('next').NextConfig} */
@@ -25,6 +25,10 @@ const nextConfig = {
   // Development only: lets a second browser session on 127.0.0.1 (separate cookies from localhost) load the app's scripts.
   allowedDevOrigins: ["127.0.0.1"],
   reactCompiler: true,
+  experimental: {
+    // Two root layouts leave no shared layout for an unmatched address; src/app/global-not-found.tsx renders its 404.
+    globalNotFound: true,
+  },
   // Do not announce the framework in an X-Powered-By header.
   poweredByHeader: false,
   // Keep Prisma external so workerd resolves the bare specifier OpenNext bundles.
@@ -38,7 +42,7 @@ const nextConfig = {
     return [
       // The service worker script is always re-checked, so a new version reaches people promptly.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
-      { source: "/(.*)", headers: securityHeaders(process.env.NEXT_PUBLIC_APP_ENV) },
+      { source: "/(.*)", headers: securityHeaders({ isStaging: process.env.NEXT_PUBLIC_APP_ENV === "staging" }) },
     ];
   },
   async redirects() {

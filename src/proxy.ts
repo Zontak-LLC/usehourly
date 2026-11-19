@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import NextAuth from "next-auth";
 
 import authConfig from "@/lib/auth.config";
-import { buildCsp, newNonce } from "@/lib/csp";
+import { newNonce } from "@/lib/csp";
 import { accessDecision, DASHBOARD_PATH, isStrayFormPost, LOGIN_PATH } from "@/lib/route-access";
+import { buildCsp } from "@/lib/security-policy.mjs";
 
 const { auth } = NextAuth(authConfig);
 
@@ -25,7 +26,11 @@ export default auth((req) => {
   // its own inline scripts. The root layout reads `x-nonce` for the theme boot script.
   const nonce = newNonce();
   const isProd = process.env.NODE_ENV === "production";
-  const csp = buildCsp(nonce, isProd, isProd && process.env.E2E_SERVE !== "1");
+  const csp = buildCsp({
+    scriptSources: [`'nonce-${nonce}'`],
+    isProd,
+    upgradeToHttps: isProd && process.env.E2E_SERVE !== "1",
+  });
   const headers = new Headers(req.headers);
   headers.set("x-nonce", nonce);
   headers.set("content-security-policy", csp);
