@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { addDays } from "@/lib/dates";
 import { invoiceState } from "@/lib/invoice-list";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
-import { byOrder, type Invoice, type InvoiceOrder } from "./helpers/memory-billing";
+import { fakeInvoices, type HistoryRow as Row } from "./helpers/memory-invoice-history";
 
 /*
  * Issue 499: Invoices showed only the newest 200 invoices (`invoice.list` stops there), so a long-time user could not
@@ -16,8 +16,6 @@ import { byOrder, type Invoice, type InvoiceOrder } from "./helpers/memory-billi
 const TODAY = "2026-11-18";
 const caller = (prisma: unknown, userId: string | null = "u1") =>
   createCallerFactory(appRouter)({ prisma, userId, session: userId ? { user: { id: userId } } : null } as never);
-
-type Row = Invoice & { search_text: string; snapshot: string };
 
 /** Invoice n of u1, issued n + 1 days before today (n = 0 is the newest), paid, with its search text and snapshot. */
 const row = (n: number, over: Partial<Row> = {}): Row => {
@@ -47,68 +45,6 @@ const row = (n: number, over: Partial<Row> = {}): Row => {
 };
 const rows = (count: number, over: (n: number) => Partial<Row> = () => ({})) =>
   Array.from({ length: count }, (_, n) => row(n, over(n)));
-
-type DueWhere = null | { not?: null; lt?: string; gte?: string };
-type Where = {
-  user_id?: string;
-  id?: string;
-  client_id?: string;
-  paid_date?: null | { not: null };
-  due_date?: DueWhere;
-  issue_date?: { gte?: string; lte?: string };
-  search_text?: { contains: string };
-  OR?: Where[];
-};
-
-const dueMatches = (due: string | null | undefined, w: DueWhere) =>
-  w === null
-    ? !due
-    : Boolean(due) && (w.lt === undefined || (due ?? "") < w.lt) && (w.gte === undefined || (due ?? "") >= w.gte);
-
-/** Prisma's `where` over the fake table: the fields the history filters on, `OR` included. */
-function matches(i: Row, w: Where): boolean {
-  if (w.user_id !== undefined && i.user_id !== w.user_id) return false;
-  if (w.id !== undefined && i.id !== w.id) return false;
-  if (w.client_id !== undefined && i.client_id !== w.client_id) return false;
-  if ("paid_date" in w && (w.paid_date === null ? Boolean(i.paid_date) : !i.paid_date)) return false;
-  if ("due_date" in w && !dueMatches(i.due_date, w.due_date ?? null)) return false;
-  const issued = i.issue_date ?? "";
-  if (w.issue_date?.gte && issued < w.issue_date.gte) return false;
-  if (w.issue_date?.lte && issued > w.issue_date.lte) return false;
-  if (w.search_text && !i.search_text.includes(w.search_text.contains)) return false;
-  return !w.OR || w.OR.some((o) => matches(i, o));
-}
-
-/** A fake `invoice` table honouring `where`, `orderBy`, `take` and `cursor` (which starts AT its row, skip 0). */
-function fakeInvoices(table: Row[]) {
-  const invoice = {
-    findMany: vi.fn(
-      async (args: {
-        where: Where;
-        select?: Record<string, true>;
-        orderBy?: InvoiceOrder;
-        take?: number;
-        cursor?: { id: string };
-        skip?: number;
-      }) => {
-        const found = table.filter((i) => matches(i, args.where));
-        if (args.orderBy) found.sort(byOrder(args.orderBy));
-        const from = args.cursor ? found.findIndex((i) => i.id === args.cursor?.id) : 0;
-        if (from < 0) return [];
-        const start = from + (args.skip ?? 0);
-        return found.slice(start, args.take === undefined ? undefined : start + args.take).map((i) => ({ ...i }));
-      },
-    ),
-    findFirst: vi.fn(async ({ where }: { where: Where }) => table.find((i) => matches(i, where)) ?? null),
-    update: vi.fn(async ({ where, data }: { where: { id: string; user_id: string }; data: Partial<Row> }) => {
-      const hit = table.find((i) => i.id === where.id && i.user_id === where.user_id);
-      if (!hit) throw new Error("Record to update not found.");
-      Object.assign(hit, data);
-      return { id: hit.id };
-    }),
-  };
-  return { prisma: { invoice }, invoice };
-}
 
 type PageInput = Parameters<ReturnType<typeof caller>["invoice"]["listPage"]>[0];
 

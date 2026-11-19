@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clients: a client's Invoices tab reaches every invoice (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 509. The client profile's Invoices tab, for a client with 601 invoices. The tab label counts every
+  invoice from the server (invoice.countByClient): "Invoices · 601", not the few found among the newest 200. The tab
+  lists the client's invoices newest first, 200 at a time (invoice.listPage({ clientId })), in the same rows as today
+  (number; "Issued <day> · <state>"; amount). While the server holds more, the shared InvoiceLoadMore line from Invoices
+  sits under the last row: "Showing 200 of 601" and an outline "Load more" button (the same component, not a copy).
+  "All invoices" stays at the bottom. While the first page loads, a skeleton shows, never another client's rows.
+  No new colour, no new control. Same layout on a phone (the frames below are 640 px and 390 px wide).
+-->
+<style>
+  :root {
+    --background: #eef2f7; --foreground: #1c2434; --card: #ffffff; --border: #dbe2ec;
+    --muted: #e3e9f1; --muted-fg: #586377; --tint: #e6ecf5;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: var(--background); color: var(--foreground);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { margin: 0 0 24px; max-width: 75ch; color: var(--muted-fg); }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 28px 0 10px;
+    color: var(--muted-fg); }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+    display: flex; flex-direction: column; gap: 16px; }
+  .wide { width: 640px; } .phone { width: 390px; padding: 12px; }
+  .head { display: flex; align-items: center; gap: 12px; }
+  .initial { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; font-weight: 700;
+    background: #dbe7fb; color: #1c2434; }
+  .name { font: 700 24px/1.1 system-ui, sans-serif; margin: 0; }
+  .facts { color: color-mix(in oklab, var(--foreground) 70%, transparent); font-size: 14px; }
+  .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab { min-height: 44px; padding-bottom: 4px; white-space: nowrap; background: none; border: 0; font: inherit;
+    color: color-mix(in oklab, var(--foreground) 70%, transparent); }
+  .tab.on { font-weight: 600; color: var(--foreground); box-shadow: inset 0 -2px 0 var(--foreground); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0 12px;
+    border-top: 1px solid var(--border); padding: 10px 12px; }
+  li:first-child { border-top: 0; }
+  .num { font-weight: 500; }
+  .sub { display: block; color: color-mix(in oklab, var(--foreground) 70%, transparent); }
+  .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .gap { text-align: center; color: var(--muted-fg); padding: 6px; font-size: 12px; }
+  .more { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 0; }
+  .more p { margin: 0; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
+  .btn { height: 40px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card);
+    font: 500 14px system-ui, sans-serif; color: var(--foreground); }
+  .link { align-self: flex-start; padding: 8px 12px; text-decoration: underline; text-underline-offset: 4px; }
+  .skeleton { height: 96px; border-radius: 8px; background: var(--muted); }
+</style>
+</head>
+<body>
+<h1>Clients · a client's Invoices tab reaches every invoice</h1>
+<p class="note">Northwind Studio has 601 invoices. The tab label counts all of them; the tab lists 200 at a time with the
+same "Showing 200 of 601 · Load more" line Invoices uses. The rows themselves do not change.</p>
+
+<h2>Desktop · first page in</h2>
+<div class="frames">
+  <section class="card wide" aria-label="Northwind Studio">
+    <div class="head">
+      <div class="initial">N</div>
+      <div><p class="name">Northwind Studio</p><div class="facts">hello@northwind.studio · usually $110/h</div></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button">Projects · 2</button>
+      <button class="tab" type="button">Time</button>
+      <button class="tab on" type="button">Invoices · 601</button>
+      <button class="tab" type="button">Billing</button>
+    </div>
+    <div>
+      <ul>
+        <li><span><span class="num">INV-2026-014</span><span class="sub">Issued Nov 3 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+        <li><span><span class="num">INV-2099-600</span><span class="sub">Issued Nov 3 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+        <li><span><span class="num">INV-2099-599</span><span class="sub">Issued Nov 3 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+      </ul>
+      <div class="gap">… 197 more rows …</div>
+      <div class="more">
+        <p>Showing 200 of 601</p>
+        <button class="btn" type="button">Load more</button>
+      </div>
+    </div>
+    <a class="link" href="/dashboard/invoices">All invoices</a>
+  </section>
+
+  <section class="card phone" aria-label="Northwind Studio on a phone">
+    <div class="head">
+      <div class="initial">N</div>
+      <div><p class="name">Northwind Studio</p></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button">Projects · 2</button>
+      <button class="tab" type="button">Time</button>
+      <button class="tab on" type="button">Invoices · 601</button>
+      <button class="tab" type="button">Billing</button>
+    </div>
+    <div>
+      <ul>
+        <li><span><span class="num">INV-2099-201</span><span class="sub">Issued Nov 3 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+        <li><span><span class="num">INV-2099-200</span><span class="sub">Issued Nov 3 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+      </ul>
+      <div class="more">
+        <p>Showing 400 of 601</p>
+        <button class="btn" type="button">Load more</button>
+      </div>
+    </div>
+    <a class="link" href="/dashboard/invoices">All invoices</a>
+  </section>
+</div>
+
+<h2>The last page in · the line goes away</h2>
+<div class="frames">
+  <section class="card wide" aria-label="Northwind Studio, every invoice loaded">
+    <ul>
+      <li><span><span class="num">INV-2099-001</span><span class="sub">Issued Nov 3 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+      <li><span><span class="num">INV-1999-001</span><span class="sub">Issued Jan 1, 2000 · paid Nov 10</span></span><span class="amt">$4,180.00</span></li>
+    </ul>
+    <a class="link" href="/dashboard/invoices">All invoices</a>
+  </section>
+</div>
+
+<h2>First page loading · another client picked</h2>
+<div class="frames">
+  <section class="card wide" aria-label="My own business, loading">
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button">Projects · 1</button>
+      <button class="tab" type="button">Time</button>
+      <button class="tab on" type="button">Invoices</button>
+      <button class="tab" type="button">Billing</button>
+    </div>
+    <div class="skeleton"></div>
+    <a class="link" href="/dashboard/invoices">All invoices</a>
+  </section>
+  <section class="card wide" aria-label="My own business, no invoices">
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button">Projects · 1</button>
+      <button class="tab" type="button">Time</button>
+      <button class="tab on" type="button">Invoices</button>
+      <button class="tab" type="button">Billing</button>
+    </div>
+    <p style="margin:0;padding:12px;color:color-mix(in oklab, var(--foreground) 70%, transparent)">No invoices for My own business yet.</p>
+    <a class="link" href="/dashboard/invoices">All invoices</a>
+  </section>
+</div>
+</body>
+</html>

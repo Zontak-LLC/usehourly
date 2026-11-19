@@ -28,7 +28,7 @@ export function WarmPages() {
           void utils.entry.nonBillableDays.prefetch(range);
         }
         void utils.invoice.listPage.prefetchInfinite({}); // Invoices' All tab, its first page
-        void utils.invoice.list.prefetch(); // no input, as on Clients
+        void utils.invoice.countByClient.prefetch(); // Clients' invoice count per client
         void utils.invoice.totals.prefetch({ today });
         void utils.clients.list.prefetch();
       };

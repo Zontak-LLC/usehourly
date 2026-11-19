@@ -10,6 +10,7 @@ import { DocButton } from "@/components/doc-button";
 import { Button } from "@/components/ui/button";
 import { toISODate } from "@/lib/dates";
 import { feature } from "@/lib/features";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { trpc } from "@/lib/trpc";
 
 /** Everything the signed-in user has logged, all clients and all time, as one zip. */
@@ -38,7 +39,7 @@ export function ExportEverything({
       setBusy(false);
       return;
     }
-    const { downloadExportZip, fetchAllPages, planExport } = exportAll;
+    const { downloadExportZip, planExport } = exportAll;
     try {
       // Every row of each list, a page at a time (invoices too: `invoice.list` stops at the newest 200, issue 451),
       // each invoice with its frozen snapshot. Expenses are a hidden feature: with the switch off there is no request.

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { addDays } from "@/lib/dates";
-import { fetchAllPages, planExport } from "@/lib/export-all";
+import { planExport } from "@/lib/export-all";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { moneyLines, tabCounts } from "@/lib/invoice-list";
 import { daysLate } from "@/lib/invoice-mail";
 import { appRouter } from "@/server/routers/_app";

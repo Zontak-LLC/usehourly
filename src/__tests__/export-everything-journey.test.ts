@@ -1,8 +1,9 @@
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 
-import { type ExportFile, fetchAllPages, planExport, zipBytes } from "@/lib/export-all";
+import { type ExportFile, planExport, zipBytes } from "@/lib/export-all";
 import type { ExportRecords } from "@/lib/export-records";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import type { SheetEntry } from "@/lib/timesheet";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";

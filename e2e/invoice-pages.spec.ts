@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
-import { copyInvoices, expect, invoiceRows, openInvoice, sql, startDemo, test } from "./helpers";
+import { copyInvoices, expect, invoiceRows, openInvoice, renumberCopy, sql, startDemo, test } from "./helpers";
 import { createHash, randomBytes } from "node:crypto";
 
 const numbersOf = (rows: ReturnType<typeof invoiceRows>) =>
@@ -40,12 +40,7 @@ test.describe("Load more reads older invoices 200 at a time (issue 499)", () => 
   async function seed602(page: Page) {
     await startDemo(page);
     const userId = await copyInvoices(page, 600);
-    sql(
-      `UPDATE invoices SET number = '${OLDEST}', issue_date = '2000-01-01',
-        search_text = '${OLDEST.toLowerCase()} ' || search_text,
-        snapshot = json_set(snapshot, '$.number', '${OLDEST}', '$.issueDate', '2000-01-01')
-      WHERE user_id = '${userId}' AND number = 'INV-2099-600'`.replace(/\s+/g, " "),
-    );
+    renumberCopy(userId, { from: "INV-2099-600", to: OLDEST, issueDate: "2000-01-01" });
     await page.goto("/dashboard/invoices");
   }
 

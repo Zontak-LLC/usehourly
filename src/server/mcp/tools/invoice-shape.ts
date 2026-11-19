@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
+import { fetchAllPages } from "@/lib/fetch-all-pages";
+
 import type { Caller } from "./core";
 import { hours, round2 } from "./format";
 
@@ -43,11 +45,21 @@ export function shapeInvoiceSummary(i: {
   };
 }
 
+/**
+ * The id of the caller's invoice `ref` names: a uuid is taken as it is, anything else as an invoice number (any case),
+ * looked for among EVERY invoice whose search text holds it, however old. Throws NOT_FOUND when no number matches.
+ */
 export async function findInvoiceId(c: Caller, ref: string): Promise<string> {
   // Ids are uuids; anything else is treated as an invoice number such as INV-2026-004.
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref)) return ref;
-  const rows = await c.invoice.list({ q: ref });
-  const hit = rows.find((r) => r.number.toLowerCase() === ref.toLowerCase());
+  const wanted = ref.toLowerCase();
+  // Stops at the page that holds the number: an exact number is nearly always on the first one.
+  const hits = await fetchAllPages(async (cursor) => {
+    const page = await c.invoice.listPage({ q: ref, cursor });
+    const found = page.items.filter((r) => r.number.toLowerCase() === wanted);
+    return { items: found, nextCursor: found.length ? null : page.nextCursor };
+  });
+  const hit = hits[0];
   if (!hit) throw new TRPCError({ code: "NOT_FOUND", message: `No invoice numbered "${ref}".` });
   return hit.id;
 }

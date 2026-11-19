@@ -47,6 +47,7 @@ describe("the copy of your last data kept for offline", () => {
       "project.budgets",
       "invoice.list",
       "invoice.listPage",
+      "invoice.countByClient",
       "report.annual",
     ]) {
       expect(persistable(key(ok))).toBe(true);

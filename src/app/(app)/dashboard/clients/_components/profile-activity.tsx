@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 
+import { InvoiceLoadMore } from "@/app/(app)/dashboard/invoices/_components/invoice-load-more";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInvoicePages } from "@/components/use-invoice-pages";
 import { shortDay } from "@/lib/client-list";
 import { formatDuration } from "@/lib/duration";
 import { ROW_FIGURE } from "@/lib/figures";
@@ -58,24 +60,31 @@ export function ProfileTime({
   );
 }
 
-type InvoiceRow = InvoiceFact & { id: string; total_cents: number; currency: string };
-
-/** The Invoices tab: the client's invoices (from the list the page already has), newest first, with their state in words. */
+/**
+ * The Invoices tab: the client's invoices, newest first, with their state in words, 200 at a time with "Load more"
+ * (asked for only when the tab is opened). `count` is the client's invoice count from the server, every invoice.
+ */
 export function ProfileInvoices({
   client: c,
-  invoices,
+  count: invoiceCount,
   today,
 }: {
   client: ClientRow;
-  invoices: readonly InvoiceRow[];
+  count: number;
   today: string | null;
 }) {
-  const mine = invoices.filter((i) => i.client_id === c.id);
+  const pages = useInvoicePages({ clientId: c.id });
+  // Rows kept from another client's tab are never drawn: a skeleton shows until this client's first page is in.
+  const mine = pages.isStandIn ? undefined : pages.data;
   return (
     <div className="flex flex-col gap-2">
-      {mine.length === 0 && <p className="px-3 py-3 text-foreground/70 text-sm">No invoices for {c.name} yet.</p>}
+      {!mine && !pages.error && <Skeleton className="h-24 w-full" />}
+      {pages.error && (
+        <p className="px-3 py-3 text-destructive text-sm">Couldn't load invoices: {pages.error.message}</p>
+      )}
+      {mine?.length === 0 && <p className="px-3 py-3 text-foreground/70 text-sm">No invoices for {c.name} yet.</p>}
       <ul className="empty:hidden">
-        {mine.map((inv) => (
+        {(mine ?? []).map((inv) => (
           <li
             key={inv.id}
             className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-t px-3 py-2.5 text-sm first:border-t-0"
@@ -90,6 +99,11 @@ export function ProfileInvoices({
           </li>
         ))}
       </ul>
+      {mine && pages.hasMore && (
+        <InvoiceLoadMore
+          more={{ loaded: mine.length, total: invoiceCount, isLoading: pages.isLoadingMore, onLoad: pages.loadMore }}
+        />
+      )}
       <Link href="/dashboard/invoices" className="self-start px-3 py-2 text-sm underline underline-offset-4">
         All invoices
       </Link>

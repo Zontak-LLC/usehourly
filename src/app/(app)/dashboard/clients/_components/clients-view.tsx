@@ -84,7 +84,7 @@ export function ClientsView() {
   // Every query the page needs starts in this render, so they go out as ONE batched request.
   const totals = trpc.project.totals.useQuery(month);
   const budgets = trpc.project.budgets.useQuery(month, { enabled: feature("budgets") });
-  const invoices = trpc.invoice.list.useQuery();
+  const invoiceCounts = trpc.invoice.countByClient.useQuery();
   const unbilled = useUnbilled();
   const today = useToday();
 
@@ -247,7 +247,7 @@ export function ClientsView() {
               budgets={budgets.data}
               editing={editing}
               unbilled={unbilledOf(selected.id)}
-              invoices={invoices.data ?? []}
+              invoiceCount={invoiceCounts.data?.find((n) => n.clientId === selected.id)?.count ?? 0}
               month={month}
               today={today}
               onArchiveClient={() => void archive({ kind: "client", id: selected.id, name: selected.name })}
