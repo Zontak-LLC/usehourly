@@ -238,8 +238,8 @@ reads the proxy's nonce. `npm run build` fails if that 404 (`/_not-found`) or an
   and Next.js's own `self.__next_f.push` scripts; no nonce, no `'unsafe-inline'`), plus the same security headers
   `next.config.mjs` sets on every other page (HSTS, X-Frame-Options and the rest, X-Robots-Tag on staging). Both come
   from `src/lib/security-policy.mjs`. Each build (staging, production) computes its own hashes from its own HTML.
-- **Its three callers:** `npm run deploy` (the CircleCI deploy job), `npm run preview` and `scripts/staging-deploy.mjs`
-  (`npm run staging:deploy`). `src/__tests__/landing-static-callers.test.ts` fails if one of them loses the step.
+- **Its three callers:** `npm run deploy` (the GitHub Actions `deploy` job in `ci.yml`), `npm run preview` and
+  `scripts/staging-deploy.mjs` (`npm run staging:deploy`). `src/__tests__/landing-static-callers.test.ts` fails if one of them loses the step.
 - **When it fails the deploy:** the prerendered page is missing (`/` is no longer static), the page's canonical origin
   is not `NEXT_PUBLIC_APP_URL` (a page from the other build), an inline script's hash is not in the written `_headers`,
   `script-src` has `'unsafe-inline'`, the `/` rule is already there (run the build again first), or a `_headers` line is
