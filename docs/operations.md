@@ -126,8 +126,9 @@ Lines that are not ours and need no fix. Match the whole signature, not one fram
 ## Shipping a change
 
 Pushing to `main` is the release: GitHub Actions (`ci.yml`) runs `npm run ci` (Biome, types, tests with the coverage
-floor) and the browser tests (4 shards), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys,
-then smoke-tests the live site. Pull requests run the same checks and browser tests, without the deploy. Run
+floor) and the browser tests (4 shards), prints a D1 Time Travel bookmark
+(step "Record the database restore point (D1 Time Travel bookmark)"), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys, then smoke-tests
+the live site. Pull requests run the same checks and browser tests, without the deploy. Run
 `npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, and a nightly browser-test run
 (`e2e.yml`: every spec on the phone too, plus the "every control" sweep). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
 `summary.md` in the `e2e-report` artifact.
@@ -168,7 +169,8 @@ One command drives real browsers as stress-test accounts on staging and writes a
 
 ## After a deploy: the smoke test and automatic rollback (2026-10-22)
 - **What runs:** the `deploy` job in `ci.yml`, after the deploy on `main`. It waits for `/api/health`, then runs `e2e/smoke/production.spec.ts` in a real browser (desktop and phone) against the live site: the public pages and the health check, then a throwaway **sample account** (the app deletes it within 24 hours): Today, add an entry, edit it, delete it (the question opens in its card), Week, Month (a day opens as a card), Invoices, Clients, Year summary. An uncaught error, a console error or an HTTP 5xx anywhere fails it. It touches nobody's data.
-- **If it fails** (the spec retries once, so two failures), and the `production` environment variable `SMOKE_ROLLBACK` is `1` (switched on after the job has passed once on a real deploy): `scripts/rollback-previous.mjs` puts the Worker back on the version that was live before this deploy (`wrangler rollback`), the job checks `/api/health` again and **stays red** so it is noticed. The database is not touched: migrations must be additive (expand, then remove later), so the old code runs on the new schema. A sample-account limit (5 an hour per connection) skips the test instead of failing it, because that says nothing about the deploy.
+- **If it fails** (the spec retries once, so two failures), and the `production` environment variable `SMOKE_ROLLBACK` is `1` (switched on after the job has passed once on a real deploy): `scripts/rollback-previous.mjs` puts the Worker back on the version that was live before this deploy (`wrangler rollback`), the job checks `/api/health` again and **stays red** so it is noticed. The database is not touched: migrations must be additive (expand, then remove later), so the old code runs on the new schema. While `SMOKE_ROLLBACK` is not `1`, the step "Check automatic rollback is on" puts a yellow warning on every release run. A sample-account limit (5 an hour per connection) skips the test instead of failing it, because that says nothing about the deploy.
+- **The database restore point:** before any migration, the `deploy` job runs the step "Record the database restore point (D1 Time Travel bookmark)", which prints the D1 Time Travel bookmark of the database as it was before this release. If wrangler cannot read it, the release stops before the migrations. A Worker rollback never undoes a migration, so if a migration damaged data: find the bookmark in that step of the run's log (`gh run view <id> --log`), take the `d1 export` backup first (see "2. The database" below), then `npx wrangler d1 time-travel restore hourly-db --bookmark=<bookmark>`.
 - **By hand:** `npm run smoke:prod` runs the same test against production; `node scripts/rollback-previous.mjs --dry-run` shows which version a rollback would go to. A rollback leaves the Worker on the older version until the next deploy to `main`.
 - **Adding to it:** keep it short (a few minutes) and read-only for real users; anything it needs must work with a sample account. When a screen it clicks changes, update the spec in the same pull request (a stale smoke test would roll back a good deploy).
 
@@ -203,7 +205,11 @@ Following the rule, a code rollback is always safe and the database never needs 
 npx wrangler d1 time-travel info hourly-db          # shows the restorable window (30 days)
 npx wrangler d1 export hourly-db --remote --output=backups/before-restore.sql   # keep what exists now first
 npx wrangler d1 time-travel restore hourly-db --timestamp=<ISO time>            # overwrites live data
+npx wrangler d1 time-travel restore hourly-db --bookmark=<bookmark>             # or the exact point before a release
 ```
+
+The bookmark of the moment before each release's migrations is in that run's `deploy` job log, step
+"Record the database restore point (D1 Time Travel bookmark)" (`gh run view <id> --log`).
 
 `npm run d1:backup` writes a full SQL dump to `backups/` (git-ignored: it holds everyone's data).
 
