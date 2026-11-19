@@ -1,5 +1,18 @@
 name: CI
 
+# Every pull request and every push to main: the checks (`check`, the status branch protection requires) and the browser
+# tests (`e2e`, 4 shards). On a push to main, when both pass, `deploy` ships it and smoke-tests the live site.
+# Free: GitHub's standard runners cost nothing for a public repository (CircleCI was used until 2026-11).
+#
+# The deploy reads everything from the GitHub Environment `production` (Settings > Environments), whose deployment
+# branches are limited to main, so pull requests and other branches never see the token:
+#   secret   CLOUDFLARE_API_TOKEN   a token with Workers Scripts: Edit and D1: Edit
+#   variable CLOUDFLARE_ACCOUNT_ID  the Cloudflare account id
+#   variable D1_DATABASE_ID         the id of the D1 database
+#   variable APP_URL                the public address, for example https://usehourly.app
+#   optional CUSTOM_DOMAIN, WORKER_NAME, D1_DATABASE_NAME (scripts/ci-wrangler-config.mjs), SMOKE_ROLLBACK=1
+# AUTH_SECRET is a Worker secret, set once with `npx wrangler secret put AUTH_SECRET`; CI never sees it.
+
 permissions:
   contents: read
 
@@ -7,6 +20,13 @@ on:
   push:
     branches: [main]
   pull_request:
+
+# One run at a time per branch. On main a running workflow is never cancelled, so two deploys (and their smoke tests
+# and rollbacks) never overlap and always go out in order; a newer push waits. On a pull request a new push cancels
+# the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   check:
@@ -21,3 +41,132 @@ jobs:
       - run: npm ci
       # One definition of "the checks" (package.json): Biome, tsc, then the tests with the coverage floor.
       - run: npm run ci
+
+  # The browser tests (Playwright, desktop and phone) in 4 shards: each starts its own copy of the app on a throwaway
+  # local database and runs a quarter of the spec files (`--shard`). The "every control" sweep is left out, as in
+  # `npm run e2e` (the nightly e2e.yml runs it).
+  e2e:
+    name: e2e ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      # The browsers come with this image (/ms-playwright), so there is no browser download.
+      # The tag must match @playwright/test in package-lock.json: the step below checks it (change deploy's tag too).
+      image: mcr.microsoft.com/playwright:v1.64.1-jammy
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Playwright version matches the image
+        run: |
+          IMAGE_VERSION=1.64.1
+          INSTALLED=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          if [ "$INSTALLED" != "$IMAGE_VERSION" ]; then
+            echo "Playwright in package-lock.json is $INSTALLED but the e2e image is v$IMAGE_VERSION: change the image tag in .github/workflows/ci.yml (e2e and deploy) to match"
+            exit 1
+          fi
+          echo "Playwright $INSTALLED matches the e2e image v$IMAGE_VERSION"
+      - name: Local config with throwaway secrets
+        run: |
+          cp wrangler.example.jsonc wrangler.jsonc
+          secret=$(openssl rand -hex 32)
+          # Dummy provider ids: the tests wait for the "Continue with Google" button as proof the page's script has
+          # loaded, and that button only renders when a provider is configured. Nothing here ever calls Google or GitHub.
+          printf 'AUTH_SECRET=%s\nAUTH_URL=http://localhost:3029\nAUTH_GITHUB_ID=e2e\nAUTH_GITHUB_SECRET=e2e\nAUTH_GOOGLE_ID=e2e\nAUTH_GOOGLE_SECRET=e2e\n' "$secret" > .dev.vars
+          cp .dev.vars .env.local
+      # No separate migration step: the tests' own database folder is migrated by e2e/start-app.mjs while the app builds.
+      - name: Browser tests (this shard's quarter)
+        env:
+          # The "chip in" spec runs first and alone as a dependency, and Playwright runs dependencies in every shard,
+          # so only shard 1 keeps it (playwright.config.ts).
+          E2E_SKIP_SERIAL: ${{ matrix.shard != 1 && '1' || '' }}
+        run: npx playwright test --shard=${{ matrix.shard }}/4
+      - name: Keep the report (only when it failed)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report-${{ matrix.shard }}
+          path: e2e/report
+          retention-days: 14
+
+  # Pushing to main is the release: migrations, deploy, then a real browser looks at the live site (e2e/smoke: every
+  # main page, an entry added, edited and deleted, with a throwaway sample account). If the smoke test fails twice (the
+  # spec retries once), production goes back to the previous version (scripts/rollback-previous.mjs) when SMOKE_ROLLBACK
+  # is 1, and the job stays red so it is noticed. Migrations are additive, so a rollback never touches the database.
+  # One job, so the workflow's concurrency lock covers the deploy, the smoke test and the rollback together.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-jammy
+    # Not secret. The token is given only to the steps that need it, never to `npm ci` or the smoke test.
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+      APP_URL: ${{ vars.APP_URL }}
+      CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+      WORKER_NAME: ${{ vars.WORKER_NAME }}
+      D1_DATABASE_NAME: ${{ vars.D1_DATABASE_NAME }}
+      SMOKE_ROLLBACK: ${{ vars.SMOKE_ROLLBACK }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Write wrangler.jsonc from the environment's variables
+        run: node scripts/ci-wrangler-config.mjs
+      - name: Apply database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler d1 migrations apply DB --remote
+      - name: Build and deploy to Cloudflare
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.APP_URL }}
+        run: npm run deploy
+      - name: Wait for the new version to answer
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS "$APP_URL/api/health"; then echo; exit 0; fi
+            sleep 10
+          done
+          echo "The site did not answer its health check in 5 minutes"; exit 1
+      - name: Smoke test the live site
+        run: E2E_BASE_URL="$APP_URL" npx playwright test e2e/smoke --project=desktop --project=phone
+      # Only after a deploy that went out (a failed migration or deploy leaves the old version live: nothing to undo).
+      # Automatic rollback is switched on with the environment variable SMOKE_ROLLBACK=1, after the smoke test has
+      # passed on a real deploy at least once. Until then a failure only turns the job red.
+      - name: Roll back to the previous version
+        if: failure() && steps.deploy.outcome == 'success'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ "$SMOKE_ROLLBACK" = "1" ]; then
+            node scripts/rollback-previous.mjs
+            sleep 20 && curl -fsS "$APP_URL/api/health"
+          else
+            echo "The smoke test failed. Automatic rollback is OFF (set SMOKE_ROLLBACK=1 in the production environment). Roll back by hand: node scripts/rollback-previous.mjs"
+          fi
+      - name: Keep the smoke report (only when it failed)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-report
+          path: e2e/report
+          retention-days: 14
+          if-no-files-found: ignore

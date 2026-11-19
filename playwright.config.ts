@@ -35,15 +35,18 @@ const NORMAL_IGNORE = [SERIAL_SPECS, ...(process.env.SWEEP ? [] : [/every-contro
 const PHONE_SPECS =
   /(first-day(-\d-[a-z-]+)?|clients-split|public|phone-dialogs|phone-header-controls|swipe-nav|left-nav|size-audit|persona-fixes|project-website|account-split|user-menu|team|invoice-actions-height|invoice-pages|week-pills|year-summary|year-split|work-items-pages|project-chips|project-search|landing-deck|landing-layout|slide-to-delete|page-descriptions|import-history|import-hint|side-column|month-rebuild|accounting-export-limit|log-button-phone|help|clients-bill-bar-phone|button-words|loading-spinner|typed-hours-not-lost|time-field-words|invoice-running-timer|today-after-midnight|invoices-all|lazy-panels|voice-entry)\.spec\.ts$/;
 
-// A CircleCI container is about twice as slow as a laptop (2 workers, a cold app that compiles each page the first time),
-// so the waits are doubled there. A real regression still fails; a slow machine does not.
-const SLOW = process.env.CIRCLECI ? 2 : 1;
+// A shared CI machine is about twice as slow as a laptop (2 workers on a small machine), so the waits are doubled there.
+// A real regression still fails; a slow machine does not. GitHub Actions sets CI.
+const CI = Boolean(process.env.CI);
+const SLOW = CI ? 2 : 1;
 
 // The serial spec flips a setting with SQL on the local database, so it can never run against a live site (the
 // after-deploy smoke test points E2E_BASE_URL at production: running it there failed and rolled the site back).
-// E2E_SKIP_SERIAL=1 leaves it out too: a CircleCI container that does not hold its file (`--no-deps` would also skip
-// the shared account below).
-const SERIAL_FIRST = external || process.env.E2E_SKIP_SERIAL ? [] : ["serial"];
+// E2E_SKIP_SERIAL=1 leaves the project out too: CI runs the suite in 4 shards (`--shard=i/4`), and Playwright runs a
+// dependency project in EVERY shard, so only shard 1 keeps it. Dropping the project (not `--no-deps`) keeps the
+// shared account below, which every shard needs.
+const SKIP_SERIAL = Boolean(external || process.env.E2E_SKIP_SERIAL);
+const SERIAL_FIRST = SKIP_SERIAL ? [] : ["serial"];
 // The one account the shared spec files sign in as (e2e/shared-account.setup.ts, issue 340). Only on the local test
 // copy: a run against an existing site (E2E_BASE_URL, the smoke test on production) never makes it. It waits for the
 // serial spec, so that one still runs alone (the order is serial, then shared-account, then desktop and phone).
@@ -58,8 +61,6 @@ export default defineConfig({
     ["list"],
     ["html", { outputFolder: "e2e/report/html", open: "never" }],
     ["json", { outputFile: "e2e/report/results.json" }],
-    // CircleCI reads this to learn how long each spec takes, and splits the files evenly across containers by it.
-    ...(process.env.CIRCLECI ? ([["junit", { outputFile: "test-results/e2e-junit.xml" }]] as const) : []),
   ],
   // Spec FILES run side by side (the tests inside one file still run in order). Most tests make their own account; the
   // files that call `withSharedAccount()` share one made once per run (the "shared-account" project below), and each of
@@ -68,8 +69,8 @@ export default defineConfig({
   fullyParallel: false,
   // A slow shared CI machine now and then times a test out that passes alone (issue #197). One retry there; a test that
   // needs it is listed as "flaky" in the report, so it is never hidden. Locally a failure is a failure.
-  retries: process.env.CIRCLECI ? 1 : 0,
-  workers: Number(process.env.E2E_WORKERS ?? (process.env.CIRCLECI ? 2 : process.env.CI ? 3 : 4)),
+  retries: CI ? 1 : 0,
+  workers: Number(process.env.E2E_WORKERS ?? (CI ? 2 : 4)),
   timeout: 180_000,
   expect: { timeout: 15_000 * SLOW },
   globalSetup: "./e2e/global-setup.ts",
@@ -77,11 +78,15 @@ export default defineConfig({
   use: { baseURL: BASE, trace: "retain-on-failure", actionTimeout: 20_000 * SLOW, navigationTimeout: 30_000 * SLOW },
   projects: [
     // The spec that switches a setting every account sees (the "chip in" note): it runs first and alone.
-    {
-      name: "serial",
-      testMatch: SERIAL_SPECS,
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
-    },
+    ...(SKIP_SERIAL
+      ? []
+      : [
+          {
+            name: "serial",
+            testMatch: SERIAL_SPECS,
+            use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+          },
+        ]),
     // Signs up the shared account and saves its sign-in to e2e/.auth/shared.json (git-ignored, written fresh each run).
     ...(external
       ? []

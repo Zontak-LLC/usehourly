@@ -3,5 +3,4 @@
 /src/server/            @dzontak
 /migrations/            @dzontak
 /.github/               @dzontak
-/.circleci/             @dzontak
 /scripts/               @dzontak

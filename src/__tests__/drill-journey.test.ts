@@ -113,7 +113,7 @@ describe("the switch can never be armed on production", () => {
     for (const f of [
       "package.json",
       "scripts/ci-wrangler-config.mjs",
-      ".circleci/config.yml",
+      ".github/workflows/ci.yml",
       "wrangler.example.jsonc",
     ])
       expect(read(f), f).not.toContain("NEXT_PUBLIC_APP_ENV");
