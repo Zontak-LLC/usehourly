@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.zontak.usehourly",
       "sha256_cert_fingerprints": [
-        "66:F6:08:71:D2:F9:8A:E8:28:92:A4:42:A2:D1:0C:23:1F:E8:7B:8C:BA:F2:CA:E1:C6:32:6D:15:DB:7D:2F:AA"
+        "66:F6:08:71:D2:F9:8A:E8:28:92:A4:42:A2:D1:0C:23:1F:E8:7B:8C:BA:F2:CA:E1:C6:32:6D:15:DB:7D:2F:AA",
+        "F2:A3:8E:36:6B:01:D8:17:6B:E2:4A:7C:2E:71:66:7A:B4:7D:37:AD:A5:59:9D:48:9B:77:AC:15:C5:69:AF:F2"
       ]
     }
   }
