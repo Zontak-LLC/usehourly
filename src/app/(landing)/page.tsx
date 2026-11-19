@@ -81,7 +81,7 @@ export default function LandingPage() {
       <SignedInRedirect />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: our own constant JSON, not user input */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5 max-sm:px-4">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-6 py-5">
         <Link href="/" className="flex items-center gap-2 font-semibold text-base sm:text-lg">
           <LogoMark className="size-7 sm:size-8" aria-hidden />
           {APP_CONFIG.name}
