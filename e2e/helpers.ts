@@ -13,6 +13,7 @@ import {
 import JSZip from "jszip";
 
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
+import { buildDemoData } from "../src/lib/demo";
 import { runSql } from "./local-db";
 import { today as localToday } from "./today";
 import { mkdirSync, readFileSync } from "node:fs";
@@ -267,7 +268,7 @@ export async function seedFirstDay(page: Page, { rate, minutes }: { rate: number
 
 /**
  * Opens the landing page and starts the sample-data demo, ending on the dashboard. The button only works once the page's
- * script has loaded, which on a slow machine (a cold CircleCI container compiling the page) can take a while: a click
+ * script has loaded, which on a slow machine (a cold CI machine compiling the page) can take a while: a click
  * before that does nothing. So wait for the page to settle, and click again if nothing happened.
  */
 export async function startDemo(page: Page) {
@@ -721,13 +722,17 @@ export async function menuAction(page: Page, button: string, item: string) {
 }
 
 /**
- * The Month page for a month the sample (demo) data fills well. The sample entries cover the 35 days up to yesterday,
- * so in the first days of a month "this month" has only a few entries (on 5 November: 5). Before the 15th this is the
- * month before, which is then nearly full; from the 15th it is this month, which has two weeks of entries by then.
+ * The Month page for the month that holds the most sample (demo) entries: this month or the one before. The sample is
+ * built from the visitor's day (`buildDemoData`, the 35 days up to yesterday), so this asks the same function. A fixed
+ * "before the 15th" rule failed on days whose random sample left 9 entries in the half month (2026-11-16).
  */
-export function fullDemoMonth(now = new Date()) {
-  const month = now.getDate() < 15 ? new Date(now.getFullYear(), now.getMonth() - 1, 1) : now;
-  return `/dashboard/month?month=${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+export function fullDemoMonth(day = localToday()) {
+  const thisMonth = day.slice(0, 7);
+  const [year, month] = thisMonth.split("-").map(Number);
+  const before = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7);
+  const entries = buildDemoData(day).entries;
+  const count = (m: string) => entries.filter((e) => e.date.startsWith(m)).length;
+  return `/dashboard/month?month=${count(before) > count(thisMonth) ? before : thisMonth}`;
 }
 
 /** Shows the period's full list of entries ("All entries this week/month"): always open under the day on Week; on
