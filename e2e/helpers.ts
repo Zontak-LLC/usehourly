@@ -340,13 +340,18 @@ export function sql(statement: string) {
 /**
  * Copies one of the signed-in account's invoices `count` times (numbers INV-2099-001 up, same dates, snapshot and
  * search text) straight into the local database, after startDemo and before page.goto. The demo quota is not checked:
- * this is setup only. Returns the account's id.
+ * this is setup only. With `clientName`, the copied invoice is one of that client's. Returns the account's id.
  */
-export async function copyInvoices(page: Page, count: number): Promise<string> {
+export async function copyInvoices(
+  page: Page,
+  count: number,
+  { clientName }: { clientName?: string } = {},
+): Promise<string> {
   // This test's own account (not "the newest sample account", which another test running at the same time may have made).
   const session = (await (await page.request.get("/api/auth/session")).json()) as { user?: { id?: string } };
   const userId = session.user?.id ?? "";
   expect(userId).toMatch(/^[0-9a-f-]{20,}$/);
+  const ofClient = clientName === undefined ? "" : ` AND client_name = '${clientName.replace(/'/g, "''")}'`;
   sql(
     `WITH RECURSIVE n(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM n WHERE n < ${Math.floor(count)})
     INSERT INTO invoices (id, user_id, client_id, client_name, number, issue_date, due_date, paid_date, period_from,
@@ -354,10 +359,23 @@ export async function copyInvoices(page: Page, count: number): Promise<string> {
     SELECT lower(hex(randomblob(16))), i.user_id, i.client_id, i.client_name, 'INV-2099-' || printf('%03d', n.n), i.issue_date,
       i.due_date, i.paid_date, i.period_from, i.period_to, i.total_minutes, i.total_cents, i.currency, i.notes, i.snapshot,
       i.search_text, i.summary, 0, 0, i.created_at
-    FROM (SELECT * FROM invoices WHERE user_id = '${userId}' LIMIT 1) i,
+    FROM (SELECT * FROM invoices WHERE user_id = '${userId}'${ofClient} LIMIT 1) i,
       n`.replace(/\s+/g, " "),
   );
   return userId;
+}
+
+/**
+ * Gives the account's invoice numbered `from` the number `to` and the issue date `issueDate`, in its list fields, its
+ * search text and its frozen snapshot (setup only, after copyInvoices: e.g. to make one copy the oldest invoice).
+ */
+export function renumberCopy(userId: string, { from, to, issueDate }: { from: string; to: string; issueDate: string }) {
+  sql(
+    `UPDATE invoices SET number = '${to}', issue_date = '${issueDate}',
+      search_text = '${to.toLowerCase()} ' || search_text,
+      snapshot = json_set(snapshot, '$.number', '${to}', '$.issueDate', '${issueDate}')
+    WHERE user_id = '${userId}' AND number = '${from}'`.replace(/\s+/g, " "),
+  );
 }
 
 export type Mail = {
@@ -663,6 +681,16 @@ export function clientRow(page: Page, name: string) {
  */
 export async function gotoClient(page: Page, name: string) {
   await page.goto("/dashboard/clients");
+  await pickClient(page, name);
+}
+
+/**
+ * Picks another client on the open Clients page without reloading it (the page keeps its cached data): on a phone it
+ * first goes back to the list with "All clients". Waits for the client's profile.
+ */
+export async function pickClient(page: Page, name: string) {
+  const back = page.getByRole("link", { name: "All clients" });
+  if (await back.isVisible()) await back.click();
   await clientRow(page, name).click();
   await expect(page.getByRole("region", { name, exact: true }).getByRole("heading", { level: 2 })).toHaveText(name);
 }

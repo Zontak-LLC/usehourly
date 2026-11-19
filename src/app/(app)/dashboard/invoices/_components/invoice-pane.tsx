@@ -102,6 +102,7 @@ export function InvoicePane({
       await Promise.all([
         utils.invoice.list.invalidate(),
         utils.invoice.listPage.invalidate(),
+        utils.invoice.countByClient.invalidate(),
         utils.invoice.get.invalidate({ id }),
         utils.invoice.latest.invalidate(),
         utils.invoice.totals.invalidate(),

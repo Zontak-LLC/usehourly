@@ -23,6 +23,7 @@ export const PERSISTED_QUERIES = [
   "project.budgets",
   "invoice.list",
   "invoice.listPage",
+  "invoice.countByClient",
   "invoice.totals",
   "invoice.overdue",
   "report.annual",

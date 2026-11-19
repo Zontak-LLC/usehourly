@@ -8,8 +8,13 @@ import type { InvoiceTab, ListInvoice } from "@/lib/invoice-list";
 /** The longest search the server takes (`q` in `invoice.listPage`); a longer one is cut, never refused. */
 const SEARCH_MAX = 100;
 
-/** What Invoices asks `invoice.listPage` for (the cursor is added page by page). */
-export type InvoicePageQuery = { q?: string; status?: "paid" | "waiting" | "overdue"; today?: string };
+/** What Invoices (and a client's Invoices tab on Clients) asks `invoice.listPage` for; the cursor is added page by page. */
+export type InvoicePageQuery = {
+  q?: string;
+  status?: "paid" | "waiting" | "overdue";
+  today?: string;
+  clientId?: string;
+};
 
 /** Every loaded page's invoices, in order: one list. No pages (nothing loaded yet) gives `[]`. */
 export function flattenInvoicePages<T>(pages: readonly { items: readonly T[] }[] | undefined): T[] {

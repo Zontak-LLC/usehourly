@@ -11,7 +11,7 @@ export const INVOICE_READ_TOOLS: McpTool[] = [
     name: "list_invoices",
     title: "List invoices",
     description:
-      "Invoice history (newest 200 at most), each with the currency it was issued in. Filter by text, client, paid status or issue-date range. unpaid_totals has one figure per currency; unpaid_total is only set when every match is in one currency.",
+      "Invoice history, each with the currency it was issued in. Filter by text, client, paid status or issue-date range. count and the unpaid totals cover every match; invoices lists the first 200 in the chosen order (listed says how many). unpaid_totals has one figure per currency; unpaid_total is only set when every match is in one currency.",
     access: "read",
     idempotent: true,
     input: z.object({
@@ -32,26 +32,22 @@ export const INVOICE_READ_TOOLS: McpTool[] = [
     }),
     run: async (c, a) => {
       const clientId = a.client ? (await resolveClient(c, a.client)).id : undefined;
-      const rows = await c.invoice.list({
-        q: a.query,
-        clientId,
-        status: a.status,
-        from: a.issued_from,
-        to: a.issued_to,
-        sort: a.sort,
-      });
+      const filters = { q: a.query, clientId, status: a.status, from: a.issued_from, to: a.issued_to };
+      // The rows stop at one page; the count and the money come from the server over every match.
+      const [page, totals] = await Promise.all([
+        c.invoice.listPage({ ...filters, sort: a.sort }),
+        c.invoice.matchTotals(filters),
+      ]);
       // Amounts in different currencies are never added: one total per currency, and the single figure only when
-      // every match is in the same one.
-      const unpaidTotals: Record<string, number> = {};
-      for (const r of rows.filter((r) => !r.paid_date))
-        unpaidTotals[r.currency] = (unpaidTotals[r.currency] ?? 0) + r.total_cents;
-      const unpaidByCurrency = Object.fromEntries(Object.entries(unpaidTotals).map(([k, v]) => [k, round2(v / 100)]));
-      const currencies = new Set(rows.map((r) => r.currency));
+      // the unpaid matches are all in the same one.
+      const unpaidByCurrency = Object.fromEntries(totals.unpaid.map((u) => [u.currency, round2(u.cents / 100)]));
+      const [onlyCurrency, ...otherCurrencies] = totals.unpaid;
       return {
-        count: rows.length,
-        unpaid_total: currencies.size <= 1 ? (Object.values(unpaidByCurrency)[0] ?? 0) : null,
+        count: totals.count,
+        listed: page.items.length,
+        unpaid_total: otherCurrencies.length ? null : round2((onlyCurrency?.cents ?? 0) / 100),
         unpaid_totals: unpaidByCurrency,
-        invoices: rows.map(shapeInvoiceSummary),
+        invoices: page.items.map(shapeInvoiceSummary),
       };
     },
   }),

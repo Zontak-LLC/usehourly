@@ -991,7 +991,7 @@
     {
       "name": "list_invoices",
       "title": "List invoices",
-      "description": "Invoice history (newest 200 at most), each with the currency it was issued in. Filter by text, client, paid status or issue-date range. unpaid_totals has one figure per currency; unpaid_total is only set when every match is in one currency.",
+      "description": "Invoice history, each with the currency it was issued in. Filter by text, client, paid status or issue-date range. count and the unpaid totals cover every match; invoices lists the first 200 in the chosen order (listed says how many). unpaid_totals has one figure per currency; unpaid_total is only set when every match is in one currency.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1033,10 +1033,15 @@
         "type": "object",
         "properties": {
           "count": {
-            "type": "number"
+            "type": "number",
+            "description": "Every invoice that matches, not only the ones listed"
+          },
+          "listed": {
+            "type": "number",
+            "description": "How many invoices are in invoices (the first 200 matches at most)"
           },
           "unpaid_total": {
-            "description": "Still unpaid across the matches, in their currency; null when the matches use more than one currency",
+            "description": "Still unpaid across every match, in their currency; null when the unpaid matches use more than one currency",
             "type": ["number", "null"]
           },
           "unpaid_totals": {
@@ -1115,7 +1120,7 @@
             }
           }
         },
-        "required": ["count", "unpaid_total", "unpaid_totals", "invoices"],
+        "required": ["count", "listed", "unpaid_total", "unpaid_totals", "invoices"],
         "additionalProperties": {}
       },
       "annotations": {

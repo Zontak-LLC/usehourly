@@ -14,14 +14,12 @@ import type { Unbilled } from "@/lib/unbilled";
 
 import { BillBar } from "./bill-bar";
 import { ClientDetailsForm } from "./client-details-form";
-import type { InvoiceFact } from "./client-facts";
 import type { ClientRow, ProjectBudgets, ProjectTotals } from "./client-types";
 import { ProfileInvoices, ProfileTime } from "./profile-activity";
 import { ProfileProjects } from "./profile-projects";
 import type { ProjectEditing } from "./use-project-editing";
 
 type Tab = "projects" | "time" | "invoices" | "billing";
-type InvoiceRow = InvoiceFact & { id: string; total_cents: number; currency: string };
 
 /**
  * One client's profile, the right half of the split view (issue 238): the initial, name, email and usual rate with
@@ -36,7 +34,7 @@ export function ClientProfile({
   budgets,
   editing,
   unbilled,
-  invoices,
+  invoiceCount,
   month,
   today,
   onArchiveClient,
@@ -49,7 +47,8 @@ export function ClientProfile({
   budgets: ProjectBudgets | undefined;
   editing: ProjectEditing;
   unbilled: Unbilled | undefined;
-  invoices: readonly InvoiceRow[];
+  /** The client's invoice count from the server (every invoice). */
+  invoiceCount: number;
   month: { from: string; to: string };
   today: string | null;
   onArchiveClient: () => void;
@@ -60,7 +59,6 @@ export function ClientProfile({
   const monthMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.range ?? 0), 0);
   const allMinutes = c.projects.reduce((sum, p) => sum + (totals?.[p.id]?.total ?? 0), 0);
   const rate = usualRate(c.projects, (id) => totals?.[id]?.total ?? 0);
-  const invoiceCount = invoices.filter((i) => i.client_id === c.id).length;
   // A form with its own solid Save is open (Billing, editing a project, adding one): the bill bar's button steps down
   // (one solid button per screen), and on a phone the bar stops covering the form.
   const formOpen = tab === "billing" || adding || c.projects.some((p) => editing.editingId === p.id);
@@ -114,7 +112,7 @@ export function ClientProfile({
               />
             )}
             {tab === "time" && <ProfileTime client={c} month={month} today={today} />}
-            {tab === "invoices" && <ProfileInvoices client={c} invoices={invoices} today={today} />}
+            {tab === "invoices" && <ProfileInvoices client={c} count={invoiceCount} today={today} />}
             {tab === "billing" && <ClientDetailsForm id={c.id} onDone={() => setTab("projects")} />}
           </div>
         </div>

@@ -282,6 +282,7 @@ export function NewInvoiceView() {
       await Promise.all([
         utils.invoice.list.invalidate(),
         utils.invoice.listPage.invalidate(),
+        utils.invoice.countByClient.invalidate(),
         utils.invoice.totals.invalidate(),
         utils.invoice.overdue.invalidate(),
         utils.invoice.unbilled.invalidate(),

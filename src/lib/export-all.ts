@@ -31,27 +31,6 @@ import { dateRange, exportableEntries } from "@/lib/timesheet";
 
 export type ExportFile = { path: string; content: string | Uint8Array };
 
-/** At most this many pages per list, so a server that keeps sending a cursor cannot loop forever. */
-const MAX_PAGES = 200;
-
-/**
- * Every row of a cursor-paged list (`entry.listAll`, `expense.listAll`, `invoice.listAll`), fetched a page at a time so
- * no single response is huge.
- */
-export async function fetchAllPages<T>(
-  fetchPage: (cursor: string | null) => Promise<{ items: T[]; nextCursor: string | null }>,
-): Promise<T[]> {
-  const all: T[] = [];
-  let cursor: string | null = null;
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const res = await fetchPage(cursor);
-    all.push(...res.items);
-    if (!res.nextCursor) break;
-    cursor = res.nextCursor;
-  }
-  return all;
-}
-
 /** A safe, readable file name from a client's name; unique within `taken`. */
 export function fileNameFor(name: string, taken: Set<string>): string {
   // Drop control characters, then the characters that are not allowed in file names.

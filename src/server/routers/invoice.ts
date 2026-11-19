@@ -11,6 +11,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { sha256Hex } from "@/lib/sha256";
 import { nextInvoiceNumber } from "@/lib/unbilled";
 
+import { countInvoicesByClient, sumInvoiceMatches } from "../invoice-counts";
 import {
   invoiceFilters,
   invoiceListAllInput,
@@ -56,7 +57,7 @@ const invoiceInput = z
 
 export { INVOICE_LIST_ALL_PAGE } from "../invoice-history";
 
-/** The most invoices `list` returns (search, the MCP tools and Clients read it whole). */
+/** The most invoices `list` returns. Only global search reads it, and it shows just the newest few matches. */
 const LIST_CAP = 200;
 
 export const invoiceRouter = router({
@@ -82,6 +83,14 @@ export const invoiceRouter = router({
    * newest 200). `detail: "full"` adds each invoice's frozen snapshot; only the zip asks for it.
    */
   listAll: protectedProcedure.input(invoiceListAllInput).query(({ ctx, input }) => readAllInvoicesPage(ctx, input)),
+
+  /** How many invoices each client has, every invoice counted (Clients' "Invoices · N"). Sends no invoice rows. */
+  countByClient: protectedProcedure.query(({ ctx }) => countInvoicesByClient(ctx)),
+
+  /** How many invoices match the filters, and their unpaid cents per currency, over every match (MCP list_invoices). */
+  matchTotals: protectedProcedure
+    .input(invoiceFilters.omit({ sort: true }).optional())
+    .query(({ ctx, input }) => sumInvoiceMatches(ctx, input)),
 
   /**
    * The money line and the tab counts over EVERY invoice (issue 451: worked out in the browser they stopped at the

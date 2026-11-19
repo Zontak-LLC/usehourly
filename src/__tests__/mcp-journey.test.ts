@@ -134,6 +134,7 @@ function setup(over: Partial<TokenRow> = {}) {
       ),
       create: vi.fn(async () => ({ id: "inv1" })),
       count: vi.fn(async () => 2),
+      groupBy: vi.fn(async (): Promise<unknown[]> => []),
       deleteMany: vi.fn(async () => ({ count: 1 })),
       updateMany: vi.fn(async () => ({ count: 1 })),
       update: vi.fn(),
@@ -903,6 +904,9 @@ describe("an assistant tracks a day of work", () => {
     expect(got.text).not.toContain('"detail"');
     expect((await s.call("get_invoice", { invoice: "INV-2026-001", include_detail: true })).text).toContain('"detail"');
 
+    s.prisma.invoice.groupBy.mockResolvedValue([
+      { currency: "USD", _sum: { total_cents: 15000 }, _count: { _all: 1 } },
+    ]);
     const list = await s.call("list_invoices", { status: "unpaid" });
     expect(list.data).toMatchObject({ count: 1, unpaid_total: 150 });
     expect(s.prisma.invoice.findMany).toHaveBeenCalledWith(
