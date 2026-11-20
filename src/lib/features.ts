@@ -2,7 +2,9 @@
  * What the first release shows (feature audit, 2026-10-23). The core is a plain, solid timesheet and invoices; the
  * extras below are hidden, not deleted: their code, server procedures and tests stay, so turning one back on is
  * changing `false` to `true` here. A hidden feature has no button, card, menu item, setting, search result or guide
- * topic, and its page answers "not found".
+ * topic, and its page answers "not found". A server procedure that makes something new for a hidden feature uses
+ * `featureProcedure(name)` (`src/server/trpc.ts`) and answers "not found" too, so the feature cannot be used by calling
+ * the server directly; its MCP tool is not offered either.
  *
  * Kept on purpose and not listed: AI assistants (MCP, trimmed to connecting and tokens), Month and the Year summary
  * (read-only), the private invoice link, the demo, offline saving, light/dark mode.

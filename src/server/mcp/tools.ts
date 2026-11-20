@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
+import { feature } from "@/lib/features";
+
 import { CLIENT_PROJECT_TOOLS } from "./tools/client-project-tools";
 import type { Caller, McpTool, ToolContext } from "./tools/core";
 import { INVOICE_READ_TOOLS, INVOICE_WRITE_TOOLS } from "./tools/invoice-tools";
@@ -32,7 +34,8 @@ export const TOOLS: McpTool[] = [
   ...TIME_TOOLS,
   ...CLIENT_PROJECT_TOOLS,
   ...INVOICE_WRITE_TOOLS,
-  ...TIMESHEET_WRITE_TOOLS,
+  // Hidden features are not offered; the procedure behind it refuses too (featureProcedure).
+  ...(feature("signOff") ? TIMESHEET_WRITE_TOOLS : []),
 ];
 
 export const TOOLS_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));

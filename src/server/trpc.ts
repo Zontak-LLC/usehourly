@@ -3,6 +3,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { Session } from "next-auth";
 import { ZodError } from "zod";
 
+import { type Feature, feature } from "@/lib/features";
 import type { Mailer } from "@/lib/mailer";
 
 // Context is built in ./context.ts so this module stays free of next-auth/Prisma
@@ -42,3 +43,14 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!userId) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in." });
   return next({ ctx: { ...ctx, userId } });
 });
+
+/**
+ * A signed-in procedure that exists only while `feature(name)` is on. While the feature is hidden it throws NOT_FOUND
+ * ("Not found."), so a hidden feature cannot be used by calling the server directly. The flag is read on every call,
+ * not once at load.
+ */
+export const featureProcedure = (name: Feature) =>
+  protectedProcedure.use(({ next }) => {
+    if (!feature(name)) throw new TRPCError({ code: "NOT_FOUND", message: "Not found." });
+    return next();
+  });

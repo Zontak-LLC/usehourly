@@ -20,7 +20,7 @@ import {
 import { dateSchema } from "../schemas/dates";
 import { approvalSchema } from "../schemas/timesheet-share";
 import { findShareByToken } from "../timesheet-share";
-import { type Context, protectedProcedure, publicProcedure, router } from "../trpc";
+import { type Context, featureProcedure, protectedProcedure, publicProcedure, router } from "../trpc";
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 const UNAVAILABLE = "This link isn't available any more.";
@@ -71,9 +71,9 @@ export const timesheetShareRouter = router({
   /**
    * Freezes the hours of a date range (optionally one client or project) into a private link for the client to
    * review and approve. Recomputed here from the account's own entries; the browser only says which range.
-   * The link is returned once: only its hash is stored.
+   * The link is returned once: only its hash is stored. Not found while sign-off is hidden; links already sent stay.
    */
-  create: protectedProcedure
+  create: featureProcedure("signOff")
     .input(
       z
         .object({
