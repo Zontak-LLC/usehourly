@@ -8,6 +8,7 @@ import { createCallerFactory } from "@/server/trpc";
 
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -24,6 +25,7 @@ function mockPrisma(round: { round_step: number; round_mode: string; round_min: 
   return {
     ...memoryInvoiceLogos(),
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null, ...round })),
       update: vi.fn(async () => ({ id: "c1" })),

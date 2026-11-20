@@ -5,6 +5,7 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -20,6 +21,7 @@ function world(opts: { account?: string; clients: ClientRow[]; invoicesFor?: str
   const created: { data: Record<string, unknown> }[] = [];
   const prisma = {
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(
         async (a: { where: { id?: string; user_id: string } }) =>

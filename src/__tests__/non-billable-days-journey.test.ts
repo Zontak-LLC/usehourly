@@ -8,6 +8,7 @@ import { createCallerFactory } from "@/server/trpc";
 
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -51,6 +52,7 @@ function world(initialDays: { user_id: string; date: string }[] = []) {
   const prisma = {
     ...days,
     ...memoryInvoiceLogos(),
+    ...memoryRateLimit(),
     timeEntry: {
       // Marks the entries an invoice bills (migration 0035); answers how many it marked.
       updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({

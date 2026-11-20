@@ -7,6 +7,7 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 /**
  * Localisation step 4 (issue #71): a freelancer who charges VAT (or GST, or sales tax) sets it once on Account, and each
@@ -21,6 +22,7 @@ const NO_TAX: Tax = { tax_name: null, tax_rate: null, tax_number: null };
 function setup(tax: Tax = NO_TAX) {
   const prisma = {
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
     },
