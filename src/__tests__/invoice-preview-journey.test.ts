@@ -65,6 +65,10 @@ function memoryDb(entries: Entry[]) {
         for (const id of where.id.in) invoiceIds.set(id, data.invoice_id);
         return { count: where.id.in.length };
       }),
+      count: vi.fn(
+        async ({ where }: { where: { user_id: string; invoice_id: string } }) =>
+          entries.filter((e) => e.user_id === where.user_id && invoiceIds.get(e.id) === where.invoice_id).length,
+      ),
     },
     invoice: {
       count: vi.fn(

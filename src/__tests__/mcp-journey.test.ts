@@ -7,6 +7,7 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
 import { withGuardedInsert } from "./helpers/guarded-insert-mock";
+import { markingMock } from "./helpers/marking-mock";
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
@@ -112,11 +113,7 @@ function setup(over: Partial<TokenRow> = {}) {
       groupBy: vi.fn(),
     },
     timeEntry: {
-      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
-      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
-        count: a?.where?.id?.in?.length ?? 0,
-      })),
-      count: vi.fn(async () => 0),
+      ...markingMock(),
       findMany: vi.fn(async () => [] as unknown[]),
       findFirst: vi.fn(async () => null as unknown),
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => entryRow({ ...data, id: "e2" })),

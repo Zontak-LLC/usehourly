@@ -5,6 +5,7 @@ import { buildInvoicePdf } from "@/lib/invoice-pdf";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { markingMock } from "./helpers/marking-mock";
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 
@@ -37,11 +38,7 @@ function mockPrisma() {
       update: vi.fn(async () => ({ id: "c1" })),
     },
     timeEntry: {
-      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
-      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
-        count: a?.where?.id?.in?.length ?? 0,
-      })),
-      count: vi.fn(async () => 0),
+      ...markingMock(),
       findMany: vi.fn(async () => [
         {
           date: "2026-10-02",
