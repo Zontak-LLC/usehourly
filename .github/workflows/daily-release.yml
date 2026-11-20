@@ -62,6 +62,10 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+    # A named shell makes GitHub run `bash -eo pipefail`: a failed command on the left of a pipe fails the step (closed).
+    defaults:
+      run:
+        shell: bash
     # A step that ends the run early writes STOP=1 to $GITHUB_ENV; every later step checks it. A step that needs the
     # owner writes ISSUE_TITLE and ISSUE_BODY (one line each); the last step opens or updates that issue.
     steps:
@@ -139,6 +143,7 @@ jobs:
         if: env.STOP != '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACTION: ${{ steps.plan.outputs.action }}
         run: |
           version=""
           if npx wrangler deployments list --name "${WORKER_NAME:-hourly}" --json > "$RUNNER_TEMP/deployments.json"; then
@@ -155,7 +160,8 @@ jobs:
           fi
           echo "::warning::Could not read the live Worker version from wrangler deployments list."
           echo "ROLLBACK_VERSION=unknown" >> "$GITHUB_ENV"
-          if [ "$DRY_RUN" != "true" ]; then
+          # Only a merge needs the version: a release that waits for Tiny still gets its PR, label and comment.
+          if [ "$DRY_RUN" != "true" ] && [ "$ACTION" = "release" ]; then
             echo "ISSUE_TITLE=Daily release held: rollback version unknown" >> "$GITHUB_ENV"
             echo "ISSUE_BODY=The live Worker version could not be read (wrangler deployments list), so nothing was merged: there would be no version to roll back to. Check the production environment's CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and WORKER_NAME." >> "$GITHUB_ENV"
             echo "STOP=1" >> "$GITHUB_ENV"
@@ -267,7 +273,7 @@ jobs:
         run: |
           merge_sha=""
           for _ in $(seq 1 10); do
-            merge_sha=$(gh pr view "$PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid // empty')
+            merge_sha=$(gh pr view "$PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid // empty') || merge_sha=""
             if [ -n "$merge_sha" ]; then break; fi
             sleep 5
           done
@@ -276,7 +282,7 @@ jobs:
           deadline=$(( $(date +%s) + RUN_APPEAR_TIMEOUT_MINUTES * 60 ))
           while [ -n "$merge_sha" ] && [ "$(date +%s)" -lt "$deadline" ]; do
             run_id=$(gh run list --workflow ci.yml --branch main --event push --commit "$merge_sha" \
-              --json databaseId,status,conclusion --jq '.[0].databaseId // empty')
+              --json databaseId,status,conclusion --jq '.[0].databaseId // empty') || run_id=""
             if [ -n "$run_id" ]; then
               echo "RUN_ID=$run_id" >> "$GITHUB_ENV"
               echo "RUN_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id" >> "$GITHUB_ENV"
@@ -297,7 +303,8 @@ jobs:
           deadline=$(( $(date +%s) + DEPLOY_TIMEOUT_MINUTES * 60 ))
           outcome="did not finish within $DEPLOY_TIMEOUT_MINUTES minutes"
           while [ "$(date +%s)" -lt "$deadline" ]; do
-            status=$(gh run view "$RUN_ID" --json status --jq .status)
+            # A failed poll (API error) only waits for the next one.
+            status=$(gh run view "$RUN_ID" --json status --jq .status) || status=""
             if [ "$status" = "completed" ]; then
               conclusion=$(gh run view "$RUN_ID" --json conclusion --jq .conclusion)
               if [ "$conclusion" = "success" ]; then echo "The deploy run is green."; exit 0; fi
@@ -332,24 +339,34 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
+          # Written first, so the issue opens even if anything below fails.
           details="Release PR: $PR_URL. Deploy run: $RUN_URL. Rollback version: $ROLLBACK_VERSION."
+          echo "ISSUE_TITLE=Daily release rolled back" >> "$GITHUB_ENV"
+          echo "ISSUE_BODY=The site or health check failed after the deploy, and the rollback step did not finish: check what is live now. $details" >> "$GITHUB_ENV"
+          lookup_failed=0
           added=$(gh api "repos/$GH_REPO/commits/$MERGE_SHA" \
-            --jq '[.files[] | select(.status == "added") | .filename | select(startswith("migrations/"))] | join(" ")')
+            --jq '[.files[] | select(.status == "added") | .filename | select(startswith("migrations/"))] | join(" ")') \
+            || { lookup_failed=1; added=""; }
+          # This workflow never merges a release that adds a migration, so a failed lookup still rolls back.
+          note=""
+          if [ "$lookup_failed" = "1" ]; then
+            echo "::warning::Could not list the merge commit's files; rolling back anyway."
+            note="The migration lookup on the merge commit failed; rolled back anyway, because this workflow never merges a release that adds a migration."
+          fi
           if [ -n "$added" ]; then
             echo "::error::The site or health check failed after a release that added a migration ($added): not rolled back."
             echo "ISSUE_TITLE=Daily release: site or health check failed after a migration" >> "$GITHUB_ENV"
             echo "ISSUE_BODY=The site or health check failed after the deploy. This release added a migration ($added), so the Worker was NOT rolled back: look now, and roll back by hand only if the old code fits the new data. $details" >> "$GITHUB_ENV"
             exit 1
           fi
-          echo "ISSUE_TITLE=Daily release rolled back" >> "$GITHUB_ENV"
           if npx wrangler rollback "$ROLLBACK_VERSION" --name "${WORKER_NAME:-hourly}" \
             --message "Daily release: site or health check failed" --yes; then
             sleep 20
             if curl -fsS --max-time 20 "${APP_URL%/}/api/health"; then after="Health after the rollback: OK."; else after="Health still fails after the rollback: look now."; fi
-            echo "ISSUE_BODY=The site or health check failed after the deploy, so production was rolled back to $ROLLBACK_VERSION. $after $details" >> "$GITHUB_ENV"
+            echo "ISSUE_BODY=The site or health check failed after the deploy, so production was rolled back to $ROLLBACK_VERSION. $after $note $details" >> "$GITHUB_ENV"
             exit 0
           fi
-          echo "ISSUE_BODY=The site or health check failed after the deploy and the rollback to $ROLLBACK_VERSION FAILED: roll back by hand (npx wrangler rollback $ROLLBACK_VERSION). $details" >> "$GITHUB_ENV"
+          echo "ISSUE_BODY=The site or health check failed after the deploy and the rollback to $ROLLBACK_VERSION FAILED: roll back by hand (npx wrangler rollback $ROLLBACK_VERSION). $note $details" >> "$GITHUB_ENV"
           exit 1
 
       - name: Release is live
