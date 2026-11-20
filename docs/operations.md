@@ -129,7 +129,9 @@ Pushing to `main` is the release: GitHub Actions (`ci.yml`) runs `npm run ci` (B
 floor) and the browser tests (4 shards), prints a D1 Time Travel bookmark
 (step "Record the database restore point (D1 Time Travel bookmark)"), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys, then smoke-tests
 the live site. Pull requests run the same checks and browser tests, without the deploy. Run
-`npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, and a nightly browser-test run
+`npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, the nightly audit watch
+(`audit-watch.yml`: files one `security` issue per high or critical package on `next`, see "Dependency audit policy"),
+and a nightly browser-test run
 (`e2e.yml`: every spec on the phone too, plus the "every control" sweep). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
 `summary.md` in the `e2e-report` artifact.
 
@@ -289,6 +291,13 @@ big they are.
 ## Dependency audit policy
 
 CI runs `npm run audit:prod` (`npm audit --omit=dev --audit-level=high`) weekly and on pull requests. It must pass.
+
+The nightly audit watch (`.github/workflows/audit-watch.yml`, 07:00 UTC, `scripts/audit-watch.mjs`) runs the same
+audit on `next`. For each high or critical package it opens one issue labelled `security`, assigned to dzontak, with the
+advisories, the fix and the `npm ls` chain; it comments (and updates the issue's marker) only when the advisories
+change, and comments and closes the issue the first night the audit no longer reports the package. Parents that only
+depend on a vulnerable package get no issue of their own. A failed audit or GitHub call fails the run and closes
+nothing. The nightly run starts once `audit-watch.yml` is on main (the default branch); until then nothing runs.
 Known and accepted on 2026-10-18:
 
 - `effect` and `uuid` are forced to fixed versions through `overrides` in `package.json`, because `@prisma/config` pins
