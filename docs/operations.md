@@ -280,9 +280,8 @@ big they are.
 CI runs `npm run audit:prod` (`npm audit --omit=dev --audit-level=high`) weekly and on pull requests. It must pass.
 Known and accepted on 2026-10-18:
 
-- `uuid` < 11.1.1 (moderate) through `exceljs`. The advisory is about `v3`/`v5`/`v6` called with an output buffer;
-  `exceljs` uses `uuid@8` `v4()` with no buffer, so it cannot be reached. Revisit when `exceljs` publishes a release
-  that bumps it.
+- `effect` and `uuid` are forced to fixed versions through `overrides` in `package.json`, because `@prisma/config` pins
+  `effect` 3.20.0 and `exceljs` pins `uuid@8`. Remove each override once its parent package ships a fixed version.
 - Findings only in development tooling (the `shadcn` CLI, `glob`, `mysql2` inside the Prisma CLI) do not ship in the
   Worker; they are cleared by upgrading those tools when fixed versions appear (Dependabot opens the pull requests).
 
