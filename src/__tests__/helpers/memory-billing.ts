@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 import { memoryInvoiceLogos } from "./memory-invoice-logos";
 import { memoryNonBillableDays } from "./memory-non-billable";
+import { memoryRateLimit } from "./memory-rate-limit";
 
 /*
  * A small in-memory database with the reads and writes that making an invoice and "not invoiced yet" use, for two
@@ -140,6 +141,7 @@ export function memoryBillingDb() {
   const prisma = {
     ...memoryInvoiceLogos(),
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(
         async ({ where }: { where: { id?: string; user_id: string } }) =>

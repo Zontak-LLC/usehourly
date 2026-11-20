@@ -8,7 +8,7 @@ import { invoiceTax, taxNumberLabel } from "@/lib/tax";
 
 import { nonBillableDates } from "./non-billable";
 
-const MAX_SNAPSHOT_CHARS = 900_000; // D1 rows top out at 2 MB; keep well under
+const MAX_SNAPSHOT_CHARS = 200_000; // D1 rows top out at 2 MB; keep well under
 
 type Db = PrismaClient;
 

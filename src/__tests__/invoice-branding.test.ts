@@ -7,12 +7,14 @@ import { createCallerFactory } from "@/server/trpc";
 
 import { markingMock } from "./helpers/marking-mock";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
 function setup(invoiceBranding: boolean) {
   const prisma = {
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
     },

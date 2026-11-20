@@ -8,6 +8,7 @@ import { createCallerFactory } from "@/server/trpc";
 import { markingMock } from "./helpers/marking-mock";
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -26,6 +27,7 @@ function mockPrisma() {
   return {
     ...memoryInvoiceLogos(),
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       count: vi.fn(async () => 0),
       findFirst: vi.fn(async () => ({
@@ -735,7 +737,7 @@ describe("one account cannot use invoices to fill the shared database", () => {
       Array.from({ length: 200 }, (_, i) => ({
         date: "2026-10-02",
         minutes: 10,
-        note: `${i} ${"word ".repeat(380)}`,
+        note: `${i} ${"word ".repeat(100)}`,
         started_at: null,
         project_id: "p1",
         project: { name: "Website", hourly_rate: 10000, billable: true },
@@ -743,6 +745,7 @@ describe("one account cannot use invoices to fill the shared database", () => {
     );
     await asCaller(prisma, "u1").invoice.create(input);
     const stored = prisma.invoice.create.mock.calls[0][0].data as Record<string, string>;
+    expect(stored.snapshot.length).toBeGreaterThan(50_000);
     expect(stored.search_text.length).toBeLessThanOrEqual(50_000);
   });
 

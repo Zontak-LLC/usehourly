@@ -12,6 +12,7 @@ import { sha256Hex } from "@/lib/sha256";
 import { nextInvoiceNumber } from "@/lib/unbilled";
 
 import { countInvoicesByClient, sumInvoiceMatches } from "../invoice-counts";
+import { assertInvoiceCreateAllowed } from "../invoice-create-limit";
 import {
   invoiceFilters,
   invoiceListAllInput,
@@ -196,6 +197,7 @@ export const invoiceRouter = router({
       isDemoSession(ctx.session),
     );
     await assertNumberFree(ctx.prisma, ctx.userId, input.number);
+    await assertInvoiceCreateAllowed(ctx);
 
     const { snapshot, snapshotText, withLogos, entries, totals, totalCents, currency } = await buildInvoiceSnapshot(
       ctx.prisma,

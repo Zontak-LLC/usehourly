@@ -9,6 +9,7 @@ import { createCallerFactory } from "@/server/trpc";
 import { markingMock } from "./helpers/marking-mock";
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -52,6 +53,7 @@ function world(initialDays: { user_id: string; date: string }[] = []) {
   const prisma = {
     ...days,
     ...memoryInvoiceLogos(),
+    ...memoryRateLimit(),
     timeEntry: {
       ...markingMock(ENTRIES.length),
       findMany: vi.fn(async ({ where }: { where: { user_id: string; date?: { gte: string; lte: string } } }) =>
