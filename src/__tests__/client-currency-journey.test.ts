@@ -4,6 +4,7 @@ import { effectiveCurrency, totalsByCurrency } from "@/lib/money";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { markingMock } from "./helpers/marking-mock";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 
 const createCaller = createCallerFactory(appRouter);
@@ -56,10 +57,7 @@ function world(opts: { account?: string; clients: ClientRow[]; invoicesFor?: str
       }),
     },
     timeEntry: {
-      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
-      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
-        count: a?.where?.id?.in?.length ?? 0,
-      })),
+      ...markingMock(),
       findMany: vi.fn(async () => [
         {
           date: "2026-10-02",

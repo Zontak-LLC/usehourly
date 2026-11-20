@@ -29,7 +29,7 @@ import { openInvoice } from "../invoice-open";
 import { assertNumberFree, buildInvoiceSnapshot, invoiceClient, numberUsedError } from "../invoice-snapshot";
 import { dateSchema } from "../schemas/dates";
 import { protectedProcedure, router } from "../trpc";
-import { markInvoiced, unbilledByClient, undoInvoice } from "../unbilled";
+import { countMarked, markInvoiced, unbilledByClient, undoInvoice } from "../unbilled";
 
 const MAX_SEARCH_CHARS = 50_000;
 
@@ -235,10 +235,12 @@ export const invoiceRouter = router({
     // Mark the time it bills, so it is never billed again. If another invoice took some of it in the meantime (two
     // made at once), this one is taken back: it would bill those hours twice.
     const billed = entries.filter((e) => e.project.billable && e.minutes > 0 && !e.started_at).map((e) => e.id);
-    // Time billed again on purpose stays marked with the invoice it was first billed on.
+    // Time billed again on purpose stays marked with the invoice it was first billed on. The marked count is read back
+    // from the rows: D1's write count also holds the trigger rows logged to entry_changes, so it would hide a clash.
     let marked: number;
     try {
-      marked = await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+      await markInvoiced(ctx.prisma, ctx.userId, created.id, billed);
+      marked = await countMarked(ctx.prisma, ctx.userId, created.id);
     } catch (err) {
       // D1 has no real transactions, so this is the rollback: a half-saved invoice would bill its unmarked hours twice.
       // If the undo fails too (D1 fully down), the half-saved invoice is logged by id; the user still sees the first error.
