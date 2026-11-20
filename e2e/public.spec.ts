@@ -28,6 +28,21 @@ test.describe("public pages", () => {
     });
   }
 
+  test("the privacy page says how voice entry handles your speech", async ({ page }) => {
+    await page.goto("/privacy");
+    const uses = page.getByRole("heading", { name: "What we do with it" }).locator("xpath=following-sibling::ul[1]");
+    const voice = uses
+      .getByRole("listitem")
+      .filter({ hasText: "Voice entry uses your browser's built-in speech recognition" });
+    await expect(voice).toBeVisible();
+    await expect(voice).toContainText("UseHourly does not receive or store the audio, only the text you confirm.");
+    const items = await uses.getByRole("listitem").allInnerTexts();
+    const voiceAt = items.findIndex((text) => text.startsWith("Voice entry"));
+    expect(items[voiceAt - 1]).toContain("calendar");
+    expect(items[voiceAt + 1]).toMatch(/^We may email you about your account/);
+    await expect(page.getByText("Last updated November 2026")).toBeVisible();
+  });
+
   // The landing page is a static file now (issue 424): no proxy runs on /, so the page itself sends a signed-in visitor
   // on after it paints (SignedInRedirect asks /api/auth/session).
   test("signed out, the landing page shows its headline and stays on /", async ({ page }) => {
