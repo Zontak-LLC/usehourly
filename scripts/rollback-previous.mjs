@@ -8,15 +8,27 @@ import { pathToFileURL } from "node:url";
 
 const WORKER = process.env.WORKER_NAME || "hourly";
 
-/**
- * From the output of `wrangler deployments list --json` (oldest first), the version that was live before the newest
- * deployment, or null when there is nothing earlier to go back to. A deployment that splits traffic between versions
- * (not something we do) is read as its first version.
- */
-export function previousVersionId(deployments) {
-  const ordered = [...deployments]
+// Deployments that name a version, oldest first by `created_on`, whatever order wrangler lists them in. A deployment
+// that splits traffic between versions (not something we do) is read as its first version.
+const oldestFirst = (deployments) =>
+  [...deployments]
     .filter((d) => d?.versions?.[0]?.version_id)
     .sort((a, b) => String(a.created_on).localeCompare(String(b.created_on)));
+
+/**
+ * From the output of `wrangler deployments list --json`, the version id live now (the newest deployment's), or
+ * undefined when the list has none. The daily release records it before merging, as the version to roll back to.
+ */
+export function currentVersionId(deployments) {
+  return oldestFirst(deployments).at(-1)?.versions[0].version_id;
+}
+
+/**
+ * From the output of `wrangler deployments list --json`, the version that was live before the newest deployment, or
+ * null when there is nothing earlier to go back to.
+ */
+export function previousVersionId(deployments) {
+  const ordered = oldestFirst(deployments);
   if (ordered.length < 2) return null;
   const newest = ordered[ordered.length - 1].versions[0].version_id;
   // Walk back past any earlier deployments of the very same version (a re-deploy of one version).

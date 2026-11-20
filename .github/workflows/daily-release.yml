@@ -1,0 +1,373 @@
+name: Daily release
+
+# Every morning: when `next` has something `main` lacks and the release PR's checks are green, merge next into main
+# (squash, as a release by hand), so ci.yml's push run deploys it. Then check the live site and roll back on failure.
+# A release that adds a D1 migration only gets its PR, the `tiny` label and one comment: it waits to be merged by hand.
+# The rules live in scripts/daily-release.mjs (unit-tested); this file only runs git, gh and wrangler.
+# Owner set-up and the whole flow: docs/operations.md, "Staging and daily releases".
+#
+# Credentials:
+#   secret RELEASE_TOKEN          fine-grained token (this repo only; Contents and Pull requests read/write). Used ONLY
+#                                 to open and merge the release PR: a GITHUB_TOKEN PR or merge starts no workflow, so
+#                                 neither the PR checks nor the deploy would run. Missing: no release, an issue opens.
+#   secret CLOUDFLARE_API_TOKEN   the production environment's deploy token, only for the wrangler steps.
+#   everything else uses the job's GITHUB_TOKEN.
+#
+# Manual runs default to a dry run: it prints what would ship, the rollback version and whether a migration blocks it,
+# and writes nothing. Set dry_run to false to release by hand through the same steps.
+
+on:
+  # The checks run twice before a deploy (on the release PR, then on main), 40–60 minutes together, so a 05:00 ET start
+  # is live by about 06:15 ET. Two UTC crons (05:00 EDT and 05:00 EST); the first step keeps only the one that is
+  # 05:00 in New York. To start at another hour, change START_HOUR_ET and both crons.
+  schedule:
+    - cron: "0 9 * * *"
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: print what would be released and change nothing"
+        type: boolean
+        default: true
+
+# Two runs never overlap: a manual run waits for the morning run (and the other way round).
+concurrency:
+  group: daily-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Checks (60) + deploy run appearing (10) + deploy run (60) + the live check and set-up.
+    timeout-minutes: 170
+    # For CLOUDFLARE_API_TOKEN and the variables below. Its deployment branches are limited to main, where schedules run.
+    environment: production
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+    env:
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true }}
+      START_HOUR_ET: "05"
+      POLL_SECONDS: 30
+      CHECKS_TIMEOUT_MINUTES: 60
+      RUN_APPEAR_TIMEOUT_MINUTES: 10
+      DEPLOY_TIMEOUT_MINUTES: 60
+      HEALTH_RETRIES: 4
+      HEALTH_RETRY_SECONDS: 30
+      SITE_URL: https://usehourly.app/
+      APP_URL: ${{ vars.APP_URL || 'https://usehourly.app' }}
+      WORKER_NAME: ${{ vars.WORKER_NAME }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    # A step that ends the run early writes STOP=1 to $GITHUB_ENV; every later step checks it. A step that needs the
+    # owner writes ISSUE_TITLE and ISSUE_BODY (one line each); the last step opens or updates that issue.
+    steps:
+      - name: Run once a day at START_HOUR_ET in New York
+        if: github.event_name == 'schedule'
+        run: |
+          hour=$(TZ=America/New_York date +%H)
+          if [ "$hour" != "$START_HOUR_ET" ]; then
+            echo "It is ${hour}:00 in New York, not ${START_HOUR_ET}:00: the other cron runs today's release."
+            echo "STOP=1" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.STOP != '1'
+        with:
+          # All branches, so origin/main and origin/next are both here.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: env.STOP != '1'
+        with:
+          node-version: 22
+          cache: npm
+      - if: env.STOP != '1'
+        run: npm ci
+
+      # Before any GitHub write. Fail closed: no token, no release. A dry run writes nothing, so it only warns.
+      - name: Release token is set
+        if: env.STOP != '1'
+        env:
+          HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
+        run: |
+          if [ "$HAS_RELEASE_TOKEN" = "true" ]; then echo "RELEASE_TOKEN is set"; exit 0; fi
+          echo "::warning::RELEASE_TOKEN is not set: no release (docs/operations.md, Owner set-up)."
+          if [ "$DRY_RUN" != "true" ]; then
+            echo "ISSUE_TITLE=Daily release skipped: RELEASE_TOKEN is not set" >> "$GITHUB_ENV"
+            echo "ISSUE_BODY=The daily release needs the repo secret RELEASE_TOKEN to open and merge the release PR. Nothing was released. Set it up as in docs/operations.md, 'Staging and daily releases', Owner set-up (once)." >> "$GITHUB_ENV"
+            echo "STOP=1" >> "$GITHUB_ENV"
+          fi
+
+      # Two-dot diffs compare content: squash releases keep next's own commits out of main forever, so commit counts
+      # would never reach zero.
+      - name: Decide what to release
+        id: plan
+        if: env.STOP != '1'
+        run: |
+          echo "NEXT_SHA=$(git rev-parse origin/next)" >> "$GITHUB_ENV"
+          has_changes=true
+          if git diff --quiet origin/main origin/next; then has_changes=false; fi
+          git diff --name-only origin/main origin/next > "$RUNNER_TEMP/files.txt"
+          git log --no-merges --format=%s origin/main..origin/next > "$RUNNER_TEMP/commits.txt"
+          git diff --name-status --diff-filter=A origin/main origin/next -- migrations/ \
+            | node scripts/daily-release.mjs added-migrations > "$RUNNER_TEMP/migrations.txt"
+          pr=$(gh pr list --base main --head next --state open --json number,url,labels --jq '.[0] // {}')
+          has_tiny_pr=$(jq '[.labels[]?.name] | index("tiny") != null' <<< "$pr")
+          echo "PR_NUMBER=$(jq -r '.number // empty' <<< "$pr")" >> "$GITHUB_ENV"
+          echo "PR_URL=$(jq -r '.url // empty' <<< "$pr")" >> "$GITHUB_ENV"
+          echo "reused=$(jq '.number != null' <<< "$pr")" >> "$GITHUB_OUTPUT"
+          echo "has_tiny_pr=$has_tiny_pr" >> "$GITHUB_OUTPUT"
+          action=$(jq -n --argjson hasChanges "$has_changes" --argjson hasTinyPr "$has_tiny_pr" \
+            --rawfile added "$RUNNER_TEMP/migrations.txt" \
+            '{hasChanges: $hasChanges, hasTinyPr: $hasTinyPr, addedMigrations: ($added | split("\n") | map(select(. != "")))}' \
+            | node scripts/daily-release.mjs action)
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+          echo "Action: $action"
+          if [ "$action" = "skip" ]; then
+            echo "Nothing new on next"
+            echo "STOP=1" >> "$GITHUB_ENV"
+          elif [ "$has_tiny_pr" = "true" ]; then
+            echo "The open release PR has the tiny label: everything else waits with it."
+            if [ "$DRY_RUN" != "true" ]; then echo "STOP=1" >> "$GITHUB_ENV"; fi
+          fi
+
+      - name: Read the rollback version (the live Worker version)
+        if: env.STOP != '1'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          version=""
+          if npx wrangler deployments list --name "${WORKER_NAME:-hourly}" --json > "$RUNNER_TEMP/deployments.json"; then
+            version=$(node --input-type=module -e '
+              import { readFileSync } from "node:fs";
+              import { currentVersionId } from "./scripts/rollback-previous.mjs";
+              console.log(currentVersionId(JSON.parse(readFileSync(0, "utf8"))) ?? "");
+            ' < "$RUNNER_TEMP/deployments.json") || version=""
+          fi
+          if [ -n "$version" ]; then
+            echo "ROLLBACK_VERSION=$version" >> "$GITHUB_ENV"
+            echo "Rollback version: $version"
+            exit 0
+          fi
+          echo "::warning::Could not read the live Worker version from wrangler deployments list."
+          echo "ROLLBACK_VERSION=unknown" >> "$GITHUB_ENV"
+          if [ "$DRY_RUN" != "true" ]; then
+            echo "ISSUE_TITLE=Daily release held: rollback version unknown" >> "$GITHUB_ENV"
+            echo "ISSUE_BODY=The live Worker version could not be read (wrangler deployments list), so nothing was merged: there would be no version to roll back to. Check the production environment's CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and WORKER_NAME." >> "$GITHUB_ENV"
+            echo "STOP=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Dry run report (nothing is written)
+        if: env.STOP != '1' && env.DRY_RUN == 'true'
+        env:
+          HAS_TINY_PR: ${{ steps.plan.outputs.has_tiny_pr }}
+        run: |
+          echo "Would release next ($NEXT_SHA) to main."
+          echo "Changed files:"
+          sed 's/^/  /' "$RUNNER_TEMP/files.txt"
+          echo "Commits that would ship (newest first):"
+          sed 's/^/  /' "$RUNNER_TEMP/commits.txt"
+          echo "Rollback version: $ROLLBACK_VERSION"
+          if [ -s "$RUNNER_TEMP/migrations.txt" ]; then
+            echo "Blocked by migration: $(paste -sd ' ' "$RUNNER_TEMP/migrations.txt")"
+          else
+            echo "No migration"
+          fi
+          if [ "$HAS_TINY_PR" = "true" ]; then echo "Blocked: release PR $PR_URL waits for Tiny (label tiny)"; fi
+          echo "Dry run: stopping before any write."
+          echo "STOP=1" >> "$GITHUB_ENV"
+
+      - name: Write the release PR body
+        if: env.STOP != '1' && env.DRY_RUN != 'true' && env.PR_NUMBER == ''
+        run: |
+          jq -n --rawfile files "$RUNNER_TEMP/files.txt" --rawfile commits "$RUNNER_TEMP/commits.txt" \
+            --arg rollbackVersion "$ROLLBACK_VERSION" \
+            '{files: ($files | split("\n") | map(select(. != ""))), commits: ($commits | split("\n") | map(select(. != ""))), rollbackVersion: $rollbackVersion}' \
+            | node scripts/daily-release.mjs body > "$RUNNER_TEMP/body.md"
+
+      # RELEASE_TOKEN, so the PR's checks start (a GITHUB_TOKEN PR starts no workflow).
+      - name: Open the release PR
+        if: env.STOP != '1' && env.DRY_RUN != 'true' && env.PR_NUMBER == ''
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          url=$(gh pr create --base main --head next --title "Release $(TZ=America/New_York date +%F) (daily)" \
+            --body-file "$RUNNER_TEMP/body.md")
+          echo "Opened $url"
+          echo "PR_URL=$url" >> "$GITHUB_ENV"
+          echo "PR_NUMBER=${url##*/}" >> "$GITHUB_ENV"
+
+      - name: Put the rollback version on the open release PR
+        if: env.STOP != '1' && env.DRY_RUN != 'true' && steps.plan.outputs.reused == 'true'
+        run: |
+          echo "Reusing the open release PR $PR_URL"
+          gh pr view "$PR_NUMBER" --json body --jq .body \
+            | node scripts/daily-release.mjs with-rollback "$ROLLBACK_VERSION" > "$RUNNER_TEMP/body.md"
+          gh pr edit "$PR_NUMBER" --body-file "$RUNNER_TEMP/body.md"
+
+      # Real-data migrations are merged by hand. Later runs see the tiny label and stop quietly, so this comments once.
+      - name: A migration waits for Tiny
+        if: env.STOP != '1' && env.DRY_RUN != 'true' && steps.plan.outputs.action == 'wait-for-tiny'
+        run: |
+          has_label=$(gh label list --limit 500 --json name --jq 'map(.name) | index("tiny") != null')
+          if [ "$has_label" != "true" ]; then
+            gh label create tiny --color FBCA04 --description "Waits for Tiny: merge by hand"
+          fi
+          gh pr edit "$PR_NUMBER" --add-label tiny
+          {
+            echo "This release has a database migration, so it waits for Tiny. Merge by hand."
+            echo
+            sed 's/.*/- `&`/' "$RUNNER_TEMP/migrations.txt"
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/comment.md"
+          echo "Release PR $PR_URL waits for Tiny."
+          echo "STOP=1" >> "$GITHUB_ENV"
+
+      # Next's own head may have no checks (ci.yml runs on PRs and main pushes), so the gate reads the PR's checks.
+      - name: Wait for the release PR's checks to be green
+        if: env.STOP != '1' && env.DRY_RUN != 'true'
+        run: |
+          deadline=$(( $(date +%s) + CHECKS_TIMEOUT_MINUTES * 60 ))
+          reason="the checks did not all finish green within $CHECKS_TIMEOUT_MINUTES minutes"
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            pr=$(gh pr view "$PR_NUMBER" --json headRefOid,mergeable,statusCheckRollup)
+            if [ "$(jq -r .headRefOid <<< "$pr")" != "$NEXT_SHA" ]; then
+              # Merging now would ship commits the migration gate never saw.
+              echo "::warning::next moved while this release waited. Nothing merged; the next morning's run releases it."
+              echo "STOP=1" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            mergeable=$(jq -r .mergeable <<< "$pr")
+            verdict=$(jq .statusCheckRollup <<< "$pr" | node scripts/daily-release.mjs verdict)
+            echo "Checks: $verdict, mergeable: $mergeable"
+            if [ "$mergeable" = "CONFLICTING" ]; then reason="the release PR conflicts with main"; break; fi
+            if [ "$verdict" = "red" ]; then reason="a check failed"; break; fi
+            if [ "$verdict" = "green" ] && [ "$mergeable" = "MERGEABLE" ]; then exit 0; fi
+            sleep "$POLL_SECONDS"
+          done
+          echo "::warning::Not merged: $reason."
+          echo "ISSUE_TITLE=Daily release held: checks on next are not green" >> "$GITHUB_ENV"
+          echo "ISSUE_BODY=Not merged: $reason. The release PR stays open: $PR_URL" >> "$GITHUB_ENV"
+          echo "STOP=1" >> "$GITHUB_ENV"
+
+      # RELEASE_TOKEN, so the merge starts ci.yml's push run (a GITHUB_TOKEN merge starts no workflow). The head check
+      # makes sure exactly the commit the gates looked at goes out.
+      - name: Merge the release PR
+        if: env.STOP != '1' && env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: gh pr merge "$PR_NUMBER" --squash --match-head-commit "$NEXT_SHA"
+
+      - name: Find the deploy run
+        if: env.STOP != '1' && env.DRY_RUN != 'true'
+        run: |
+          merge_sha=""
+          for _ in $(seq 1 10); do
+            merge_sha=$(gh pr view "$PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid // empty')
+            if [ -n "$merge_sha" ]; then break; fi
+            sleep 5
+          done
+          echo "MERGE_SHA=$merge_sha" >> "$GITHUB_ENV"
+          echo "Merged as $merge_sha"
+          deadline=$(( $(date +%s) + RUN_APPEAR_TIMEOUT_MINUTES * 60 ))
+          while [ -n "$merge_sha" ] && [ "$(date +%s)" -lt "$deadline" ]; do
+            run_id=$(gh run list --workflow ci.yml --branch main --event push --commit "$merge_sha" \
+              --json databaseId,status,conclusion --jq '.[0].databaseId // empty')
+            if [ -n "$run_id" ]; then
+              echo "RUN_ID=$run_id" >> "$GITHUB_ENV"
+              echo "RUN_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id" >> "$GITHUB_ENV"
+              echo "Deploy run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id"
+              exit 0
+            fi
+            sleep "$POLL_SECONDS"
+          done
+          echo "::warning::No ci.yml push run for the merge within $RUN_APPEAR_TIMEOUT_MINUTES minutes."
+          echo "ISSUE_TITLE=Daily release: deploy run not found" >> "$GITHUB_ENV"
+          echo "ISSUE_BODY=The release PR was merged ($PR_URL, merge commit ${merge_sha:-unknown}) but no ci.yml push run started for it within $RUN_APPEAR_TIMEOUT_MINUTES minutes, so it may not be live. Nothing was rolled back." >> "$GITHUB_ENV"
+          echo "STOP=1" >> "$GITHUB_ENV"
+
+      # A red deploy run is ci.yml's to handle (its smoke test rolls back); this only tells the owner.
+      - name: Wait for the deploy run
+        if: env.STOP != '1' && env.DRY_RUN != 'true'
+        run: |
+          deadline=$(( $(date +%s) + DEPLOY_TIMEOUT_MINUTES * 60 ))
+          outcome="did not finish within $DEPLOY_TIMEOUT_MINUTES minutes"
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            status=$(gh run view "$RUN_ID" --json status --jq .status)
+            if [ "$status" = "completed" ]; then
+              conclusion=$(gh run view "$RUN_ID" --json conclusion --jq .conclusion)
+              if [ "$conclusion" = "success" ]; then echo "The deploy run is green."; exit 0; fi
+              outcome="ended $conclusion"
+              break
+            fi
+            sleep "$POLL_SECONDS"
+          done
+          echo "::warning::The deploy run $outcome."
+          echo "ISSUE_TITLE=Daily release: deploy run failed" >> "$GITHUB_ENV"
+          echo "ISSUE_BODY=The deploy run $outcome: $RUN_URL (release PR $PR_URL). ci.yml's own smoke test rollback handles a failed deploy; check what is live." >> "$GITHUB_ENV"
+          echo "STOP=1" >> "$GITHUB_ENV"
+
+      - name: Check the live site and health
+        id: live
+        if: env.STOP != '1' && env.DRY_RUN != 'true'
+        run: |
+          healthy=false
+          for attempt in $(seq 1 "$HEALTH_RETRIES"); do
+            site=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE_URL") || true
+            health=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "${APP_URL%/}/api/health") || true
+            echo "Attempt $attempt: $SITE_URL answered $site, /api/health answered $health"
+            if [ "$site" = "200" ] && [ "$health" = "200" ]; then healthy=true; break; fi
+            if [ "$attempt" -lt "$HEALTH_RETRIES" ]; then sleep "$HEALTH_RETRY_SECONDS"; fi
+          done
+          echo "healthy=$healthy" >> "$GITHUB_OUTPUT"
+
+      # Only a failed site or health check rolls back. A release that added a migration is never merged here; if one
+      # ever is, its Worker is not rolled back (the old code may not fit the new data) and the owner is asked instead.
+      - name: Roll back to the recorded version
+        if: env.STOP != '1' && env.DRY_RUN != 'true' && steps.live.outputs.healthy == 'false'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          details="Release PR: $PR_URL. Deploy run: $RUN_URL. Rollback version: $ROLLBACK_VERSION."
+          added=$(gh api "repos/$GH_REPO/commits/$MERGE_SHA" \
+            --jq '[.files[] | select(.status == "added") | .filename | select(startswith("migrations/"))] | join(" ")')
+          if [ -n "$added" ]; then
+            echo "::error::The site or health check failed after a release that added a migration ($added): not rolled back."
+            echo "ISSUE_TITLE=Daily release: site or health check failed after a migration" >> "$GITHUB_ENV"
+            echo "ISSUE_BODY=The site or health check failed after the deploy. This release added a migration ($added), so the Worker was NOT rolled back: look now, and roll back by hand only if the old code fits the new data. $details" >> "$GITHUB_ENV"
+            exit 1
+          fi
+          echo "ISSUE_TITLE=Daily release rolled back" >> "$GITHUB_ENV"
+          if npx wrangler rollback "$ROLLBACK_VERSION" --name "${WORKER_NAME:-hourly}" \
+            --message "Daily release: site or health check failed" --yes; then
+            sleep 20
+            if curl -fsS --max-time 20 "${APP_URL%/}/api/health"; then after="Health after the rollback: OK."; else after="Health still fails after the rollback: look now."; fi
+            echo "ISSUE_BODY=The site or health check failed after the deploy, so production was rolled back to $ROLLBACK_VERSION. $after $details" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "ISSUE_BODY=The site or health check failed after the deploy and the rollback to $ROLLBACK_VERSION FAILED: roll back by hand (npx wrangler rollback $ROLLBACK_VERSION). $details" >> "$GITHUB_ENV"
+          exit 1
+
+      - name: Release is live
+        if: env.STOP != '1' && env.DRY_RUN != 'true' && steps.live.outputs.healthy == 'true'
+        run: echo "Released $PR_URL; the site and /api/health answer 200."
+
+      # One open issue per title: a repeat failure comments on it instead of opening another.
+      - name: Open the issue, or comment on the open one with the same title
+        if: always() && env.ISSUE_TITLE != '' && env.DRY_RUN != 'true'
+        run: |
+          body="$ISSUE_BODY
+
+          Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          number=$(gh issue list --state open --limit 500 --json number,title \
+            --jq 'map(select(.title == $ENV.ISSUE_TITLE)) | .[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+            echo "Commented on issue #$number: $ISSUE_TITLE"
+          else
+            gh issue create --title "$ISSUE_TITLE" --body "$body"
+          fi
