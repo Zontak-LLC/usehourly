@@ -95,7 +95,7 @@ export const profileProcedures = {
    * mailbox). The browser sends its time zone so "Friday afternoon" is the person's own. If this
    * week's time has already passed, the first email is next Friday, not in an hour.
    */
-  setWeeklyReminder: protectedProcedure
+  setWeeklyReminder: featureProcedure("weeklyReminder")
     .input(z.object({ enabled: z.boolean(), timezone: z.string().max(64).optional() }))
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.authUser.findUnique({

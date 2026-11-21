@@ -11,6 +11,10 @@ import { createCallerFactory } from "@/server/trpc";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["reportEmail"]),
+);
+
 const createCaller = createCallerFactory(appRouter);
 
 /**
