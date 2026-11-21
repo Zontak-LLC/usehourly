@@ -18,7 +18,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 
 import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { dateSchema } from "../schemas/dates";
-import { protectedProcedure, router } from "../trpc";
+import { featureProcedure, router } from "../trpc";
 
 const noteSchema = z.string().trim().max(MAX_NOTE).nullish();
 
@@ -103,7 +103,7 @@ const LIST_ALL_PAGE = 2_000;
 
 export const expenseRouter = router({
   /** The caller's expenses in a date range (a year at most), newest first. */
-  list: protectedProcedure
+  list: featureProcedure("expenses")
     .input(
       z
         .object({ from: dateSchema, to: dateSchema })
@@ -121,32 +121,36 @@ export const expenseRouter = router({
    * Every expense and trip, a page at a time, with no date limit (for "export everything"). Pass the previous page's
    * `nextCursor` until it comes back null. The `id` tie-break keeps the order stable across pages.
    */
-  listAll: protectedProcedure.input(z.object({ cursor: cursorInput })).query(async ({ ctx, input }) => {
-    const rows = await ctx.prisma.expense.findMany({
-      where: { user_id: ctx.userId },
-      select: SELECT,
-      orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
-      ...cursorArgs(input.cursor, LIST_ALL_PAGE),
-    });
-    return toPage(rows, LIST_ALL_PAGE);
-  }),
+  listAll: featureProcedure("expenses")
+    .input(z.object({ cursor: cursorInput }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.prisma.expense.findMany({
+        where: { user_id: ctx.userId },
+        select: SELECT,
+        orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "asc" }],
+        ...cursorArgs(input.cursor, LIST_ALL_PAGE),
+      });
+      return toPage(rows, LIST_ALL_PAGE);
+    }),
 
-  create: protectedProcedure.input(expenseInput).mutation(async ({ ctx, input }) => {
-    assertWithinQuota(
-      await ctx.prisma.expense.count({ where: { user_id: ctx.userId } }),
-      1,
-      "expenses",
-      isDemoSession(ctx.session),
-    );
-    await assertOwnClient(ctx, input.clientId);
-    const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { currency: true } });
-    return ctx.prisma.expense.create({
-      data: { user_id: ctx.userId, currency: currencyOrDefault(user?.currency), ...columns(input) },
-      select: SELECT,
-    });
-  }),
+  create: featureProcedure("expenses")
+    .input(expenseInput)
+    .mutation(async ({ ctx, input }) => {
+      assertWithinQuota(
+        await ctx.prisma.expense.count({ where: { user_id: ctx.userId } }),
+        1,
+        "expenses",
+        isDemoSession(ctx.session),
+      );
+      await assertOwnClient(ctx, input.clientId);
+      const user = await ctx.prisma.authUser.findUnique({ where: { id: ctx.userId }, select: { currency: true } });
+      return ctx.prisma.expense.create({
+        data: { user_id: ctx.userId, currency: currencyOrDefault(user?.currency), ...columns(input) },
+        select: SELECT,
+      });
+    }),
 
-  update: protectedProcedure
+  update: featureProcedure("expenses")
     .input(z.object({ id: z.string().min(1).max(64), expense: expenseInput }))
     .mutation(async ({ ctx, input }) => {
       await assertOwnClient(ctx, input.expense.clientId);
@@ -158,9 +162,11 @@ export const expenseRouter = router({
       return { id: input.id };
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string().min(1).max(64) })).mutation(async ({ ctx, input }) => {
-    const { count } = await ctx.prisma.expense.deleteMany({ where: { id: input.id, user_id: ctx.userId } });
-    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Expense not found." });
-    return { id: input.id };
-  }),
+  delete: featureProcedure("expenses")
+    .input(z.object({ id: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      const { count } = await ctx.prisma.expense.deleteMany({ where: { id: input.id, user_id: ctx.userId } });
+      if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Expense not found." });
+      return { id: input.id };
+    }),
 });
