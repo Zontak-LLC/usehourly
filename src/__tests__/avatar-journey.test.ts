@@ -4,6 +4,8 @@ import { initialsOf } from "@/lib/initials";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+vi.mock("@/lib/features", async (orig) => (await import("./helpers/feature-switch")).withFeatures(orig, ["avatar"]));
+
 const createCaller = createCallerFactory(appRouter);
 
 /** The picture beside the name in the top bar: set, removed, never someone else's, small and an image only. */

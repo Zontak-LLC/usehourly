@@ -17,7 +17,7 @@ import { drillError, faultActive } from "../drill";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
 import { dateSchema } from "../schemas/dates";
-import { protectedProcedure, router } from "../trpc";
+import { featureProcedure, protectedProcedure, router } from "../trpc";
 
 /** Entries the global search shows. */
 const ENTRY_SEARCH_LIMIT = 8;
@@ -201,7 +201,7 @@ export const entryRouter = router({
     .query(async ({ ctx, input }) => [...(await nonBillableDates(ctx.prisma, ctx.userId, input))].sort()),
 
   /** Marks (or un-marks) one day non-billable. Nothing about the day's entries changes; marking twice is harmless. */
-  setNonBillable: protectedProcedure
+  setNonBillable: featureProcedure("nonBillableDays")
     .input(z.object({ date: dateSchema, nonBillable: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const key = { user_id_date: { user_id: ctx.userId, date: input.date } };
