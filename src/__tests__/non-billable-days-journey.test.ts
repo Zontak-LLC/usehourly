@@ -11,6 +11,10 @@ import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["nonBillableDays"]),
+);
+
 const createCaller = createCallerFactory(appRouter);
 
 const project = { id: "p1", name: "Website", hourly_rate: 10000, billable: true, client_id: "c1" };

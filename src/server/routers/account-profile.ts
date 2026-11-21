@@ -21,12 +21,7 @@ export const profileProcedures = {
     )
     .mutation(async ({ ctx, input }) => {
       if (isDemoSession(ctx.session) || !input.mode) return { saved: false };
-      await ctx.prisma.authUser.update({
-        where: { id: ctx.userId },
-        data: {
-          ...(input.mode ? { theme_mode: input.mode } : {}),
-        },
-      });
+      await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { theme_mode: input.mode } });
       return { saved: true };
     }),
 
@@ -142,13 +137,15 @@ export const profileProcedures = {
     ),
 
   /** The person's picture, shown beside their name in the top bar. null removes it (initials show again). */
-  setAvatar: protectedProcedure.input(z.object({ avatar: avatarSchema })).mutation(async ({ ctx, input }) => {
-    if (isDemoSession(ctx.session)) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to add your picture." });
-    }
-    await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { avatar: input.avatar } });
-    return { saved: true };
-  }),
+  setAvatar: featureProcedure("avatar")
+    .input(z.object({ avatar: avatarSchema }))
+    .mutation(async ({ ctx, input }) => {
+      if (isDemoSession(ctx.session)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to add your picture." });
+      }
+      await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { avatar: input.avatar } });
+      return { saved: true };
+    }),
 
   /** Business details printed on invoices. Empty strings clear a field. */
   updateBusiness: protectedProcedure

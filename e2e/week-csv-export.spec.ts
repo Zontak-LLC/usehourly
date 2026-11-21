@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 
+import { FEATURES } from "../src/lib/features";
 import { expect, startFreshAccount, test, trpc } from "./helpers";
 import { readFileSync } from "node:fs";
 
@@ -56,6 +57,7 @@ test("the week's CSV has its name, the header and one row per entry the page sho
 });
 
 test("an entry on a day marked non-billable is not in the CSV", async ({ page }) => {
+  test.skip(!FEATURES.nonBillableDays, "Non-billable days are hidden in this release (src/lib/features.ts)");
   const { general, add } = await seed(page);
   await add(general, "2026-09-08", 90, "Design");
   await add(general, "2026-09-09", 60, "Day off work");
