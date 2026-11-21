@@ -1,6 +1,7 @@
 import type { Client, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
+import { feature } from "@/lib/features";
 import { buildInvoice, type InvoiceSnapshot } from "@/lib/invoice";
 import { effectiveCurrency, formatMoney } from "@/lib/money";
 import { isRounding, type Rounding } from "@/lib/rounding";
@@ -95,8 +96,12 @@ export async function buildInvoiceSnapshot(
     });
   }
 
-  // The rate comes from the account, never from the caller: the browser only says whether to add it.
-  const tax = input.addTax ? invoiceTax(totals.totalCents, { name: user.tax_name, rate: user.tax_rate }) : null;
+  // The rate comes from the account, never from the caller: the browser only says whether to add it. While tax is
+  // switched off, a direct call asking for it gets an invoice without tax rather than a refusal.
+  const tax =
+    input.addTax && feature("invoiceTax")
+      ? invoiceTax(totals.totalCents, { name: user.tax_name, rate: user.tax_rate })
+      : null;
   const totalCents = totals.totalCents + (tax?.cents ?? 0);
   const taxNumber = user.tax_number ? { label: taxNumberLabel(user.tax_name), value: user.tax_number } : null;
 

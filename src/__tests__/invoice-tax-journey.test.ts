@@ -3,73 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import type { InvoiceSnapshot } from "@/lib/invoice";
 import { buildInvoicePdf } from "@/lib/invoice-pdf";
 import { formatTaxRate, invoiceTax, parseTaxRate, taxCents, taxNumberLabel, taxRateInput } from "@/lib/tax";
-import { appRouter } from "@/server/routers/_app";
-import { createCallerFactory } from "@/server/trpc";
 
-import { markingMock } from "./helpers/marking-mock";
-import { memoryNonBillableDays } from "./helpers/memory-non-billable";
-import { memoryRateLimit } from "./helpers/memory-rate-limit";
+import { createCaller, input, NO_TAX, setup, VAT } from "./helpers/invoice-tax-world";
+
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["invoiceTax"]),
+);
 
 /**
  * Localisation step 4 (issue #71): a freelancer who charges VAT (or GST, or sales tax) sets it once on Account, and each
- * new invoice adds it on top of the hours, prints the tax number, and freezes all of it into the snapshot.
+ * new invoice adds it on top of the hours, prints the tax number, and freezes all of it into the snapshot. These run
+ * with the invoiceTax switch on; invoice-tax-hidden-journey.test.ts covers it off.
  */
-const createCaller = createCallerFactory(appRouter);
-
-type Tax = { tax_name: string | null; tax_rate: number | null; tax_number: string | null };
-const NO_TAX: Tax = { tax_name: null, tax_rate: null, tax_number: null };
-
-/** One account (in euros) with 1:30 at €100/h for Acme, and the given tax settings. */
-function setup(tax: Tax = NO_TAX) {
-  const prisma = {
-    ...memoryNonBillableDays(),
-    ...memoryRateLimit(),
-    client: {
-      findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
-    },
-    timeEntry: {
-      ...markingMock(),
-      findMany: vi.fn(async () => [
-        {
-          id: "e1",
-          date: "2026-10-02",
-          minutes: 90,
-          note: "homepage hero",
-          started_at: null,
-          project_id: "p1",
-          project: { name: "Website", hourly_rate: 10000, billable: true },
-        },
-      ]),
-    },
-    invoice: {
-      findFirst: vi.fn(async () => null),
-      count: vi.fn(async () => 0),
-      create: vi.fn(async (_a: { data: { snapshot: string; total_cents: number } }) => ({ id: "inv1" })),
-    },
-    authUser: {
-      findUnique: vi.fn(async () => ({
-        id: "u1",
-        name: "Jo",
-        email: "jo@example.com",
-        currency: "EUR",
-        business_name: "Jo Design Ltd",
-        ein: null,
-        address: null,
-        logo: null,
-        payment_instructions: null,
-        invoice_branding: true,
-        is_demo: false,
-        ...tax,
-      })),
-      update: vi.fn(async () => ({ id: "u1" })),
-    },
-  };
-  const caller = createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
-  return { prisma, caller };
-}
-
-const input = { clientId: "c1", from: "2026-10-01", to: "2026-10-31", number: "INV-1", issueDate: "2026-11-01" };
-const VAT: Tax = { tax_name: "VAT", tax_rate: 2000, tax_number: "GB123456789" };
 
 describe("the tax rules", () => {
   it("reads a rate the way people type it, and refuses anything that is not a percentage", () => {
