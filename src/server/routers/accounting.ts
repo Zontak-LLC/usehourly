@@ -6,7 +6,7 @@ import type { InvoiceSnapshot } from "@/lib/invoice";
 import { CURRENCY_CODES, currencyOrDefault } from "@/lib/money";
 
 import { dateSchema } from "../schemas/dates";
-import { protectedProcedure, router } from "../trpc";
+import { featureProcedure, router } from "../trpc";
 import { CHUNK } from "../unbilled";
 
 /** Invoices per request. Each one carries its frozen copy, so a request is bounded; the screen asks for a shorter range. */
@@ -14,7 +14,7 @@ const MAX_INVOICES = 200;
 
 export const accountingRouter = router({
   /** The currencies this account has invoices in (usually one), so the export can ask which to write. */
-  currencies: protectedProcedure.query(async ({ ctx }) => {
+  currencies: featureProcedure("accountingExport").query(async ({ ctx }) => {
     const rows = await ctx.prisma.invoice.groupBy({ by: ["currency"], where: { user_id: ctx.userId } });
     return rows.map((r) => currencyOrDefault(r.currency)).sort();
   }),
@@ -23,7 +23,7 @@ export const accountingRouter = router({
    * The caller's invoices issued in [from, to], oldest first, with their lines, for the files an accounting app
    * imports (built in the browser, see lib/accounting-export.ts). `more` is true when the range held more than fit.
    */
-  invoices: protectedProcedure
+  invoices: featureProcedure("accountingExport")
     .input(
       z
         .object({
