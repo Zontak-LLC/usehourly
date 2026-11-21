@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { log, world } from "./helpers/team-world";
 
+vi.mock("@/lib/features", async (orig) => (await import("./helpers/feature-switch")).withFeatures(orig, ["team"]));
 beforeAll(() => {
   vi.stubEnv("AUTH_SECRET", "test-secret-for-signed-links");
 });

@@ -6,6 +6,7 @@ import { MAX_TEAM_MEMBERS } from "@/lib/team";
 
 import { log, nowS, type Row, USERS, world } from "./helpers/team-world";
 
+vi.mock("@/lib/features", async (orig) => (await import("./helpers/feature-switch")).withFeatures(orig, ["team"]));
 beforeAll(() => {
   vi.stubEnv("AUTH_SECRET", "test-secret-for-signed-links");
 });
