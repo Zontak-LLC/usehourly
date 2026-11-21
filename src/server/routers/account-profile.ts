@@ -9,7 +9,7 @@ import { MAX_TAX_NAME, MAX_TAX_NUMBER, MAX_TAX_RATE } from "@/lib/tax";
 import { isThemeMode } from "@/lib/theme-sync";
 
 import { avatarSchema, logoSchema } from "../logo-schema";
-import { protectedProcedure } from "../trpc";
+import { featureProcedure, protectedProcedure } from "../trpc";
 
 export const profileProcedures = {
   /** Remembers the light/dark choice so other devices open with it. Demo accounts keep it to the browser. */
@@ -184,7 +184,7 @@ export const profileProcedures = {
    * the seller's tax number. Each new invoice can still leave it off (a reverse-charge client, say); issued invoices
    * never change.
    */
-  setTax: protectedProcedure
+  setTax: featureProcedure("invoiceTax")
     .input(
       z.object({
         name: z.string().trim().max(MAX_TAX_NAME, `Keep the name under ${MAX_TAX_NAME} characters.`),
