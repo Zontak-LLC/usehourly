@@ -14,75 +14,16 @@ import {
   summarizeExpenses,
 } from "@/lib/expenses";
 import { buildAnnualWorkbook } from "@/lib/export-annual-xlsx";
-import { appRouter } from "@/server/routers/_app";
-import { createCallerFactory } from "@/server/trpc";
+
+import { createCaller, type Row, world } from "./helpers/expenses-world";
+
+vi.mock("@/lib/features", async (orig) => (await import("./helpers/feature-switch")).withFeatures(orig, ["expenses"]));
 
 /**
  * Expenses and mileage (issue 100, first slice): a freelancer records what they spent and the trips they drove, and the
  * Year summary adds them up by category and quarter, nets them against payments received, and puts them in Excel.
+ * The expenses switch is mocked on here; `expenses-hidden-journey.test.ts` runs with the real switch (off).
  */
-const createCaller = createCallerFactory(appRouter);
-
-type Row = Record<string, unknown> & { id: string; user_id: string; date: string; created_at: number };
-
-/** An in-memory `expenses` table and two accounts' clients, with just the Prisma calls the router makes. */
-function world(opts: { count?: number } = {}) {
-  let rows: Row[] = [];
-  let seq = 0;
-  const clients = [
-    { id: "c1", user_id: "u1", name: "Acme" },
-    { id: "c2", user_id: "u2", name: "Globex" },
-  ];
-  const owns = (r: Row, where: { id?: string; user_id?: string }) =>
-    (where.id === undefined || r.id === where.id) && (where.user_id === undefined || r.user_id === where.user_id);
-  const withClient = (r: Row) => ({
-    ...r,
-    client: r.client_id ? { name: clients.find((c) => c.id === r.client_id)?.name ?? "" } : null,
-  });
-  const prisma = {
-    authUser: { findUnique: vi.fn(async () => ({ currency: "USD" })) },
-    client: {
-      findFirst: vi.fn(
-        async ({ where }: { where: { id: string; user_id: string } }) =>
-          clients.find((c) => c.id === where.id && c.user_id === where.user_id) ?? null,
-      ),
-    },
-    expense: {
-      count: vi.fn(
-        async ({ where }: { where: { user_id: string } }) =>
-          opts.count ?? rows.filter((r) => r.user_id === where.user_id).length,
-      ),
-      create: vi.fn(async ({ data }: { data: Omit<Row, "id" | "created_at"> }) => {
-        seq += 1;
-        const row = { ...data, id: `x${seq}`, created_at: seq } as Row;
-        rows.push(row);
-        return withClient(row);
-      }),
-      findMany: vi.fn(async ({ where }: { where: { user_id: string; date: { gte: string; lte: string } } }) =>
-        rows
-          .filter((r) => r.user_id === where.user_id && r.date >= where.date.gte && r.date <= where.date.lte)
-          .sort((a, b) => b.date.localeCompare(a.date) || b.created_at - a.created_at)
-          .map(withClient),
-      ),
-      updateMany: vi.fn(async ({ where, data }: { where: { id: string; user_id: string }; data: Partial<Row> }) => {
-        const hit = rows.filter((r) => owns(r, where));
-        for (const r of hit) Object.assign(r, data);
-        return { count: hit.length };
-      }),
-      deleteMany: vi.fn(async ({ where }: { where: { id: string; user_id: string } }) => {
-        const before = rows.length;
-        rows = rows.filter((r) => !owns(r, where));
-        return { count: before - rows.length };
-      }),
-    },
-  };
-  const as = (id: string, demo = false) =>
-    createCaller({
-      session: { user: { id, ...(demo ? { demo: true } : {}) }, expires: "" } as never,
-      prisma: prisma as never,
-    });
-  return { prisma, as, rows: () => rows };
-}
 
 const YEAR = { from: "2026-01-01", to: "2026-12-31" };
 
@@ -180,6 +121,12 @@ describe("the expense rules", () => {
 });
 
 describe("recording expenses", () => {
+  it("works with the expenses switch on: a new expense shows in the list", async () => {
+    const me = world().as("u1");
+    const made = await me.expense.create({ kind: "expense", date: "2026-05-01", category: "office", amountCents: 500 });
+    expect((await me.expense.list(YEAR)).map((e) => [e.id, e.amount_cents])).toEqual([[made.id, 500]]);
+  });
+
   it("adds an expense and a trip, works the trip out on the server, and lists the year newest first", async () => {
     const w = world();
     const me = w.as("u1");
