@@ -6,8 +6,10 @@ import { billedMinutes, describeRounding } from "@/lib/rounding";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { markingMock } from "./helpers/marking-mock";
 import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -24,15 +26,13 @@ function mockPrisma(round: { round_step: number; round_mode: string; round_min: 
   return {
     ...memoryInvoiceLogos(),
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null, ...round })),
       update: vi.fn(async () => ({ id: "c1" })),
     },
     timeEntry: {
-      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
-      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
-        count: a?.where?.id?.in?.length ?? 0,
-      })),
+      ...markingMock(),
       findMany: vi.fn(async () => [entry("2026-10-02", 7), entry("2026-10-03", 20), entry("2026-10-04", 61)]),
     },
     invoice: {

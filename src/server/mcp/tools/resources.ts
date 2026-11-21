@@ -1,3 +1,5 @@
+import { feature } from "@/lib/features";
+
 export const RESOURCES = [
   {
     uri: "usehourly://projects",
@@ -61,15 +63,19 @@ export const PROMPTS: {
   {
     name: "client_timesheet",
     title: "Prepare a timesheet for a client",
-    description:
-      "Build a client's timesheet for a date range, flag gaps, and create a link to send for sign-off after confirmation.",
+    description: feature("signOff")
+      ? "Build a client's timesheet for a date range, flag gaps, and create a link to send for sign-off after confirmation."
+      : "Build a client's timesheet for a date range and flag gaps.",
     arguments: [
       { name: "client", description: "Client name", required: true },
       { name: "from", description: "First day, YYYY-MM-DD", required: true },
       { name: "to", description: "Last day, YYYY-MM-DD", required: true },
     ],
     build: (a) =>
-      `Prepare the timesheet for ${a.client} for ${a.from} to ${a.to}. Call get_timesheet for that client and range and show it as a table: a row per project, a column per day with hours, and the totals. List any weekdays with nothing logged and ask whether anything is missing before going on. Then ask me whether to include the work descriptions and how long the link should work, and only after I confirm call share_timesheet and give me the link to send to the client.`,
+      `Prepare the timesheet for ${a.client} for ${a.from} to ${a.to}. Call get_timesheet for that client and range and show it as a table: a row per project, a column per day with hours, and the totals. List any weekdays with nothing logged and ask whether anything is missing before going on.` +
+      (feature("signOff")
+        ? " Then ask me whether to include the work descriptions and how long the link should work, and only after I confirm call share_timesheet and give me the link to send to the client."
+        : ""),
   },
   {
     name: "invoice_client",

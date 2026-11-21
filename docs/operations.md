@@ -129,7 +129,9 @@ Pushing to `main` is the release: GitHub Actions (`ci.yml`) runs `npm run ci` (B
 floor) and the browser tests (4 shards), prints a D1 Time Travel bookmark
 (step "Record the database restore point (D1 Time Travel bookmark)"), applies D1 migrations (`wrangler d1 migrations apply DB --remote`), deploys, then smoke-tests
 the live site. Pull requests run the same checks and browser tests, without the deploy. Run
-`npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, and a nightly browser-test run
+`npm run ci` before every push. Other workflows: a weekly dependency audit and CodeQL, the nightly audit watch
+(`audit-watch.yml`: files one `security` issue per high or critical package on `next`, see "Dependency audit policy"),
+and a nightly browser-test run
 (`e2e.yml`: every spec on the phone too, plus the "every control" sweep). That run prints its 10 slowest tests in its log (step "Slowest 10 tests") and keeps
 `summary.md` in the `e2e-report` artifact.
 
@@ -141,7 +143,18 @@ the live site. Pull requests run the same checks and browser tests, without the 
 - **Test against it:** `E2E_BASE_URL=https://staging.usehourly.app npx playwright test <files>` (sign-up is limited to 5 per hour per connection, so run a few files at a time; tests that read mail from the stand-in mailbox cannot run there). The full suite runs on the release pull request in GitHub.
 - Not yet: a Cloudflare Access lock in front of it (dashboard: Zero Trust, Access, Applications), and deploying it from CI.
 
-**Daily release** (when the owner says "daily release"): tickets merge into the `next` branch one after another (each cut from `next`, `npm run ci`, targeted e2e, cold review, approval of the before/after page). Deploy `next` to staging and look at it. On "ship": one pull request `next` to `main`, full CI and e2e green, record the rollback points first (`wrangler deployments list` for the current Worker version id, and for a migration the D1 Time Travel timestamp), merge, watch the `deploy` job (`gh run watch`), confirm `/api/health`, check the Worker logs for new errors for 15 minutes, and list what went out. If health fails or errors spike, roll back first (`wrangler rollback <version-id>`), investigate after. At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
+**Daily release** (automatic, `.github/workflows/daily-release.yml`): tickets merge into the `next` branch one after another (each cut from `next`, `npm run ci`, targeted e2e, cold review, approval of the before/after page). Every morning the workflow releases what is on `next`, with no hand step:
+- **Schedule:** start 05:00 ET so changes are live by about 06:15 ET (Tiny's Done-when). The issue said 06:00; the night answerer moved it because the checks run twice (40–60 min). Tiny can set it back to 06:00 (live about 07:00) by changing `START_HOUR_ET` and the two crons. The crons are `0 9 * * *` and `0 10 * * *` UTC; the first step keeps only the one that is 05:00 in New York, so it runs once a day in both EST and EDT.
+- **Nothing new:** when `git diff origin/main origin/next` is empty, it prints `Nothing new on next` and ends green.
+- **Migration waits for Tiny:** when `next` adds a file under `migrations/`, it opens the release PR (or reuses the open one), labels it `tiny`, comments once ("This release has a database migration, so it waits for Tiny. Merge by hand.") and stops. While an open release PR has the `tiny` label, later mornings stop quietly: everything else waits with it. To release it by hand: record the D1 Time Travel timestamp and the Worker version (`wrangler deployments list`), merge, watch the `deploy` job, confirm `/api/health`.
+- **Rollback version:** before merging, it reads the live Worker version (`wrangler deployments list`) and writes `Rollback version: <id>` into the PR body. If it cannot read it, nothing merges and an issue opens.
+- **Green gate:** it opens the PR `Release YYYY-MM-DD (daily)` next → main (changed files, commit subjects, rollback version), waits up to 60 minutes for every check on the PR to end green, then squash-merges it. A red check, a conflict with main or a timeout leaves the PR open and opens an issue.
+- **After the deploy:** it waits for `ci.yml`'s push run for the merge commit (its own smoke test and rollback stay as they are), then expects 200 from https://usehourly.app/ and `/api/health` (4 tries, 30 s apart). If either fails, it runs `wrangler rollback` to the recorded version and opens an issue `Daily release rolled back`. Nothing else rolls back automatically; the database never does (Time Travel stays a hand step).
+- **Issues:** every problem opens one issue per title (`Daily release skipped: RELEASE_TOKEN is not set`, `Daily release held: …`, `Daily release: deploy run not found` / `failed`, `Daily release rolled back`); a repeat comments on the open one.
+- **Dry run:** Actions, Daily release, Run workflow (`dry_run` is on by default) prints the changed files, the commits, the rollback version and `Blocked by migration: <files>` or `No migration`, and writes nothing.
+- **Owner set-up (once):** create a fine-grained personal access token with access to Zontak-LLC/usehourly only, with the repository permissions Contents: Read and write and Pull requests: Read and write. Store it as the repository secret `RELEASE_TOKEN` (Settings, Secrets and variables, Actions). The workflow uses it only to open and merge the release PR, because a merge with the built-in token would not start the deploy. The rollback reuses the production environment's `CLOUDFLARE_API_TOKEN`. After the workflow reaches `main`, run it once by hand with `dry_run` true and read its log.
+
+At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
 
 ## Drills: break one thing on purpose, on staging (2026-10-24)
 
@@ -278,11 +291,17 @@ big they are.
 ## Dependency audit policy
 
 CI runs `npm run audit:prod` (`npm audit --omit=dev --audit-level=high`) weekly and on pull requests. It must pass.
+
+The nightly audit watch (`.github/workflows/audit-watch.yml`, 07:00 UTC, `scripts/audit-watch.mjs`) runs the same
+audit on `next`. For each high or critical package it opens one issue labelled `security`, assigned to dzontak, with the
+advisories, the fix and the `npm ls` chain; it comments (and updates the issue's marker) only when the advisories
+change, and comments and closes the issue the first night the audit no longer reports the package. Parents that only
+depend on a vulnerable package get no issue of their own. A failed audit or GitHub call fails the run and closes
+nothing. The nightly run starts once `audit-watch.yml` is on main (the default branch); until then nothing runs.
 Known and accepted on 2026-10-18:
 
-- `uuid` < 11.1.1 (moderate) through `exceljs`. The advisory is about `v3`/`v5`/`v6` called with an output buffer;
-  `exceljs` uses `uuid@8` `v4()` with no buffer, so it cannot be reached. Revisit when `exceljs` publishes a release
-  that bumps it.
+- `effect` and `uuid` are forced to fixed versions through `overrides` in `package.json`, because `@prisma/config` pins
+  `effect` 3.20.0 and `exceljs` pins `uuid@8`. Remove each override once its parent package ships a fixed version.
 - Findings only in development tooling (the `shadcn` CLI, `glob`, `mysql2` inside the Prisma CLI) do not ship in the
   Worker; they are cleared by upgrading those tools when fixed versions appear (Dependabot opens the pull requests).
 

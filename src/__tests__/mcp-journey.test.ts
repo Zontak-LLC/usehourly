@@ -1,15 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { hashApiToken, newApiToken } from "@/lib/api-token";
-import { handleMcpHttp, originAllowed } from "@/server/mcp/http";
+import { originAllowed } from "@/server/mcp/http";
 import { OUTPUT_SCHEMAS } from "@/server/mcp/output-schemas";
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
-import { withGuardedInsert } from "./helpers/guarded-insert-mock";
-import { memoryInvoiceLogos } from "./helpers/memory-invoice-logos";
-import { memoryNonBillableDays } from "./helpers/memory-non-billable";
-import { memoryRateLimit } from "./helpers/memory-rate-limit";
+import { APP, acme, entryRow, outputChecked, setup, week, withWeek } from "./helpers/mcp-world";
 
 /**
  * A person connects an AI assistant to UseHourly: makes a token in the app, the assistant
@@ -18,202 +15,6 @@ import { memoryRateLimit } from "./helpers/memory-rate-limit";
  */
 
 const createCaller = createCallerFactory(appRouter);
-/** Tools whose successful result has been checked against its outputSchema (see `call` in setup). */
-const outputChecked = new Set<string>();
-const URL_MCP = "https://usehourly.app/api/mcp";
-const APP = "https://usehourly.app";
-
-const acme = {
-  id: "c1",
-  name: "Acme",
-  color: "#6366f1",
-  legal_name: "Acme Holdings, Inc.",
-  address: "500 Market St",
-  projects: [
-    { id: "p1", name: "Website", hourly_rate: 10000, billable: true },
-    { id: "p2", name: "Support", hourly_rate: 5000, billable: false },
-  ],
-};
-const globex = {
-  id: "c2",
-  name: "Globex",
-  color: "#10b981",
-  legal_name: null,
-  address: null,
-  projects: [{ id: "p3", name: "Website", hourly_rate: 9000, billable: true }],
-};
-
-const entryRow = (over: Record<string, unknown> = {}) => ({
-  id: "e1",
-  user_id: "u1",
-  project_id: "p1",
-  date: "2026-10-09",
-  minutes: 90,
-  note: "homepage",
-  started_at: null,
-  project: { id: "p1", name: "Website", client: { id: "c1", name: "Acme" } },
-  ...over,
-});
-
-type TokenRow = {
-  id: string;
-  name: string;
-  access: string;
-  token_version: number;
-  expires_at: number | null;
-  revoked_at: number | null;
-  last_used_at: number | null;
-  user: { id: string; token_version: number };
-};
-
-function setup(over: Partial<TokenRow> = {}) {
-  const token = newApiToken();
-  const row: TokenRow = {
-    id: "t1",
-    name: "Claude Code",
-    access: "write",
-    token_version: 0,
-    expires_at: null,
-    revoked_at: null,
-    last_used_at: null,
-    user: { id: "u1", token_version: 0 },
-    ...over,
-  };
-  let expectedHash = "";
-  const limits = memoryRateLimit();
-  const prisma = {
-    ...memoryInvoiceLogos(),
-    ...memoryNonBillableDays(),
-    apiToken: {
-      findUnique: vi.fn(async ({ where }: { where: { token_hash: string } }) =>
-        where.token_hash === expectedHash ? row : null,
-      ),
-      update: vi.fn(async () => row),
-      create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "t9", ...data })),
-      count: vi.fn(async () => 0),
-      findMany: vi.fn(async () => []),
-      updateMany: vi.fn(async () => ({ count: 1 })),
-    },
-    rateLimit: limits.rateLimit,
-    client: {
-      count: vi.fn(async () => 0),
-      findMany: vi.fn(async () => [acme, globex]),
-      findFirst: vi.fn(async () => acme),
-      create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "c9", color: "#6366f1", ...data })),
-      updateMany: vi.fn(async () => ({ count: 1 })),
-      update: vi.fn(async () => ({ id: "c1" })),
-    },
-    project: {
-      count: vi.fn(async () => 0),
-      findFirst: vi.fn(async () => ({ id: "p1" })),
-      findMany: vi.fn(async () => [] as unknown[]),
-      create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "p9", ...data })),
-      updateMany: vi.fn(async () => ({ count: 1 })),
-      groupBy: vi.fn(),
-    },
-    timeEntry: {
-      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
-      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
-        count: a?.where?.id?.in?.length ?? 0,
-      })),
-      count: vi.fn(async () => 0),
-      findMany: vi.fn(async () => [] as unknown[]),
-      findFirst: vi.fn(async () => null as unknown),
-      create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => entryRow({ ...data, id: "e2" })),
-      update: vi.fn(async ({ data }: { data: Record<string, unknown> }) => entryRow(data)),
-      deleteMany: vi.fn(async () => ({ count: 1 })),
-      groupBy: vi.fn(async () => []),
-    },
-    invoice: {
-      findFirst: vi.fn(async () => null),
-      // Two invoices exist this year (asked for their numbers only when suggesting the next one).
-      findMany: vi.fn(async (a?: { select?: Record<string, boolean> }) =>
-        a?.select && Object.keys(a.select).join() === "number"
-          ? [{ number: "INV-2026-001" }, { number: "INV-2026-002" }]
-          : [],
-      ),
-      create: vi.fn(async () => ({ id: "inv1" })),
-      count: vi.fn(async () => 2),
-      groupBy: vi.fn(async (): Promise<unknown[]> => []),
-      deleteMany: vi.fn(async () => ({ count: 1 })),
-      updateMany: vi.fn(async () => ({ count: 1 })),
-      update: vi.fn(),
-    },
-    timesheetShare: {
-      count: vi.fn(async () => 0),
-      create: vi.fn(async (_a: { data: Record<string, unknown> }) => ({ id: "s1" })),
-    },
-    authUser: {
-      findUnique: vi.fn(async () => ({
-        id: "u1",
-        name: "Jo Freelance",
-        email: "jo@example.com",
-        created_at: new Date("2026-01-01"),
-        business_name: "Jo Design LLC",
-        ein: "12-3456789",
-        address: "1 Main St",
-        logo: "data:image/png;base64,AAAA",
-        payment_instructions: "Pay by ACH",
-        email_verified_at: null,
-        token_version: 0,
-      })),
-    },
-  };
-  const ready = hashApiToken(token).then((h) => {
-    expectedHash = h;
-  });
-
-  async function http(
-    body: unknown,
-    init: { token?: string | null; headers?: Record<string, string>; method?: string } = {},
-  ) {
-    await ready;
-    const headers: Record<string, string> = {
-      "content-type": "application/json",
-      host: "usehourly.app",
-      ...init.headers,
-    };
-    const t = init.token === undefined ? token : init.token;
-    if (t) headers.authorization = `Bearer ${t}`;
-    const res = await handleMcpHttp(
-      new Request(URL_MCP, {
-        method: init.method ?? "POST",
-        headers,
-        body:
-          init.method && init.method !== "POST" ? undefined : typeof body === "string" ? body : JSON.stringify(body),
-      }),
-      prisma as never,
-      APP,
-    );
-    const text = await res.text();
-    return { status: res.status, headers: res.headers, json: text ? JSON.parse(text) : null };
-  }
-
-  let id = 0;
-  const rpc = async (method: string, params?: unknown) =>
-    (await http({ jsonrpc: "2.0", id: ++id, method, params })).json;
-  const call = async (name: string, args: Record<string, unknown> = {}) => {
-    const r = await rpc("tools/call", { name, arguments: args });
-    const result = r.result as {
-      isError: boolean;
-      content: { text: string }[];
-      structuredContent?: Record<string, unknown>;
-    };
-    // Every successful result in every scenario must match the outputSchema the tool advertises.
-    if (!result.isError) {
-      const schema = OUTPUT_SCHEMAS[name];
-      expect(schema, `${name} has an output schema`).toBeDefined();
-      const checked = schema.safeParse(result.structuredContent);
-      outputChecked.add(name);
-      expect(checked.success, `${name} result matches its outputSchema: ${JSON.stringify(checked.error?.issues)}`).toBe(
-        true,
-      );
-    }
-    return { isError: result.isError, text: result.content[0].text, data: result.structuredContent };
-  };
-  withGuardedInsert(prisma); // creates count and insert in one statement; this reads it back onto count and create
-  return { prisma, token, row, http, rpc, call, limits };
-}
 
 describe("making and managing access tokens", () => {
   const asUser = (prisma: ReturnType<typeof setup>["prisma"], uid: string | null) =>
@@ -434,7 +235,6 @@ describe("the protocol", () => {
       "annual_report",
       "parse_duration",
       "get_timesheet",
-      "share_timesheet",
     ]) {
       expect(names).toContain(n);
     }
@@ -461,7 +261,6 @@ describe("the protocol", () => {
     expect(by.delete_entry).toMatchObject({ readOnlyHint: false, destructiveHint: true });
     expect(by.delete_invoice.destructiveHint).toBe(true);
     expect(by.get_timesheet).toMatchObject({ readOnlyHint: true });
-    expect(by.share_timesheet).toMatchObject({ readOnlyHint: false, destructiveHint: false });
     // Optional fields are optional in the schema; required ones are required.
     const logTime = tools.find((t) => t.name === "log_time")?.inputSchema as { required?: string[] };
     expect(logTime.required).toEqual(expect.arrayContaining(["project", "date"]));
@@ -1108,29 +907,6 @@ describe("a batch cannot multiply what one token may do", () => {
 });
 
 describe("timesheets", () => {
-  const week = { from: "2026-10-05", to: "2026-10-11" }; // Monday to Sunday
-  const projects = [
-    { id: "p1", name: "Website", client_id: "c1", client: { id: "c1", name: "Acme" } },
-    { id: "p3", name: "Website", client_id: "c2", client: { id: "c2", name: "Globex" } },
-  ];
-  const entries = [
-    entryRow({ id: "a", date: "2026-10-09", minutes: 90 }),
-    entryRow({ id: "b", date: "2026-10-08", minutes: 60, note: "review" }),
-    entryRow({
-      id: "c",
-      date: "2026-10-09",
-      minutes: 30,
-      project_id: "p3",
-      project: { id: "p3", name: "Website", client: { id: "c2", name: "Globex" } },
-    }),
-  ];
-  const withWeek = async (access = "write") => {
-    const s = setup({ access });
-    s.prisma.project.findMany.mockResolvedValue(projects);
-    s.prisma.timeEntry.findMany.mockResolvedValue(entries);
-    return s;
-  };
-
   it("gets the timesheet as a grid: a row per project, hours per day, totals, and the weekdays with nothing logged", async () => {
     const s = await withWeek("read"); // reading needs no write access
     const r = await s.call("get_timesheet", week);
@@ -1182,56 +958,29 @@ describe("timesheets", () => {
     expect(stranger.text).toContain("No client matches");
   });
 
-  it("creates a private link for a client: the token is returned once and only its hash is stored", async () => {
-    const s = await withWeek();
-    const r = await s.call("share_timesheet", { ...week, client: "Acme", include_notes: false, expires_in_days: 7 });
-    expect(r.isError).toBe(false);
-    const data = r.data as { url: string; includes_notes: boolean; expires_in_days: number };
-    expect(data.url).toMatch(/\/timesheet\/[A-Za-z0-9_-]{20,}$/);
-    expect(data).toMatchObject({ includes_notes: false, expires_in_days: 7 });
-    const token = data.url.split("/").pop() ?? "";
-    const stored = s.prisma.timesheetShare.create.mock.calls[0][0].data as {
-      token_hash: string;
-      user_id: string;
-      snapshot: string;
-    };
-    expect(stored.user_id).toBe("u1");
-    expect(stored.token_hash).not.toBe(token); // only a hash is kept
-    expect(JSON.stringify(stored)).not.toContain(token);
-    expect(stored.snapshot).not.toContain("review"); // notes left out when asked
-    expect(s.prisma.timeEntry.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ user_id: "u1", project: { client_id: "c1" } }), // Acme only
-      }),
-    );
+  // Sign-off links are hidden in this release (real switches); mcp-share-timesheet-journey.test.ts runs them on.
+  it("does not offer share_timesheet while sign-off is hidden", async () => {
+    const s = setup();
+    const { tools } = (await s.rpc("tools/list")).result as { tools: { name: string }[] };
+    expect(tools.map((t) => t.name)).not.toContain("share_timesheet");
   });
 
-  it("is refused for a read-only token, for a bad lifetime, and when there is nothing to share", async () => {
-    const ro = await withWeek("read");
-    const refused = await ro.call("share_timesheet", week);
-    expect(refused.isError).toBe(true);
-    expect(refused.text).toContain("read-only");
-    expect(ro.prisma.timesheetShare.create).not.toHaveBeenCalled();
-
+  it("refuses a call to share_timesheet anyway and stores nothing", async () => {
     const s = await withWeek();
-    expect((await s.call("share_timesheet", { ...week, expires_in_days: 10 })).isError).toBe(true);
-    s.prisma.timeEntry.findMany.mockResolvedValue([]);
-    const empty = await s.call("share_timesheet", week);
-    expect(empty.isError).toBe(true);
-    expect(empty.text).toContain("no logged time");
+    const r = await s.rpc("tools/call", { name: "share_timesheet", arguments: { ...week, client: "Acme" } });
+    expect(r.error.code).toBe(-32602); // an unknown tool, the same answer as any other name
+    expect(r.result).toBeUndefined();
     expect(s.prisma.timesheetShare.create).not.toHaveBeenCalled();
   });
 
-  it("offers a prompt that walks through building a client's timesheet and asks before sharing", async () => {
-    const s = setup();
-    const r = await s.rpc("prompts/get", {
+  it("offers a prompt that builds a client's timesheet without sharing it", async () => {
+    const r = await setup().rpc("prompts/get", {
       name: "client_timesheet",
       arguments: { client: "Acme", from: week.from, to: week.to },
     });
     const text = JSON.stringify(r.result);
     expect(text).toContain("get_timesheet");
-    expect(text).toContain("share_timesheet");
-    expect(text).toMatch(/confirm/i);
+    expect(text).not.toContain("share_timesheet");
   });
 });
 

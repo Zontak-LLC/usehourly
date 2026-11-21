@@ -14,7 +14,9 @@ import {
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+import { markingMock } from "./helpers/marking-mock";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
+import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -22,14 +24,12 @@ const createCaller = createCallerFactory(appRouter);
 function setup(currency: string, invoices = 0, hourlyRate = 10000) {
   const prisma = {
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(async () => ({ id: "c1", name: "Acme", legal_name: null, address: null, logo: null })),
     },
     timeEntry: {
-      // Marks the entries an invoice bills (migration 0035); answers how many it marked.
-      updateMany: vi.fn(async (a?: { where?: { id?: { in?: unknown[] } } }) => ({
-        count: a?.where?.id?.in?.length ?? 0,
-      })),
+      ...markingMock(),
       findMany: vi.fn(async () => [
         {
           date: "2026-10-02",

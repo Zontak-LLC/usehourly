@@ -1,0 +1,36 @@
+name: Nightly audit watch (next)
+
+# Runs the PR check's production audit on `next` every night and keeps one `security` issue per high or critical
+# package (scripts/audit-watch.mjs), so a new advisory is a ticket by morning instead of a stuck PR.
+# GitHub runs `schedule` (and shows `workflow_dispatch`) only for workflow files on the default branch, main: this
+# starts once the file reaches main with a release of next.
+
+permissions:
+  contents: read
+  issues: write
+
+on:
+  schedule:
+    # 07:00 UTC: 02:00 in New York in winter, 03:00 in summer.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+concurrency: audit-watch
+
+jobs:
+  watch:
+    name: npm audit on next to issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: next
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node scripts/audit-watch.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

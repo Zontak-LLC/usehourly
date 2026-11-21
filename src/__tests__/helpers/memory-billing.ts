@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 import { memoryInvoiceLogos } from "./memory-invoice-logos";
 import { memoryNonBillableDays } from "./memory-non-billable";
+import { memoryRateLimit } from "./memory-rate-limit";
 
 /*
  * A small in-memory database with the reads and writes that making an invoice and "not invoiced yet" use, for two
@@ -51,7 +52,7 @@ export type Invoice = {
 export type Where = {
   user_id: string;
   project?: { client_id: string | { in: string[] } };
-  invoice_id?: null;
+  invoice_id?: string | null;
   started_at?: null;
   id?: { in: string[] };
   date?: { gte: string; lte: string } | { in: string[] };
@@ -140,6 +141,7 @@ export function memoryBillingDb() {
   const prisma = {
     ...memoryInvoiceLogos(),
     ...memoryNonBillableDays(),
+    ...memoryRateLimit(),
     client: {
       findFirst: vi.fn(
         async ({ where }: { where: { id?: string; user_id: string } }) =>
@@ -182,6 +184,7 @@ export function memoryBillingDb() {
           .filter((e) => matches(e, where))
           .map((e) => ({ ...e, project: projects.find((p) => p.id === e.project_id) })),
       ),
+      count: vi.fn(async ({ where }: { where: Where }) => entries.filter((e) => matches(e, where)).length),
       updateMany: vi.fn(async ({ where, data }: { where: Where; data: { invoice_id: string | null } }) => {
         const hit = entries.filter((e) => matches(e, where));
         for (const e of hit) e.invoice_id = data.invoice_id;

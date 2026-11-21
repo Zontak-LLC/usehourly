@@ -11,24 +11,30 @@ export const CHUNK = 80;
 
 /**
  * Marks unbilled entries as billed on `invoiceId`. An entry already on an invoice (billed again on purpose, or taken by
- * another invoice made at the same moment) keeps its first invoice; the answer says how many were marked, so the caller
- * can tell a clash.
+ * another invoice made at the same moment) keeps its first invoice. Use `countMarked` to tell a clash: the write count
+ * cannot, because D1 adds the trigger rows logged to `entry_changes` to it.
  */
 export async function markInvoiced(
   prisma: PrismaClient,
   userId: string,
   invoiceId: string,
   ids: string[],
-): Promise<number> {
-  let marked = 0;
+): Promise<void> {
   for (let i = 0; i < ids.length; i += CHUNK) {
-    const { count } = await prisma.timeEntry.updateMany({
+    await prisma.timeEntry.updateMany({
       where: { user_id: userId, id: { in: ids.slice(i, i + CHUNK) }, invoice_id: null },
       data: { invoice_id: invoiceId },
     });
-    marked += count;
   }
-  return marked;
+}
+
+/**
+ * How many of the account's entries are on `invoiceId`, read back from the rows themselves. Filters by invoice and
+ * account (no id list), so it stays under D1's bound-values limit for any size. Throws the database error if the read
+ * fails.
+ */
+export function countMarked(prisma: PrismaClient, userId: string, invoiceId: string): Promise<number> {
+  return prisma.timeEntry.count({ where: { user_id: userId, invoice_id: invoiceId } });
 }
 
 /**

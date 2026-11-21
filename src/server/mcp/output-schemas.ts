@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { feature } from "@/lib/features";
+
 /**
  * What each tool returns, as the `outputSchema` clients see in tools/list. They describe the JSON a
  * successful call puts in `structuredContent`. Objects are loose so a field added later never makes
@@ -40,11 +42,7 @@ const invoiceLine = obj({
   amountCents: z.number(),
 });
 
-const bucket = {
-  minutes: z.number(),
-  billableMinutes: z.number(),
-  earnedCents: z.number(),
-};
+const bucket = { minutes: z.number(), billableMinutes: z.number(), earnedCents: z.number() };
 
 const reportInvoice = obj({
   number: z.string(),
@@ -123,13 +121,15 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     total_hours: z.number(),
     weekdays_without_time: z.array(z.string()).describe("Monday to Friday dates in the range with nothing logged"),
   }),
-  share_timesheet: obj({
-    url: z.string().describe("The private link to send to the client. Shown only once"),
-    from: z.string(),
-    to: z.string(),
-    includes_notes: z.boolean(),
-    expires_in_days: z.number(),
-    note: z.string(),
+  ...(feature("signOff") && {
+    share_timesheet: obj({
+      url: z.string().describe("The private link to send to the client. Shown only once"),
+      from: z.string(),
+      to: z.string(),
+      includes_notes: z.boolean(),
+      expires_in_days: z.number(),
+      note: z.string(),
+    }),
   }),
   list_entries: obj({
     from: z.string(),

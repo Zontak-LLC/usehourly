@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy policy" updated="October 2026">
+    <LegalPage title="Privacy policy" updated="November 2026">
       <p>
         UseHourly is a free time tracking app run by Zontak LLC. This page says in plain words what we keep and why.
       </p>
@@ -76,6 +76,10 @@ export default function PrivacyPage() {
           browser, until you log out or press Disconnect. You can also remove UseHourly's access any time at
           myaccount.google.com/permissions. Meeting rules you make ("always put these meetings on this project") are
           kept in your browser only, with the calendar, and removed the same way.
+        </li>
+        <li>
+          Voice entry uses your browser&apos;s built-in speech recognition, which may send audio to your browser&apos;s
+          provider to be turned into text; UseHourly does not receive or store the audio, only the text you confirm.
         </li>
         <li>We may email you about your account (for example, a password reset). We do not send marketing email.</li>
       </ul>
