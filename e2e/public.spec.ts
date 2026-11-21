@@ -1,6 +1,7 @@
 import { test as plainTest } from "@playwright/test";
 
 import { landingHeaders, landingPolicy } from "../scripts/landing-static-headers.mjs";
+import { isSpeculativePrefetch } from "./browser-problems";
 import { watchCspViolations } from "./csp-violations";
 import { expect, holdRoute, signUpByApi, startDemo, test } from "./helpers";
 
@@ -143,6 +144,37 @@ test.describe("public pages", () => {
     await page.goto("/");
     await page.getByRole("link", { name: "Help", exact: true }).first().click();
     await expect(page).toHaveURL(/\/help$/);
+  });
+
+  test("a 503 to a speculative prefetch of /help is not a server error, and the real visit to /help still loads", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "the header link is hidden on a phone to save room");
+    // On a live site Cloudflare Speed Brain prefetches /help and answers 503 when its cache cannot serve it.
+    await page.route(
+      (url) => url.pathname === "/help",
+      async (route) => {
+        if (isSpeculativePrefetch(await route.request().allHeaders())) await route.fulfill({ status: 503 });
+        else await route.continue();
+      },
+    );
+    await page.goto("/");
+    const prefetchAnswer = page.waitForResponse((r) => new URL(r.url()).pathname === "/help" && r.status() === 503);
+    await page.evaluate(() => {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = "/help";
+      document.head.appendChild(link);
+    });
+    await prefetchAnswer;
+    const visit = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === "/help" && r.request().isNavigationRequest(),
+    );
+    await page.getByRole("link", { name: "Help", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/help$/);
+    expect((await visit).status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1, name: "Help" })).toBeVisible();
   });
 
   test("on a phone the landing page fits the screen: header, the hero buttons and the footer links", async ({
