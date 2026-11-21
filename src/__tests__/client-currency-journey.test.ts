@@ -8,6 +8,10 @@ import { markingMock } from "./helpers/marking-mock";
 import { memoryNonBillableDays } from "./helpers/memory-non-billable";
 import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["accountingExport"]),
+);
+
 const createCaller = createCallerFactory(appRouter);
 
 /**
