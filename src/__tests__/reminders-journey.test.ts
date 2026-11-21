@@ -10,6 +10,9 @@ import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
 vi.mock("@/lib/prisma", () => ({ getPrisma: vi.fn() }));
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["weeklyReminder"]),
+);
 
 const SECRET = "test-secret";
 const APP = "https://usehourly.app";
