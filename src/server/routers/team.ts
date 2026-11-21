@@ -9,7 +9,7 @@ import { cleanLabel, INVITE_DAYS, MAX_TEAM_MEMBERS, memberStatus } from "@/lib/t
 
 import { replaceGrants } from "../team-grants";
 import { emailInvite } from "../team-invite";
-import { type Context, protectedProcedure, router } from "../trpc";
+import { type Context, featureProcedure, router } from "../trpc";
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 const clientIds = z.array(z.string().max(100)).min(1, "Choose at least one client.").max(50);
@@ -30,7 +30,7 @@ const sendTo = (ctx: Ctx, to: string, token: string) =>
 /** The owner's side: invite people, choose which clients they may log time on, remove them. */
 export const teamRouter = router({
   /** Everyone invited, with the clients each may use. Never includes an invite link (only its hash is stored). */
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: featureProcedure("team").query(async ({ ctx }) => {
     const now = nowSeconds();
     const rows = await ctx.prisma.teamMember.findMany({
       where: { owner_id: ctx.userId },
@@ -53,7 +53,7 @@ export const teamRouter = router({
    * the sender passes the mail guards (see `emailInvite`), and says why not otherwise. The link is returned ONCE: only its
    * hash is stored. They need a UseHourly account to accept.
    */
-  invite: protectedProcedure
+  invite: featureProcedure("team")
     .input(z.object({ email: emailField, name: z.string().max(200).default(""), clientIds }))
     .mutation(async ({ ctx, input }) => {
       if (isDemoSession(ctx.session)) {
@@ -90,27 +90,29 @@ export const teamRouter = router({
     }),
 
   /** Makes a fresh link for someone who has not accepted yet (the old link stops working) and emails it again. */
-  resend: protectedProcedure.input(z.object({ id: z.string().max(100) })).mutation(async ({ ctx, input }) => {
-    const token = newToken();
-    const done = await ctx.prisma.teamMember.updateMany({
-      where: { id: input.id, owner_id: ctx.userId, member_id: null, revoked_at: null },
-      data: { token_hash: await hashToken(token), expires_at: nowSeconds() + INVITE_DAYS * 86_400 },
-    });
-    if (done.count !== 1)
-      throw new TRPCError({ code: "NOT_FOUND", message: "That invitation isn't waiting any more." });
-    const row = await ctx.prisma.teamMember.findFirst({
-      where: { id: input.id, owner_id: ctx.userId },
-      select: { email: true },
-    });
-    const mail = await sendTo(ctx, row?.email ?? "", token);
-    return { id: input.id, token, ...mail };
-  }),
+  resend: featureProcedure("team")
+    .input(z.object({ id: z.string().max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const token = newToken();
+      const done = await ctx.prisma.teamMember.updateMany({
+        where: { id: input.id, owner_id: ctx.userId, member_id: null, revoked_at: null },
+        data: { token_hash: await hashToken(token), expires_at: nowSeconds() + INVITE_DAYS * 86_400 },
+      });
+      if (done.count !== 1)
+        throw new TRPCError({ code: "NOT_FOUND", message: "That invitation isn't waiting any more." });
+      const row = await ctx.prisma.teamMember.findFirst({
+        where: { id: input.id, owner_id: ctx.userId },
+        select: { email: true },
+      });
+      const mail = await sendTo(ctx, row?.email ?? "", token);
+      return { id: input.id, token, ...mail };
+    }),
 
   /**
    * Replaces the clients a person may log time on. Only for someone not removed, and only the owner's own clients.
    * A failed save never leaves them with no clients (see `replaceGrants`).
    */
-  setClients: protectedProcedure
+  setClients: featureProcedure("team")
     .input(z.object({ id: z.string().max(100), clientIds }))
     .mutation(async ({ ctx, input }) => {
       const member = await ctx.prisma.teamMember.findFirst({
@@ -125,11 +127,13 @@ export const teamRouter = router({
     }),
 
   /** Removes a person (or cancels an invitation). Their entries stay on the owner's books. Removing twice is harmless. */
-  remove: protectedProcedure.input(z.object({ id: z.string().max(100) })).mutation(async ({ ctx, input }) => {
-    const done = await ctx.prisma.teamMember.updateMany({
-      where: { id: input.id, owner_id: ctx.userId, revoked_at: null },
-      data: { revoked_at: nowSeconds(), token_hash: null, expires_at: null },
-    });
-    return { removed: done.count };
-  }),
+  remove: featureProcedure("team")
+    .input(z.object({ id: z.string().max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const done = await ctx.prisma.teamMember.updateMany({
+        where: { id: input.id, owner_id: ctx.userId, revoked_at: null },
+        data: { revoked_at: nowSeconds(), token_hash: null, expires_at: null },
+      });
+      return { removed: done.count };
+    }),
 });

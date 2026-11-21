@@ -13,6 +13,8 @@ import { createCallerFactory } from "@/server/trpc";
 
 import { fakeD1 } from "./helpers/fake-d1";
 
+vi.mock("@/lib/features", async (orig) => (await import("./helpers/feature-switch")).withFeatures(orig, ["team"]));
+
 /**
  * Issue 329 (part of #30): the limits on clients, projects, entries and API tokens used to count rows and then insert,
  * so two creates sent at the same moment could both pass the count and take the account one over. Now the count and
