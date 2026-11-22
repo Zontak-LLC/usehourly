@@ -13,6 +13,9 @@ import { memoryRateLimit } from "./helpers/memory-rate-limit";
 
 const prismaMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/prisma", () => ({ getPrisma: prismaMock }));
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["invoiceEmail"]),
+);
 
 const createCaller = createCallerFactory(appRouter);
 const SECRET = "test-secret-for-signing";

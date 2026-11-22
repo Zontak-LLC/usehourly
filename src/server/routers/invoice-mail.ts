@@ -6,7 +6,7 @@ import { MAX_INVOICE_NOTE, senderBlocker } from "@/lib/invoice-mail";
 import { appUrl } from "@/lib/mailer";
 
 import { deliverInvoiceEmail, InvoiceMailError } from "../invoice-mail";
-import { protectedProcedure, router } from "../trpc";
+import { featureProcedure, protectedProcedure, router } from "../trpc";
 
 export const invoiceMailRouter = router({
   /** What the "Email it" panel needs: who it would go to, what was already sent, and why sending is blocked, if it is. */
@@ -59,7 +59,7 @@ export const invoiceMailRouter = router({
   }),
 
   /** Emails the invoice to the client with a fresh private link. Every guard lives in `deliverInvoiceEmail`. */
-  send: protectedProcedure
+  send: featureProcedure("invoiceEmail")
     .input(
       z.object({
         invoiceId: z.string().max(100),
@@ -106,7 +106,7 @@ export const invoiceMailRouter = router({
     }),
 
   /** Turn the overdue reminders for one invoice on or off. */
-  setReminders: protectedProcedure
+  setReminders: featureProcedure("invoiceEmail")
     .input(z.object({ invoiceId: z.string().max(100), enabled: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const inv = await ctx.prisma.invoice.findFirst({

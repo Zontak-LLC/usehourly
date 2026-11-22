@@ -9,7 +9,7 @@ import { MAX_TAX_NAME, MAX_TAX_NUMBER, MAX_TAX_RATE } from "@/lib/tax";
 import { isThemeMode } from "@/lib/theme-sync";
 
 import { avatarSchema, logoSchema } from "../logo-schema";
-import { protectedProcedure } from "../trpc";
+import { featureProcedure, protectedProcedure } from "../trpc";
 
 export const profileProcedures = {
   /** Remembers the light/dark choice so other devices open with it. Demo accounts keep it to the browser. */
@@ -21,12 +21,7 @@ export const profileProcedures = {
     )
     .mutation(async ({ ctx, input }) => {
       if (isDemoSession(ctx.session) || !input.mode) return { saved: false };
-      await ctx.prisma.authUser.update({
-        where: { id: ctx.userId },
-        data: {
-          ...(input.mode ? { theme_mode: input.mode } : {}),
-        },
-      });
+      await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { theme_mode: input.mode } });
       return { saved: true };
     }),
 
@@ -95,7 +90,7 @@ export const profileProcedures = {
    * mailbox). The browser sends its time zone so "Friday afternoon" is the person's own. If this
    * week's time has already passed, the first email is next Friday, not in an hour.
    */
-  setWeeklyReminder: protectedProcedure
+  setWeeklyReminder: featureProcedure("weeklyReminder")
     .input(z.object({ enabled: z.boolean(), timezone: z.string().max(64).optional() }))
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.authUser.findUnique({
@@ -142,13 +137,15 @@ export const profileProcedures = {
     ),
 
   /** The person's picture, shown beside their name in the top bar. null removes it (initials show again). */
-  setAvatar: protectedProcedure.input(z.object({ avatar: avatarSchema })).mutation(async ({ ctx, input }) => {
-    if (isDemoSession(ctx.session)) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to add your picture." });
-    }
-    await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { avatar: input.avatar } });
-    return { saved: true };
-  }),
+  setAvatar: featureProcedure("avatar")
+    .input(z.object({ avatar: avatarSchema }))
+    .mutation(async ({ ctx, input }) => {
+      if (isDemoSession(ctx.session)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Create a free account to add your picture." });
+      }
+      await ctx.prisma.authUser.update({ where: { id: ctx.userId }, data: { avatar: input.avatar } });
+      return { saved: true };
+    }),
 
   /** Business details printed on invoices. Empty strings clear a field. */
   updateBusiness: protectedProcedure
@@ -184,7 +181,7 @@ export const profileProcedures = {
    * the seller's tax number. Each new invoice can still leave it off (a reverse-charge client, say); issued invoices
    * never change.
    */
-  setTax: protectedProcedure
+  setTax: featureProcedure("invoiceTax")
     .input(
       z.object({
         name: z.string().trim().max(MAX_TAX_NAME, `Keep the name under ${MAX_TAX_NAME} characters.`),

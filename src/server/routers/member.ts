@@ -12,7 +12,7 @@ import { MAX_TEAMS_JOINED } from "@/lib/team";
 import { accountQuota, insertWithinQuota } from "../quota-insert";
 import { dateSchema } from "../schemas/dates";
 import { activeMembership } from "../team";
-import { protectedProcedure, router } from "../trpc";
+import { featureProcedure, router } from "../trpc";
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 const teamId = z.string().max(100);
@@ -24,7 +24,7 @@ const NOT_AVAILABLE = "This invitation isn't available any more.";
  */
 export const memberRouter = router({
   /** Joins a team by invitation link. One conditional update claims it, so a link works once. */
-  accept: protectedProcedure
+  accept: featureProcedure("team")
     .input(z.object({ token: z.string().min(20).max(100) }))
     .mutation(async ({ ctx, input }) => {
       if (isDemoSession(ctx.session)) {
@@ -66,7 +66,7 @@ export const memberRouter = router({
     }),
 
   /** The teams this person is on, with the clients and open projects they may log time on (names only, no rates). */
-  teams: protectedProcedure.query(async ({ ctx }) => {
+  teams: featureProcedure("team").query(async ({ ctx }) => {
     const rows = await ctx.prisma.teamMember.findMany({
       where: { member_id: ctx.userId, revoked_at: null },
       include: {
@@ -94,7 +94,7 @@ export const memberRouter = router({
   }),
 
   /** Logs time for the team's owner as this member. Sending the same `clientId` twice saves one entry. */
-  log: protectedProcedure
+  log: featureProcedure("team")
     .input(
       z
         .object({
@@ -141,7 +141,7 @@ export const memberRouter = router({
     }),
 
   /** This member's own entries for the team in [from, to], newest first. Nobody else's. */
-  myEntries: protectedProcedure
+  myEntries: featureProcedure("team")
     .input(
       z
         .object({ teamId, from: dateSchema, to: dateSchema })
@@ -183,7 +183,7 @@ export const memberRouter = router({
    * The checks and the delete are one statement, so nothing can change in between.
    * Throws NOT_FOUND without saying which check failed.
    */
-  deleteEntry: protectedProcedure
+  deleteEntry: featureProcedure("team")
     .input(z.object({ teamId, id: z.string().max(100) }))
     .mutation(async ({ ctx, input }) => {
       const team = await activeMembership(ctx.prisma, ctx.userId, input.teamId);
@@ -202,11 +202,13 @@ export const memberRouter = router({
     }),
 
   /** Leaves a team. The owner keeps the entries; the person can be invited again. */
-  leave: protectedProcedure.input(z.object({ teamId })).mutation(async ({ ctx, input }) => {
-    const done = await ctx.prisma.teamMember.updateMany({
-      where: { id: input.teamId, member_id: ctx.userId, revoked_at: null },
-      data: { revoked_at: nowSeconds() },
-    });
-    return { left: done.count };
-  }),
+  leave: featureProcedure("team")
+    .input(z.object({ teamId }))
+    .mutation(async ({ ctx, input }) => {
+      const done = await ctx.prisma.teamMember.updateMany({
+        where: { id: input.teamId, member_id: ctx.userId, revoked_at: null },
+        data: { revoked_at: nowSeconds() },
+      });
+      return { left: done.count };
+    }),
 });

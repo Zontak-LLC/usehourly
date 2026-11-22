@@ -15,6 +15,10 @@ import {
 import { appRouter } from "@/server/routers/_app";
 import { createCallerFactory } from "@/server/trpc";
 
+vi.mock("@/lib/features", async (orig) =>
+  (await import("./helpers/feature-switch")).withFeatures(orig, ["accountingExport"]),
+);
+
 const createCaller = createCallerFactory(appRouter);
 
 /** A small RFC 4180 reader, so the tests see the file the way an import does (quotes, commas and line breaks inside fields). */
@@ -219,7 +223,6 @@ describe("exporting invoices for an accounting app", () => {
   it("hands over the caller's invoices for the period, oldest first, with lines and the client's email", async () => {
     const { prisma, as } = world();
     const { invoices, more } = await as("u1").accounting.invoices(YEAR);
-
     expect(more).toBe(false);
     expect(invoices.map((i) => i.number)).toEqual(["INV-2026-001", "INV-2026-002"]); // not the 2025 one, not the stranger's
     expect(invoices[0]).toMatchObject({
@@ -255,9 +258,7 @@ describe("exporting invoices for an accounting app", () => {
       email: `billing${i + 1}@example.com`,
     }));
     const { prisma, as } = world(rows, clients);
-
     const { invoices, more } = await as("u1").accounting.invoices(YEAR);
-
     expect(more).toBe(false);
     expect(invoices).toHaveLength(150);
     expect(invoices[0]).toMatchObject({ number: "INV-2026-001", client: { email: "billing1@example.com" } });
@@ -277,7 +278,6 @@ describe("exporting invoices for an accounting app", () => {
     expect(rows[0]).toHaveLength(XERO_COLUMNS);
     expect(rows.slice(1).every((r) => r.length === XERO_COLUMNS)).toBe(true);
     expect(rows).toHaveLength(1 + 3); // two lines on the first invoice, one on the second
-
     const col = (name: string) => rows[0].indexOf(name);
     const first = rows[1];
     expect(first[col("*ContactName")]).toBe("Acme Holdings, Inc.");

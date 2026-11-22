@@ -3,7 +3,6 @@ import {
   type Browser,
   type BrowserContext,
   test as base,
-  type ConsoleMessage,
   type Download,
   expect,
   type Locator,
@@ -14,6 +13,7 @@ import JSZip from "jszip";
 
 import { TIMER_LOCK_MS } from "../src/components/timer-panel";
 import { buildDemoData } from "../src/lib/demo";
+import { watchBrowserProblems } from "./browser-problems";
 import { runSql } from "./local-db";
 import { today as localToday } from "./today";
 import { mkdirSync, readFileSync } from "node:fs";
@@ -577,25 +577,6 @@ export async function auditPage(page: Page, label: string, isPhone: boolean) {
   expect.soft(problems, `page checks: ${label}`).toEqual([]);
 }
 
-/** Console messages that are noise in development, not problems with the app. */
-// 400/401/403 are the app saying no on purpose (a wrong password, a refused send); 5xx and uncaught errors still fail.
-// These net:: errors are what the browser logs when a test switches it offline or aborts a request on purpose.
-const IGNORED = [
-  /net::ERR_(INTERNET_DISCONNECTED|CONNECTION_FAILED|FAILED)/i,
-  /Failed to fetch RSC payload/i, // Next logs this when a page change falls back to a normal page load while offline
-  /favicon/i,
-  /Download the React DevTools/i,
-  /status of 40[013]/i,
-  /\[Fast Refresh\]/i,
-];
-
-/**
- * A 404 from a tRPC call is the server's NOT_FOUND on purpose (an entry deleted in another tab, issue 458), so it is not
- * a problem. A 404 for a page, script or picture still fails: Chromium logs the missing file's address as the location.
- */
-const isDeliberateNotFound = (m: ConsoleMessage) =>
-  /status of 404/i.test(m.text()) && m.location().url.includes("/api/trpc/");
-
 type Fixtures = {
   /** Save a full-page screenshot, numbered, under e2e/report/screens/<device>/. */
   shot: (name: string) => Promise<void>;
@@ -616,17 +597,9 @@ export const test = base.extend<Fixtures>({
   // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring pattern even when no fixture is used
   isPhone: async ({}, use, testInfo) => use(testInfo.project.name === "phone"),
   page: async ({ page }, use) => {
-    const problems: string[] = [];
-    page.on("pageerror", (e) => problems.push(`uncaught error: ${e.message}`));
-    page.on("console", (m) => {
-      if (m.type() === "error" && !IGNORED.some((r) => r.test(m.text())) && !isDeliberateNotFound(m))
-        problems.push(`console error: ${m.text().slice(0, 3500)}`);
-    });
-    page.on("response", (r) => {
-      if (r.status() >= 500) problems.push(`HTTP ${r.status()}: ${r.url()}`);
-    });
+    const problems = watchBrowserProblems(page);
     await use(page);
-    expect.soft(problems, "errors in the browser").toEqual([]);
+    expect.soft(await problems(), "errors in the browser").toEqual([]);
   },
   shot: async ({ page }, use, testInfo) => {
     let n = 0;
