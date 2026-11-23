@@ -3,7 +3,7 @@
 Serve the procedures your app already has to AI assistants (Claude, ChatGPT, Cursor and other MCP
 clients) as a safe MCP server: Streamable HTTP, stateless, JSON replies, no SDK in your bundle.
 
-This is the first slice of [issue 125](https://github.com/Zontak-LLC/usehourly/issues/125). The code
+This is the first slice of [issue 125](https://github.com/zontak-ai/usehourly/issues/125). The code
 was extracted from UseHourly's MCP server, and UseHourly runs on it (`src/server/mcp/protocol.ts`
 and `http.ts` are now thin adapters). It is not published yet: the name, repo and docs home are the
 owner's choice.

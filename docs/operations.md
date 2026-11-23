@@ -10,7 +10,7 @@ change goes wrong. Written for the next person on call, including future you.
 | App | One Cloudflare Worker named `hourly` (Next.js through OpenNext) | Cloudflare dashboard > Workers & Pages > `hourly` |
 | Database | Cloudflare D1 `hourly-db` (SQLite) | `npx wrangler d1 ...`; Time Travel keeps 30 days |
 | Public address | https://usehourly.app (custom domain, the only public origin) | `wrangler.jsonc` `routes` |
-| Pipeline | GitHub Actions `ci.yml`: `check`, `e2e` (4 shards), then `deploy` (with the smoke test) on `main` | https://github.com/Zontak-LLC/usehourly/actions (free: the repository is public) |
+| Pipeline | GitHub Actions `ci.yml`: `check`, `e2e` (4 shards), then `deploy` (with the smoke test) on `main` | https://github.com/zontak-ai/usehourly/actions (free: the repository is public) |
 | Secrets | Worker secrets (`AUTH_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAILS`, `TURNSTILE_SECRET_KEY`, OAuth ids/secrets, ...) | `npx wrangler secret list` (names only) |
 
 ## CI cost (2026-11-16)
@@ -152,7 +152,7 @@ and a nightly browser-test run
 - **After the deploy:** it waits for `ci.yml`'s push run for the merge commit (its own smoke test and rollback stay as they are), then expects 200 from https://usehourly.app/ and `/api/health` (4 tries, 30 s apart). If either fails, it runs `wrangler rollback` to the recorded version and opens an issue `Daily release rolled back`. Nothing else rolls back automatically; the database never does (Time Travel stays a hand step).
 - **Issues:** every problem opens one issue per title (`Daily release skipped: RELEASE_TOKEN is not set`, `Daily release held: …`, `Daily release: deploy run not found` / `failed`, `Daily release rolled back`); a repeat comments on the open one.
 - **Dry run:** Actions, Daily release, Run workflow (`dry_run` is on by default) prints the changed files, the commits, the rollback version and `Blocked by migration: <files>` or `No migration`, and writes nothing.
-- **Owner set-up (once):** create a fine-grained personal access token with access to Zontak-LLC/usehourly only, with the repository permissions Contents: Read and write and Pull requests: Read and write. Store it as the repository secret `RELEASE_TOKEN` (Settings, Secrets and variables, Actions). The workflow uses it only to open and merge the release PR, because a merge with the built-in token would not start the deploy. The rollback reuses the production environment's `CLOUDFLARE_API_TOKEN`. After the workflow reaches `main`, run it once by hand with `dry_run` true and read its log.
+- **Owner set-up (once):** create a fine-grained personal access token with access to zontak-ai/usehourly only, with the repository permissions Contents: Read and write and Pull requests: Read and write. Store it as the repository secret `RELEASE_TOKEN` (Settings, Secrets and variables, Actions). The workflow uses it only to open and merge the release PR, because a merge with the built-in token would not start the deploy. The rollback reuses the production environment's `CLOUDFLARE_API_TOKEN`. After the workflow reaches `main`, run it once by hand with `dry_run` true and read its log.
 
 At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
 

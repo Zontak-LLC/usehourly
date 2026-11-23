@@ -1,6 +1,6 @@
 # CLAUDE.md — UseHourly (formerly Hourly)
 
-Time tracking for freelancers. The product name is **UseHourly** (renamed from "Hourly" 2026-10-14 to stay clear of other products called Hourly). Only what people see changed: internal ids are kept on purpose (Worker `hourly`, D1 `hourly-db`, the `hourly:lastProject` saved setting, `hourly_rate` fields). The GitHub repo is `Zontak-LLC/usehourly` and the local folder is `~/Projects/usehourly` (both renamed from `hourly` on 2026-10-14; the old repo URL redirects); download file names are `usehourly-*.xlsx`. Goal: logging a day's time should take seconds (UX is the product).
+Time tracking for freelancers. The product name is **UseHourly** (renamed from "Hourly" 2026-10-14 to stay clear of other products called Hourly). Only what people see changed: internal ids are kept on purpose (Worker `hourly`, D1 `hourly-db`, the `hourly:lastProject` saved setting, `hourly_rate` fields). The GitHub repo is `zontak-ai/usehourly` and the local folder is `~/Projects/usehourly` (both renamed from `hourly` on 2026-10-14; the old repo URL redirects); download file names are `usehourly-*.xlsx`. Goal: logging a day's time should take seconds (UX is the product).
 Built on the `arhamkhnz/next-shadcn-admin-dashboard` shell (the Vercel "admin-dashboard" template was Postgres/Auth.js-only, so it was not used). No Material UI — shadcn + Tailwind only.
 
 ## Stack
@@ -510,7 +510,7 @@ Why this exists: the day-card "Edit day" button shipped doing nothing, because a
 
 ## Free, supported by donations
 - UseHourly is free: no paywall, no ads, and no payment code anywhere. Donations are optional.
-- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts` (`donateUrl()` only accepts https). It is **on**: https://github.com/sponsors/Zontak-LLC (the Zontak LLC GitHub Sponsors listing, live 2026-10-14; one-time, monthly and custom amounts). It drives the landing page "UseHourly is free." band and footer link and the Account page's "Support UseHourly" row (`account-section-list.tsx`). Set it to "" to hide all of them.
+- The donation address is one constant, `DONATE_URL` in `src/lib/donate.ts` (`donateUrl()` only accepts https). It is **on**: https://github.com/sponsors/zontak-ai (the Zontak LLC GitHub Sponsors listing, live 2026-10-14; one-time, monthly and custom amounts). It drives the landing page "UseHourly is free." band and footer link and the Account page's "Support UseHourly" row (`account-section-list.tsx`). Set it to "" to hide all of them.
 - GitHub Sponsors suits open-source work and the repo is public (MIT). If GitHub ever objects, Ko-fi or Buy Me a Coffee are drop-in replacements (change `DONATE_URL` and `DONATE_PLATFORM`).
 
 ## Timesheet grid & export

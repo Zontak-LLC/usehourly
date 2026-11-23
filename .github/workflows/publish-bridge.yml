@@ -5,7 +5,7 @@ name: Publish bridge
 # npm is already that version, so an ordinary merge to main does nothing here.
 #
 # npm side: "trusted publishing" (npmjs.com > usehourly-mcp > Settings > Trusted Publisher: GitHub Actions, repository
-# Zontak-LLC/usehourly, workflow publish-bridge.yml). No npm token is stored anywhere.
+# zontak-ai/usehourly, workflow publish-bridge.yml). No npm token is stored anywhere.
 # Registry side: the name app.usehourly/usehourly is a domain name, so GitHub's own login does not work for it; the
 # registry wants the ed25519 key for usehourly.app (repository secret MCP_REGISTRY_KEY). Without the secret that step is
 # skipped and the log says so.

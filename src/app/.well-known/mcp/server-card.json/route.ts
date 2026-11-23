@@ -12,7 +12,7 @@ export function GET() {
     serverInfo: SERVER_INFO,
     description:
       "Time tracking for freelancers: log and edit time, run timers, manage clients and projects, create invoices and read annual reports.",
-    documentationUrl: "https://github.com/Zontak-LLC/usehourly#use-it-from-any-ai-assistant-mcp-server",
+    documentationUrl: "https://github.com/zontak-ai/usehourly#use-it-from-any-ai-assistant-mcp-server",
     transport: { type: "streamable-http", endpoint: "/api/mcp" },
     authentication: {
       required: true,

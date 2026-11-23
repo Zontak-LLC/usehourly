@@ -79,7 +79,7 @@ describe("the progress line", () => {
     expect(shouldTrackClick(click("/dashboard/week"), here)).toBe(true);
     expect(shouldTrackClick(click("/dashboard/today?date=2026-10-01"), here)).toBe(false); // same page
     expect(shouldTrackClick(click("/dashboard/today#x"), here)).toBe(false);
-    expect(shouldTrackClick(click("https://github.com/sponsors/Zontak-LLC"), here)).toBe(false); // another site
+    expect(shouldTrackClick(click("https://github.com/sponsors/zontak-ai"), here)).toBe(false); // another site
     expect(shouldTrackClick(click("/dashboard/week", { metaKey: true }), here)).toBe(false); // new tab
     expect(shouldTrackClick(click("/dashboard/week", { ctrlKey: true }), here)).toBe(false);
     expect(shouldTrackClick(click("/dashboard/week", { shiftKey: true }), here)).toBe(false);
