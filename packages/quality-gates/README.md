@@ -9,7 +9,7 @@ UseHourly once shipped an "Edit day" button that did nothing. A rewrite left it 
 no test ever clicked it. The lesson: a rule that is only remembered will be forgotten. So every rule here is checked
 by a command, the same command runs everywhere, and a rule can only ever get stricter.
 
-This is slice 1 of [issue 126](https://github.com/Zontak-LLC/usehourly/issues/126). UseHourly runs on it. It is not
+This is slice 1 of [issue 126](https://github.com/zontak-ai/usehourly/issues/126). UseHourly runs on it. It is not
 published yet (the npm name `quality-gates` is reserved).
 
 ## Install and set up

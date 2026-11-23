@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Zontak-LLC/usehourly.git",
+    "url": "git+https://github.com/zontak-ai/usehourly.git",
     "directory": "bridge"
   },
   "homepage": "https://usehourly.app"

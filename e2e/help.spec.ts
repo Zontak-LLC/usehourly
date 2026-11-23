@@ -1,7 +1,7 @@
 import { FEATURES } from "../src/lib/features";
 import { allMail, expect, mailWhere, signUpReady, startFreshAccount, test } from "./helpers";
 
-const GITHUB_ISSUES = 'a[href*="github.com/Zontak-LLC/usehourly/issues"]';
+const GITHUB_ISSUES = 'a[href*="github.com/zontak-ai/usehourly/issues"]';
 
 /** The Help page (issue #216): one search box, six common questions that open in place, and old guide links that still land. */
 test("a visitor finds an answer by searching, opens it in place, and old guide links still land", async ({ page }) => {

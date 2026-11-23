@@ -36,7 +36,7 @@ describe("Supporters thank-you", () => {
   });
 
   it("writes a README list that cannot be broken by a clever name", () => {
-    const url = "https://github.com/sponsors/Zontak-LLC";
+    const url = "https://github.com/sponsors/zontak-ai";
     expect(readmeSupportersBlock([], url)).toContain("Be the first");
     const block = readmeSupportersBlock(
       [{ name: "Ada [admin](https://evil.example)", url: "https://github.com/ada" }, { name: "Plain" }],

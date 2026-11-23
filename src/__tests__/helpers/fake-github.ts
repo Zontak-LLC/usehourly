@@ -7,7 +7,7 @@ import type { AddressInfo } from "node:net";
  * records every request, honours `per_page`/`page`, and can be told to fail one route with a status. Nothing leaves
  * the machine.
  */
-export const REPO = "Zontak-LLC/usehourly";
+export const REPO = "zontak-ai/usehourly";
 const PREFIX = `/repos/${REPO}`;
 
 export type FakeIssue = {

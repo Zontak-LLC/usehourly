@@ -149,7 +149,7 @@ export function protectedResourceMetadata(appUrl: string) {
     bearer_methods_supported: ["header"],
     scopes_supported: ["read", "write"],
     resource_name: "UseHourly",
-    resource_documentation: "https://github.com/Zontak-LLC/usehourly#use-it-from-any-ai-assistant-mcp-server",
+    resource_documentation: "https://github.com/zontak-ai/usehourly#use-it-from-any-ai-assistant-mcp-server",
   };
 }
 
@@ -170,7 +170,7 @@ export function authorizationServerMetadata(appUrl: string) {
     // RFC 9207: every answer sent back to the app's redirect address names this server as `iss`, so an app that
     // talks to several servers can tell a mix-up attack from a real answer.
     authorization_response_iss_parameter_supported: true,
-    service_documentation: "https://github.com/Zontak-LLC/usehourly",
+    service_documentation: "https://github.com/zontak-ai/usehourly",
   };
 }
 

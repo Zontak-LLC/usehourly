@@ -37,7 +37,7 @@ BUILT FOR REAL FREELANCE LIFE
 
 FREE AND OPEN SOURCE
 • No ads, no paywall, no tracking of what you type. Donations are optional.
-• The code is open source (MIT): github.com/Zontak-LLC/usehourly
+• The code is open source (MIT): github.com/zontak-ai/usehourly
 • Delete your account and data any time from the Account page.
 
 Made by Zontak LLC.
