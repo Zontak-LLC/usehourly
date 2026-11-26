@@ -2,7 +2,7 @@
  * "Ask a question" on the Help page (issue 375): where questions go and how much one account may send. The form and the
  * `help.ask` procedure both read these, so the box and the server can never disagree on the cap.
  */
-export const SUPPORT_EMAIL = "admin@zontakllc.com";
+export const SUPPORT_EMAIL = "denis@zontak.ai";
 
 /** Characters in one question. */
 export const HELP_QUESTION_MAX = 2000;

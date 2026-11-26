@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/legal-page";
 import { feature } from "@/lib/features";
+import { SUPPORT_EMAIL } from "@/lib/help-question";
 
 export const metadata: Metadata = {
   title: "Privacy policy | UseHourly",
@@ -119,8 +120,8 @@ export default function PrivacyPage() {
       <h2>Contact</h2>
       <p>
         Questions:{" "}
-        <a href="mailto:admin@zontakllc.com" className="inline-block py-1">
-          admin@zontakllc.com
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-block py-1">
+          {SUPPORT_EMAIL}
         </a>
         .
       </p>

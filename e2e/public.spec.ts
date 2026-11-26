@@ -44,6 +44,16 @@ test.describe("public pages", () => {
     await expect(page.getByText("Last updated November 2026")).toBeVisible();
   });
 
+  test("the privacy and terms pages link to the support address", async ({ page }) => {
+    for (const path of ["/privacy", "/terms"]) {
+      await page.goto(path);
+      await expect(page.getByRole("link", { name: "denis@zontak.ai" })).toHaveAttribute(
+        "href",
+        "mailto:denis@zontak.ai",
+      );
+    }
+  });
+
   // The landing page is a static file now (issue 424): no proxy runs on /, so the page itself sends a signed-in visitor
   // on after it paints (SignedInRedirect asks /api/auth/session).
   test("signed out, the landing page shows its headline and stays on /", async ({ page }) => {

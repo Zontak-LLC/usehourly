@@ -186,7 +186,7 @@ test("a signed-in person asks a question on Help, and it is emailed to support w
     await expect(aside.getByRole("status")).toHaveText("Thanks, we got it. We'll answer by email.");
     // filtered by reply_to: specs run side by side and all send their questions to the same support address
     const mail = await mailWhere((m) => m.reply_to === user.email, `with reply-to ${user.email}`);
-    expect(mail.to).toBe("admin@zontakllc.com");
+    expect(mail.to).toBe("denis@zontak.ai");
     expect(mail.text).toContain(QUESTION);
     expect(mail.text).toContain(user.email);
     expect((await allMail()).filter((m) => m.reply_to === user.email)).toHaveLength(1);
@@ -213,21 +213,21 @@ test("a send that fails says so plainly under the box and keeps the text; an end
     [
       "PRECONDITION_FAILED",
       "Email isn't set up on this server yet.",
-      "Email isn't set up on this server yet. Please write to admin@zontakllc.com.",
+      "Email isn't set up on this server yet. Please write to denis@zontak.ai.",
     ],
     [
       "INTERNAL_SERVER_ERROR",
       "Something went wrong. Please try again.", // what the server's error formatter leaves of a failed send
-      "Couldn't send it right now. Please try again in a minute, or write to admin@zontakllc.com.",
+      "Couldn't send it right now. Please try again in a minute, or write to denis@zontak.ai.",
     ],
   ]) {
     await page.unroute("**/api/trpc/help.ask*");
     await page.route("**/api/trpc/help.ask*", (route) => route.fulfill(refuse(code, message)));
     await aside.getByRole("button", { name: "Send" }).click();
     await expect(aside.getByRole("alert")).toHaveText(shown);
-    await expect(aside.getByRole("alert").getByRole("link", { name: "admin@zontakllc.com" })).toHaveAttribute(
+    await expect(aside.getByRole("alert").getByRole("link", { name: "denis@zontak.ai" })).toHaveAttribute(
       "href",
-      "mailto:admin@zontakllc.com",
+      "mailto:denis@zontak.ai",
     );
     await expect(box).toHaveValue(QUESTION);
   }

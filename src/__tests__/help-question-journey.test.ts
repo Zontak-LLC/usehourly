@@ -51,7 +51,7 @@ describe("asking a question from the Help page", () => {
     expect(w.send).toHaveBeenCalledTimes(1);
     const m = w.send.mock.calls[0][0];
     expect(m.to).toBe(SUPPORT_EMAIL);
-    expect(m.to).toBe("admin@zontakllc.com");
+    expect(m.to).toBe("denis@zontak.ai");
     expect(m.replyTo).toBe("ada@example.com");
     expect(m.subject).toBe("UseHourly question from Ada Lovelace");
     expect(m.fromName).toBe("Ada Lovelace via UseHourly");
@@ -74,7 +74,7 @@ describe("asking a question from the Help page", () => {
       to: "victim@example.org",
     } as never);
     const m = w.send.mock.calls[0][0];
-    expect(m.to).toBe("admin@zontakllc.com");
+    expect(m.to).toBe("denis@zontak.ai");
     expect(m.replyTo).toBe("ada@example.com");
     expect(m.subject).not.toContain("Bank");
     expect(m.text).not.toContain("boss@bank.example");
