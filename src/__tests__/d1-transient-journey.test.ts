@@ -4,6 +4,7 @@ import { retryTransientD1 } from "@/lib/d1-retry";
 import { logError } from "@/lib/log";
 
 import { fakeD1 } from "./helpers/fake-d1";
+import { logLines } from "./helpers/log-lines";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 /**
@@ -48,20 +49,7 @@ describe("a short-lived D1 error on a read (incident c6e22d9fe8d78087)", () => {
   });
   afterEach(() => spy.mockRestore());
 
-  // JSON lines only: the adapter's own "Error in performIO: %O" line goes to console.error too
-  type Line = {
-    event: string;
-    attempt?: number;
-    attempts?: number;
-    message: string;
-    error: { name: string; message: string };
-  };
-  const lines = (event: string): Line[] =>
-    (spy.mock.calls as unknown[][])
-      .map((c) => String(c[0]))
-      .filter((l) => l.startsWith("{"))
-      .map((l) => JSON.parse(l))
-      .filter((l) => l.event === event);
+  const lines = (event: string) => logLines(spy, event);
 
   async function signedIn() {
     const d1 = fakeD1();
