@@ -83,6 +83,9 @@ Events you may see (all `level: "error"`), and what they mean:
 | `social_sign_in_failed`, `demo_sign_in_failed` | A GitHub/Google or sample-account sign-in failed | Check the provider's status and the secrets |
 | `prisma_warmup_failed` | The early connection attempt failed; it reconnects on the first query | Only matters if it repeats |
 | `d1_retry` (warn) | A read failed with a short-lived D1 error ("Network connection lost" and similar) and is tried again (`attempt` 1 or 2, `message`); the adapter's own "Error in performIO: %O" line comes with it | Harmless alone; many in a row mean D1 itself is in trouble (Cloudflare status, D1 metrics) |
+| `d1_read_failed` | A read failed for good, after any retries (`message`, `attempts`); the adapter's own "Error in performIO: %O" line comes with it | One is a blip; many in a row mean D1 is in trouble |
+| `d1_write_conflict` (warn) | A write hit a unique-key clash (`message`, `sql` first 80 characters); the adapter's own "Error in performIO: %O" line comes with it | Harmless: on `rate_limits` it is the handled create race in src/lib/rate-limit.ts |
+| `d1_write_failed` | A write failed for any other reason (`message`, `sql` first 80 characters); writes are never retried; the adapter's own "Error in performIO: %O" line comes with it | Read `message`; many in a row mean D1 is in trouble (Cloudflare status, D1 metrics) |
 | `drill_started`, `drill_stopped`, `drill_expired` (warn) | STAGING only: a planned test failure began, was stopped or ran out (`fault`, `expires`) | Nothing: errors between started and stopped/expired are the drill (see "Drills") |
 | `drill_refused` (warn) | STAGING only: a call to `/api/drill` with a wrong or missing token | One is a typo; many is someone guessing (20 per 15 minutes per connection) |
 | `drill_read_failed` | STAGING only: the drill setting could not be read; the path runs normally | Harmless |
