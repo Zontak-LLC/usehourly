@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Week: "All N entries this week" fold row (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Mockup for issue 577. On Week, under the day panel: nothing when all the week's time is on one day; otherwise one row
+  "All N entries this week" with a chevron (src/app/(main)/dashboard/week/_components/week-all-entries.tsx). Tap or
+  Enter/Space opens the existing WorkItems card right below; the row stays as the toggle. Colours are the app's tokens
+  (light and dark); the row is rounded-3xl border bg-band-2, at least 44px tall.
+-->
+<style>
+  .light { --background: #eef2f7; --foreground: #1c2434; --card: #ffffff; --border: #dbe2ec; --band: #e3e9f1; --muted-fg: #586377; }
+  .dark { --background: #131a26; --foreground: #e6ebf3; --card: #1a2232; --border: #2a3447; --band: #222b3c; --muted-fg: #9ba7ba; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px; background: #eef2f7; color: #1c2434; font: 14px/1.45 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 24px; }
+  h2 { font: 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 10px; color: #586377; }
+  .theme { padding: 20px; border-radius: 16px; background: var(--background); color: var(--foreground); margin-bottom: 24px; }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .label { font: 11px/1 ui-monospace, monospace; color: var(--muted-fg); margin-bottom: 6px; }
+  .desktop { width: 560px; max-width: 100%; }
+  .phone { width: 343px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .day { border-radius: 24px; border: 1px solid var(--border); background: var(--card); padding: 16px; font-weight: 600; }
+  .fold { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px;
+    border-radius: 24px; border: 1px solid var(--border); background: var(--band); color: var(--foreground);
+    padding: 12px 16px; font: 600 16px system-ui, sans-serif; text-align: left; }
+  .chev { width: 20px; height: 20px; transition: transform .15s; }
+  .open .chev { transform: rotate(180deg); }
+  .card { border-radius: 24px; border: 1px solid var(--border); background: var(--card); overflow: hidden; }
+  .card header { background: var(--band); padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+  .card h3 { margin: 0; font-size: 16px; }
+  .card h3 span { font-weight: 400; color: var(--muted-fg); font-size: 14px; }
+  .search { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--muted-fg); background: var(--card); min-width: 180px; }
+  .rows { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .row { border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; display: flex; justify-content: space-between; }
+  .none { color: var(--muted-fg); font-style: italic; padding: 8px 4px; }
+</style>
+</head>
+<body>
+<h1>Week: the "All entries this week" fold row</h1>
+
+<div class="theme light">
+  <div class="frames">
+    <div class="desktop">
+      <div class="label">Light · one day only: no list</div>
+      <div class="stack"><div class="day">Tuesday, September 8 (day panel)</div><div class="none">(nothing here: the day panel shows it all)</div></div>
+    </div>
+    <div class="desktop">
+      <div class="label">Light · two or more days: folded (aria-expanded="false")</div>
+      <div class="stack"><div class="day">Tuesday, September 8 (day panel)</div>
+        <button class="fold" type="button" aria-expanded="false">All 3 entries this week
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+    </div>
+    <div class="desktop open">
+      <div class="label">Light · open (aria-expanded="true", chevron turned)</div>
+      <div class="stack"><div class="day">Tuesday, September 8 (day panel)</div>
+        <button class="fold" type="button" aria-expanded="true">All 3 entries this week
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <section class="card"><header><h3>All entries this week <span>(3)</span></h3><div class="search">Search entries</div></header>
+          <div class="rows"><div class="row"><span>Note 1</span><span>0:30</span></div><div class="row"><span>Note 2</span><span>0:30</span></div><div class="row"><span>Note 3</span><span>0:30</span></div></div></section></div>
+    </div>
+  </div>
+</div>
+
+<div class="theme dark">
+  <div class="frames">
+    <div class="desktop">
+      <div class="label">Dark · folded</div>
+      <div class="stack"><div class="day">Tuesday, September 8 (day panel)</div>
+        <button class="fold" type="button" aria-expanded="false">All 3 entries this week
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+    </div>
+    <div class="desktop open">
+      <div class="label">Dark · open</div>
+      <div class="stack">
+        <button class="fold" type="button" aria-expanded="true">All 3 entries this week
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <section class="card"><header><h3>All entries this week <span>(3)</span></h3><div class="search">Search entries</div></header>
+          <div class="rows"><div class="row"><span>Note 1</span><span>0:30</span></div><div class="row"><span>Note 2</span><span>0:30</span></div></div></section></div>
+    </div>
+  </div>
+</div>
+
+<div class="theme light">
+  <div class="frames">
+    <div class="phone">
+      <div class="label">Phone · folded, 44px or taller</div>
+      <div class="stack"><div class="day">Tuesday, September 8</div>
+        <button class="fold" type="button" aria-expanded="false">All 3 entries this week
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+    </div>
+    <div class="phone open">
+      <div class="label">Phone · open</div>
+      <div class="stack">
+        <button class="fold" type="button" aria-expanded="true">All 3 entries this week
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <section class="card"><header><h3>All entries this week <span>(3)</span></h3><div class="search" style="width:100%">Search entries</div></header>
+          <div class="rows"><div class="row"><span>Note 1</span><span>0:30</span></div></div></section></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

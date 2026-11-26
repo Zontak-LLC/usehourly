@@ -1,4 +1,13 @@
-import { expect, gotoClient, menuAction, openAllEntries, shownMonth, startFreshAccount, test } from "./helpers";
+import {
+  addEntryOnAnotherDay,
+  expect,
+  gotoClient,
+  menuAction,
+  openAllEntries,
+  shownMonth,
+  startFreshAccount,
+  test,
+} from "./helpers";
 
 /**
  * A button that opens a form closes it again on the second click, and says whether it is open (aria-expanded). And the
@@ -31,9 +40,13 @@ test("buttons that open a form close it on the second click; the day's list is h
   });
 
   await test.step("on Week the day's Edit day button opens every entry's form and Done editing closes them", async () => {
+    await addEntryOnAnotherDay(page); // Week's list shows only when the week has time on two days
     await page.goto("/dashboard/week");
     await openAllEntries(page); // the full list is folded behind one button
-    const list = page.getByRole("region", { name: /^All entries this (week|month)$/ });
+    const list = page
+      .getByRole("region", { name: /^All entries this (week|month)$/ })
+      .getByRole("region")
+      .filter({ hasText: "toggle me" });
     const open = list.getByRole("button", { name: /^Edit .*\d/ });
     await expect(open).toHaveAttribute("aria-expanded", "false");
     await open.click();

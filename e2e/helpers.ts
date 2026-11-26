@@ -713,11 +713,40 @@ export function fullDemoMonth(day = localToday()) {
   return `/dashboard/month?month=${count(before) > count(thisMonth) ? before : thisMonth}`;
 }
 
-/** Shows the period's full list of entries ("All entries this week/month"): always open under the day on Week; on
- * Month it is the "Whole month" view of the switch beside the calendar. */
+/** Today and the first three days (Monday to Wednesday) of this week, in the browser's own time zone (the app works out "today" there). */
+export async function thisWeek(page: Page) {
+  return page.evaluate(() => {
+    const iso = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const d = new Date();
+    const today = iso(d);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const monday = iso(d);
+    d.setDate(d.getDate() + 1);
+    const tuesday = iso(d);
+    d.setDate(d.getDate() + 1);
+    return { today, monday, tuesday, wednesday: iso(d) };
+  });
+}
+
+/**
+ * Logs a second 30-minute entry on a day of this week that is not today, so Week's list (hidden while all time is on
+ * one day) shows. Go to a page after it: the one open does not show it yet.
+ */
+export async function addEntryOnAnotherDay(page: Page) {
+  const { today, monday, tuesday } = await thisWeek(page);
+  await addEntries(page, today === monday ? tuesday : monday, 1);
+}
+
+/** Shows the period's full list of entries ("All entries this week/month"): folded behind one row on Week (which is
+ * absent when all time is on one day); on Month it is the "Whole month" view of the switch beside the calendar. */
 export async function openAllEntries(page: Page) {
   if (page.url().includes("/dashboard/month")) {
     await page.getByRole("button", { name: "Whole month", exact: true }).click();
+  } else {
+    const fold = page.getByRole("button", { name: /^All \d+ entries this week$/ });
+    await expect(fold).toBeVisible();
+    if ((await fold.getAttribute("aria-expanded")) === "false") await fold.click();
   }
   await expect(page.getByRole("region", { name: /^All entries this (week|month)$/ })).toBeVisible();
 }
