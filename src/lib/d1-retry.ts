@@ -46,7 +46,9 @@ function wrapStatement(stmt: Statement, sql: string): Statement {
     get(target, prop) {
       if (prop === "bind") return (...args: unknown[]) => wrapStatement(target.bind(...args), sql);
       if (prop === "raw" && READ.test(sql)) return (...args: unknown[]) => rawWithRetry(target, args);
-      if (prop === "run" || prop === "raw") return (...args: unknown[]) => writeLogged(target, prop, args, sql);
+      if (prop === "run" || prop === "raw")
+        return (...args: unknown[]) =>
+          writeLogged(() => (target[prop] as (...a: unknown[]) => Promise<unknown>).apply(target, args), sql);
       const value = Reflect.get(target, prop, target);
       return typeof value === "function" ? value.bind(target) : value;
     },
@@ -62,10 +64,9 @@ function logWriteFailure(err: unknown, sql: string) {
   else logError("d1_write_failed", err, fields);
 }
 
-async function writeLogged(stmt: Statement, method: "run" | "raw", args: unknown[], sql: string): Promise<unknown> {
-  const call = stmt[method] as (...a: unknown[]) => Promise<unknown>;
+async function writeLogged(send: () => Promise<unknown>, sql: string): Promise<unknown> {
   try {
-    return await call.apply(stmt, args);
+    return await send();
   } catch (err) {
     logWriteFailure(err, sql);
     throw err;

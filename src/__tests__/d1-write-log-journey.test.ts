@@ -4,6 +4,7 @@ import { retryTransientD1 } from "@/lib/d1-retry";
 
 import { fakeD1 } from "./helpers/fake-d1";
 import { logLines } from "./helpers/log-lines";
+import { type Req, signedIn as signIn } from "./helpers/request-context";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 /**
@@ -11,7 +12,6 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * (R-78). The real Prisma client and adapter run over the stand-in D1, signed in as in d1-transient-journey.test.ts.
  */
 
-type Req = { env: { DB: unknown }; ctx: object; cf: object; canceled: boolean };
 const requests = vi.hoisted(() => ({ als: null as unknown as AsyncLocalStorage<Req> }));
 requests.als = new AsyncLocalStorage<Req>();
 
@@ -22,14 +22,6 @@ vi.mock("@opennextjs/cloudflare", () => ({
     return store;
   },
 }));
-
-async function loadPrisma() {
-  vi.resetModules();
-  await import("@opennextjs/cloudflare");
-  return import("@/lib/prisma");
-}
-
-const within = <T>(req: Req, fn: () => Promise<T>) => requests.als.run(req, async () => await fn());
 
 const INSERT_USER =
   "INSERT INTO auth_users (id, name, email, password_hash, created_at) VALUES ('u1','A','a@x.invalid','x', 0)";
@@ -46,16 +38,7 @@ describe("a failed D1 write is logged with its real message (R-78)", () => {
   const lines = (event: string) => logLines(spy, event);
   const writeLines = () => [...lines("d1_write_conflict"), ...lines("d1_write_failed")];
 
-  async function signedIn() {
-    const d1 = fakeD1();
-    d1.db.exec(INSERT_USER);
-    const { getPrisma } = await loadPrisma();
-    const req: Req = { env: { DB: d1.DB }, ctx: {}, cf: {}, canceled: false };
-    const prisma = await within(req, getPrisma);
-    d1.sent.length = 0;
-    const run = <T>(fn: () => Promise<T>) => within(req, fn);
-    return { ...d1, prisma, run };
-  }
+  const signedIn = () => signIn(requests.als);
 
   it("logs a unique-key clash through Prisma as d1_write_conflict (warn)", async () => {
     const { prisma, run } = await signedIn();

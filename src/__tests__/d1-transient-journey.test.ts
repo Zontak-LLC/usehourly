@@ -5,6 +5,7 @@ import { logError } from "@/lib/log";
 
 import { fakeD1 } from "./helpers/fake-d1";
 import { logLines } from "./helpers/log-lines";
+import { type Req, signedIn as signIn } from "./helpers/request-context";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 /**
@@ -18,7 +19,6 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * `meta.driverAdapterError.cause.originalMessage`.
  */
 
-type Req = { env: { DB: unknown }; ctx: object; cf: object; canceled: boolean };
 const requests = vi.hoisted(() => ({ als: null as unknown as AsyncLocalStorage<Req> }));
 requests.als = new AsyncLocalStorage<Req>();
 
@@ -29,16 +29,6 @@ vi.mock("@opennextjs/cloudflare", () => ({
     return store;
   },
 }));
-
-// vitest can hand a same-tick dynamic import of a mocked module the real one, so import the mock first
-async function loadPrisma() {
-  vi.resetModules();
-  await import("@opennextjs/cloudflare");
-  return import("@/lib/prisma");
-}
-
-// awaited inside the run: a Prisma query is lazy and only starts when someone awaits it
-const within = <T>(req: Req, fn: () => Promise<T>) => requests.als.run(req, async () => await fn());
 
 const LOST = "D1_ERROR: Network connection lost.";
 
@@ -51,18 +41,7 @@ describe("a short-lived D1 error on a read (incident c6e22d9fe8d78087)", () => {
 
   const lines = (event: string) => logLines(spy, event);
 
-  async function signedIn() {
-    const d1 = fakeD1();
-    d1.db.exec(
-      "INSERT INTO auth_users (id, name, email, password_hash, created_at) VALUES ('u1','A','a@x.invalid','x', 0)",
-    );
-    const { getPrisma } = await loadPrisma();
-    const req: Req = { env: { DB: d1.DB }, ctx: {}, cf: {}, canceled: false };
-    const prisma = await within(req, getPrisma);
-    d1.sent.length = 0; // count only what the test sends
-    const run = <T>(fn: () => Promise<T>) => within(req, fn);
-    return { ...d1, prisma, run };
-  }
+  const signedIn = () => signIn(requests.als);
 
   const userReads = (sent: { sql: string }[]) =>
     sent.filter((s) => /^\s*SELECT/i.test(s.sql) && s.sql.includes("auth_users")).length;
