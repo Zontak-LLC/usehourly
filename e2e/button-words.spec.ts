@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { openInvoice, startDemo } from "./helpers";
+import { openAllEntries, openInvoice, startDemo } from "./helpers";
 
 // Buttons say what they do on a wide screen (walkthrough 2026-10-25: a lone arrow and a lone pencil were guesses).
 // A phone keeps the square icons: its rows have no room, and each has a name for screen readers.
@@ -17,6 +17,7 @@ test("on a wide screen Download says PDF and Edit says Edit; a phone keeps the i
   await page.goto("/dashboard/week");
   // The sample's entries are on the days before today: on a Monday this week is still empty, so look at last week.
   await page.getByRole("button", { name: "Previous week" }).click();
+  await openAllEntries(page); // Week's list is folded behind one row
   const edit = page.getByRole("button", { name: "Edit", exact: true }).first();
   await expect(edit).toBeVisible();
   const word = edit.getByText("Edit", { exact: true });
