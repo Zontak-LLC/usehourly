@@ -44,6 +44,10 @@ test("a new freelancer's first day: rate", async ({ page, shot, audit, isPhone }
     await expect(page.getByText("No hourly rate yet")).toHaveCount(0);
     await page.getByRole("button", { name: "Edit General" }).click();
     await expect(page.getByLabel("Rate per hour")).toHaveValue("60.00");
+    const rateSlider = page.getByLabel("Hourly rate slider"); // no stops: min, max and step as given
+    await expect(rateSlider).toHaveAttribute("min", "0");
+    await expect(rateSlider).toHaveAttribute("max", "300");
+    await expect(rateSlider).toHaveAttribute("step", "5");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("$60.00/h").first()).toBeVisible();
     await audit("my work");
@@ -72,6 +76,8 @@ test("a new freelancer's first day: rate", async ({ page, shot, audit, isPhone }
     await amount.fill("5000");
     await slider.press("ArrowRight");
     await expect(amount).toHaveValue("5100");
+    await slider.press("ArrowRight");
+    await expect(amount).toHaveValue("5200");
     await page.getByLabel("Budget unit").selectOption("hours");
     await amount.fill("10");
     await slider.press("ArrowRight");

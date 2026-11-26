@@ -40,7 +40,7 @@ export function ValueSlider({
     const direction = ARROW_DIRECTION[e.key];
     if (!stops || !direction) return;
     e.preventDefault();
-    const moved = stops[current] + direction * (stops[1] - stops[0]);
+    const moved = (Number.isFinite(value) ? value : 0) + direction * (stops[1] - stops[0]);
     onChange(Math.min(stops[last], Math.max(stops[0], moved)));
   }
 
