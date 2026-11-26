@@ -54,7 +54,29 @@ test("a new freelancer's first day: rate", async ({ page, shot, audit, isPhone }
     if (!FEATURES.budgets) return; // hidden in this release (src/lib/features.ts)
     await gotoClient(page, "Acme Studio");
     await page.getByRole("button", { name: "Edit General" }).click();
-    await page.getByLabel("Budget amount").fill("100");
+    const amount = page.getByLabel("Budget amount");
+    const slider = page.getByLabel("Budget slider");
+    await amount.fill("100");
+    // the arrows move one $100 (1 h) step, above $3,000 too; the box stays the way to type exact amounts
+    await slider.focus();
+    await slider.press("ArrowRight");
+    await expect(amount).toHaveValue("200");
+    await slider.press("ArrowLeft");
+    await slider.press("ArrowLeft");
+    await expect(amount).toHaveValue("");
+    await amount.fill("1000");
+    await slider.press("ArrowRight");
+    await expect(amount).toHaveValue("1100");
+    await slider.press("End");
+    await expect(amount).toHaveValue("10000");
+    await amount.fill("5000");
+    await slider.press("ArrowRight");
+    await expect(amount).toHaveValue("5100");
+    await page.getByLabel("Budget unit").selectOption("hours");
+    await amount.fill("10");
+    await slider.press("ArrowRight");
+    await expect(amount).toHaveValue("11");
+    await amount.fill("100");
     await page.getByLabel("Budget unit").selectOption("dollars");
     await page.getByLabel("Budget period").selectOption("month");
     await page.getByRole("button", { name: "Save", exact: true }).click();
