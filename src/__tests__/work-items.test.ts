@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SheetEntry } from "@/lib/timesheet";
-import { groupByDay, paginate, searchWorkItems, WORK_ITEMS_PAGE_SIZE } from "@/lib/work-items";
+import { countEntryDays, groupByDay, paginate, searchWorkItems, WORK_ITEMS_PAGE_SIZE } from "@/lib/work-items";
 
 function entry(i: number, over: Partial<SheetEntry> = {}): SheetEntry {
   return {
@@ -86,5 +86,14 @@ describe("grouping by day", () => {
       ["2026-10-05", 90],
       ["2026-10-04", 60],
     ]);
+  });
+});
+
+describe("countEntryDays", () => {
+  it("counts the different dates the entries cover", () => {
+    expect(countEntryDays([])).toBe(0);
+    const same = [1, 2, 3].map((i) => entry(i, { date: "2026-09-08" }));
+    expect(countEntryDays(same)).toBe(1);
+    expect(countEntryDays([entry(1, { date: "2026-09-08" }), entry(2, { date: "2026-09-10" })])).toBe(2);
   });
 });

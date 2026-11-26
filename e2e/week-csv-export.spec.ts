@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { FEATURES } from "../src/lib/features";
-import { expect, startFreshAccount, test, trpc } from "./helpers";
+import { expect, openAllEntries, startFreshAccount, test, trpc } from "./helpers";
 import { readFileSync } from "node:fs";
 
 /**
@@ -44,6 +44,7 @@ test("the week's CSV has its name, the header and one row per entry the page sho
   await trpc(page, "entry.start", { projectId: general, date: "2026-09-10", note: "Still running" });
 
   await page.goto(WEEK);
+  await openAllEntries(page);
   await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("Design");
   const { name, lines } = await downloadCsv(page);
 
@@ -64,6 +65,7 @@ test("an entry on a day marked non-billable is not in the CSV", async ({ page })
   await trpc(page, "entry.setNonBillable", { date: "2026-09-09", nonBillable: true });
 
   await page.goto(WEEK);
+  await openAllEntries(page);
   await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("Day off work");
   const { lines } = await downloadCsv(page);
 
@@ -78,6 +80,7 @@ test("with a project filter the CSV holds only that project's entries", async ({
   await add(other.id, "2026-09-11", 15, "Email");
 
   await page.goto(`${WEEK}&project=${other.id}`);
+  await openAllEntries(page);
   const list = page.getByRole("region", { name: "All entries this week" });
   await expect(list).toContainText("Email");
   await expect(list).not.toContainText("General work");
@@ -92,15 +95,20 @@ test("after ‹ the CSV is the previous week's, by name and by content", async (
   const { general, add } = await seed(page);
   await add(general, "2026-09-08", 90, "This week");
   await add(general, "2026-09-02", 60, "Week before");
+  await add(general, "2026-09-03", 30, "Week before too"); // two days, so the week's list shows
 
   await page.goto(WEEK);
-  await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("This week");
   await page.getByRole("button", { name: "Previous week" }).click();
+  await openAllEntries(page);
   await expect(page.getByRole("region", { name: "All entries this week" })).toContainText("Week before");
   const { name, lines } = await downloadCsv(page);
 
   expect(name).toBe("usehourly-2026-08-31_to_2026-09-06.csv");
-  expect(lines).toEqual([HEADER, "2026-09-02,Acme,General,Week before,1,60,Yes,100,100,USD"]);
+  expect(lines).toEqual([
+    HEADER,
+    "2026-09-02,Acme,General,Week before,1,60,Yes,100,100,USD",
+    "2026-09-03,Acme,General,Week before too,0.5,30,Yes,100,50,USD",
+  ]);
 });
 
 test("the CSV item waits for the entries, and Month offers the month's CSV", async ({ page }) => {

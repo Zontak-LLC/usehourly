@@ -15,6 +15,11 @@ export function searchWorkItems(entries: SheetEntry[], query: string): SheetEntr
   });
 }
 
+/** How many different dates the entries cover (0 for none). */
+export function countEntryDays(entries: SheetEntry[]): number {
+  return new Set(entries.map((e) => e.date)).size;
+}
+
 export type Page<T> = { items: T[]; page: number; pages: number; total: number; from: number; to: number };
 
 /** One page of `size` items. `page` is 1-based and clamped, so a shrinking list never strands you. */
