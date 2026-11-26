@@ -25,6 +25,8 @@ describe("what a freelancer types in a time box", () => {
     ["1:30", 90],
     ["1h30", 90],
     [" 2 ", 120],
+    [".5", 30],
+    [".25", 15],
   ])("reads %j as %i minutes", (input, minutes) => {
     expect(readTypedDuration(input)).toEqual({ minutes });
   });
@@ -49,6 +51,9 @@ describe("what a freelancer types in a time box", () => {
     ["1,5,5", "Try 1.5, 1:30 or 90m"],
     ["1.5,5", "Try 1.5, 1:30 or 90m"],
     ["1,234", "Try 1.5, 1:30 or 90m"],
+    ["-.5", "Enter more than 0, like 1:30"],
+    [".", "Try 1.5, 1:30 or 90m"],
+    ["-", "Try 1.5, 1:30 or 90m"],
   ])("refuses %j with %j", (input, error) => {
     expect(readTypedDuration(input)).toEqual({ error });
   });

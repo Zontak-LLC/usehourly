@@ -28,6 +28,8 @@ describe("freelancer duration entry", () => {
     ["1,5h", 90],
     ["13", 780],
     ["24", 1440],
+    [".5", 30],
+    [".25", 15],
   ])("parses %s → %i minutes", (input, expected) => {
     expect(parseDuration(input)).toBe(expected);
     expect(readDuration(input)).toEqual({ minutes: expected });
@@ -50,6 +52,9 @@ describe("freelancer duration entry", () => {
     ["0:00", DURATION_NOT_POSITIVE],
     ["0m", DURATION_NOT_POSITIVE],
     ["-2", DURATION_NOT_POSITIVE],
+    ["-.5", DURATION_NOT_POSITIVE],
+    [".", DURATION_UNREADABLE],
+    ["-", DURATION_UNREADABLE],
   ])("refuses %j with %j", (input, error) => {
     expect(readDuration(input)).toEqual({ error });
     expect(parseDuration(input)).toBeNull();

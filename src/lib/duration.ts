@@ -18,7 +18,7 @@ export type DurationRead = { minutes: number } | { error: string };
 
 /**
  * Read free-form duration text as whole minutes, or say in plain words why it cannot be logged.
- *   "1.5" / "1,5" → 90   "1:30" → 90   "90m" → 90   "2h" → 120   "1h30" / "1h 30m" → 90
+ *   "1.5" / "1,5" / ".5" → 90 / 90 / 30   "1:30" → 90   "90m" → 90   "2h" → 120   "1h30" / "1h 30m" → 90
  *   a bare number up to 24 is hours ("2" → 120, "13" → 780); minutes need m ("45m"). Issue 435: a bare "2" once
  *   logged two minutes, so a bare number over 24 is refused with a hint instead of guessed.
  */
@@ -62,7 +62,7 @@ export type DurationText = { minutes: number } | { bareHours: number; isWhole: b
 
 /**
  * Read duration text before any limit or words: whole minutes for "1:30", "90m", "2h", "1h30" (0 included), a bare
- * number of hours for "2", "1,5" or "-2" (whole or not, any size), or null when it cannot be read. Spaces and case are
+ * number of hours for "2", "1,5", ".5" or "-2" (whole or not, any size), or null when it cannot be read. Spaces and case are
  * ignored, and one decimal comma is read as a point. `readDuration` (server, MCP, CSV) and `readTypedDuration` (the
  * typed UI boxes) both start here and each puts its own limits and words on the result.
  */
@@ -85,8 +85,8 @@ export function readDurationText(input: string): DurationText | null {
   if (m) return { minutes: Number(m[1]) };
 
   // "-2" is read only so a reader can say it must be more than 0.
-  m = s.match(/^-?(\d+)(\.\d+)?$/);
-  if (m) return { bareHours: Number(s), isWhole: !m[2] };
+  // A lone "-" or "." must not match: Number() of either is NaN or 0.
+  if (/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(s)) return { bareHours: Number(s), isWhole: !s.includes(".") };
   return null;
 }
 
