@@ -79,6 +79,27 @@ test("an invoiced entry keeps its time: a longer time is refused with the invoic
   await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:00 this day");
 });
 
+test("an invoiced entry cannot be deleted: the invoice number is named and the time stays", async ({ page }) => {
+  await seedFirstDay(page, { rate: 10000, minutes: [120] });
+  await page.goto("/dashboard/invoices/new");
+  await makeInvoice(page);
+  await expect(page).toHaveURL(/\/dashboard\/invoices$/);
+  const [invoice] = await savedInvoices(page);
+
+  await page.goto("/dashboard/today");
+  const card = await openEntryEdit(page);
+  await card.getByRole("button", { name: "Delete", exact: true }).click();
+  await card.getByRole("region", { name: "Delete this entry?" }).getByRole("button", { name: "Delete entry" }).click();
+  await expect(
+    page.getByText(
+      `This entry is on invoice ${invoice.number}, so it can't be deleted. Delete the invoice first to free its time.`,
+    ),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("navigation", { name: "Days" })).toContainText("2:00 this day");
+});
+
 test("Resume on an entry invoiced meanwhile starts a new entry, so the extra time can be billed", async ({ page }) => {
   await seedFirstDay(page, { rate: 10000, minutes: [] });
   await page.goto("/dashboard/today");

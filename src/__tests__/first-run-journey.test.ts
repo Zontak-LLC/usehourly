@@ -83,7 +83,9 @@ describe("brand-new user: one question, then one tap logs time", () => {
     );
 
     await c.entry.delete({ id: entry.id });
-    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: entry.id, user_id: "u1" } });
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: entry.id, user_id: "u1", invoice_id: null },
+    });
   });
 
   it("refuses the first-run steps when signed out and never touches the database", async () => {

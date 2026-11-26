@@ -29,7 +29,7 @@ describe("week grid: filling several days at once", () => {
         findMany: vi.fn().mockResolvedValue(existing),
         create: vi.fn(),
         update: vi.fn(),
-        deleteMany: vi.fn(),
+        deleteMany: vi.fn(async () => ({ count: 1 })),
       },
     };
     const caller = createCaller({ session: { user: { id: "u1" }, expires: "" }, prisma: prisma as never });
@@ -120,7 +120,9 @@ describe("week grid: filling several days at once", () => {
     const { prisma, caller } = setup([{ id: "e1", date: "2026-10-05", minutes: 60, started_at: null }]);
     const res = await caller.entry.bulkSet({ projectId: "p1", cells: [{ date: "2026-10-05", minutes: 0 }] });
     expect(res.deleted).toBe(1);
-    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: "e1", user_id: "u1" } });
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: "e1", user_id: "u1", invoice_id: null },
+    });
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();
   });
 
