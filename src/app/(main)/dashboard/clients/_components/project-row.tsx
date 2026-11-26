@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ValueSlider } from "@/components/value-slider";
 import { type BudgetStatus, budgetInputValue } from "@/lib/budget";
+import { budgetStopsFor } from "@/lib/budget-scale";
 import { formatDuration } from "@/lib/duration";
 import { feature } from "@/lib/features";
 import { currencySymbol } from "@/lib/money";
@@ -256,9 +257,7 @@ export function ProjectEditCard({
               <div className="flex flex-wrap items-center gap-3">
                 <ValueSlider
                   value={Number(budget) || 0}
-                  min={0}
-                  max={hours ? 200 : 10000}
-                  step={hours ? 5 : 100}
+                  stops={budgetStopsFor(hours)}
                   label="Budget slider"
                   valueText={budget ? `${budget} ${hours ? "hours" : currency}` : "no budget"}
                   onChange={(v) => setBudget(v ? String(v) : "")}
