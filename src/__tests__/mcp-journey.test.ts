@@ -590,6 +590,7 @@ describe("an assistant tracks a day of work", () => {
     } as never);
     s.prisma.timeEntry.findMany.mockResolvedValue([
       {
+        id: "e1",
         date: "2026-10-02",
         minutes: 90,
         note: "hero",
@@ -598,6 +599,7 @@ describe("an assistant tracks a day of work", () => {
         project: { name: "Website", hourly_rate: 10000, billable: true },
       },
       {
+        id: "e2",
         date: "2026-10-03",
         minutes: 60,
         note: "internal",
