@@ -2,11 +2,16 @@ import { z } from "zod";
 
 import { readDuration } from "@/lib/duration";
 
+import { retryKeySchema } from "../../entry-retry-key";
 import { defineTool, type McpTool } from "./core";
 import { type EntryRow, minutesFromArgs, needsDuration, shapeEntry } from "./entry-shape";
 import { hours } from "./format";
 import { date, durationText, minutesInt, noteText, projectRef } from "./inputs";
 import { resolveProject } from "./lookup";
+
+const retryKey = retryKeySchema.describe(
+  "Optional retry key, max 100 characters: calling again with the same key returns the first entry instead of adding another",
+);
 
 export const TIME_TOOLS: McpTool[] = [
   defineTool({
@@ -29,7 +34,7 @@ export const TIME_TOOLS: McpTool[] = [
     name: "log_time",
     title: "Log time",
     description:
-      "Add one time entry: a project, a date, how long, and what was done. Give minutes or a duration text. This adds a new entry; it never merges with an existing one. Check list_entries first if the day may already be logged.",
+      "Add one time entry: a project, a date, how long, and what was done. Give minutes or a duration text. This adds a new entry; it never merges with an existing one. Check list_entries first if the day may already be logged. Pass the same key when retrying a call, so the time is logged once.",
     access: "write",
     input: z
       .object({
@@ -38,6 +43,7 @@ export const TIME_TOOLS: McpTool[] = [
         minutes: minutesInt.optional().describe("Whole minutes worked (use this or duration)"),
         duration: durationText.optional().describe('Duration text such as "1h30" (use this or minutes)'),
         note: noteText.default("").describe("What was done (max 2,000 characters)"),
+        key: retryKey,
       })
       .refine(needsDuration, { message: "Give minutes or a duration." }),
     run: async (c, a) => {
@@ -48,6 +54,7 @@ export const TIME_TOOLS: McpTool[] = [
         minutes: a.minutes,
         duration: a.duration,
         note: a.note,
+        key: a.key,
       })) as EntryRow;
       return { logged: shapeEntry(created) };
     },
@@ -70,6 +77,7 @@ export const TIME_TOOLS: McpTool[] = [
           .boolean()
           .default(true)
           .describe("Skip days that already have time for this project (default true)"),
+        key: retryKey,
       })
       .refine(needsDuration, { message: "Give minutes or a duration." }),
     run: async (c, a) => {
@@ -81,6 +89,7 @@ export const TIME_TOOLS: McpTool[] = [
         minutes,
         note: a.note,
         skipExisting: a.skip_existing,
+        key: a.key,
       });
       return { project: p.label, minutes, ...r };
     },

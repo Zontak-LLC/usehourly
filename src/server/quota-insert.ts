@@ -18,6 +18,7 @@ export const QUOTA_TABLES = {
     "note",
     "started_at",
     "author_id",
+    "retry_key",
     "created_at",
     "updated_at",
   ],
