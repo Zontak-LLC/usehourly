@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 
+import { rethrowIfD1Busy } from "@/lib/d1-busy";
 import { isDemoEmail } from "@/lib/demo";
 import { emailField, normalizeEmail } from "@/lib/email";
 import { logError } from "@/lib/log";
@@ -43,7 +44,7 @@ export const signupProcedures = {
           `register:${ctx.ip}`,
           REGISTER_PER_IP.limit,
           REGISTER_PER_IP.windowSeconds,
-        );
+        ).catch((err: unknown) => rethrowIfD1Busy(err, "register_limit"));
         if (!r.allowed) {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",

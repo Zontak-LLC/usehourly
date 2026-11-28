@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
+import { rethrowIfD1Busy } from "@/lib/d1-busy";
 import { describeWait, hitRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -31,7 +32,7 @@ export async function enforceRequestLimits(
     target.windowSeconds,
     undefined,
     Math.max(1, who.calls ?? 1),
-  );
+  ).catch((err: unknown) => rethrowIfD1Busy(err, "write_limit"));
   if (!r.allowed) {
     throw new TRPCError({
       code: "TOO_MANY_REQUESTS",

@@ -70,6 +70,7 @@ Events you may see (all `level: "error"`), and what they mean:
 | `event` | Meaning | What to do |
 |---|---|---|
 | `trpc_internal_error` | A tRPC call failed with an unexpected error (`path`, `requestId`) | Find the `requestId`, read the `error`; reproduce with the path's scenario test |
+| `d1_overloaded` | (`level: "warn"`) D1 refused a rate-limit counter write as over capacity; the visitor got a 503 "busy, try again" (`where`: `write_limit` or `register_limit`; `message`) | Usually a short burst. If it keeps coming, check D1 metrics and who is sending the burst |
 | `render_error` | A server render (page, layout or server component) threw (`path` without query, `routePath`, `routeType`, `digest`, `requestId`) | Find the `requestId`/`digest`, read `error.message`, and open the follow-up fix ticket from that path with a failing test first |
 | `health_check_failed` | The database did not answer | Check Cloudflare status; D1 dashboard |
 | `support_notice_read_failed` | The "chip in" setting could not be read (the layout shows no note instead of failing) | Usually migration 0033 not applied yet: run `npm run d1:migrate:remote` |
