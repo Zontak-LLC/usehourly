@@ -606,6 +606,10 @@ describe("an assistant tracks a day of work", () => {
         project: { name: "Support", hourly_rate: 5000, billable: false },
       },
     ]);
+    // The preview of the same period shows the same $150 and makes nothing (mcp-unbilled-journey checks it to the cent).
+    const preview = await s.call("unbilled_time", { client: "Acme", from: "2026-10-01", to: "2026-10-31" });
+    expect(preview.data).toMatchObject({ total: 150, total_hours: 1.5 });
+    expect(s.prisma.invoice.create).not.toHaveBeenCalled();
     const r = await s.call("create_invoice", {
       client: "Acme",
       from: "2026-10-01",

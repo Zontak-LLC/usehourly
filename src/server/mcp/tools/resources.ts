@@ -87,6 +87,6 @@ export const PROMPTS: {
       { name: "to", description: "Last day to bill, YYYY-MM-DD", required: true },
     ],
     build: (a) =>
-      `Prepare an invoice for ${a.client} for ${a.from} to ${a.to}. List that client's entries in the period with list_entries, summarize hours and the amount per project (rates from list_projects), and show me the proposed invoice number from next_invoice_number. Do not call create_invoice until I confirm the dates, the period and the issue date.`,
+      `Prepare an invoice for ${a.client} for ${a.from} to ${a.to}. Call unbilled_time for that client and period and show me the hours and the amount per project and the total, then show me the proposed invoice number from next_invoice_number. Do not call create_invoice until I confirm the dates, the period and the issue date.`,
   },
 ];

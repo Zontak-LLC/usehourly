@@ -26,7 +26,7 @@ https://github.com/zontak-ai/usehourly/raw/main/public/landing/assistant-demo.mp
 
 ## Use it from any AI assistant (MCP server)
 
-UseHourly runs a remote [Model Context Protocol](https://modelcontextprotocol.io) server at `https://usehourly.app/api/mcp` (Streamable HTTP). It has 31 tools for projects, clients, time entries, timers, timesheets, invoices and reports; each one runs as you, so it only sees your own data. Create a token on Account > AI assistants (read-only or read and write, with an expiry), then:
+UseHourly runs a remote [Model Context Protocol](https://modelcontextprotocol.io) server at `https://usehourly.app/api/mcp` (Streamable HTTP). It has 32 tools for projects, clients, time entries, timers, timesheets, invoices and reports; each one runs as you, so it only sees your own data. Create a token on Account > AI assistants (read-only or read and write, with an expiry), then:
 
 ```bash
 claude mcp add --transport http usehourly https://usehourly.app/api/mcp --header "Authorization: Bearer <your token>"

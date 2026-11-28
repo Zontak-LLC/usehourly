@@ -42,6 +42,14 @@ export function amountCents(minutes: number, rateCents: number): number {
   return Math.round((minutes * rateCents) / 60);
 }
 
+/**
+ * Whether an invoice bills this entry: a billable project, minutes logged and no running timer. The one rule behind
+ * the invoice lines, the entries `invoice.create` marks as billed and the MCP unbilled-time preview.
+ */
+export function isBilledEntry(e: Pick<InvoiceEntry, "minutes" | "started_at" | "project">): boolean {
+  return e.project.billable && e.minutes > 0 && !e.started_at;
+}
+
 export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_ROUNDING): InvoiceTotals {
   const byProject = new Map<string, InvoiceLine>();
   const detail: InvoiceDetailRow[] = [];
@@ -60,7 +68,7 @@ export function buildInvoice(entries: InvoiceEntry[], rounding: Rounding = NO_RO
       runningTimers += 1;
       continue;
     }
-    if (e.minutes <= 0) continue;
+    if (!isBilledEntry(e)) continue; // only an empty entry is left here
     const line = byProject.get(e.project_id) ?? {
       projectId: e.project_id,
       project: e.project.name,

@@ -140,7 +140,13 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
       by_project: z.array(obj({ project: z.string(), client: z.string(), minutes: z.number(), hours: z.number() })),
       by_date: z.array(obj({ date: z.string(), minutes: z.number(), hours: z.number() })),
     }),
-    entries: z.array(entry).describe("Newest first, at most 500"),
+    entries: z
+      .array(
+        entry.extend({
+          billed: z.string().nullable().describe("Number of the invoice this entry is on, or null when not billed"),
+        }),
+      )
+      .describe("Newest first, at most 500"),
     truncated: z.boolean().describe("True when more than 500 entries matched"),
   }),
   project_totals: obj({
@@ -231,6 +237,28 @@ export const OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
     }),
   }),
   next_invoice_number: obj({ number: z.string().describe("For example INV-2026-004") }),
+  unbilled_time: obj({
+    client: z.string().describe("Client name"),
+    currency: z.string().describe("ISO 4217 code the amounts are in"),
+    from: z.string(),
+    to: z.string(),
+    total_minutes: z.number().describe("Billed minutes (after the client's rounding)"),
+    total_hours: z.number(),
+    total: z.number().describe("What the invoice would come to, in dollars (no tax)"),
+    projects: z
+      .array(
+        obj({
+          project_id: z.string(),
+          project: z.string(),
+          minutes: z.number(),
+          hours: z.number(),
+          rate: z.number().describe("Per hour"),
+          amount: z.number(),
+          entry_ids: z.array(z.string()).describe("The entries this line would bill"),
+        }),
+      )
+      .describe("One per project, sorted by name; empty when nothing is unbilled"),
+  }),
   parse_duration: obj({
     minutes: z.number().nullable().describe("Whole minutes, or null when the text could not be read"),
     hours: z.number().optional(),

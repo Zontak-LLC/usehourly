@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { MAX_QUERY_DAYS, spanDays } from "@/lib/dates";
 import { isDemoSession } from "@/lib/demo";
-import { buildSearchText, type InvoiceSnapshot } from "@/lib/invoice";
+import { buildSearchText, type InvoiceSnapshot, isBilledEntry } from "@/lib/invoice";
 import { invoiceTotals } from "@/lib/invoice-list";
 import { summarizeInvoice } from "@/lib/invoice-summary";
 import { logError } from "@/lib/log";
@@ -31,6 +31,7 @@ import { assertNumberFree, buildInvoiceSnapshot, invoiceClient, numberUsedError 
 import { dateSchema } from "../schemas/dates";
 import { protectedProcedure, router } from "../trpc";
 import { countMarked, markInvoiced, unbilledByClient, undoInvoice } from "../unbilled";
+import { unbilledTime, unbilledTimeInput } from "../unbilled-time";
 
 const MAX_SEARCH_CHARS = 50_000;
 
@@ -159,7 +160,6 @@ export const invoiceRouter = router({
       };
     }),
 
-  /** Per client: billable time not on any invoice yet, what it is worth, and its oldest and newest day. */
   /**
    * Per client: the time not invoiced yet. With the browser's `today` (the Worker runs in UTC), each row also says
    * whether an invoice is due under the client's invoice schedule (issue 100).
@@ -168,10 +168,11 @@ export const invoiceRouter = router({
     .input(z.object({ today: dateSchema }).optional())
     .query(({ ctx, input }) => unbilledByClient(ctx.prisma, ctx.userId, input?.today)),
 
-  /**
-   * Compute from the database (never trust client-sent totals), snapshot the seller's current
-   * business details, and store. Billable entries for the client's projects in [from, to].
-   */
+  /** What `create` would bill for a client and period, per project, without making an invoice (MCP unbilled_time). */
+  unbilledTime: protectedProcedure
+    .input(unbilledTimeInput)
+    .query(({ ctx, input }) => unbilledTime(ctx.prisma, ctx.userId, input)),
+
   /**
    * The invoice `create` would make, to check before saving (2026-11-06: testers expected a preview before the
    * download). Same input, same checks and the same snapshot builder as `create`; it writes nothing, marks no time and,
@@ -187,6 +188,7 @@ export const invoiceRouter = router({
     return { snapshot: withLogos };
   }),
 
+  /** Computed from the database (never client-sent totals), snapshots the seller's current details and stores. */
   create: protectedProcedure.input(invoiceInput).mutation(async ({ ctx, input }) => {
     const client = await invoiceClient(ctx.prisma, ctx.userId, input.clientId);
 
@@ -236,7 +238,7 @@ export const invoiceRouter = router({
       });
     // Mark the time it bills, so it is never billed again. If another invoice took some of it in the meantime (two
     // made at once), this one is taken back: it would bill those hours twice.
-    const billed = entries.filter((e) => e.project.billable && e.minutes > 0 && !e.started_at).map((e) => e.id);
+    const billed = entries.filter(isBilledEntry).map((e) => e.id);
     // Time billed again on purpose stays marked with the invoice it was first billed on. The marked count is read back
     // from the rows: D1's write count also holds the trigger rows logged to entry_changes, so it would hide a clash.
     let marked: number;

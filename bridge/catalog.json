@@ -504,9 +504,24 @@
                   },
                   "required": ["id", "name"],
                   "additionalProperties": {}
+                },
+                "billed": {
+                  "description": "Number of the invoice this entry is on, or null when not billed",
+                  "type": ["string", "null"]
                 }
               },
-              "required": ["id", "date", "minutes", "hours", "note", "running", "started_at", "project", "client"],
+              "required": [
+                "id",
+                "date",
+                "minutes",
+                "hours",
+                "note",
+                "running",
+                "started_at",
+                "project",
+                "client",
+                "billed"
+              ],
               "additionalProperties": {}
             },
             "description": "Newest first, at most 500"
@@ -1308,6 +1323,108 @@
       },
       "annotations": {
         "title": "Next invoice number",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "unbilled_time",
+      "title": "Unbilled time and what the invoice would be",
+      "description": "The unbilled billable time for one client in a period, per project, with the amount an invoice would come to and the entry ids behind each line. Worked out with the same rules as create_invoice: time already on an invoice, running timers, non-billable projects and non-billable days are left out, and the client's rounding applies. It creates nothing. Use it to answer 'what would I bill this client?' before create_invoice.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Client id or exact client name"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "First day of the period"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last day of the period"
+          }
+        },
+        "required": ["client", "from", "to"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "string",
+            "description": "Client name"
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO 4217 code the amounts are in"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "total_minutes": {
+            "type": "number",
+            "description": "Billed minutes (after the client's rounding)"
+          },
+          "total_hours": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number",
+            "description": "What the invoice would come to, in dollars (no tax)"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "project_id": {
+                  "type": "string"
+                },
+                "project": {
+                  "type": "string"
+                },
+                "minutes": {
+                  "type": "number"
+                },
+                "hours": {
+                  "type": "number"
+                },
+                "rate": {
+                  "type": "number",
+                  "description": "Per hour"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "entry_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The entries this line would bill"
+                }
+              },
+              "required": ["project_id", "project", "minutes", "hours", "rate", "amount", "entry_ids"],
+              "additionalProperties": {}
+            },
+            "description": "One per project, sorted by name; empty when nothing is unbilled"
+          }
+        },
+        "required": ["client", "currency", "from", "to", "total_minutes", "total_hours", "total", "projects"],
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Unbilled time and what the invoice would be",
         "readOnlyHint": true,
         "destructiveHint": false,
         "idempotentHint": true,
