@@ -7,9 +7,9 @@ import type { PrismaClient } from "@prisma/client";
 export async function invoiceNumbersFor(
   db: PrismaClient,
   userId: string,
-  invoiceIds: readonly (string | null)[],
+  invoiceIds: readonly (string | null | undefined)[],
 ): Promise<Map<string, string>> {
-  const ids = [...new Set(invoiceIds.filter((id): id is string => id !== null))];
+  const ids = [...new Set(invoiceIds.filter((id): id is string => !!id))];
   if (ids.length === 0) return new Map();
   const rows = await db.invoice.findMany({
     where: { user_id: userId, id: { in: ids } },
