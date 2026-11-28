@@ -10,13 +10,13 @@ import { useProjectLogos } from "@/components/project-logo";
 import { SideColumn } from "@/components/side-column";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WeekPills } from "@/components/week-pills";
-import { WorkItems } from "@/components/work-items";
 import { addDays, fromISODate, monthBounds, startOfWeek, toISODate } from "@/lib/dates";
 import { feature } from "@/lib/features";
 import { buildSheet } from "@/lib/timesheet";
 import { trpc } from "@/lib/trpc";
 import { useToday } from "@/lib/use-today";
 
+import { WeekAllEntries } from "./week-all-entries";
 import { longDayLabel, WeekTotalCard } from "./week-strip";
 import { WeekToolbar } from "./week-toolbar";
 
@@ -149,13 +149,12 @@ export function WeekView({ initialProject, initialDate }: { initialProject?: str
                 />
               </section>
               {feature("merge") && <MergeDaysPanel entries={shown.filter((e) => e.date !== selected)} />}
-              {/* The week's full list, always open under the day (it renders nothing for an empty week). */}
-              <WorkItems
+              {/* The week's full list: hidden when the shown entries (after the project filter) are all on one day,
+              else folded behind one row. */}
+              <WeekAllEntries
                 key={`${start}-${projectId}`}
                 entries={shown}
                 onOpenDay={openDay}
-                period="week"
-                editInPlace
                 nonBillable={nonBillable}
               />
             </div>

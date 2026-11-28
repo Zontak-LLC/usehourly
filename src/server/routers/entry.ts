@@ -12,6 +12,7 @@ import { planMerge } from "@/lib/merge-entries";
 import { NOTE_MAX } from "@/lib/notes";
 import { assertWithinQuota } from "@/lib/quotas";
 
+import { billedLockMessage, deleteUnbilledDay, deleteUnbilledEntry } from "../billed-entry";
 import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { drillError, faultActive } from "../drill";
 import { nonBillableDates } from "../non-billable";
@@ -49,19 +50,6 @@ async function assertEntryQuota(ctx: EntryCtx, adding: number) {
 /** The account's entries against its limit, for a one-statement guarded insert (server/quota-insert.ts). */
 function entryQuota(ctx: { userId: string; session: Session | null }) {
   return accountQuota("time_entries", "entries", ctx.userId, isDemoSession(ctx.session));
-}
-
-/**
- * Why an entry may not gain or lose minutes or change client: it is on an invoice (issue 448). Billing takes only
- * unbilled rows, so time added to a billed row would never be billed. Null when the entry is not on an invoice.
- */
-async function billedLockMessage(ctx: EntryCtx, entry: { invoice_id?: string | null }): Promise<string | null> {
-  if (!entry.invoice_id) return null;
-  const invoice = await ctx.prisma.invoice.findFirst({
-    where: { id: entry.invoice_id, user_id: ctx.userId },
-    select: { number: true },
-  });
-  return `This entry is on invoice ${invoice?.number ?? "an invoice"}. Add a new entry for the extra time.`;
 }
 
 /**
@@ -398,8 +386,8 @@ export const entryRouter = router({
             result.created++;
           }
         } else if (minutes === 0) {
-          await ctx.prisma.timeEntry.deleteMany({ where: { id: rows[0].id, user_id: ctx.userId } });
-          result.deleted++;
+          if (await deleteUnbilledDay(ctx, rows[0])) result.deleted++;
+          else result.skipped.push(date);
         } else if (rows[0].minutes !== minutes || (note !== undefined && rows[0].note !== note)) {
           // Billed minutes stay as billed (issue 448): the day is reported, the caller adds a new entry instead.
           if (rows[0].invoice_id && rows[0].minutes !== minutes) {
@@ -491,8 +479,7 @@ export const entryRouter = router({
     }),
 
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
-    const { count } = await ctx.prisma.timeEntry.deleteMany({ where: { id: input.id, user_id: ctx.userId } });
-    if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: ENTRY_GONE });
+    await deleteUnbilledEntry(ctx, input.id);
     return { ok: true };
   }),
 

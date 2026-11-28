@@ -10,7 +10,7 @@ change goes wrong. Written for the next person on call, including future you.
 | App | One Cloudflare Worker named `hourly` (Next.js through OpenNext) | Cloudflare dashboard > Workers & Pages > `hourly` |
 | Database | Cloudflare D1 `hourly-db` (SQLite) | `npx wrangler d1 ...`; Time Travel keeps 30 days |
 | Public address | https://usehourly.app (custom domain, the only public origin) | `wrangler.jsonc` `routes` |
-| Pipeline | GitHub Actions `ci.yml`: `check`, `e2e` (4 shards), then `deploy` (with the smoke test) on `main` | https://github.com/Zontak-LLC/usehourly/actions (free: the repository is public) |
+| Pipeline | GitHub Actions `ci.yml`: `check`, `e2e` (4 shards), then `deploy` (with the smoke test) on `main` | https://github.com/zontak-ai/usehourly/actions (free: the repository is public) |
 | Secrets | Worker secrets (`AUTH_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAILS`, `TURNSTILE_SECRET_KEY`, OAuth ids/secrets, ...) | `npx wrangler secret list` (names only) |
 
 ## CI cost (2026-11-16)
@@ -83,6 +83,9 @@ Events you may see (all `level: "error"`), and what they mean:
 | `social_sign_in_failed`, `demo_sign_in_failed` | A GitHub/Google or sample-account sign-in failed | Check the provider's status and the secrets |
 | `prisma_warmup_failed` | The early connection attempt failed; it reconnects on the first query | Only matters if it repeats |
 | `d1_retry` (warn) | A read failed with a short-lived D1 error ("Network connection lost" and similar) and is tried again (`attempt` 1 or 2, `message`); the adapter's own "Error in performIO: %O" line comes with it | Harmless alone; many in a row mean D1 itself is in trouble (Cloudflare status, D1 metrics) |
+| `d1_read_failed` | A read failed for good, after any retries (`message`, `attempts`); the adapter's own "Error in performIO: %O" line comes with it | One is a blip; many in a row mean D1 is in trouble |
+| `d1_write_conflict` (warn) | A write hit a unique-key clash (`message`, `sql` first 80 characters); the adapter's own "Error in performIO: %O" line comes with it | Harmless: on `rate_limits` it is the handled create race in src/lib/rate-limit.ts |
+| `d1_write_failed` | A write failed for any other reason (`message`, `sql` first 80 characters); writes are never retried; the adapter's own "Error in performIO: %O" line comes with it | Read `message`; many in a row mean D1 is in trouble (Cloudflare status, D1 metrics) |
 | `drill_started`, `drill_stopped`, `drill_expired` (warn) | STAGING only: a planned test failure began, was stopped or ran out (`fault`, `expires`) | Nothing: errors between started and stopped/expired are the drill (see "Drills") |
 | `drill_refused` (warn) | STAGING only: a call to `/api/drill` with a wrong or missing token | One is a typo; many is someone guessing (20 per 15 minutes per connection) |
 | `drill_read_failed` | STAGING only: the drill setting could not be read; the path runs normally | Harmless |
@@ -152,7 +155,7 @@ and a nightly browser-test run
 - **After the deploy:** it waits for `ci.yml`'s push run for the merge commit (its own smoke test and rollback stay as they are), then expects 200 from https://usehourly.app/ and `/api/health` (4 tries, 30 s apart). If either fails, it runs `wrangler rollback` to the recorded version and opens an issue `Daily release rolled back`. Nothing else rolls back automatically; the database never does (Time Travel stays a hand step).
 - **Issues:** every problem opens one issue per title (`Daily release skipped: RELEASE_TOKEN is not set`, `Daily release held: …`, `Daily release: deploy run not found` / `failed`, `Daily release rolled back`); a repeat comments on the open one.
 - **Dry run:** Actions, Daily release, Run workflow (`dry_run` is on by default) prints the changed files, the commits, the rollback version and `Blocked by migration: <files>` or `No migration`, and writes nothing.
-- **Owner set-up (once):** create a fine-grained personal access token with access to Zontak-LLC/usehourly only, with the repository permissions Contents: Read and write and Pull requests: Read and write. Store it as the repository secret `RELEASE_TOKEN` (Settings, Secrets and variables, Actions). The workflow uses it only to open and merge the release PR, because a merge with the built-in token would not start the deploy. The rollback reuses the production environment's `CLOUDFLARE_API_TOKEN`. After the workflow reaches `main`, run it once by hand with `dry_run` true and read its log.
+- **Owner set-up (once):** create a fine-grained personal access token with access to zontak-ai/usehourly only, with the repository permissions Contents: Read and write and Pull requests: Read and write. Store it as the repository secret `RELEASE_TOKEN` (Settings, Secrets and variables, Actions). The workflow uses it only to open and merge the release PR, because a merge with the built-in token would not start the deploy. The rollback reuses the production environment's `CLOUDFLARE_API_TOKEN`. After the workflow reaches `main`, run it once by hand with `dry_run` true and read its log.
 
 At most one high-risk ticket (migration, sign-in or security, money, email sending) per release, built first. New features that need outside setup ship hidden behind a setting, like the Google Calendar button.
 

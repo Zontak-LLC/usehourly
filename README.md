@@ -6,7 +6,7 @@
 
 [![smithery badge](https://smithery.ai/badge/dzontak/usehourly)](https://smithery.ai/servers/dzontak/usehourly)
 
-https://github.com/Zontak-LLC/usehourly/raw/main/public/landing/assistant-demo.mp4
+https://github.com/zontak-ai/usehourly/raw/main/public/landing/assistant-demo.mp4
 
 ![The weekly timesheet](public/landing/week-v3.webp)
 
@@ -127,14 +127,14 @@ writes `wrangler.jsonc` from these variables, so no account ids live in the repo
 
 ## Support
 
-UseHourly is free. If it saves you time you can [sponsor it on GitHub](https://github.com/sponsors/Zontak-LLC).
+UseHourly is free. If it saves you time you can [sponsor it on GitHub](https://github.com/sponsors/zontak-ai).
 
 ### Supporters
 
 Thank you to everyone who helps keep UseHourly free:
 
 <!-- supporters:start -->
-_Be the first: [sponsor UseHourly on GitHub](https://github.com/sponsors/Zontak-LLC)._
+_Be the first: [sponsor UseHourly on GitHub](https://github.com/sponsors/zontak-ai)._
 <!-- supporters:end -->
 
 ## Credits and license

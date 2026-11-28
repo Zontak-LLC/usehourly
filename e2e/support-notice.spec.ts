@@ -33,7 +33,7 @@ test("the note appears on Today only while the owner has it on, links to the spo
     await shot("support-notice");
     await expect(note.getByRole("link", { name: "Chip in" })).toHaveAttribute(
       "href",
-      "https://github.com/sponsors/Zontak-LLC",
+      "https://github.com/sponsors/zontak-ai",
     );
   });
 

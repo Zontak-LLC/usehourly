@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { auditPage, expect, signUpByApi, test, trpc } from "./helpers";
+import { auditPage, expect, openAllEntries, signUpByApi, test, thisWeek, trpc } from "./helpers";
 
 /**
  * The side column (components/side-column.tsx): on a wide screen Week's "This week" card is min(its own content, the
@@ -11,29 +11,18 @@ const FLOOR = 24 * 16;
 // One page of the By project list (pages of 10 since 2026-10-24); the pages have their own test below.
 const PROJECTS = 10;
 
-/** Monday and Tuesday of this week, in the browser's own time zone (the app works out "today" there). */
-async function thisWeek(page: Page) {
-  return page.evaluate(() => {
-    const iso = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const d = new Date();
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const monday = iso(d);
-    d.setDate(d.getDate() + 1);
-    return { monday, tuesday: iso(d) };
-  });
-}
-
 /** Ten projects with time on Monday (`count` to change it); the page then opens Tuesday, an empty day, so the main column is short. */
 async function seed(page: Page, count = PROJECTS) {
   await signUpByApi(page);
   await page.goto("/dashboard/today");
-  const { monday, tuesday } = await thisWeek(page);
+  const { monday, tuesday, wednesday } = await thisWeek(page);
   const client = await trpc<{ id: string }>(page, "clients.create", { name: "Side Co" });
   for (let i = 1; i <= count; i++) {
     const name = `Project ${String(i).padStart(2, "0")}`;
     const project = await trpc<{ id: string }>(page, "project.create", { clientId: client.id, name, hourlyRate: 5000 });
     await trpc(page, "entry.create", { projectId: project.id, date: monday, minutes: 15 * i, note: "" });
+    // One entry on another day, so Week's list (hidden while all time is on one day) shows once opened.
+    if (i === 1) await trpc(page, "entry.create", { projectId: project.id, date: wednesday, minutes: 15, note: "" });
   }
   await page.goto(`/dashboard/week?date=${tuesday}`);
   const card = page.getByRole("region", { name: "This week", exact: true });
@@ -80,7 +69,7 @@ test("on a wide screen the This week card is min(its content, the main column) a
   // A tall window, so the card's own content fits under the window cap and the "keeps its own height" case shows.
   await page.setViewportSize({ width: 1280, height: 1100 });
   const card = await seed(page);
-  await expect(page.getByRole("region", { name: "All entries this week" })).toBeVisible(); // always open, no fold
+  await openAllEntries(page); // the list is folded by default: open it so the main column is tall
 
   // An empty day with the week's list under it: the main column is taller than the card's content, so the card keeps
   // its own height: its last row sits at its foot (no empty block), well above the main column's foot.

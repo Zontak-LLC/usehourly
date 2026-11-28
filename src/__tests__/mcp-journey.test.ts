@@ -498,7 +498,9 @@ describe("an assistant tracks a day of work", () => {
     s.prisma.timeEntry.deleteMany.mockResolvedValueOnce({ count: 0 });
     const miss = await s.call("delete_entry", { id: "someone-elses" });
     expect(miss.isError).toBe(true);
-    expect(s.prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: "someone-elses", user_id: "u1" } });
+    expect(s.prisma.timeEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: "someone-elses", user_id: "u1", invoice_id: null },
+    });
     expect((await s.call("delete_entry", { id: "e1" })).isError).toBe(false);
 
     s.prisma.timeEntry.findMany.mockResolvedValue([

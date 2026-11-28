@@ -41,7 +41,7 @@ const PROMISES: Pledge[] = [
     Icon: Code2,
     title: "Open source",
     body: "MIT licensed. Read every line, report a bug, or run your own copy.",
-    link: { href: "https://github.com/Zontak-LLC/usehourly", label: "View the code" },
+    link: { href: "https://github.com/zontak-ai/usehourly", label: "View the code" },
   },
   {
     Icon: ShieldCheck,
@@ -270,7 +270,7 @@ export default function LandingPage() {
             </a>
           )}
           <a
-            href="https://github.com/Zontak-LLC/usehourly/issues/new"
+            href="https://github.com/zontak-ai/usehourly/issues/new"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block whitespace-nowrap py-2 hover:text-foreground"

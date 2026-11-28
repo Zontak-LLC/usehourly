@@ -93,6 +93,6 @@ To change your password while signed in, open **Account**, **Profile**. Changing
     keywords: ["bug", "support", "contact", "feedback", "feature request", "help", "issue", "broken", "question"],
     answer: `Use **Ask a question** under **Still stuck?** at the foot of this page (you need to be signed in). Plain words are fine: say what you did and what you expected. We answer by email, to the address on your account.
 
-If you use GitHub, you can also open an issue at [github.com/Zontak-LLC/usehourly/issues](https://github.com/Zontak-LLC/usehourly/issues). For anything private, use the contact address on the [privacy page](/privacy).`,
+If you use GitHub, you can also open an issue at [github.com/zontak-ai/usehourly/issues](https://github.com/zontak-ai/usehourly/issues). For anything private, use the contact address on the [privacy page](/privacy).`,
   },
 ];

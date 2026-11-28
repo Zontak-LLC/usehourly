@@ -127,7 +127,7 @@ describe("daily time entry journey", () => {
   it("delete is scoped to the owner and 404s when nothing matched", async () => {
     prisma.timeEntry.deleteMany.mockResolvedValue({ count: 0 });
     await expect(asCaller(prisma, "u1").entry.delete({ id: "e9" })).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: "e9", user_id: "u1" } });
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: "e9", user_id: "u1", invoice_id: null } });
   });
 
   it("moves an entry to another day without touching its hours, note or project", async () => {
@@ -886,7 +886,9 @@ describe("an entry deleted elsewhere: a plain NOT_FOUND, never a server error", 
     await expect(u2.entry.update({ id: made.id, minutes: 600 })).rejects.toMatchObject(GONE);
     await expect(u2.entry.delete({ id: made.id })).rejects.toMatchObject(GONE);
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
-    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({ where: { id: made.id, user_id: "u2" } });
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: made.id, user_id: "u2", invoice_id: null },
+    });
     expect(rows.get(made.id)).toEqual(before);
   });
 });
