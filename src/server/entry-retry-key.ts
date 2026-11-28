@@ -39,3 +39,34 @@ export function isKeyClash(err: unknown): boolean {
   if (err instanceof QuotaInsertDuplicate || errorCode(err) === "P2002") return true;
   return /UNIQUE constraint failed/.test(err instanceof Error ? err.message : String(err));
 }
+
+/** Adds to `taken` every date of a multi-day call that the account already saved under `key`. */
+export async function addKeyedDays(
+  ctx: { prisma: PrismaClient; userId: string },
+  key: string,
+  dates: string[],
+  taken: Set<string>,
+) {
+  const kept = await findTakenKeys(
+    ctx,
+    dates.map((d) => dayRetryKey(key, d)),
+  );
+  for (const d of dates) if (kept.has(dayRetryKey(key, d))) taken.add(d);
+}
+
+/** Saves one day of a multi-day call. Returns false when a keyed day was saved at the same moment by another call. */
+export async function createDay(
+  ctx: { prisma: PrismaClient },
+  data: Prisma.TimeEntryUncheckedCreateInput,
+  key: string | undefined,
+): Promise<boolean> {
+  try {
+    await ctx.prisma.timeEntry.create({
+      data: key ? { ...data, retry_key: dayRetryKey(key, data.date) } : data,
+    });
+    return true;
+  } catch (err) {
+    if (!key || !isKeyClash(err)) throw err;
+    return false;
+  }
+}

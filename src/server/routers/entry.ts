@@ -15,7 +15,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { billedLockMessage, deleteUnbilledDay, deleteUnbilledEntry } from "../billed-entry";
 import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { drillError, faultActive } from "../drill";
-import { dayRetryKey, findKeyedEntry, findTakenKeys, isKeyClash, retryKeySchema } from "../entry-retry-key";
+import { addKeyedDays, createDay, findKeyedEntry, isKeyClash, retryKeySchema } from "../entry-retry-key";
 import { invoiceNumbersFor } from "../invoice-numbers";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
@@ -452,37 +452,13 @@ export const entryRouter = router({
         });
         for (const e of existing) taken.add(e.date);
       }
-      const { key } = input;
-      if (key) {
-        const kept = await findTakenKeys(
-          ctx,
-          dates.map((d) => dayRetryKey(key, d)),
-        );
-        for (const d of dates) if (kept.has(dayRetryKey(key, d))) taken.add(d);
-      }
+      if (input.key) await addKeyedDays(ctx, input.key, dates, taken);
 
       const result = { created: 0, skipped: [] as string[] };
       for (const date of dates) {
-        if (taken.has(date)) {
-          result.skipped.push(date);
-          continue;
-        }
-        try {
-          await ctx.prisma.timeEntry.create({
-            data: {
-              user_id: ctx.userId,
-              project_id: project.id,
-              date,
-              minutes: input.minutes,
-              note: input.note,
-              ...(key && { retry_key: dayRetryKey(key, date) }),
-            },
-          });
-          result.created++;
-        } catch (err) {
-          if (!key || !isKeyClash(err)) throw err;
-          result.skipped.push(date);
-        }
+        const data = { user_id: ctx.userId, project_id: project.id, date, minutes: input.minutes, note: input.note };
+        if (!taken.has(date) && (await createDay(ctx, data, input.key))) result.created++;
+        else result.skipped.push(date);
       }
       return result;
     }),
