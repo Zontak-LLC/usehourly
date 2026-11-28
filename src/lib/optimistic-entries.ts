@@ -111,5 +111,6 @@ export function pendingEntry(input: {
     project,
     author: null,
     non_billable: input.nonBillable,
+    invoice_number: null,
   };
 }

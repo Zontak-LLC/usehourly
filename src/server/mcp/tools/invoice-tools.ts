@@ -83,6 +83,44 @@ export const INVOICE_READ_TOOLS: McpTool[] = [
     }),
     run: (c, a) => c.invoice.nextNumber(a),
   }),
+
+  defineTool({
+    name: "unbilled_time",
+    title: "Unbilled time and what the invoice would be",
+    description:
+      "The unbilled billable time for one client in a period, per project, with the amount an invoice would come to and the entry ids behind each line. Worked out with the same rules as create_invoice: time already on an invoice, running timers, non-billable projects and non-billable days are left out, and the client's rounding applies. It creates nothing. Use it to answer 'what would I bill this client?' before create_invoice.",
+    access: "read",
+    idempotent: true,
+    input: z
+      .object({
+        client: clientRef,
+        from: date.describe("First day of the period"),
+        to: date.describe("Last day of the period"),
+      })
+      .refine((v) => v.from <= v.to, { message: "from must be on or before to." }),
+    run: async (c, a) => {
+      const cl = await resolveClient(c, a.client);
+      const u = await c.invoice.unbilledTime({ clientId: cl.id, from: a.from, to: a.to });
+      return {
+        client: cl.name,
+        currency: u.currency,
+        from: a.from,
+        to: a.to,
+        total_minutes: u.totalMinutes,
+        total_hours: hours(u.totalMinutes),
+        total: round2(u.totalCents / 100),
+        projects: u.lines.map((l) => ({
+          project_id: l.projectId,
+          project: l.project,
+          minutes: l.minutes,
+          hours: hours(l.minutes),
+          rate: round2(l.rateCents / 100),
+          amount: round2(l.amountCents / 100),
+          entry_ids: u.entryIdsByProject[l.projectId] ?? [],
+        })),
+      };
+    },
+  }),
 ];
 
 export const INVOICE_WRITE_TOOLS: McpTool[] = [

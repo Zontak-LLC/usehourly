@@ -45,6 +45,41 @@ export async function assertNumberFree(db: Db, userId: string, number: string): 
   if (dup) throw numberUsedError(number);
 }
 
+/** The client's rounding rule for billed minutes (none when the client has no step). */
+export function clientRounding(client: Pick<Client, "round_step" | "round_mode" | "round_min">): Rounding {
+  return {
+    step: client.round_step ?? 0,
+    mode: client.round_mode === "nearest" ? "nearest" : "up",
+    min: client.round_min ?? 0,
+  };
+}
+
+/**
+ * The entries an invoice for this client and period draws from: stopped timers only (a running one is billed once it
+ * is stopped), minus days marked non-billable, and minus time already on an invoice unless `includeInvoiced`.
+ * Reads only, always filtered by the account.
+ */
+export async function invoiceableEntries(
+  db: Db,
+  userId: string,
+  opts: { client: Pick<Client, "id">; from: string; to: string; includeInvoiced: boolean },
+) {
+  const [allEntries, skipDays] = await Promise.all([
+    db.timeEntry.findMany({
+      where: {
+        user_id: userId,
+        date: { gte: opts.from, lte: opts.to },
+        project: { client_id: opts.client.id },
+        ...(opts.includeInvoiced ? {} : { invoice_id: null }),
+        started_at: null,
+      },
+      include: { project: true },
+    }),
+    nonBillableDates(db, userId, opts),
+  ]);
+  return allEntries.filter((e) => !skipDays.has(e.date));
+}
+
 /**
  * The one place an invoice is worked out (2026-11-06): the preview shows exactly what Save stores, because both call
  * this. It only reads; `logoHash` decides what happens to the logos (create stores them, the preview only hashes).
@@ -57,26 +92,8 @@ export async function buildInvoiceSnapshot(
   input: InvoiceRequest,
   logoHash: (dataUrl: string | null) => Promise<string | null>,
 ) {
-  const [allEntries, skipDays] = await Promise.all([
-    db.timeEntry.findMany({
-      where: {
-        user_id: userId,
-        date: { gte: input.from, lte: input.to },
-        project: { client_id: client.id },
-        ...(input.includeInvoiced ? {} : { invoice_id: null }),
-        started_at: null, // a running (or resumed) timer is billed once it is stopped
-      },
-      include: { project: true },
-    }),
-    nonBillableDates(db, userId, input),
-  ]);
-  // Days marked non-billable are never invoiced.
-  const entries = allEntries.filter((e) => !skipDays.has(e.date));
-  const rounding: Rounding = {
-    step: client.round_step ?? 0,
-    mode: client.round_mode === "nearest" ? "nearest" : "up",
-    min: client.round_min ?? 0,
-  };
+  const entries = await invoiceableEntries(db, userId, { client, ...input });
+  const rounding = clientRounding(client);
   const user = await db.authUser.findUnique({ where: { id: userId } });
   if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in again." });
   const currency = effectiveCurrency(client.currency, user.currency); // the client's own, else the account's

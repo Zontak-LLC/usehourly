@@ -11,6 +11,8 @@ export type EntryRow = {
   note: string;
   started_at: Date | null;
   project: { id: string; name: string; client: { id: string; name: string } };
+  /** Set by `entry.list` only: the number of the invoice the entry is on, or null. Other calls do not look it up. */
+  invoice_number?: string | null;
 };
 
 export function shapeEntry(e: EntryRow) {
@@ -24,6 +26,7 @@ export function shapeEntry(e: EntryRow) {
     started_at: e.started_at ? e.started_at.toISOString() : null,
     project: { id: e.project.id, name: e.project.name },
     client: { id: e.project.client.id, name: e.project.client.name },
+    ...(e.invoice_number !== undefined && { billed: e.invoice_number }),
   };
 }
 

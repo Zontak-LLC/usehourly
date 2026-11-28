@@ -15,6 +15,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { billedLockMessage, deleteUnbilledDay, deleteUnbilledEntry } from "../billed-entry";
 import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { drillError, faultActive } from "../drill";
+import { invoiceNumbersFor } from "../invoice-numbers";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
 import { dateSchema } from "../schemas/dates";
@@ -141,11 +142,17 @@ export const entryRouter = router({
       ? await ctx.prisma.authUser.findMany({ where: { id: { in: authorIds } }, select: { id: true, name: true } })
       : [];
     const authorName = new Map(authors.map((a) => [a.id, a.name]));
+    const invoiceNumber = await invoiceNumbersFor(
+      ctx.prisma,
+      ctx.userId,
+      rows.map((e) => e.invoice_id),
+    );
     return rows.flatMap((e) => {
       const project = byId.get(e.project_id);
       if (!project) return []; // cannot happen (an entry's project is deleted with it); never show a half-built row
       const author = e.author_id ? { name: authorName.get(e.author_id) ?? null } : null;
-      return [{ ...e, project, author, non_billable: days.has(e.date) }];
+      const invoice_number = (e.invoice_id && invoiceNumber.get(e.invoice_id)) || null;
+      return [{ ...e, project, author, non_billable: days.has(e.date), invoice_number }];
     });
   }),
 
