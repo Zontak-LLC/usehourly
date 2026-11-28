@@ -15,6 +15,7 @@ import { assertWithinQuota } from "@/lib/quotas";
 import { billedLockMessage, deleteUnbilledDay, deleteUnbilledEntry } from "../billed-entry";
 import { cursorArgs, cursorInput, toPage } from "../cursor-page";
 import { drillError, faultActive } from "../drill";
+import { dayRetryKey, findKeyedEntry, findTakenKeys, isKeyClash, retryKeySchema } from "../entry-retry-key";
 import { invoiceNumbersFor } from "../invoice-numbers";
 import { nonBillableDates } from "../non-billable";
 import { accountQuota, insertWithinQuota, QuotaInsertDuplicate } from "../quota-insert";
@@ -248,6 +249,8 @@ export const entryRouter = router({
            * dropped connection (or an entry that waited offline and was sent again) returns the saved entry, never a copy.
            */
           clientId: z.string().uuid().optional(),
+          /** An assistant's retry key (MCP): the same key again returns the first entry. */
+          key: retryKeySchema,
         })
         .refine((v) => v.minutes !== undefined || v.duration !== undefined, { message: "Enter a duration." }),
     )
@@ -258,6 +261,10 @@ export const entryRouter = router({
           include: withProject,
         });
         if (already) return already;
+      }
+      if (input.key) {
+        const kept = await findKeyedEntry(ctx, input.key, withProject);
+        if (kept) return kept;
       }
       const read = entryMinutes(input);
       if ("error" in read) throw new TRPCError({ code: "BAD_REQUEST", message: read.error });
@@ -275,6 +282,7 @@ export const entryRouter = router({
             date: input.date,
             minutes,
             note: input.note,
+            retry_key: input.key,
           },
           entryQuota(ctx),
         );
@@ -288,6 +296,8 @@ export const entryRouter = router({
           });
           if (won) return won;
         }
+        const keyed = input.key && isKeyClash(err) ? await findKeyedEntry(ctx, input.key, withProject) : null;
+        if (keyed) return keyed;
         throw err;
       }
     }),
@@ -424,6 +434,8 @@ export const entryRouter = router({
         minutes: minutesSchema,
         note: noteSchema,
         skipExisting: z.boolean().default(true),
+        /** An assistant's retry key: each day is stored as `<key>:<date>`, and a stored day is skipped. */
+        key: retryKeySchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -440,6 +452,14 @@ export const entryRouter = router({
         });
         for (const e of existing) taken.add(e.date);
       }
+      const { key } = input;
+      if (key) {
+        const kept = await findTakenKeys(
+          ctx,
+          dates.map((d) => dayRetryKey(key, d)),
+        );
+        for (const d of dates) if (kept.has(dayRetryKey(key, d))) taken.add(d);
+      }
 
       const result = { created: 0, skipped: [] as string[] };
       for (const date of dates) {
@@ -447,10 +467,22 @@ export const entryRouter = router({
           result.skipped.push(date);
           continue;
         }
-        await ctx.prisma.timeEntry.create({
-          data: { user_id: ctx.userId, project_id: project.id, date, minutes: input.minutes, note: input.note },
-        });
-        result.created++;
+        try {
+          await ctx.prisma.timeEntry.create({
+            data: {
+              user_id: ctx.userId,
+              project_id: project.id,
+              date,
+              minutes: input.minutes,
+              note: input.note,
+              ...(key && { retry_key: dayRetryKey(key, date) }),
+            },
+          });
+          result.created++;
+        } catch (err) {
+          if (!key || !isKeyClash(err)) throw err;
+          result.skipped.push(date);
+        }
       }
       return result;
     }),

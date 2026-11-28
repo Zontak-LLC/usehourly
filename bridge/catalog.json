@@ -1587,7 +1587,7 @@
     {
       "name": "log_time",
       "title": "Log time",
-      "description": "Add one time entry: a project, a date, how long, and what was done. Give minutes or a duration text. This adds a new entry; it never merges with an existing one. Check list_entries first if the day may already be logged.",
+      "description": "Add one time entry: a project, a date, how long, and what was done. Give minutes or a duration text. This adds a new entry; it never merges with an existing one. Check list_entries first if the day may already be logged. Pass the same key when retrying a call, so the time is logged once.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1616,6 +1616,12 @@
             "description": "What was done (max 2,000 characters)",
             "type": "string",
             "maxLength": 2000
+          },
+          "key": {
+            "description": "Optional retry key, max 100 characters: calling again with the same key returns the first entry instead of adding another",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           }
         },
         "required": ["project", "date"]
@@ -1739,6 +1745,12 @@
             "default": true,
             "description": "Skip days that already have time for this project (default true)",
             "type": "boolean"
+          },
+          "key": {
+            "description": "Optional retry key, max 100 characters: calling again with the same key returns the first entry instead of adding another",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           }
         },
         "required": ["project", "dates"]
